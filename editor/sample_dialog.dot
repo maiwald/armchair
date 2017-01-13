@@ -1,0 +1,51 @@
+strict digraph "" {
+  rankdir=LR
+  center=true
+
+  node [
+    shape=box
+    style=filled tooltip=" "
+    rank="same"
+  ]
+
+  subgraph hugo {
+    node [fillcolor="#5DADE2"]
+    l1 [label="Hey, who are you?" URL="http://google.com"]
+    l2 [label="I am Hugo. And you...?"]
+    l3 [label="How do you know this? We have never met!"]
+    l4 [label="Fine, be a jerk."]
+    l5 [label="Nice to meet you!"]
+    l6 [label="What do you want to know?"]
+    l7 [label="thing 1"]
+    l8 [label="thing 2"]
+    l9 [label="thing 3"]
+  }
+
+  subgraph player {
+    node [shape=record fillcolor="#F1948A"]
+    a1 [label="<l6>I could ask you the same.|<l8>My name does not matter.|<l7>I know your name is Hugo!"]
+    a2 [label="<l8>My name does not matter.|<l9>I am Hugo as well."]
+    a3 [label="<l10>I am not telling you!|<l11>I just know. I am Hugo as well"]
+    a4 [label="<l12>thing 1|<l13>thing 2|<l14>thing 3"]
+    a5 [label="Thanks, one more thing..."]
+  }
+
+  l1 -> a1
+  l2 -> a2
+  l3 -> a3
+  a1:l6 -> l2
+  a1:l7 -> l3
+  a1:l8 -> l4
+  a2:l8 -> l4
+  a2:l9 -> l5
+  a3:l10 -> l4
+  a3:l11 -> l5
+  l5 -> l6
+  l6 -> a4
+  a4:l12 -> l7
+  a4:l13 -> l8
+  a4:l14 -> l9
+  {l7, l8, l9} -> a5
+  a5 -> l6
+
+}
