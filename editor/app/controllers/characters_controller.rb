@@ -1,74 +1,35 @@
 class CharactersController < ApplicationController
   before_action :set_character, only: [:show, :edit, :update, :destroy]
 
-  # GET /characters
-  # GET /characters.json
   def index
-    @characters = Character.all
+    render json: Character.all
   end
 
-  # GET /characters/1
-  # GET /characters/1.json
   def show
+    render json: @character
   end
 
-  # GET /characters/new
-  def new
-    @character = Character.new
-  end
-
-  # GET /characters/1/edit
-  def edit
-  end
-
-  # POST /characters
-  # POST /characters.json
   def create
-    @character = Character.new(character_params)
-
-    respond_to do |format|
-      if @character.save
-        format.html { redirect_to @character, notice: 'Character was successfully created.' }
-        format.json { render :show, status: :created, location: @character }
-      else
-        format.html { render :new }
-        format.json { render json: @character.errors, status: :unprocessable_entity }
-      end
-    end
+    render json: Character.create!(character_params)
   end
 
-  # PATCH/PUT /characters/1
-  # PATCH/PUT /characters/1.json
   def update
-    respond_to do |format|
-      if @character.update(character_params)
-        format.html { redirect_to @character, notice: 'Character was successfully updated.' }
-        format.json { render :show, status: :ok, location: @character }
-      else
-        format.html { render :edit }
-        format.json { render json: @character.errors, status: :unprocessable_entity }
-      end
-    end
+    @character.update!(character_params)
+    render json: @character
   end
 
-  # DELETE /characters/1
-  # DELETE /characters/1.json
   def destroy
-    @character.destroy
-    respond_to do |format|
-      format.html { redirect_to characters_url, notice: 'Character was successfully destroyed.' }
-      format.json { head :no_content }
-    end
+    @character.destroy!
+    render json: @character
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_character
-      @character = Character.find(params[:id])
-    end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
-    def character_params
-      params.require(:character).permit(:name)
-    end
+  def set_character
+    @character = Character.find(params[:id])
+  end
+
+  def character_params
+    params.require(:character).permit(:name)
+  end
 end
