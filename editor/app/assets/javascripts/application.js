@@ -2,7 +2,28 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, connect } from 'react-redux';
 import { getJSON, postJSON } from 'ajax_helpers';
+import { isNull } from 'lodash';
 import store from 'state/store';
+
+function showNotice(notice) {
+  return {
+    type: 'SHOW_NOTICE',
+    notice
+  };
+}
+
+function hideNotice() {
+  return {
+    type: 'HIDE_NOTICE'
+  };
+}
+
+function showTimedNotice(notice) {
+  return dispatch => {
+    dispatch(showNotice(notice));
+    setTimeout(() => dispatch(hideNotice()), 4000)
+  };
+}
 
 function resetCharacters(characters) {
   return {
@@ -22,7 +43,7 @@ function loadCharacters() {
   store.dispatch(dispatch => {
     getJSON('/characters.json')
       .then(characters => dispatch(resetCharacters(characters)))
-      .catch(e => { console.log(e); });
+      .catch(e => dispatch(showTimedNotice(e.message)));
   });
 }
 
@@ -30,7 +51,7 @@ function createCharacter(name) {
   return dispatch => {
     postJSON('/characters.json', { name: name })
       .then(character => dispatch(addCharacter(character)))
-      .catch(e => { console.log(e); });
+      .catch(({error}) => dispatch(showTimedNotice(error)));
   };
 }
 
@@ -69,6 +90,8 @@ class CharacterForm extends Component {
   }
 }
 
+const ConnectedCharacterForm = connect()(CharacterForm);
+
 const CharacterItem = ({character}) => {
   return (
     <li>{character.name}</li>
@@ -86,14 +109,27 @@ const CharacterList = ({characters}) => {
 }
 
 const ConnectedCharacterList = connect(state => {
-  return { characters: state.get('characters').toJS() };
+  return { characters: state.getIn(['data', 'characters']).toJS() };
 })(CharacterList);
 
-const ConnectedCharacterForm = connect()(CharacterForm);
+
+const Notice = ({notice}) => {
+  if (! isNull(notice)) {
+    return <div>{notice}</div>
+  } else {
+    return null;
+  }
+}
+
+const ConnectedNotice = connect(state => {
+  return { notice: state.getIn(['ui', 'notice']) };
+})(Notice);
+
 
 const Editor = () => {
   return (
     <div>
+      <ConnectedNotice />
       <h1>Hello!</h1>
       <ConnectedCharacterList />
       <ConnectedCharacterForm />

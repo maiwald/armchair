@@ -5,9 +5,14 @@ class ApplicationController < ActionController::Base
   private
 
   def render_validation_error e
-    full_message = "#{e.record.class.model_name.human} #{e.record.id}: #{e.record.errors.full_messages.join(", ")}"
-    errors = camelize_hash_keys(e.record.errors.messages)
-    render status: :unprocessable_entity, json: { errors: errors, full_error_message: full_message }
+    full_message = [
+      e.record.class.model_name.human,
+      e.record.id,
+      ':',
+      e.record.errors.full_messages.join(', ')
+    ].compact.join(' ')
+
+    render status: :unprocessable_entity, json: { error: full_message }
   end
 
   def camelize_hash_keys(hash)

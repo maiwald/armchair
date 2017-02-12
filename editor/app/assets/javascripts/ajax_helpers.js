@@ -1,23 +1,24 @@
 const csrfToken = document.head.querySelector("[name=csrf-token]").content;
 
-function checkStatus(response) {
-  if (response.status >= 200 && response.status < 300) {
-    return response
-  } else {
-    var error = new Error(response.statusText)
-    error.response = response
-    throw error
-  }
+function isSuccessfulResponse(response) {
+  return (response.status >= 200 && response.status < 300);
+}
+
+function fetchJSON(url, options) {
+  return new Promise((resolve, reject) => {
+    fetch(url, options).then(response => {
+      let callback = isSuccessfulResponse(response) ? resolve : reject;
+      response.json().then(callback);
+    });
+  });
 }
 
 export function getJSON(url) {
-  return fetch(url)
-    .then(checkStatus)
-    .then(res => res.json())
+  return fetchJSON(url);
 }
 
 export function postJSON(url, payload) {
-  return fetch(url, {
+  return fetchJSON(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -26,7 +27,5 @@ export function postJSON(url, payload) {
     },
     body: JSON.stringify(payload),
     credentials: 'same-origin'
-  })
-    .then(checkStatus)
-    .then(res => res.json())
+  });
 }
