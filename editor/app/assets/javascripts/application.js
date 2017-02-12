@@ -1,46 +1,36 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, connect } from 'react-redux';
+import { getJSON, postJSON } from 'ajax_helpers';
 import store from 'state/store';
+
+function resetCharacters(characters) {
+  return {
+    type: 'RESET_CHARACTERS',
+    characters
+  };
+}
+
+function addCharacter(character) {
+  return {
+    type: 'ADD_CHARACTER',
+    character
+  };
+}
 
 function loadCharacters() {
   store.dispatch(dispatch => {
-    fetch('/characters.json')
-      .then(r => r.json())
-      .then((characters) => {
-        dispatch({
-          type: 'RESET_CHARACTERS',
-          characters
-        });
-      });
-  });
-}
-
-const csrfToken = document.head.querySelector("[name=csrf-token]").content;
-
-function postJSON(url, payload) {
-  return fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-      'X-CSRF-Token': csrfToken
-    },
-    body: JSON.stringify(payload),
-    credentials: 'same-origin'
+    getJSON('/characters.json')
+      .then(characters => dispatch(resetCharacters(characters)))
+      .catch(e => { console.log(e); });
   });
 }
 
 function createCharacter(name) {
   return dispatch => {
     postJSON('/characters.json', { name: name })
-      .then(response => response.json())
-      .then(character => {
-        dispatch({
-          type: 'ADD_CHARACTER',
-          character
-        });
-      });
+      .then(character => dispatch(addCharacter(character)))
+      .catch(e => { console.log(e); });
   };
 }
 
