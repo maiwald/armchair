@@ -1,0 +1,24 @@
+import React from 'react';
+import { connect } from 'react-redux';
+
+const CharacterItem = ({character}) => {
+  return (
+    <li>{character.get('name')}</li>
+  );
+}
+
+const CharacterList = ({characters}) => {
+  let items = characters.map((c) => {
+    return <CharacterItem key={c.get('id')} character={c} />;
+  });
+
+  return (
+    <ul>{items}</ul>
+  );
+}
+
+function mapStateToProps(state) {
+  return { characters: state.getIn(['data', 'characters']) };
+}
+
+export default connect(mapStateToProps)(CharacterList);

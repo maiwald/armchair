@@ -4,7 +4,7 @@ import { fromJS } from 'immutable';
 import uiReducer, { initialState as initialUiState } from 'reducers/ui'
 import thunk from 'redux-thunk';
 
-let initialState = fromJS({
+const initialState = fromJS({
   ui: initialUiState,
   data: {
     characters: []
