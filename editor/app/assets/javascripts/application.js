@@ -72,10 +72,8 @@ class CharacterForm extends Component {
   }
 
   handleSubmit(event) {
-    if (this.state.name.length != 0) {
-      this.props.dispatch(createCharacter(this.state.name));
-    }
     event.preventDefault();
+    this.props.createCharacter(this.state.name);
   }
 
   render() {
@@ -90,7 +88,7 @@ class CharacterForm extends Component {
   }
 }
 
-const ConnectedCharacterForm = connect()(CharacterForm);
+const ConnectedCharacterForm = connect(null, {createCharacter})(CharacterForm);
 
 const CharacterItem = ({character}) => {
   return (
@@ -114,11 +112,7 @@ const ConnectedCharacterList = connect(state => {
 
 
 const Notice = ({notice}) => {
-  if (! isNull(notice)) {
-    return <div>{notice}</div>
-  } else {
-    return null;
-  }
+  return isNull(notice) ? null : <div>{notice}</div>;
 }
 
 const ConnectedNotice = connect(state => {

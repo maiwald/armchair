@@ -80,6 +80,9 @@ GEM
     mime-types-data (3.2016.0521)
     mini_portile2 (2.1.0)
     minitest (5.10.1)
+    nilify_blanks (1.2.1)
+      activerecord (>= 3.0.0)
+      activesupport (>= 3.0.0)
     nio4r (1.2.1)
     nokogiri (1.7.0.1)
       mini_portile2 (~> 2.1.0)
@@ -158,6 +161,7 @@ DEPENDENCIES
   haml
   jquery-rails
   listen (~> 3.0.5)
+  nilify_blanks
   puma (~> 3.0)
   rails (~> 5.0.1)
   sass-rails (~> 5.0)
