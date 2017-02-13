@@ -1,61 +1,11 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, connect } from 'react-redux';
-import { getJSON, postJSON } from 'ajax_helpers';
 import { isNull } from 'lodash';
 import store from 'state/store';
+import { loadCharacters, createCharacter } from 'actions/character'
 
-function showNotice(notice) {
-  return {
-    type: 'SHOW_NOTICE',
-    notice
-  };
-}
-
-function hideNotice() {
-  return {
-    type: 'HIDE_NOTICE'
-  };
-}
-
-function showTimedNotice(notice) {
-  return dispatch => {
-    dispatch(showNotice(notice));
-    setTimeout(() => dispatch(hideNotice()), 4000)
-  };
-}
-
-function resetCharacters(characters) {
-  return {
-    type: 'RESET_CHARACTERS',
-    characters
-  };
-}
-
-function addCharacter(character) {
-  return {
-    type: 'ADD_CHARACTER',
-    character
-  };
-}
-
-function loadCharacters() {
-  store.dispatch(dispatch => {
-    getJSON('/characters.json')
-      .then(characters => dispatch(resetCharacters(characters)))
-      .catch(e => dispatch(showTimedNotice(e.message)));
-  });
-}
-
-function createCharacter(name) {
-  return dispatch => {
-    postJSON('/characters.json', { name: name })
-      .then(character => dispatch(addCharacter(character)))
-      .catch(({error}) => dispatch(showTimedNotice(error)));
-  };
-}
-
-loadCharacters();
+store.dispatch(loadCharacters());
 
 class CharacterForm extends Component {
 
