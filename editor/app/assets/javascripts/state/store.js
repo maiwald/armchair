@@ -1,29 +1,15 @@
 import { createStore, applyMiddleware } from 'redux';
 import { combineReducers } from 'redux-immutable';
 import { fromJS } from 'immutable';
+import uiReducer, { initialState as initialUiState } from 'reducers/ui'
 import thunk from 'redux-thunk';
 
 let initialState = fromJS({
-  ui: {
-    notice: null
-  },
+  ui: initialUiState,
   data: {
     characters: []
   }
 })
-
-function uiReducer(state, action) {
-  switch (action.type) {
-    case 'SHOW_NOTICE':
-      return state.set('notice', action.notice);
-
-    case 'HIDE_NOTICE':
-      return state.set('notice', null);
-
-    default:
-      return state;
-  }
-}
 
 function dataReducer(state, action) {
   switch (action.type) {
