@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { createCharacter } from 'actions/character'
+import { createCharacter } from 'actions/character';
 
 class CharacterForm extends Component {
   constructor(props) {

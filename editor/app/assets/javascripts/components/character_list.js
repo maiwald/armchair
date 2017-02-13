@@ -1,13 +1,13 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-const CharacterItem = ({character}) => {
+function CharacterItem({character}) {
   return (
     <li>{character.get('name')}</li>
   );
 }
 
-const CharacterList = ({characters}) => {
+function CharacterList({characters}) {
   let items = characters.map((c) => {
     return <CharacterItem key={c.get('id')} character={c} />;
   });

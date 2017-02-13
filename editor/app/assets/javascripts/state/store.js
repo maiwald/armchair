@@ -9,7 +9,7 @@ const initialState = fromJS({
   data: {
     characters: []
   }
-})
+});
 
 function dataReducer(state, action) {
   switch (action.type) {

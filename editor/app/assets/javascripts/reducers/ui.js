@@ -1,6 +1,6 @@
 import { Map } from 'immutable';
 
-export const initialState = new Map({ notice: null })
+export const initialState = new Map({ notice: null });
 
 export default function reducer(state, action) {
   switch (action.type) {
