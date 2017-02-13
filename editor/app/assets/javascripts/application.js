@@ -42,13 +42,13 @@ const ConnectedCharacterForm = connect(null, {createCharacter})(CharacterForm);
 
 const CharacterItem = ({character}) => {
   return (
-    <li>{character.name}</li>
+    <li>{character.get('name')}</li>
   );
 }
 
 const CharacterList = ({characters}) => {
   let items = characters.map((c) => {
-    return <CharacterItem key={c.id} character={c} />;
+    return <CharacterItem key={c.get('id')} character={c} />;
   });
 
   return (
@@ -57,7 +57,7 @@ const CharacterList = ({characters}) => {
 }
 
 const ConnectedCharacterList = connect(state => {
-  return { characters: state.getIn(['data', 'characters']).toJS() };
+  return { characters: state.getIn(['data', 'characters']) };
 })(CharacterList);
 
 
