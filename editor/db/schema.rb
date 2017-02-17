@@ -10,17 +10,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170122124355) do
+ActiveRecord::Schema.define(version: 20170217115934) do
 
   create_table "characters", force: :cascade do |t|
     t.string   "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-  end
-
-  create_table "dialogues", force: :cascade do |t|
-    t.string  "label"
-    t.integer "initial_line_id"
   end
 
   create_table "lines", force: :cascade do |t|
