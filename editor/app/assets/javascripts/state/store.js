@@ -7,7 +7,8 @@ import thunk from 'redux-thunk';
 const initialState = fromJS({
   ui: initialUiState,
   data: {
-    characters: []
+    characters: [],
+    lines: [],
   }
 });
 
