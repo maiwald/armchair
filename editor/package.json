@@ -25,6 +25,7 @@
     "react-redux": "^5.0.2",
     "redux": "^3.6.0",
     "redux-immutable": "^3.0.11",
-    "redux-thunk": "^2.2.0"
+    "redux-thunk": "^2.2.0",
+    "vis": "^4.18.1"
   }
 }

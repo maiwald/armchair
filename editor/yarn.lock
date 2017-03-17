@@ -990,6 +990,10 @@ elliptic@^6.0.0:
     minimalistic-assert "^1.0.0"
     minimalistic-crypto-utils "^1.0.0"
 
+emitter-component@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/emitter-component/-/emitter-component-1.1.1.tgz#065e2dbed6959bf470679edabeaf7981d1003ab6"
+
 emojis-list@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/emojis-list/-/emojis-list-2.1.0.tgz#4daa4d9db00f9819880c79fa457ae5b09a1fd389"
@@ -1210,6 +1214,10 @@ globals@^9.0.0:
 graceful-fs@^4.1.2:
   version "4.1.11"
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.1.11.tgz#0e8bdfe4d1ddb8854d64e04ea7c00e2a026e5658"
+
+hammerjs@^2.0.6, hammerjs@^2.0.8:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/hammerjs/-/hammerjs-2.0.8.tgz#04ef77862cff2bb79d30f7692095930222bf60f1"
 
 har-schema@^1.0.5:
   version "1.0.5"
@@ -1499,6 +1507,10 @@ jsprim@^1.2.2:
     json-schema "0.2.3"
     verror "1.3.6"
 
+keycharm@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/keycharm/-/keycharm-0.2.0.tgz#fa6ea2e43b90a68028843d27f2075d35a8c3e6f9"
+
 keycode@^2.1.2:
   version "2.1.8"
   resolved "https://registry.yarnpkg.com/keycode/-/keycode-2.1.8.tgz#94d2b7098215eff0e8f9a8931d5a59076c4532fb"
@@ -1629,6 +1641,10 @@ minimist@^1.2.0:
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.5.1.tgz#30057438eac6cf7f8c4767f38648d6697d75c903"
   dependencies:
     minimist "0.0.8"
+
+moment@^2.17.1:
+  version "2.18.0"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.18.0.tgz#6cfec6a495eca915d02600a67020ed994937252c"
 
 ms@0.7.1:
   version "0.7.1"
@@ -1864,6 +1880,12 @@ promise@^7.1.1:
   resolved "https://registry.yarnpkg.com/promise/-/promise-7.1.1.tgz#489654c692616b8aa55b0724fa809bb7db49c5bf"
   dependencies:
     asap "~2.0.3"
+
+propagating-hammerjs@^1.4.6:
+  version "1.4.6"
+  resolved "https://registry.yarnpkg.com/propagating-hammerjs/-/propagating-hammerjs-1.4.6.tgz#fed00e9b00767ffd42d14f5b531bc493eb672e37"
+  dependencies:
+    hammerjs "^2.0.6"
 
 prr@~0.0.0:
   version "0.0.0"
@@ -2415,6 +2437,16 @@ verror@1.3.6:
   resolved "https://registry.yarnpkg.com/verror/-/verror-1.3.6.tgz#cff5df12946d297d2baaefaa2689e25be01c005c"
   dependencies:
     extsprintf "1.0.2"
+
+vis@^4.18.1:
+  version "4.19.1"
+  resolved "https://registry.yarnpkg.com/vis/-/vis-4.19.1.tgz#5cef4e72e1f0372a4e5ab502523b88687b1e2027"
+  dependencies:
+    emitter-component "^1.1.1"
+    hammerjs "^2.0.8"
+    keycharm "^0.2.0"
+    moment "^2.17.1"
+    propagating-hammerjs "^1.4.6"
 
 vm-browserify@0.0.4:
   version "0.0.4"

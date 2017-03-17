@@ -6,7 +6,7 @@ function Line({content, onClickDelete, onClickAdd}) {
     <div className="line">
       <acticle>{content}</acticle>
       <ul className="actions">
-        <li><a onClick={() => onClickAdd}>delete</a></li>
+        <li><a onClick={() => onClickAdd}>add</a></li>
         <li><a onClick={() => onClickDelete}>delete</a></li>
       </ul>
     </div>
