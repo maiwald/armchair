@@ -1,5 +1,5 @@
-import { showTimedNotice } from 'actions/ui';
-import { getJSON, postJSON } from 'ajax_helpers';
+import { showTimedNotice } from './ui';
+import { getJSON, postJSON } from '../ajax_helpers';
 
 export function resetCharacters(characters) {
   return {
