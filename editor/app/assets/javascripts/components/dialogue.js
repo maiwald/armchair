@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { Network } from 'vis';
 import { List, Map } from 'immutable';
 import { showLineForm, hideLineForm } from '../actions/line_actions.js';
-import { first, size } from 'lodash';
+import { isNull, first, size } from 'lodash';
 
 const VIS_NETWORK_OPTIONS = {
   layout: {
@@ -15,7 +15,8 @@ const VIS_NETWORK_OPTIONS = {
     }
   },
   nodes: {
-    shape: 'box'
+    shape: 'box',
+    fixed: true
   },
   edges: {
     arrows: 'to'
@@ -46,10 +47,16 @@ class Dialogue extends Component {
 
   showNetwork() {
     const { container } = this.refs;
+    const { selectedLineId } = this.props;
+
     const network = new Network(container, {
       nodes: this.getNodes(),
       edges: this.getEdges()
     }, VIS_NETWORK_OPTIONS);
+
+    if (!isNull(selectedLineId)) {
+      network.selectNodes([selectedLineId]);
+    }
 
     network.on('click', this.handleClick);
   }
@@ -121,7 +128,8 @@ function mapStateToProps(state) {
 
   return {
     lines: dialogue.get('lines'),
-    connections: dialogue.get('connections')
+    connections: dialogue.get('connections'),
+    selectedLineId: dialogue.get('selectedLineId')
   };
 }
 
