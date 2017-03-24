@@ -30,22 +30,31 @@ class Dialogue extends Component {
   constructor(props) {
     super(props);
 
+    this.network = null;
     this.handleClick = this.handleClick.bind(this);
   }
 
   componentDidMount() {
-    this.showNetwork();
+    this.network = this.createNetwork();
+  }
+
+  componentWillUnmount() {
+    this.network.destroy();
+  }
+
+  componentWillUpdate() {
+    this.network.destroy();
   }
 
   componentDidUpdate() {
-    this.showNetwork();
+    this.network = this.createNetwork();
   }
 
   render() {
     return <div style={{height: "80vh"}} ref="container" />;
   }
 
-  showNetwork() {
+  createNetwork() {
     const { container } = this.refs;
     const { selectedLineId } = this.props;
 
@@ -59,6 +68,8 @@ class Dialogue extends Component {
     }
 
     network.on('click', this.handleClick);
+
+    return network;
   }
 
   handleClick(params) {
