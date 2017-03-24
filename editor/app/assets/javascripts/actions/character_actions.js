@@ -30,4 +30,3 @@ export function createCharacter(name) {
       .catch(({error}) => dispatch(showTimedNotice(error)));
   };
 }
-

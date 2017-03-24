@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Network } from 'vis';
 import { List, Map } from 'immutable';
+import { showLineForm, hideLineForm } from '../actions/line_actions.js';
+import { first, size } from 'lodash';
 
 const VIS_NETWORK_OPTIONS = {
   layout: {
@@ -24,7 +26,17 @@ const VIS_NETWORK_OPTIONS = {
 };
 
 class Dialogue extends Component {
+  constructor(props) {
+    super(props);
+
+    this.handleClick = this.handleClick.bind(this);
+  }
+
   componentDidMount() {
+    this.showNetwork();
+  }
+
+  componentDidUpdate() {
     this.showNetwork();
   }
 
@@ -34,10 +46,21 @@ class Dialogue extends Component {
 
   showNetwork() {
     const { container } = this.refs;
-    new Network(container, {
+    const network = new Network(container, {
       nodes: this.getNodes(),
       edges: this.getEdges()
     }, VIS_NETWORK_OPTIONS);
+
+    network.on('click', this.handleClick);
+  }
+
+  handleClick(params) {
+    const { nodes } = params;
+    if (size(nodes) == 1) {
+      this.props.showLineForm(first(nodes));
+    } else {
+      this.props.hideLineForm();
+    }
   }
 
   getNodes() {
@@ -102,4 +125,4 @@ function mapStateToProps(state) {
   };
 }
 
-export default connect(mapStateToProps)(Dialogue);
+export default connect(mapStateToProps, {showLineForm, hideLineForm})(Dialogue);

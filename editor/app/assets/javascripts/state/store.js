@@ -46,6 +46,13 @@ function dataReducer(state, action) {
         return characters.push(fromJS(action.character));
       });
 
+    case 'UPDATE_LINE':
+      const { lineId, text } = action;
+      const lineIndex = state.getIn(['dialogue', 'lines']).findIndex(line => {
+        return line.get('id') == lineId;
+      });
+      return state.setIn(['dialogue', 'lines', lineIndex, 'text'], text);
+
     default:
       return state;
   }

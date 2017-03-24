@@ -7,7 +7,7 @@ import CharacterForm from './components/character_form';
 import CharacterList from './components/character_list';
 import Notice from './components/notice';
 import Dialogue from './components/dialogue';
-import Line from './components/line';
+import LineForm from './components/line_form';
 
 store.dispatch(loadCharacters());
 
@@ -18,6 +18,7 @@ function Editor() {
       <h1>Hello!</h1>
       <CharacterList />
       <CharacterForm />
+      <LineForm />
       <Dialogue />
     </div>
   );
