@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import store from './state/store';
-import { loadCharacters } from './actions/character';
+import { loadCharacters } from './actions/character_actions';
 import CharacterForm from './components/character_form';
 import CharacterList from './components/character_list';
 import Notice from './components/notice';
