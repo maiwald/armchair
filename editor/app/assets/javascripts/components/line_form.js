@@ -7,8 +7,7 @@ class LineForm extends Component {
   constructor(props) {
     super(props);
 
-    const { line } = this.props;
-    this.state = { text: line.get('text') };
+    this.state = { text: props.line.get('text') };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -49,15 +48,14 @@ function FormWrapper({ line, updateLine }) {
 }
 
 function mapStateToProps(state) {
-  const selectedLineId = state.getIn(['ui', 'selectedLineId']);
+  const dialogue = state.get('dialogue');
+  const selectedLineId = dialogue.get('selectedLineId');
 
-  const line = state
-    .getIn(['data', 'dialogue', 'lines'])
-    .find(l => { return l.get('id') == selectedLineId });
+  const line = dialogue.get('lines').find(line => {
+    return line.get('id') == selectedLineId;
+  });
 
-  return {
-    line
-  };
+  return { line };
 }
 
 export default connect(mapStateToProps, {updateLine})(FormWrapper);

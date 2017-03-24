@@ -117,7 +117,7 @@ class Dialogue extends Component {
 }
 
 function mapStateToProps(state) {
-  const dialogue = state.getIn(['data', 'dialogue']);
+  const dialogue = state.get('dialogue');
 
   return {
     lines: dialogue.get('lines'),

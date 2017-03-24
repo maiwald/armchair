@@ -18,7 +18,7 @@ function CharacterList({characters}) {
 }
 
 function mapStateToProps(state) {
-  return { characters: state.getIn(['data', 'characters']) };
+  return { characters: state.get('characters') };
 }
 
 export default connect(mapStateToProps)(CharacterList);
