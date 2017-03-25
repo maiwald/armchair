@@ -1,7 +1,8 @@
 module.exports = {
-  entry: './app/assets/javascripts/application.js',
+  context: __dirname + '/app/assets/javascripts',
+  entry: './application.js',
   output: {
-    path: './public/target',
+    path: __dirname + '/public/target',
     filename: 'application.js'
   },
   module: {
