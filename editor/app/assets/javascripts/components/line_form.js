@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { updateLine } from '../actions/line_actions';
+import { updateLine } from 'actions/line_actions';
 import { isUndefined } from 'lodash'
 
 class LineForm extends Component {

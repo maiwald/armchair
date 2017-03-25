@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Network } from 'vis';
 import { List, Map } from 'immutable';
-import { showLineForm, hideLineForm } from '../actions/line_actions.js';
+import { showLineForm, hideLineForm } from 'actions/line_actions.js';
 import { isNull, first, size } from 'lodash';
 
 const VIS_NETWORK_OPTIONS = {

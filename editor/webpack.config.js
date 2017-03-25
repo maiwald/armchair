@@ -18,5 +18,11 @@ module.exports = {
         }
       }
     ]
+  },
+  resolve: {
+    modules: [
+      __dirname + '/app/assets/javascripts',
+      __dirname + '/node_modules'
+    ]
   }
 };
