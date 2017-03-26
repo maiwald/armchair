@@ -1,0 +1,16 @@
+.wrapper {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+}
+
+.sidebarLeft, .sidebarRight {
+  flex: 0;
+  min-width: 230px;
+  padding: 0 10px;
+  background: #eee;
+}
+
+.main {
+  flex: 1;
+}

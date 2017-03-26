@@ -16,6 +16,21 @@ module.exports = {
             presets: ['es2015', 'react']
           }
         }
+      },
+      {
+        test: /\.s?css$/,
+        exclude: /node_modules/,
+        use: [
+          { loader: 'style-loader' },
+          {
+            loader: 'css-loader',
+            options: {
+              modules: true,
+              camelCase: true
+            }
+          },
+          { loader: 'sass-loader' }
+        ]
       }
     ]
   },

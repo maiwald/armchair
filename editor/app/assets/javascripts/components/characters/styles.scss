@@ -1,0 +1,30 @@
+.characters {
+  padding: 4px
+}
+
+.characters h2 {
+  margin: 4px 0;
+  font-family: sans-serif;
+}
+
+.form {
+  width: 100%;
+
+  input, button {
+    display: block;
+  }
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+}
+
+.item {
+  color: #fff;
+  font: 14px sans-serif;
+  background: #aaa;
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin: 4px 0;
+}

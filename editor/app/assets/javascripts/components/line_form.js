@@ -3,40 +3,58 @@ import { connect } from 'react-redux';
 import { updateLine } from 'actions/line_actions';
 import { isUndefined } from 'lodash';
 
+const style = {};
+
 class LineForm extends Component {
   constructor(props) {
     super(props);
 
-    this.state = { text: props.line.get('text') };
+    this.state = { line: props.line };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   componentWillReceiveProps({ line }) {
-    this.setState({ text: line.get('text') });
+    this.setState({ line: line });
   }
 
   render() {
+    const { line } = this.state;
+
     return (
-      <form onSubmit={this.handleSubmit}>
-        <input
-          type="text"
-          onChange={this.handleChange}
-          value={this.state.text}
-        />
-        <button type="submit">Save</button>
-      </form>
+      <div className={style.lineForm}>
+        <header>ID: {line.get('id')}</header>
+        <section className={style.text}>
+          <form className={style.foo} onSubmit={this.handleSubmit}>
+            <input
+              type="text"
+              onChange={this.handleChange}
+              value={line.get('text')}
+            />
+            <button type="submit">Save</button>
+          </form>
+        </section>
+        <section className={style.connections}>
+          <p>Inbound connections</p>
+          <ul>
+            <li>some inbound line <a>x</a></li>
+            <li>some inbound line <a>x</a></li>
+          </ul>
+        </section>
+      </div>
     );
   }
 
   handleChange(event) {
-    this.setState({ text: event.target.value });
+    const { line } = this.state;
+    this.setState({ line: line.set('text', event.target.value) });
   }
 
   handleSubmit(event) {
     event.preventDefault();
-    this.props.updateLine(this.props.line.get('id'), this.state.text);
+    const { line } = this.state;
+    this.props.updateLine(line.get('id'), line.get('text'));
   }
 }
 

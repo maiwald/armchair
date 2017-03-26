@@ -16,7 +16,8 @@ const VIS_NETWORK_OPTIONS = {
   },
   nodes: {
     shape: 'box',
-    fixed: true
+    fixed: true,
+    widthConstraint: 130
   },
   edges: {
     arrows: 'to'
@@ -51,7 +52,7 @@ class Dialogue extends Component {
   }
 
   render() {
-    return <div style={{ height: '80vh' }} ref="container" />;
+    return <div style={{ height: '100vh' }} ref="container" />;
   }
 
   createNetwork() {
