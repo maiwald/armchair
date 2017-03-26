@@ -12,7 +12,7 @@ class CharacterForm extends Component {
   }
 
   handleChange(event) {
-    this.setState({name: event.target.value});
+    this.setState({ name: event.target.value });
   }
 
   handleSubmit(event) {
@@ -24,12 +24,16 @@ class CharacterForm extends Component {
     return (
       <form onSubmit={this.handleSubmit}>
         <label>
-          <input onChange={this.handleChange} type='text' value={this.state.name} />
+          <input
+            onChange={this.handleChange}
+            type="text"
+            value={this.state.name}
+          />
         </label>
-        <button type='submit'>Create {this.props.resouceName}</button>
+        <button type="submit">Create {this.props.resouceName}</button>
       </form>
     );
   }
 }
 
-export default connect(null, {createCharacter})(CharacterForm);
+export default connect(null, { createCharacter })(CharacterForm);

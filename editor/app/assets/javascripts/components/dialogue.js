@@ -51,17 +51,21 @@ class Dialogue extends Component {
   }
 
   render() {
-    return <div style={{height: "80vh"}} ref="container" />;
+    return <div style={{ height: '80vh' }} ref="container" />;
   }
 
   createNetwork() {
     const { container } = this.refs;
     const { selectedLineId } = this.props;
 
-    const network = new Network(container, {
-      nodes: this.getNodes(),
-      edges: this.getEdges()
-    }, VIS_NETWORK_OPTIONS);
+    const network = new Network(
+      container,
+      {
+        nodes: this.getNodes(),
+        edges: this.getEdges()
+      },
+      VIS_NETWORK_OPTIONS
+    );
 
     if (!isNull(selectedLineId)) {
       network.selectNodes([selectedLineId]);
@@ -84,34 +88,44 @@ class Dialogue extends Component {
   getNodes() {
     const levels = this.getLevels();
 
-    return this.props.lines.map(l => {
-      return {
-        id: l.get('id'),
-        label: l.get('text'),
-        group: l.get('character', 0),
-        level: levels.get(l.get('id'))
-      };
-    }).toJS();
+    return this.props.lines
+      .map(l => {
+        return {
+          id: l.get('id'),
+          label: l.get('text'),
+          group: l.get('character', 0),
+          level: levels.get(l.get('id'))
+        };
+      })
+      .toJS();
   }
 
   getEdges() {
-    return this.props.connections.map(c => {
-      return {
-        from: c.get('from'),
-        to: c.get('to')
-      };
-    }).toJS();
+    return this.props.connections
+      .map(c => {
+        return {
+          from: c.get('from'),
+          to: c.get('to')
+        };
+      })
+      .toJS();
   }
 
   getLevels() {
     const { lines } = this.props;
     let orderedDependencies = this.resolveDependencies(lines.toSet());
 
-    return lines.reduce((memo, l) => {
-      return memo.set(l.get('id'), orderedDependencies.findIndex(deps => {
-        return deps.contains(l);
-      }));
-    }, new Map());
+    return lines.reduce(
+      (memo, l) => {
+        return memo.set(
+          l.get('id'),
+          orderedDependencies.findIndex(deps => {
+            return deps.contains(l);
+          })
+        );
+      },
+      new Map()
+    );
   }
 
   resolveDependencies(unresolved, resolved = new List()) {
@@ -120,9 +134,12 @@ class Dialogue extends Component {
     } else {
       const resolvable = unresolved.filter(line => {
         return this.getLineDependencies(line).isSubset(resolved.flatten());
-      })
+      });
 
-      return this.resolveDependencies(unresolved.subtract(resolvable), resolved.push(resolvable));
+      return this.resolveDependencies(
+        unresolved.subtract(resolvable),
+        resolved.push(resolvable)
+      );
     }
   }
 
@@ -144,4 +161,6 @@ function mapStateToProps(state) {
   };
 }
 
-export default connect(mapStateToProps, {showLineForm, hideLineForm})(Dialogue);
+export default connect(mapStateToProps, { showLineForm, hideLineForm })(
+  Dialogue
+);

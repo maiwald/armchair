@@ -14,6 +14,6 @@ function hideNotice() {
 export function showTimedNotice(notice) {
   return dispatch => {
     dispatch(showNotice(notice));
-    setTimeout(() => dispatch(hideNotice()), 4000)
+    setTimeout(() => dispatch(hideNotice()), 4000);
   };
 }

@@ -1,7 +1,7 @@
 import { Map } from 'immutable';
 
 export const initialState = new Map({
-  notice: null,
+  notice: null
 });
 
 export default function reducer(state, action) {

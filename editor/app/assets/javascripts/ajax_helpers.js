@@ -1,7 +1,7 @@
-const csrfToken = document.head.querySelector("[name=csrf-token]").content;
+const csrfToken = document.head.querySelector('[name=csrf-token]').content;
 
 function isSuccessfulResponse(response) {
-  return (response.status >= 200 && response.status < 300);
+  return response.status >= 200 && response.status < 300;
 }
 
 function fetchJSON(url, options) {

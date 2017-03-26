@@ -7,7 +7,7 @@ export function showLineForm(lineId) {
 
 export function hideLineForm() {
   return {
-    type: 'HIDE_LINE_FORM',
+    type: 'HIDE_LINE_FORM'
   };
 }
 
@@ -16,5 +16,5 @@ export function updateLine(lineId, text) {
     type: 'UPDATE_LINE',
     lineId,
     text
-  }
+  };
 }

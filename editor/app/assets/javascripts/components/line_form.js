@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { updateLine } from 'actions/line_actions';
-import { isUndefined } from 'lodash'
+import { isUndefined } from 'lodash';
 
 class LineForm extends Component {
   constructor(props) {
@@ -20,8 +20,12 @@ class LineForm extends Component {
   render() {
     return (
       <form onSubmit={this.handleSubmit}>
-        <input type='text' onChange={this.handleChange} value={this.state.text} />
-        <button type='submit'>Save</button>
+        <input
+          type="text"
+          onChange={this.handleChange}
+          value={this.state.text}
+        />
+        <button type="submit">Save</button>
       </form>
     );
   }
@@ -40,10 +44,7 @@ function FormWrapper({ line, updateLine }) {
   if (isUndefined(line)) {
     return null;
   } else {
-    return <LineForm
-      line={line}
-      updateLine={updateLine}
-    />;
+    return <LineForm line={line} updateLine={updateLine} />;
   }
 }
 
@@ -58,4 +59,4 @@ function mapStateToProps(state) {
   return { line };
 }
 
-export default connect(mapStateToProps, {updateLine})(FormWrapper);
+export default connect(mapStateToProps, { updateLine })(FormWrapper);

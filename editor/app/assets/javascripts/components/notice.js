@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { isNull } from 'lodash';
 
-function Notice({notice}) {
+function Notice({ notice }) {
   return isNull(notice) ? null : <div>{notice}</div>;
 }
 

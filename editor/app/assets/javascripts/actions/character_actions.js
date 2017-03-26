@@ -27,6 +27,6 @@ export function createCharacter(name) {
   return dispatch => {
     postJSON('/characters.json', { name: name })
       .then(character => dispatch(addCharacter(character)))
-      .catch(({error}) => dispatch(showTimedNotice(error)));
+      .catch(({ error }) => dispatch(showTimedNotice(error)));
   };
 }
