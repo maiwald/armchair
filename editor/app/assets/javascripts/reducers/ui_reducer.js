@@ -4,6 +4,10 @@ export const initialState = new Map({
   notice: null
 });
 
+export function getNotice(state) {
+  return state.getIn(['ui', 'notice']);
+}
+
 export default function reducer(state, action) {
   switch (action.type) {
     case 'SHOW_NOTICE':
