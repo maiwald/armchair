@@ -4,7 +4,7 @@ export const initialState = new Map({
   notice: null
 });
 
-export function getNotice(state) {
+export function selectNotice(state) {
   return state.getIn(['ui', 'notice']);
 }
 

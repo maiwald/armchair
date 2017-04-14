@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { createCharacter } from 'actions/character_actions';
-import { getCharacters } from 'reducers/character_reducer';
+import { selectCharacters } from 'reducers/character_reducer';
 import List from './list';
 import Form from './form';
 import styles from './styles.scss';
@@ -18,7 +18,7 @@ function Characters({ characters, createCharacter }) {
 
 function mapStateToProps(state) {
   return {
-    characters: getCharacters(state)
+    characters: selectCharacters(state)
   };
 }
 

@@ -5,7 +5,7 @@ export const initialState = fromJS([
   { id: 2, name: 'Dende' }
 ]);
 
-export function getCharacters(state) {
+export function selectCharacters(state) {
   return state
     .get('characters')
     .sortBy(c => c.get('name'), (lhs, rhs) => lhs.localeCompare(rhs));
