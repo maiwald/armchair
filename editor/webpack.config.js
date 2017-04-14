@@ -1,9 +1,11 @@
+let sourceDir = __dirname + '/src';
+
 module.exports = {
-  context: __dirname + '/app/assets/javascripts',
+  context: sourceDir,
   entry: './application.js',
   output: {
-    path: __dirname + '/public/target',
-    filename: 'application.js'
+    path: __dirname + '/build',
+    filename: 'bundle.js'
   },
   module: {
     loaders: [
@@ -35,9 +37,6 @@ module.exports = {
     ]
   },
   resolve: {
-    modules: [
-      __dirname + '/app/assets/javascripts',
-      __dirname + '/node_modules'
-    ]
+    modules: [sourceDir, __dirname + '/node_modules']
   }
 };

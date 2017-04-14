@@ -4,7 +4,7 @@
   "description": "This README would normally document whatever steps are necessary to get the application up and running.",
   "main": "index.js",
   "scripts": {
-    "dev": "webpack --progress --colors --watch",
+    "dev": "webpack-dev-server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -30,6 +30,7 @@
     "redux-immutable": "^4.0.0",
     "redux-thunk": "^2.2.0",
     "style-loader": "^0.16.0",
-    "vis": "^4.18.1"
+    "vis": "^4.18.1",
+    "webpack-dev-server": "^2.4.2"
   }
 }

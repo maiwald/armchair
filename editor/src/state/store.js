@@ -5,12 +5,14 @@ import uiReducer, { initialState as initialUiState } from 'reducers/ui_reducer';
 import dialogueReducer, {
   initialState as initialDialogueState
 } from 'reducers/dialogue_reducer';
-import characterReducer from 'reducers/character_reducer';
+import characterReducer, {
+  initialState as initialCharactersState
+} from 'reducers/character_reducer';
 import thunk from 'redux-thunk';
 
 const initialState = fromJS({
   ui: initialUiState,
-  characters: [],
+  characters: initialCharactersState,
   dialogue: initialDialogueState
 });
 
