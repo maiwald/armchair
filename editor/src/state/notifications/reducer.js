@@ -4,10 +4,6 @@ const initialState = fromJS({
   notice: null
 });
 
-export function selectNotice(state) {
-  return state.getIn(['ui', 'notice']);
-}
-
 export default function reducer(state = initialState, { type, payload }) {
   switch (type) {
     case 'SHOW_NOTICE':

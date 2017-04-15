@@ -1,11 +1,11 @@
 import { createStore, applyMiddleware } from 'redux';
 import { combineReducers } from 'redux-immutable';
 import { fromJS } from 'immutable';
-import uiReducer from 'reducers/ui_reducer';
-import dialogueReducer from 'reducers/dialogue_reducer';
-import characterReducer from 'reducers/character_reducer';
 import thunk from 'redux-thunk';
-import validationMiddleware from './validation_middleware';
+import uiReducer from 'state/notifications/reducer';
+import dialogueReducer from 'state/dialogues/reducer';
+import characterReducer from 'state/characters/reducer';
+import validationMiddleware from 'state/middlewares/validation';
 
 const reducer = combineReducers({
   ui: uiReducer,

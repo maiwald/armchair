@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Network } from 'vis';
 import { List, Map } from 'immutable';
-import { showLineForm, hideLineForm } from 'actions/line_actions.js';
+import { showLineForm, hideLineForm } from 'state/dialogues/actions';
+import { getDialogue } from 'state/dialogues/selectors';
 import { isNull, first, size } from 'lodash';
 
 const VIS_NETWORK_OPTIONS = {
@@ -153,7 +154,7 @@ class Dialogue extends Component {
 }
 
 function mapStateToProps(state) {
-  const dialogue = state.get('dialogue');
+  const dialogue = getDialogue(state);
 
   return {
     lines: dialogue.get('lines'),

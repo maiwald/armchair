@@ -1,6 +1,6 @@
-import { showTimedNotice } from './ui_actions';
 import { trim } from 'lodash';
-import { selectCharacterNames } from 'reducers/character_reducer';
+import { showTimedNotice } from 'state/notifications/actions';
+import { getCharacterNames } from 'state/characters/selectors';
 
 export function resetCharacters(characters) {
   return {
@@ -21,7 +21,7 @@ export function createCharacter(name) {
     },
     validations: [
       {
-        fn: state => !selectCharacterNames(state).includes(sanitizedName),
+        fn: state => !getCharacterNames(state).includes(sanitizedName),
         msg: `Character '${sanitizedName}' already exists!`
       }
     ]

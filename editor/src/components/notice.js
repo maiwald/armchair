@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { selectNotice } from 'reducers/ui_reducer';
 import { isNull } from 'lodash';
+import { getNotice } from 'state/notifications/selectors';
 
 function Notice({ notice }) {
   return isNull(notice) ? null : <div>{notice}</div>;
@@ -9,7 +9,7 @@ function Notice({ notice }) {
 
 function mapStateToProps(state) {
   return {
-    notice: selectNotice(state)
+    notice: getNotice(state)
   };
 }
 

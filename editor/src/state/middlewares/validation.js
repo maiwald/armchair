@@ -1,5 +1,5 @@
 import { each, isEmpty, reject } from 'lodash';
-import { showTimedNotice } from 'actions/ui_actions';
+import { showTimedNotice } from 'state/notifications/actions';
 
 export default ({ dispatch, getState }) =>
   next =>
