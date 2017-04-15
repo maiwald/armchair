@@ -5,6 +5,7 @@ import uiReducer from 'reducers/ui_reducer';
 import dialogueReducer from 'reducers/dialogue_reducer';
 import characterReducer from 'reducers/character_reducer';
 import thunk from 'redux-thunk';
+import validationMiddleware from './validation_middleware';
 
 const reducer = combineReducers({
   ui: uiReducer,
@@ -12,4 +13,7 @@ const reducer = combineReducers({
   dialogue: dialogueReducer
 });
 
-export default createStore(reducer, applyMiddleware(thunk));
+export default createStore(
+  reducer,
+  applyMiddleware(thunk, validationMiddleware)
+);
