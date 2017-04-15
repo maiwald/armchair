@@ -1,6 +1,6 @@
-import { Map } from 'immutable';
+import { fromJS } from 'immutable';
 
-export const initialState = new Map({
+const initialState = fromJS({
   notice: null
 });
 
@@ -8,10 +8,10 @@ export function selectNotice(state) {
   return state.getIn(['ui', 'notice']);
 }
 
-export default function reducer(state, action) {
-  switch (action.type) {
+export default function reducer(state = initialState, { type, payload }) {
+  switch (type) {
     case 'SHOW_NOTICE':
-      return state.set('notice', action.notice);
+      return state.set('notice', payload.notice);
 
     case 'HIDE_NOTICE':
       return state.set('notice', null);

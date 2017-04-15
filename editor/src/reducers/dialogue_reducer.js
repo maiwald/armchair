@@ -1,6 +1,6 @@
 import { fromJS } from 'immutable';
 
-export const initialState = fromJS({
+const initialState = fromJS({
   selectedLineId: null,
   lines: [
     { id: 1, character: 1, text: 'Hey, who are you?', level: 0 },
@@ -27,17 +27,17 @@ export const initialState = fromJS({
   ]
 });
 
-export default function reducer(state, action) {
-  switch (action.type) {
+export default function reducer(state = initialState, { type, payload }) {
+  switch (type) {
     case 'UPDATE_LINE':
-      const { lineId, text } = action;
+      const { lineId, text } = payload;
       const lineIndex = state.get('lines').findIndex(line => {
         return line.get('id') == lineId;
       });
       return state.setIn(['lines', lineIndex, 'text'], text);
 
     case 'SHOW_LINE_FORM':
-      return state.set('selectedLineId', action.lineId);
+      return state.set('selectedLineId', payload.lineId);
 
     case 'HIDE_LINE_FORM':
       return state.set('selectedLineId', null);

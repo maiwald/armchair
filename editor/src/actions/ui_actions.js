@@ -1,7 +1,9 @@
 function showNotice(notice) {
   return {
     type: 'SHOW_NOTICE',
-    notice
+    payload: {
+      notice
+    }
   };
 }
 
