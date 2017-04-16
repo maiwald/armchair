@@ -2,9 +2,13 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Network } from 'vis';
 import { List, Map } from 'immutable';
-import { showLineForm, hideLineForm } from 'state/dialogues/actions';
+import {
+  showLineForm,
+  setLineFormPosition,
+  hideLineForm
+} from 'state/dialogues/actions';
 import { getDialogue } from 'state/dialogues/selectors';
-import { isNull, first, size } from 'lodash';
+import { mapValues, isNull, first, size } from 'lodash';
 
 const VIS_NETWORK_OPTIONS = {
   layout: {
@@ -33,7 +37,6 @@ class Dialogue extends Component {
     super(props);
 
     this.network = null;
-    this.handleClick = this.handleClick.bind(this);
   }
 
   componentDidMount() {
@@ -58,7 +61,6 @@ class Dialogue extends Component {
 
   createNetwork() {
     const { container } = this.refs;
-    const { selectedLineId } = this.props;
 
     const network = new Network(
       container,
@@ -69,22 +71,38 @@ class Dialogue extends Component {
       VIS_NETWORK_OPTIONS
     );
 
-    if (!isNull(selectedLineId)) {
-      network.selectNodes([selectedLineId]);
-    }
+    network.on('click', ({ nodes }) => {
+      if (size(nodes) == 1) {
+        const node = first(nodes);
+        this.props.showLineForm(node);
+        this.props.setLineFormPosition(this.getFormPosition(node));
+      } else {
+        this.props.hideLineForm();
+      }
+    });
 
-    network.on('click', this.handleClick);
+    network.on('dragging', () => {
+      const nodes = network.getSelectedNodes();
+      if (size(nodes) == 1) {
+        const node = first(nodes);
+        this.props.setLineFormPosition(this.getFormPosition(node));
+      }
+    });
 
     return network;
   }
 
-  handleClick(params) {
-    const { nodes } = params;
-    if (size(nodes) == 1) {
-      this.props.showLineForm(first(nodes));
-    } else {
-      this.props.hideLineForm();
-    }
+  getFormPosition(nodeId) {
+    const { top, left, right } = this.network.getBoundingBox(nodeId);
+    const pLeft = this.network.canvasToDOM({ x: left, y: top });
+    const pRight = this.network.canvasToDOM({ x: right, y: top });
+    return mapValues(
+      {
+        x: pLeft.x + (pRight.x - pLeft.x) / 2,
+        y: pLeft.y
+      },
+      Math.round
+    );
   }
 
   getNodes() {
@@ -95,7 +113,7 @@ class Dialogue extends Component {
         return {
           id: l.get('id'),
           label: l.get('text'),
-          group: l.get('character', 0),
+          group: l.get('characterId', 0),
           level: levels.get(l.get('id'))
         };
       })
@@ -158,11 +176,12 @@ function mapStateToProps(state) {
 
   return {
     lines: dialogue.get('lines'),
-    connections: dialogue.get('connections'),
-    selectedLineId: dialogue.get('selectedLineId')
+    connections: dialogue.get('connections')
   };
 }
 
-export default connect(mapStateToProps, { showLineForm, hideLineForm })(
-  Dialogue
-);
+export default connect(mapStateToProps, {
+  setLineFormPosition,
+  showLineForm,
+  hideLineForm
+})(Dialogue);

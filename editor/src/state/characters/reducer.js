@@ -1,6 +1,7 @@
 import { Map, fromJS } from 'immutable';
 
 const initialState = fromJS([
+  { id: 0, name: 'Player' },
   { id: 1, name: 'Hugo' },
   { id: 2, name: 'Dende' }
 ]);
