@@ -18,9 +18,9 @@ export function hideLineForm() {
   };
 }
 
-export function updateLine(lineId, text) {
+export function updateLine(lineId, line) {
   return {
     type: 'UPDATE_LINE',
-    payload: { lineId, text }
+    payload: { lineId, line }
   };
 }

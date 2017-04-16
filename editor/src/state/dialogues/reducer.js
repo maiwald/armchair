@@ -31,11 +31,11 @@ const initialState = fromJS({
 export default function reducer(state = initialState, { type, payload }) {
   switch (type) {
     case 'UPDATE_LINE': {
-      const { lineId, text } = payload;
+      const { lineId, line } = payload;
       const lineIndex = state.get('lines').findIndex(line => {
         return line.get('id') == lineId;
       });
-      return state.setIn(['lines', lineIndex, 'text'], text);
+      return state.setIn(['lines', lineIndex], line);
     }
 
     case 'SHOW_LINE_FORM': {

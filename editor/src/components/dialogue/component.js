@@ -8,7 +8,7 @@ import {
   hideLineForm
 } from 'state/dialogues/actions';
 import { getDialogue } from 'state/dialogues/selectors';
-import { mapValues, isNull, first, size } from 'lodash';
+import { round, mapValues, isNull, first, size } from 'lodash';
 
 const VIS_NETWORK_OPTIONS = {
   layout: {
@@ -101,7 +101,7 @@ class Dialogue extends Component {
         x: pLeft.x + (pRight.x - pLeft.x) / 2,
         y: pLeft.y
       },
-      Math.round
+      round
     );
   }
 
