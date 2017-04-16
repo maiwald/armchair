@@ -18,6 +18,13 @@ export function hideLineForm() {
   };
 }
 
+export function deleteLine(lineId) {
+  return {
+    type: 'DELETE_LINE',
+    payload: { lineId }
+  };
+}
+
 export function updateLine(lineId, line) {
   return {
     type: 'UPDATE_LINE',

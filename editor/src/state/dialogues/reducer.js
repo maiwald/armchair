@@ -4,15 +4,15 @@ const initialState = fromJS({
   selectedLineId: null,
   lineFormPosition: { x: 0, y: 0 },
   lines: [
-    { id: 1, characterId: 1, text: 'Hey, who are you?', level: 0 },
-    { id: 2, characterId: 0, text: 'I could ask you the same.', level: 1 },
-    { id: 3, characterId: 0, text: 'My name does not matter.', level: 3 },
-    { id: 4, characterId: 1, text: 'I am Hugo. And you...?', level: 2 },
-    { id: 5, characterId: 0, text: 'I am Hugo as well.', level: 3 },
-    { id: 6, characterId: 0, text: 'None of your business!', level: 3 },
-    { id: 7, characterId: 1, text: 'Fine, be a jerk.', level: 4 },
-    { id: 8, characterId: 1, text: 'Nice to meet you!', level: 4 },
-    { id: 9, characterId: 1, text: 'Ok, bye!', level: 5 }
+    { id: 1, characterId: 1, text: 'Hey, who are you?' },
+    { id: 2, characterId: 0, text: 'I could ask you the same.' },
+    { id: 3, characterId: 0, text: 'My name does not matter.' },
+    { id: 4, characterId: 1, text: 'I am Hugo. And you...?' },
+    { id: 5, characterId: 0, text: 'I am Hugo as well.' },
+    { id: 6, characterId: 0, text: 'None of your business!' },
+    { id: 7, characterId: 1, text: 'Fine, be a jerk.' },
+    { id: 8, characterId: 1, text: 'Nice to meet you!' },
+    { id: 9, characterId: 1, text: 'Ok, bye!' }
   ],
   connections: [
     { id: 1, from: 1, to: 2 },
@@ -28,14 +28,31 @@ const initialState = fromJS({
   ]
 });
 
+function getLineIndex(state, lineId) {
+  return state.get('lines').findIndex(line => {
+    return line.get('id') == lineId;
+  });
+}
+
 export default function reducer(state = initialState, { type, payload }) {
   switch (type) {
     case 'UPDATE_LINE': {
       const { lineId, line } = payload;
-      const lineIndex = state.get('lines').findIndex(line => {
-        return line.get('id') == lineId;
-      });
-      return state.setIn(['lines', lineIndex], line);
+      return state.setIn(['lines', getLineIndex(state, lineId)], line);
+    }
+
+    case 'DELETE_LINE': {
+      const { lineId } = payload;
+
+      return state
+        .update('selectedLineId', id => {
+          return id == lineId ? null : id;
+        })
+        .update('lines', lines => lines.delete(getLineIndex(state, lineId)))
+        .update('connections', connections =>
+          connections.filterNot(c => {
+            return c.get('from') == lineId || c.get('to') == lineId;
+          }));
     }
 
     case 'SHOW_LINE_FORM': {

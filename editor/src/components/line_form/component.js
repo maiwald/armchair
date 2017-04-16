@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { toInteger, trim, isUndefined, pick } from 'lodash';
-import { updateLine } from 'state/dialogues/actions';
+import { deleteLine, updateLine } from 'state/dialogues/actions';
 import {
   getSelectedLine,
   getLineFormPosition
@@ -26,24 +26,37 @@ class LineForm extends Component {
 
   render() {
     const { text } = this.state;
-    const { line, character, position } = this.props;
+    const { line, character, position, deleteLine } = this.props;
 
     return (
-      <div style={this.getFormPositionCss()} className={styles.wrapper}>
-        <header>ID: {line.get('id')}</header>
+      <div style={this.getFormPositionCss()} className={styles.lineForm}>
+        <header>
+          <div className={styles.id}>ID: {line.get('id')}</div>
+          <div className={styles.actions}>
+            <a onClick={() => deleteLine(line.get('id'))}>
+              <i className="fa fa-trash-o" /> delete
+            </a>
+          </div>
+        </header>
         <form className={styles.form} onSubmit={this.handleSubmit}>
-          Character:
-          <select
-            value={this.state.characterId}
-            onChange={e => this.setState({ characterId: e.target.value })}
-          >
-            {this.getCharacterOptions()}
-          </select>
-          <textarea
-            className={styles.text}
-            onChange={e => this.setState({ text: e.target.value })}
-            value={this.state.text}
-          />
+          <section>
+            <label>Character:</label>
+            <select
+              id="character-select"
+              value={this.state.characterId}
+              onChange={e => this.setState({ characterId: e.target.value })}
+            >
+              {this.getCharacterOptions()}
+            </select>
+          </section>
+
+          <section>
+            <label>Text:</label>
+            <textarea
+              onChange={e => this.setState({ text: e.target.value })}
+              value={this.state.text}
+            />
+          </section>
           <button type="submit">Save</button>
         </form>
       </div>
@@ -107,4 +120,6 @@ function mapStateToProps(state) {
   };
 }
 
-export default connect(mapStateToProps, { updateLine })(FormWrapper);
+export default connect(mapStateToProps, { deleteLine, updateLine })(
+  FormWrapper
+);
