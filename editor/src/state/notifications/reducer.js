@@ -1,16 +1,17 @@
 import { fromJS } from 'immutable';
 
 const initialState = fromJS({
-  notice: null
+  notifications: []
 });
 
 export default function reducer(state = initialState, { type, payload }) {
   switch (type) {
-    case 'SHOW_NOTICE':
-      return state.set('notice', payload.notice);
+    case 'PUSH_NOTICE':
+      return state.update('notifications', ns =>
+        ns.unshift(fromJS({ id: Date.now(), text: payload.notice })));
 
-    case 'HIDE_NOTICE':
-      return state.set('notice', null);
+    case 'POP_NOTICE':
+      return state.update('notifications', ns => ns.pop());
 
     default:
       return state;

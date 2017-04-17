@@ -1,3 +1,3 @@
-export function getNotice(state) {
-  return state.getIn(['ui', 'notice']);
+export function getNotifications(state) {
+  return state.getIn(['ui', 'notifications']);
 }
