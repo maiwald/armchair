@@ -2,7 +2,6 @@ import { fromJS } from 'immutable';
 
 const initialState = fromJS({
   selectedLineId: null,
-  lineFormPosition: { x: 0, y: 0 },
   lines: [
     { id: 1, characterId: 1, text: 'Hey, who are you?' },
     { id: 2, characterId: 0, text: 'I could ask you the same.' },
@@ -57,11 +56,6 @@ export default function reducer(state = initialState, { type, payload }) {
 
     case 'SHOW_LINE_FORM': {
       return state.set('selectedLineId', payload.lineId);
-    }
-
-    case 'SET_LINE_FORM_POSITION': {
-      const { x, y } = payload;
-      return state.set('lineFormPosition', fromJS({ x, y }));
     }
 
     case 'HIDE_LINE_FORM': {

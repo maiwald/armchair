@@ -5,13 +5,6 @@ export function showLineForm(lineId) {
   };
 }
 
-export function setLineFormPosition({ x, y }) {
-  return {
-    type: 'SET_LINE_FORM_POSITION',
-    payload: { x, y }
-  };
-}
-
 export function hideLineForm() {
   return {
     type: 'HIDE_LINE_FORM'

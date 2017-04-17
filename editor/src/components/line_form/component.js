@@ -26,10 +26,10 @@ class LineForm extends Component {
 
   render() {
     const { text } = this.state;
-    const { line, character, position, deleteLine } = this.props;
+    const { line, character, deleteLine } = this.props;
 
     return (
-      <div style={this.getFormPositionCss()} className={styles.lineForm}>
+      <div className={styles.lineForm}>
         <header>
           <div className={styles.id}>ID: {line.get('id')}</div>
           <div className={styles.actions}>
@@ -61,15 +61,6 @@ class LineForm extends Component {
         </form>
       </div>
     );
-  }
-
-  getFormPositionCss() {
-    const { position } = this.props;
-
-    return {
-      top: position.get('y'),
-      left: position.get('x')
-    };
   }
 
   getCharacterOptions() {
@@ -115,8 +106,7 @@ function mapStateToProps(state) {
   return {
     line,
     character,
-    characters: getSortedCharacters(state),
-    position: getLineFormPosition(state)
+    characters: getSortedCharacters(state)
   };
 }
 

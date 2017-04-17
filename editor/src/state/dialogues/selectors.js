@@ -14,10 +14,6 @@ export function hasSelectedLine(state) {
   return getDialogue(state).get('selectedLineId') != null;
 }
 
-export function getLineFormPosition(state) {
-  return getDialogue(state).get('lineFormPosition');
-}
-
 export function getSelectedLine(state) {
   const selectedLineId = getDialogue(state).get('selectedLineId');
   return getLine(state, selectedLineId);
