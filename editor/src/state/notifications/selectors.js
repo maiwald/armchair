@@ -1,3 +1,3 @@
 export function getNotifications(state) {
-  return state.getIn(['ui', 'notifications']);
+  return state.getIn(["ui", "notifications"]);
 }

@@ -1,27 +1,27 @@
-import React, { Component } from 'react';
-import { connect } from 'react-redux';
-import { Network } from 'vis';
-import { List, Map } from 'immutable';
-import { showLineForm, hideLineForm } from 'state/dialogues/actions';
-import { getDialogue } from 'state/dialogues/selectors';
-import { round, mapValues, isNull, first, size } from 'lodash';
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import { Network } from "vis";
+import { List, Map } from "immutable";
+import { showLineForm, hideLineForm } from "state/dialogues/actions";
+import { getDialogue } from "state/dialogues/selectors";
+import { round, mapValues, isNull, first, size } from "lodash";
 
 const VIS_NETWORK_OPTIONS = {
   layout: {
     improvedLayout: true,
     hierarchical: {
-      direction: 'LR',
+      direction: "LR",
       levelSeparation: 200,
       nodeSpacing: 150
     }
   },
   nodes: {
-    shape: 'box',
+    shape: "box",
     fixed: true,
     widthConstraint: 130
   },
   edges: {
-    arrows: 'to'
+    arrows: "to"
   },
   physics: {
     enabled: false
@@ -52,7 +52,7 @@ class Dialogue extends Component {
   }
 
   render() {
-    return <div style={{ height: '100vh' }} ref="container" />;
+    return <div style={{ height: "100vh" }} ref="container" />;
   }
 
   createNetwork() {
@@ -67,7 +67,7 @@ class Dialogue extends Component {
       VIS_NETWORK_OPTIONS
     );
 
-    network.on('click', ({ nodes }) => {
+    network.on("click", ({ nodes }) => {
       if (size(nodes) == 1) {
         const node = first(nodes);
         this.props.showLineForm(node);
@@ -85,10 +85,10 @@ class Dialogue extends Component {
     return this.props.lines
       .map(l => {
         return {
-          id: l.get('id'),
-          label: l.get('text'),
-          group: l.get('characterId', 0),
-          level: levels.get(l.get('id'))
+          id: l.get("id"),
+          label: l.get("text"),
+          group: l.get("characterId", 0),
+          level: levels.get(l.get("id"))
         };
       })
       .toJS();
@@ -98,8 +98,8 @@ class Dialogue extends Component {
     return this.props.connections
       .map(c => {
         return {
-          from: c.get('from'),
-          to: c.get('to')
+          from: c.get("from"),
+          to: c.get("to")
         };
       })
       .toJS();
@@ -109,17 +109,14 @@ class Dialogue extends Component {
     const { lines } = this.props;
     let orderedDependencies = this.resolveDependencies(lines.toSet());
 
-    return lines.reduce(
-      (memo, l) => {
-        return memo.set(
-          l.get('id'),
-          orderedDependencies.findIndex(deps => {
-            return deps.contains(l);
-          })
-        );
-      },
-      new Map()
-    );
+    return lines.reduce((memo, l) => {
+      return memo.set(
+        l.get("id"),
+        orderedDependencies.findIndex(deps => {
+          return deps.contains(l);
+        })
+      );
+    }, new Map());
   }
 
   resolveDependencies(unresolved, resolved = new List()) {
@@ -139,8 +136,8 @@ class Dialogue extends Component {
 
   getLineDependencies(line) {
     return this.props.connections
-      .filter(c => c.get('to') == line.get('id'))
-      .map(c => c.get('from'))
+      .filter(c => c.get("to") == line.get("id"))
+      .map(c => c.get("from"))
       .toSet();
   }
 }
@@ -149,8 +146,8 @@ function mapStateToProps(state) {
   const dialogue = getDialogue(state);
 
   return {
-    lines: dialogue.get('lines'),
-    connections: dialogue.get('connections')
+    lines: dialogue.get("lines"),
+    connections: dialogue.get("connections")
   };
 }
 

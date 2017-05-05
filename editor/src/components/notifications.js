@@ -1,7 +1,7 @@
-import React from 'react';
-import { connect } from 'react-redux';
-import { isEmpty } from 'lodash';
-import { getNotifications } from 'state/notifications/selectors';
+import React from "react";
+import { connect } from "react-redux";
+import { isEmpty } from "lodash";
+import { getNotifications } from "state/notifications/selectors";
 
 function Notifications({ notifications }) {
   if (isEmpty(notifications)) {
@@ -9,8 +9,8 @@ function Notifications({ notifications }) {
   } else {
     const items = notifications.map(n => {
       return (
-        <li key={n.get('id')}>
-          {n.get('text')}
+        <li key={n.get("id")}>
+          {n.get("text")}
         </li>
       );
     });

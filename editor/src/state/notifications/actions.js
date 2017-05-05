@@ -1,6 +1,6 @@
 function showNotice(notice) {
   return {
-    type: 'PUSH_NOTICE',
+    type: "PUSH_NOTICE",
     payload: {
       notice
     }
@@ -9,7 +9,7 @@ function showNotice(notice) {
 
 function hideNotice() {
   return {
-    type: 'POP_NOTICE'
+    type: "POP_NOTICE"
   };
 }
 

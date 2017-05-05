@@ -1,10 +1,10 @@
-import React from 'react';
-import { connect } from 'react-redux';
-import { createCharacter } from 'state/characters/actions';
-import { getSortedCharacters } from 'state/characters/selectors';
-import List from './list';
-import Form from './form';
-import styles from './styles.scss';
+import React from "react";
+import { connect } from "react-redux";
+import { createCharacter } from "state/characters/actions";
+import { getSortedCharacters } from "state/characters/selectors";
+import List from "./list";
+import Form from "./form";
+import styles from "./styles.scss";
 
 function Characters({ characters, createCharacter }) {
   return (

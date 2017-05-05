@@ -1,4 +1,4 @@
-const csrfToken = document.head.querySelector('[name=csrf-token]').content;
+const csrfToken = document.head.querySelector("[name=csrf-token]").content;
 
 function isSuccessfulResponse(response) {
   return response.status >= 200 && response.status < 300;
@@ -19,13 +19,13 @@ export function getJSON(url) {
 
 export function postJSON(url, payload) {
   return fetchJSON(url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-      'X-CSRF-Token': csrfToken
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+      "X-CSRF-Token": csrfToken
     },
     body: JSON.stringify(payload),
-    credentials: 'same-origin'
+    credentials: "same-origin"
   });
 }

@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
-import styles from './styles.scss';
+import React, { Component } from "react";
+import styles from "./styles.scss";
 
 export default class Form extends Component {
   constructor(props) {
     super(props);
-    this.state = { name: '' };
+    this.state = { name: "" };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
