@@ -1,14 +1,15 @@
 import { fromJS } from "immutable";
+import { isUndefined } from "lodash";
 
 const initialState = fromJS({
   selectedLineId: null,
   lines: [
     { id: 1, characterId: 1, text: "Hey, who are you?" },
-    { id: 2, characterId: 0, text: "I could ask you the same." },
-    { id: 3, characterId: 0, text: "My name does not matter." },
+    { id: 2, characterId: 2, text: "I could ask you the same." },
+    { id: 3, characterId: 2, text: "My name does not matter." },
     { id: 4, characterId: 1, text: "I am Hugo. And you...?" },
-    { id: 5, characterId: 0, text: "I am Hugo as well." },
-    { id: 6, characterId: 0, text: "None of your business!" },
+    { id: 5, characterId: 2, text: "I am Hugo as well." },
+    { id: 6, characterId: 2, text: "None of your business!" },
     { id: 7, characterId: 1, text: "Fine, be a jerk." },
     { id: 8, characterId: 1, text: "Nice to meet you!" },
     { id: 9, characterId: 1, text: "Ok, bye!" }
@@ -27,17 +28,37 @@ const initialState = fromJS({
   ]
 });
 
+function getNextLineId(state) {
+  return state.get("lines").map(l => l.get("id")).max() + 1;
+}
+
 function getLineIndex(state, lineId) {
   return state.get("lines").findIndex(line => {
     return line.get("id") == lineId;
   });
 }
 
+function createLine(state, data) {
+  return state.update("lines", lines =>
+    lines.push(data.set("id", getNextLineId(state)))
+  );
+}
+
+function updateLine(state, lineId, data) {
+  return state.mergeIn(
+    ["lines", getLineIndex(state, lineId)],
+    data.set("id", lineId)
+  );
+}
+
 export default function reducer(state = initialState, { type, payload }) {
   switch (type) {
-    case "UPDATE_LINE": {
-      const { lineId, line } = payload;
-      return state.setIn(["lines", getLineIndex(state, lineId)], line);
+    case "SAVE_LINE": {
+      const { lineId, lineData } = payload;
+
+      return isUndefined(lineId)
+        ? createLine(state, lineData)
+        : updateLine(state, lineId, lineData);
     }
 
     case "DELETE_LINE": {

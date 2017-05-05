@@ -1,10 +1,10 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { Network } from "vis";
-import { List, Map } from "immutable";
 import { showLineForm, hideLineForm } from "state/dialogues/actions";
 import { getDialogue } from "state/dialogues/selectors";
 import { round, mapValues, isNull, first, size } from "lodash";
+import getLevels from "./level_helper";
 
 const VIS_NETWORK_OPTIONS = {
   layout: {
@@ -80,9 +80,10 @@ class Dialogue extends Component {
   }
 
   getNodes() {
-    const levels = this.getLevels();
+    const { lines, connections } = this.props;
+    const levels = getLevels(lines, connections);
 
-    return this.props.lines
+    return lines
       .map(l => {
         return {
           id: l.get("id"),
@@ -103,42 +104,6 @@ class Dialogue extends Component {
         };
       })
       .toJS();
-  }
-
-  getLevels() {
-    const { lines } = this.props;
-    let orderedDependencies = this.resolveDependencies(lines.toSet());
-
-    return lines.reduce((memo, l) => {
-      return memo.set(
-        l.get("id"),
-        orderedDependencies.findIndex(deps => {
-          return deps.contains(l);
-        })
-      );
-    }, new Map());
-  }
-
-  resolveDependencies(unresolved, resolved = new List()) {
-    if (unresolved.isEmpty()) {
-      return resolved;
-    } else {
-      const resolvable = unresolved.filter(line => {
-        return this.getLineDependencies(line).isSubset(resolved.flatten());
-      });
-
-      return this.resolveDependencies(
-        unresolved.subtract(resolvable),
-        resolved.push(resolvable)
-      );
-    }
-  }
-
-  getLineDependencies(line) {
-    return this.props.connections
-      .filter(c => c.get("to") == line.get("id"))
-      .map(c => c.get("from"))
-      .toSet();
   }
 }
 

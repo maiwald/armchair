@@ -1,8 +1,9 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import { toInteger, trim, isUndefined, pick } from "lodash";
-import { deleteLine, updateLine } from "state/dialogues/actions";
+import { isInteger, pick, some } from "lodash";
+import { deleteLine, saveLine } from "state/dialogues/actions";
 import {
+  getEmptyLine,
   getSelectedLine,
   getLineFormPosition
 } from "state/dialogues/selectors";
@@ -18,26 +19,22 @@ class LineForm extends Component {
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
-  componentWillReceiveProps({ line, character }) {
+  componentWillReceiveProps({ line }) {
     this.setState({
       text: line.get("text"),
-      characterId: character.get("id")
+      characterId: line.get("characterId") || ""
     });
   }
 
   render() {
     const { text } = this.state;
-    const { line, character, deleteLine } = this.props;
+    const { line } = this.props;
 
     return (
       <div className={[infoBox, styles.lineForm].join(" ")}>
         <header>
           <div className={styles.id}>ID: {line.get("id")}</div>
-          <div className={styles.actions}>
-            <a onClick={() => deleteLine(line.get("id"))}>
-              <i className="fa fa-trash-o" /> delete
-            </a>
-          </div>
+          <div className={styles.actions}>{this.getDeleteLink()}</div>
         </header>
         <form className={styles.form} onSubmit={this.handleSubmit}>
           <section>
@@ -47,6 +44,7 @@ class LineForm extends Component {
               value={this.state.characterId}
               onChange={e => this.setState({ characterId: e.target.value })}
             >
+              <option key={null} value="" />
               {this.getCharacterOptions()}
             </select>
           </section>
@@ -64,6 +62,18 @@ class LineForm extends Component {
     );
   }
 
+  getDeleteLink() {
+    const { line, deleteLine } = this.props;
+
+    if (isInteger(line.get("id"))) {
+      return (
+        <a onClick={() => deleteLine(line.get("id"))}>
+          <i className="fa fa-trash-o" /> delete
+        </a>
+      );
+    }
+  }
+
   getCharacterOptions() {
     return this.props.characters.map(c => {
       return (
@@ -74,43 +84,18 @@ class LineForm extends Component {
 
   handleSubmit(event) {
     event.preventDefault();
-
-    const { line, updateLine } = this.props;
-    const { text, characterId } = this.state;
-
-    updateLine(
-      line.get("id"),
-      line.merge({
-        text: trim(text),
-        characterId: toInteger(characterId)
-      })
-    );
-  }
-}
-
-function FormWrapper(props) {
-  if (isUndefined(props.line)) {
-    return null;
-  } else {
-    return <LineForm {...props} />;
+    const { line, saveLine } = this.props;
+    saveLine(line.get("id"), pick(this.state, ["text", "characterId"]));
   }
 }
 
 function mapStateToProps(state) {
-  const line = getSelectedLine(state);
-  let character;
-
-  if (!isUndefined(line)) {
-    character = getCharacter(state, line.get("characterId"));
-  }
+  const line = getSelectedLine(state) || getEmptyLine();
 
   return {
     line,
-    character,
     characters: getSortedCharacters(state)
   };
 }
 
-export default connect(mapStateToProps, { deleteLine, updateLine })(
-  FormWrapper
-);
+export default connect(mapStateToProps, { deleteLine, saveLine })(LineForm);
