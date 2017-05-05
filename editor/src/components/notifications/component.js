@@ -1,7 +1,7 @@
 import React from "react";
 import { connect } from "react-redux";
-import { isEmpty } from "lodash";
 import { getNotifications } from "state/notifications/selectors";
+import { isEmpty } from "lodash";
 
 function Notifications({ notifications }) {
   if (isEmpty(notifications)) {

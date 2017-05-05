@@ -8,6 +8,7 @@ import {
 } from "state/dialogues/selectors";
 import { getCharacter, getSortedCharacters } from "state/characters/selectors";
 import styles from "./styles.scss";
+import { infoBox } from "shared_styles/info_box.scss";
 
 class LineForm extends Component {
   constructor(props) {
@@ -29,7 +30,7 @@ class LineForm extends Component {
     const { line, character, deleteLine } = this.props;
 
     return (
-      <div className={styles.lineForm}>
+      <div className={[infoBox, styles.lineForm].join(" ")}>
         <header>
           <div className={styles.id}>ID: {line.get("id")}</div>
           <div className={styles.actions}>

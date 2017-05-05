@@ -1,17 +1,20 @@
-.wrapper {
+.main {
+  z-index: 0;
+  position: relative;
   height: 100vh;
   width: 100vw;
-  display: flex;
 }
 
-.sidebarLeft {
-  flex: 0;
-  min-width: 230px;
-  padding: 0 10px;
-  background: #eee;
+.menu {
+  z-index: 1;
+  position: absolute;
+  top: 10px;
+  left: 10px;
 }
 
-.main {
-  position: relative;
-  flex: 1;
+.notifications {
+  z-index: 1;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
 }

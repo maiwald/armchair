@@ -1,23 +1,22 @@
-.characters {
-  padding: 4px;
-}
-
-.characters h2 {
-  margin: 4px 0;
-  font-family: sans-serif;
+.wrapper {
+  position: relative;
 }
 
 .form {
+  margin-top: 4px;
   width: 100%;
 
   input, button {
+    box-sizing: border-box;
     display: block;
+    width: 100%;
   }
 }
 
 .list {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .item {
@@ -27,4 +26,9 @@
   border-radius: 3px;
   padding: 1px 5px;
   margin: 4px 0;
+}
+
+.popover {
+  position: absolute;
+  width: 200px;
 }
