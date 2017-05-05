@@ -1,4 +1,4 @@
-import { trim } from "lodash";
+import { isEmpty, trim } from "lodash";
 import { showTimedNotice } from "state/notifications/actions";
 import { getCharacterNames } from "state/characters/selectors";
 
@@ -23,6 +23,10 @@ export function createCharacter(name) {
       {
         fn: state => !getCharacterNames(state).includes(sanitizedName),
         msg: `Character '${sanitizedName}' already exists!`
+      },
+      {
+        fn: () => !isEmpty(sanitizedName),
+        msg: "Character name must not be empty!"
       }
     ]
   };
