@@ -6,31 +6,26 @@ import { getEmptyLine, getSelectedLine } from "state/dialogues/selectors";
 import { getSortedCharacters } from "state/characters/selectors";
 import styles from "./styles.scss";
 import { infoBox } from "shared_styles/info_box.scss";
+import { Field } from "redux-form";
+import { reduxForm } from "redux-form/immutable";
+import { fromJS } from "immutable";
 
 function getLineData(line) {
   return {
     text: line.get("text"),
-    characterId: line.get("characterId") || ""
+    characterId: line.get("characterId")
   };
 }
 
 class LineForm extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = getLineData(props.line);
-    this.handleSubmit = this.handleSubmit.bind(this);
-  }
-
   componentWillReceiveProps({ line }) {
     if (this.props.line.get("id") != line.get("id")) {
-      this.setState(getLineData(line));
+      this.props.initialize(getLineData(line));
     }
   }
 
   render() {
-    const { text } = this.state;
-    const { line } = this.props;
+    const { line, handleSubmit, reset, pristine } = this.props;
 
     return (
       <div className={[infoBox, styles.lineForm].join(" ")}>
@@ -38,26 +33,26 @@ class LineForm extends Component {
           <div className={styles.id}>ID: {line.get("id")}</div>
           <div className={styles.actions}>{this.getDeleteLink()}</div>
         </header>
-        <form className={styles.form} onSubmit={this.handleSubmit}>
+        <form
+          className={styles.form}
+          onSubmit={handleSubmit(this.onSubmit.bind(this))}
+        >
           <section>
             <label>Character:</label>
-            <select
-              onChange={e => this.setState({ characterId: e.target.value })}
-              value={this.state.characterId}
-            >
-              <option key={null} value="" />
+            <Field name="characterId" component="select">
+              <option key={null} />
               {this.getCharacterOptions()}
-            </select>
+            </Field>
           </section>
 
           <section>
             <label>Text:</label>
-            <textarea
-              onChange={e => this.setState({ text: e.target.value })}
-              value={this.state.text}
-            />
+            <Field name="text" component="textarea" />
           </section>
-          <button type="submit">Save</button>
+          <button type="submit" disabled={pristine}>Save</button>
+          <button type="button" disabled={pristine} onClick={reset}>
+            Reset
+          </button>
         </form>
       </div>
     );
@@ -83,14 +78,12 @@ class LineForm extends Component {
     });
   }
 
-  handleSubmit(event) {
-    event.preventDefault();
+  onSubmit(data) {
     const { line, createLine, updateLine } = this.props;
-
     if (isInteger(line.get("id"))) {
-      updateLine(line.get("id"), this.state);
+      updateLine(line.get("id"), data);
     } else {
-      createLine(this.state);
+      createLine(data);
     }
   }
 }
@@ -105,5 +98,5 @@ function mapStateToProps(state) {
 }
 
 export default connect(mapStateToProps, { createLine, updateLine, deleteLine })(
-  LineForm
+  reduxForm({ form: "lineForm" })(LineForm)
 );
