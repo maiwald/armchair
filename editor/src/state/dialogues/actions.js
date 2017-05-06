@@ -21,23 +21,33 @@ export function deleteLine(lineId) {
   };
 }
 
-function sanitizeLineData(lineData) {
-  return lineData.update("text", trim).update("characterId", toInteger);
-}
-
-export function saveLine(lineId, lineData) {
-  const sanitizedLineData = sanitizeLineData(fromJS(lineData));
-
+export function updateLine(lineId, lineData) {
   return {
-    type: "SAVE_LINE",
-    payload: { lineId, lineData: sanitizedLineData },
+    type: "UPDATE_LINE",
+    payload: { lineId, lineData },
     validations: [
       {
-        fn: () => sanitizedLineData.get("characterId") != 0,
+        fn: () => toInteger(lineData["characterId"]) != 0,
         msg: "Line must have a character!"
       },
       {
-        fn: () => !isEmpty(sanitizedLineData.get("text")),
+        fn: () => !isEmpty(lineData["text"]),
+        msg: "Line must have text!"
+      }
+    ]
+  };
+}
+export function createLine(lineData) {
+  return {
+    type: "CREATE_LINE",
+    payload: { lineData },
+    validations: [
+      {
+        fn: () => toInteger(lineData["characterId"]) != 0,
+        msg: "Line must have a character!"
+      },
+      {
+        fn: () => !isEmpty(lineData["text"]),
         msg: "Line must have text!"
       }
     ]

@@ -38,27 +38,25 @@ function getLineIndex(state, lineId) {
   });
 }
 
-function createLine(state, data) {
-  return state.update("lines", lines =>
-    lines.push(data.set("id", getNextLineId(state)))
-  );
-}
-
-function updateLine(state, lineId, data) {
-  return state.mergeIn(
-    ["lines", getLineIndex(state, lineId)],
-    data.set("id", lineId)
-  );
-}
-
 export default function reducer(state = initialState, { type, payload }) {
   switch (type) {
-    case "SAVE_LINE": {
-      const { lineId, lineData } = payload;
+    case "CREATE_LINE": {
+      const { lineData } = payload;
+      const lineId = getNextLineId(state);
+      const line = fromJS(lineData).set("id", lineId);
 
-      return isUndefined(lineId)
-        ? createLine(state, lineData)
-        : updateLine(state, lineId, lineData);
+      return state
+        .update("lines", lines => lines.push(line))
+        .set("selectedLineId", lineId);
+    }
+
+    case "UPDATE_LINE": {
+      const { lineId, lineData } = payload;
+      const line = fromJS(lineData).set("id", lineId);
+
+      return state
+        .setIn(["lines", getLineIndex(state, lineId)], line)
+        .set("selectedLineId", lineId);
     }
 
     case "DELETE_LINE": {

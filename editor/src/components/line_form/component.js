@@ -1,29 +1,31 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import { isInteger, pick, some } from "lodash";
-import { deleteLine, saveLine } from "state/dialogues/actions";
-import {
-  getEmptyLine,
-  getSelectedLine,
-  getLineFormPosition
-} from "state/dialogues/selectors";
-import { getCharacter, getSortedCharacters } from "state/characters/selectors";
+import { isInteger, pick } from "lodash";
+import { createLine, updateLine, deleteLine } from "state/dialogues/actions";
+import { getEmptyLine, getSelectedLine } from "state/dialogues/selectors";
+import { getSortedCharacters } from "state/characters/selectors";
 import styles from "./styles.scss";
 import { infoBox } from "shared_styles/info_box.scss";
+
+function getLineData(line) {
+  return {
+    text: line.get("text"),
+    characterId: line.get("characterId") || ""
+  };
+}
 
 class LineForm extends Component {
   constructor(props) {
     super(props);
 
-    this.state = { text: "", characterId: "" };
+    this.state = getLineData(props.line);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   componentWillReceiveProps({ line }) {
-    this.setState({
-      text: line.get("text"),
-      characterId: line.get("characterId") || ""
-    });
+    if (this.props.line.get("id") != line.get("id")) {
+      this.setState(getLineData(line));
+    }
   }
 
   render() {
@@ -40,9 +42,8 @@ class LineForm extends Component {
           <section>
             <label>Character:</label>
             <select
-              id="character-select"
-              value={this.state.characterId}
               onChange={e => this.setState({ characterId: e.target.value })}
+              value={this.state.characterId}
             >
               <option key={null} value="" />
               {this.getCharacterOptions()}
@@ -84,8 +85,13 @@ class LineForm extends Component {
 
   handleSubmit(event) {
     event.preventDefault();
-    const { line, saveLine } = this.props;
-    saveLine(line.get("id"), pick(this.state, ["text", "characterId"]));
+    const { line, createLine, updateLine } = this.props;
+
+    if (isInteger(line.get("id"))) {
+      updateLine(line.get("id"), this.state);
+    } else {
+      createLine(this.state);
+    }
   }
 }
 
@@ -98,4 +104,6 @@ function mapStateToProps(state) {
   };
 }
 
-export default connect(mapStateToProps, { deleteLine, saveLine })(LineForm);
+export default connect(mapStateToProps, { createLine, updateLine, deleteLine })(
+  LineForm
+);
