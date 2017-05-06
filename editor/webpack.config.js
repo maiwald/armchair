@@ -1,15 +1,15 @@
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
-const sourceDir = __dirname + '/src';
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const sourceDir = __dirname + "/src";
 
 module.exports = {
   context: sourceDir,
-  entry: './application.js',
+  entry: "./application.js",
   output: {
-    path: __dirname + '/build',
-    filename: 'bundle.js'
+    path: __dirname + "/build",
+    filename: "bundle.js"
   },
   resolve: {
-    modules: [sourceDir, __dirname + '/node_modules']
+    modules: [sourceDir, __dirname + "/node_modules"]
   },
   module: {
     loaders: [
@@ -17,9 +17,9 @@ module.exports = {
         test: /\.js$/,
         exclude: /node_modules/,
         use: {
-          loader: 'babel-loader',
+          loader: "babel-loader",
           options: {
-            presets: ['es2015', 'react']
+            presets: [["es2015", { modules: false }], "react"]
           }
         }
       },
@@ -27,20 +27,20 @@ module.exports = {
         test: /\.s?css$/,
         exclude: /node_modules/,
         use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
+          fallback: "style-loader",
           use: [
             {
-              loader: 'css-loader',
+              loader: "css-loader",
               options: {
                 modules: true,
                 camelCase: true
               }
             },
-            { loader: 'sass-loader' }
+            { loader: "sass-loader" }
           ]
         })
       }
     ]
   },
-  plugins: [new ExtractTextPlugin('style.css')]
+  plugins: [new ExtractTextPlugin("style.css")]
 };
