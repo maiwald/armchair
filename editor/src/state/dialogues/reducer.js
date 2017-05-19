@@ -1,6 +1,14 @@
 import { fromJS } from "immutable";
 import { isUndefined } from "lodash";
 
+import {
+  SHOW_LINE_FORM,
+  HIDE_LINE_FORM,
+  DELETE_LINE,
+  UPDATE_LINE,
+  CREATE_LINE
+} from "state/action_types";
+
 const initialState = fromJS({
   selectedLineId: null,
   lines: [
@@ -40,7 +48,7 @@ function getLineIndex(state, lineId) {
 
 export default function reducer(state = initialState, { type, payload }) {
   switch (type) {
-    case "CREATE_LINE": {
+    case CREATE_LINE: {
       const { lineData } = payload;
       const lineId = getNextLineId(state);
       const line = fromJS(lineData).set("id", lineId);
@@ -50,7 +58,7 @@ export default function reducer(state = initialState, { type, payload }) {
         .set("selectedLineId", lineId);
     }
 
-    case "UPDATE_LINE": {
+    case UPDATE_LINE: {
       const { lineId, lineData } = payload;
       const line = fromJS(lineData).set("id", lineId);
 
@@ -59,7 +67,7 @@ export default function reducer(state = initialState, { type, payload }) {
         .set("selectedLineId", lineId);
     }
 
-    case "DELETE_LINE": {
+    case DELETE_LINE: {
       const { lineId } = payload;
 
       return state
@@ -74,11 +82,11 @@ export default function reducer(state = initialState, { type, payload }) {
         );
     }
 
-    case "SHOW_LINE_FORM": {
+    case SHOW_LINE_FORM: {
       return state.set("selectedLineId", payload.lineId);
     }
 
-    case "HIDE_LINE_FORM": {
+    case HIDE_LINE_FORM: {
       return state.set("selectedLineId", null);
     }
 

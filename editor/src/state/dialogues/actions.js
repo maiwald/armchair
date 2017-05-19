@@ -1,29 +1,37 @@
 import { isEmpty, trim, toInteger } from "lodash";
 import { fromJS } from "immutable";
 
+import {
+  SHOW_LINE_FORM,
+  HIDE_LINE_FORM,
+  DELETE_LINE,
+  UPDATE_LINE,
+  CREATE_LINE
+} from "state/action_types";
+
 export function showLineForm(lineId) {
   return {
-    type: "SHOW_LINE_FORM",
+    type: SHOW_LINE_FORM,
     payload: { lineId }
   };
 }
 
 export function hideLineForm() {
   return {
-    type: "HIDE_LINE_FORM"
+    type: HIDE_LINE_FORM
   };
 }
 
 export function deleteLine(lineId) {
   return {
-    type: "DELETE_LINE",
+    type: DELETE_LINE,
     payload: { lineId }
   };
 }
 
 export function updateLine(lineId, lineData) {
   return {
-    type: "UPDATE_LINE",
+    type: UPDATE_LINE,
     payload: { lineId, lineData },
     validations: [
       {
@@ -40,7 +48,7 @@ export function updateLine(lineId, lineData) {
 
 export function createLine(lineData) {
   return {
-    type: "CREATE_LINE",
+    type: CREATE_LINE,
     payload: { lineData },
     validations: [
       {
