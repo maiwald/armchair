@@ -2,10 +2,15 @@ import React, { Component } from "react";
 import { connect } from "react-redux";
 import { isEqual, isInteger, pick } from "lodash";
 import { createLine, updateLine, deleteLine } from "state/dialogues/actions";
-import { getEmptyLine, getSelectedLine } from "state/dialogues/selectors";
+import {
+  getEmptyLine,
+  getSelectedLine,
+  getOutboundLines
+} from "state/dialogues/selectors";
 import { getSortedCharacters } from "state/characters/selectors";
 import styles from "./styles.scss";
 import { infoBox } from "shared_styles/info_box.scss";
+import OutboundLines from "./outbound_lines";
 
 function handleStateUpdate(self, name) {
   return e => {
@@ -63,6 +68,11 @@ class LineForm extends Component {
               onChange={handleStateUpdate(this, "text")}
             />
           </section>
+
+          <section>
+            <OutboundLines lines={this.props.outboundLines} />
+          </section>
+
           <button type="submit" disabled={pristine}>
             Save
           </button>
@@ -130,12 +140,13 @@ function mapStateToProps(state) {
   const line = getSelectedLine(state) || getEmptyLine();
 
   return {
-    lineId: line.get("id"),
     characters: getSortedCharacters(state),
+    outboundLines: getOutboundLines(state, line.get("id")),
     initialValues: {
       text: line.get("text"),
       characterId: line.get("characterId")
-    }
+    },
+    lineId: line.get("id")
   };
 }
 

@@ -26,3 +26,13 @@ export function getSelectedLineId(state) {
 export function getSelectedLine(state) {
   return getLine(state, getSelectedLineId(state));
 }
+
+export function getOutboundLines(state, lineId) {
+  const dialogue = getDialogue(state);
+  const childIds = dialogue
+    .get("connections")
+    .filter(c => c.get("from") == lineId)
+    .map(c => c.get("to"));
+
+  return dialogue.get("lines").filter(l => childIds.includes(l.get("id")));
+}
