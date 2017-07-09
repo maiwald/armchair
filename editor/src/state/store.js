@@ -6,13 +6,11 @@ import validationMiddleware from "state/middlewares/validation";
 import { combineReducers } from "redux-immutable";
 import { createStore, applyMiddleware } from "redux";
 import { fromJS } from "immutable";
-import { reducer as formReducer } from "redux-form";
 
 const reducer = combineReducers({
   ui: uiReducer,
   characters: characterReducer,
-  dialogue: dialogueReducer,
-  form: formReducer
+  dialogue: dialogueReducer
 });
 
 export default createStore(
