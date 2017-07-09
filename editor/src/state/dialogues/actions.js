@@ -2,23 +2,16 @@ import { isEmpty, trim, toInteger } from "lodash";
 import { fromJS } from "immutable";
 
 import {
-  SHOW_LINE_FORM,
-  HIDE_LINE_FORM,
+  SET_SELECTED_LINE,
   DELETE_LINE,
   UPDATE_LINE,
   CREATE_LINE
 } from "state/action_types";
 
-export function showLineForm(lineId) {
+export function setSelectedLine(lineId) {
   return {
-    type: SHOW_LINE_FORM,
+    type: SET_SELECTED_LINE,
     payload: { lineId }
-  };
-}
-
-export function hideLineForm() {
-  return {
-    type: HIDE_LINE_FORM
   };
 }
 

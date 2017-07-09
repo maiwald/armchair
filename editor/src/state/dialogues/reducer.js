@@ -2,15 +2,14 @@ import { fromJS } from "immutable";
 import { isUndefined } from "lodash";
 
 import {
-  SHOW_LINE_FORM,
-  HIDE_LINE_FORM,
+  SET_SELECTED_LINE,
   DELETE_LINE,
   UPDATE_LINE,
   CREATE_LINE
 } from "state/action_types";
 
 const initialState = fromJS({
-  selectedLineId: null,
+  selectedLineId: undefined,
   lines: [
     { id: 1, characterId: 1, text: "Hey, who are you?" },
     { id: 2, characterId: 2, text: "I could ask you the same." },
@@ -82,12 +81,8 @@ export default function reducer(state = initialState, { type, payload }) {
         );
     }
 
-    case SHOW_LINE_FORM: {
+    case SET_SELECTED_LINE: {
       return state.set("selectedLineId", payload.lineId);
-    }
-
-    case HIDE_LINE_FORM: {
-      return state.set("selectedLineId", null);
     }
 
     default: {

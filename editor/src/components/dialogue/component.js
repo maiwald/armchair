@@ -1,9 +1,9 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { Network } from "vis";
-import { showLineForm, hideLineForm } from "state/dialogues/actions";
-import { getDialogue } from "state/dialogues/selectors";
-import { round, mapValues, isNull, first, size } from "lodash";
+import { setSelectedLine } from "state/dialogues/actions";
+import { getSelectedLineId, getDialogue } from "state/dialogues/selectors";
+import { round, mapValues, isNull, isUndefined } from "lodash";
 import getLevels from "./level_helper";
 
 const VIS_NETWORK_OPTIONS = {
@@ -14,6 +14,10 @@ const VIS_NETWORK_OPTIONS = {
       levelSeparation: 200,
       nodeSpacing: 150
     }
+  },
+  interaction: {
+    selectConnectedEdges: false,
+    selectable: false
   },
   nodes: {
     shape: "box",
@@ -37,18 +41,43 @@ class Dialogue extends Component {
 
   componentDidMount() {
     this.network = this.createNetwork();
+
+    this.setData();
+    this.setSelectedNode();
   }
 
   componentWillUnmount() {
     this.network.destroy();
   }
 
-  componentWillUpdate() {
-    this.network.destroy();
+  componentDidUpdate(prevProps) {
+    if (
+      !this.props.lines.equals(prevProps.lines) ||
+      !this.props.connections.equals(prevProps.connections)
+    ) {
+      this.setData();
+      this.setSelectedNode();
+    }
+
+    if (this.props.selectedLineId != prevProps.selectedLineId) {
+      this.setSelectedNode();
+    }
   }
 
-  componentDidUpdate() {
-    this.network = this.createNetwork();
+  setSelectedNode() {
+    const { selectedLineId } = this.props;
+    if (!isUndefined(selectedLineId)) {
+      this.network.selectNodes([selectedLineId], null);
+    } else {
+      this.network.unselectAll();
+    }
+  }
+
+  setData() {
+    this.network.setData({
+      nodes: this.getNodes(),
+      edges: this.getEdges()
+    });
   }
 
   render() {
@@ -58,22 +87,11 @@ class Dialogue extends Component {
   createNetwork() {
     const { container } = this.refs;
 
-    const network = new Network(
-      container,
-      {
-        nodes: this.getNodes(),
-        edges: this.getEdges()
-      },
-      VIS_NETWORK_OPTIONS
-    );
+    const network = new Network(container, {}, VIS_NETWORK_OPTIONS);
 
-    network.on("click", ({ nodes }) => {
-      if (size(nodes) == 1) {
-        const node = first(nodes);
-        this.props.showLineForm(node);
-      } else {
-        this.props.hideLineForm();
-      }
+    network.on("click", ({ pointer: { DOM: coords } }) => {
+      const node = network.getNodeAt(coords);
+      this.props.setSelectedLine(node);
     });
 
     return network;
@@ -112,11 +130,11 @@ function mapStateToProps(state) {
 
   return {
     lines: dialogue.get("lines"),
-    connections: dialogue.get("connections")
+    connections: dialogue.get("connections"),
+    selectedLineId: getSelectedLineId(state)
   };
 }
 
 export default connect(mapStateToProps, {
-  showLineForm,
-  hideLineForm
+  setSelectedLine
 })(Dialogue);

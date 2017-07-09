@@ -19,7 +19,10 @@ export function hasSelectedLine(state) {
   return getDialogue(state).get("selectedLineId") != null;
 }
 
+export function getSelectedLineId(state) {
+  return getDialogue(state).get("selectedLineId");
+}
+
 export function getSelectedLine(state) {
-  const selectedLineId = getDialogue(state).get("selectedLineId");
-  return getLine(state, selectedLineId);
+  return getLine(state, getSelectedLineId(state));
 }
