@@ -25,7 +25,12 @@ const VIS_NETWORK_OPTIONS = {
     widthConstraint: 130
   },
   edges: {
-    arrows: "to"
+    arrows: {
+      to: {
+        scaleFactor: 0.5
+      }
+    },
+    color: "ccc"
   },
   physics: {
     enabled: false
