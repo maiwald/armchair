@@ -1,7 +1,8 @@
+// @flow
 import { isNull } from "lodash";
 import { Map } from "immutable";
 
-export function getDialogue(state) {
+export function getDialogue(state: any) {
   return state.get("dialogue");
 }
 
@@ -12,22 +13,26 @@ function getLine(state, id) {
 }
 
 export function getEmptyLine() {
-  return new Map({ id: undefined, characterId: undefined, text: "" });
+  return Map({ id: undefined, characterId: undefined, text: "" });
 }
 
-export function hasSelectedLine(state) {
+export function hasSelectedLine(state: any) {
   return getDialogue(state).get("selectedLineId") != null;
 }
 
-export function getSelectedLineId(state) {
+export function getIsModalSelection(state: any): boolean {
+  return getDialogue(state).get("isModalNodeSelection");
+}
+
+export function getSelectedLineId(state: any) {
   return getDialogue(state).get("selectedLineId");
 }
 
-export function getSelectedLine(state) {
+export function getSelectedLine(state: any) {
   return getLine(state, getSelectedLineId(state));
 }
 
-export function getOutboundLines(state, lineId) {
+export function getOutboundLines(state: any, lineId: string) {
   const dialogue = getDialogue(state);
   const childIds = dialogue
     .get("connections")

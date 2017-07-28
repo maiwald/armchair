@@ -38,6 +38,8 @@ const VIS_NETWORK_OPTIONS = {
 };
 
 class Dialogue extends Component {
+  network: any;
+
   constructor(props) {
     super(props);
 
@@ -89,7 +91,7 @@ class Dialogue extends Component {
     return <div style={{ height: "100vh" }} ref="container" />;
   }
 
-  createNetwork() {
+  createNetwork(): any {
     const { container } = this.refs;
 
     const network = new Network(container, {}, VIS_NETWORK_OPTIONS);

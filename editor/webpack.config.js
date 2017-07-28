@@ -1,5 +1,6 @@
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const sourceDir = __dirname + "/src";
+const FlowBabelWebpackPlugin = require("flow-babel-webpack-plugin");
 
 module.exports = {
   context: sourceDir,
@@ -43,5 +44,5 @@ module.exports = {
       }
     ]
   },
-  plugins: [new ExtractTextPlugin("style.css")]
+  plugins: [new ExtractTextPlugin("style.css"), new FlowBabelWebpackPlugin()]
 };
