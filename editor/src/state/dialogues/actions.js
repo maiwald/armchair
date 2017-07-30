@@ -1,6 +1,7 @@
 // @flow
-import { isEmpty, trim, toInteger } from "lodash";
+import { isEmpty, trim, toInteger, isUndefined } from "lodash";
 import { fromJS } from "immutable";
+import { isModalSelection } from "state/dialogues/selectors";
 
 import {
   SELECT_LINE,
@@ -18,9 +19,15 @@ export function setModalSelection(value: boolean) {
 }
 
 export function selectLine(lineId: number) {
-  return {
-    type: SELECT_LINE,
-    payload: { lineId }
+  return (dispatch: any => void, getState: void => any) => {
+    if (isModalSelection(getState()) && isUndefined(lineId)) {
+      return;
+    }
+
+    dispatch({
+      type: SELECT_LINE,
+      payload: { lineId }
+    });
   };
 }
 

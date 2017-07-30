@@ -88,6 +88,8 @@ export default function reducer(state = initialState, { type, payload }) {
     }
 
     case SELECT_LINE: {
+      const { lineId } = payload;
+
       if (state.get("isModalNodeSelection")) {
         return state
           .set("isModalNodeSelection", false)
@@ -96,12 +98,12 @@ export default function reducer(state = initialState, { type, payload }) {
               Map({
                 id: getNextConnectionId(state),
                 from: state.get("selectedLineId"),
-                to: payload.lineId
+                to: lineId
               })
             );
           });
       } else {
-        return state.set("selectedLineId", payload.lineId);
+        return state.set("selectedLineId", lineId);
       }
     }
 
