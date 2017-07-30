@@ -5,7 +5,7 @@ import {
   createLine,
   updateLine,
   deleteLine,
-  setModalSelection
+  setSelectionMode
 } from "state/dialogues/actions";
 import {
   getEmptyLine,
@@ -43,7 +43,7 @@ class LineForm extends Component {
   }
 
   render() {
-    const { lineId, setModalSelection } = this.props;
+    const { lineId, setSelectionMode } = this.props;
     const pristine = this.isPristine();
 
     return (
@@ -78,7 +78,7 @@ class LineForm extends Component {
 
           <section>
             <OutboundLines
-              addOutboundLine={() => setModalSelection(true)}
+              addOutboundLine={() => setSelectionMode(true)}
               lines={this.props.outboundLines}
             />
           </section>
@@ -164,5 +164,5 @@ export default connect(mapStateToProps, {
   createLine,
   updateLine,
   deleteLine,
-  setModalSelection
+  setSelectionMode
 })(LineForm);

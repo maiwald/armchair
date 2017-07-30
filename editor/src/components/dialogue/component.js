@@ -5,7 +5,7 @@ import { Network } from "vis";
 import { selectLine } from "state/dialogues/actions";
 import {
   getSelectedLineId,
-  isModalSelection,
+  isInSelectionMode,
   getDialogue
 } from "state/dialogues/selectors";
 import { round, mapValues, isNull, isUndefined } from "lodash";
@@ -94,12 +94,12 @@ class Dialogue extends Component {
   }
 
   render() {
-    const { isModalNodeSelection } = this.props;
+    const { isInSelectionMode } = this.props;
     return (
       <div
         ref="container"
         style={{ height: "100vh" }}
-        className={isModalNodeSelection ? styles.inModal : null}
+        className={isInSelectionMode ? styles.inModal : null}
       />
     );
   }
@@ -152,7 +152,7 @@ function mapStateToProps(state) {
     lines: dialogue.get("lines"),
     connections: dialogue.get("connections"),
     selectedLineId: getSelectedLineId(state),
-    isModalNodeSelection: isModalSelection(state)
+    isInSelectionMode: isInSelectionMode(state)
   };
 }
 

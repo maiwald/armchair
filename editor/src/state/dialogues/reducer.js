@@ -12,7 +12,7 @@ import {
 
 const initialState = fromJS({
   selectedLineId: undefined,
-  isModalNodeSelection: false,
+  isInSelectionMode: false,
   lines: [
     { id: 1, characterId: 1, text: "Hey, who are you?" },
     { id: 2, characterId: 2, text: "I could ask you the same." },
@@ -90,9 +90,9 @@ export default function reducer(state = initialState, { type, payload }) {
     case SELECT_LINE: {
       const { lineId } = payload;
 
-      if (state.get("isModalNodeSelection")) {
+      if (state.get("isInSelectionMode")) {
         return state
-          .set("isModalNodeSelection", false)
+          .set("isInSelectionMode", false)
           .update("connections", connections => {
             return connections.push(
               Map({
@@ -108,12 +108,12 @@ export default function reducer(state = initialState, { type, payload }) {
     }
 
     case SET_MODAL_SELECTION: {
-      return state.set("isModalNodeSelection", payload);
+      return state.set("isInSelectionMode", payload);
     }
 
     case PRESS_ESCAPE: {
-      return state.get("isModalNodeSelection")
-        ? state.set("isModalNodeSelection", false)
+      return state.get("isInSelectionMode")
+        ? state.set("isInSelectionMode", false)
         : state;
     }
 

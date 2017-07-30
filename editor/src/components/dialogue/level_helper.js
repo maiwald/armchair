@@ -14,7 +14,7 @@ export default function getLevels(lines, connections) {
         return deps.contains(l.get("id"));
       })
     );
-  }, new Map());
+  }, Map());
 }
 
 function resolveDependencies(
@@ -30,6 +30,12 @@ function resolveDependencies(
         resolvedIds.flatten()
       );
     });
+
+    if (resolvableIds.isEmpty()) {
+      throw new Error(
+        "cannot calculate line levels because of cyclic dependency!"
+      );
+    }
 
     return resolveDependencies(
       unresolvedIds.subtract(resolvableIds),

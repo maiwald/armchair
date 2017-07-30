@@ -20,8 +20,8 @@ export function hasSelectedLine(state: any) {
   return getDialogue(state).get("selectedLineId") != null;
 }
 
-export function isModalSelection(state: any): boolean {
-  return getDialogue(state).get("isModalNodeSelection");
+export function isInSelectionMode(state: any): boolean {
+  return getDialogue(state).get("isInSelectionMode");
 }
 
 export function getSelectedLineId(state: any) {

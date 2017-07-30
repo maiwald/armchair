@@ -1,7 +1,7 @@
 // @flow
 import { isEmpty, trim, toInteger, isUndefined } from "lodash";
 import { fromJS } from "immutable";
-import { isModalSelection } from "state/dialogues/selectors";
+import { isInSelectionMode } from "state/dialogues/selectors";
 
 import {
   SELECT_LINE,
@@ -11,7 +11,7 @@ import {
   CREATE_LINE
 } from "state/action_types";
 
-export function setModalSelection(value: boolean) {
+export function setSelectionMode(value: boolean) {
   return {
     type: SET_MODAL_SELECTION,
     payload: value
@@ -20,7 +20,7 @@ export function setModalSelection(value: boolean) {
 
 export function selectLine(lineId: number) {
   return (dispatch: any => void, getState: void => any) => {
-    if (isModalSelection(getState()) && isUndefined(lineId)) {
+    if (isInSelectionMode(getState()) && isUndefined(lineId)) {
       return;
     }
 
