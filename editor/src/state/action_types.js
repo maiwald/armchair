@@ -1,10 +1,13 @@
 export const RESET_CHARACTERS = "RESET_CHARACTERS";
 export const CREATE_CHARACTER = "CREATE_CHARACTER";
 
-export const SET_SELECTED_LINE = "SET_SELECTED_LINE";
+export const SELECT_LINE = "SELECT_LINE";
+export const SET_MODAL_SELECTION = "SET_MODAL_SELECTION";
 export const DELETE_LINE = "DELETE_LINE";
 export const UPDATE_LINE = "UPDATE_LINE";
 export const CREATE_LINE = "CREATE_LINE";
 
 export const PUSH_NOTICE = "PUSH_NOTICE";
 export const POP_NOTICE = "POP_NOTICE";
+
+export const PRESS_ESCAPE = "PRESS_ESCAPE";

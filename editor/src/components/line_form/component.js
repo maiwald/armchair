@@ -1,7 +1,12 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { isEqual, isInteger, pick } from "lodash";
-import { createLine, updateLine, deleteLine } from "state/dialogues/actions";
+import {
+  createLine,
+  updateLine,
+  deleteLine,
+  setModalSelection
+} from "state/dialogues/actions";
 import {
   getEmptyLine,
   getSelectedLine,
@@ -20,6 +25,8 @@ function handleStateUpdate(self, name) {
 }
 
 class LineForm extends Component {
+  state: any;
+
   constructor(props) {
     super(props);
 
@@ -36,7 +43,7 @@ class LineForm extends Component {
   }
 
   render() {
-    const { lineId } = this.props;
+    const { lineId, setModalSelection } = this.props;
     const pristine = this.isPristine();
 
     return (
@@ -70,7 +77,10 @@ class LineForm extends Component {
           </section>
 
           <section>
-            <OutboundLines lines={this.props.outboundLines} />
+            <OutboundLines
+              addOutboundLine={() => setModalSelection(true)}
+              lines={this.props.outboundLines}
+            />
           </section>
 
           <button type="submit" disabled={pristine}>
@@ -150,6 +160,9 @@ function mapStateToProps(state) {
   };
 }
 
-export default connect(mapStateToProps, { createLine, updateLine, deleteLine })(
-  LineForm
-);
+export default connect(mapStateToProps, {
+  createLine,
+  updateLine,
+  deleteLine,
+  setModalSelection
+})(LineForm);

@@ -1,15 +1,18 @@
-import { fromJS } from "immutable";
+import { Map, fromJS } from "immutable";
 import { isUndefined } from "lodash";
 
 import {
-  SET_SELECTED_LINE,
+  SELECT_LINE,
+  SET_MODAL_SELECTION,
   DELETE_LINE,
   UPDATE_LINE,
-  CREATE_LINE
+  CREATE_LINE,
+  PRESS_ESCAPE
 } from "state/action_types";
 
 const initialState = fromJS({
   selectedLineId: undefined,
+  isModalNodeSelection: false,
   lines: [
     { id: 1, characterId: 1, text: "Hey, who are you?" },
     { id: 2, characterId: 2, text: "I could ask you the same." },
@@ -36,7 +39,10 @@ const initialState = fromJS({
 });
 
 function getNextLineId(state) {
-  return state.get("lines").map(l => l.get("id")).max() + 1;
+  return state.get("lines").map(c => c.get("id")).max() + 1;
+}
+function getNextConnectionId(state) {
+  return state.get("connections").map(l => l.get("id")).max() + 1;
 }
 
 function getLineIndex(state, lineId) {
@@ -74,15 +80,39 @@ export default function reducer(state = initialState, { type, payload }) {
           return id == lineId ? null : id;
         })
         .update("lines", lines => lines.delete(getLineIndex(state, lineId)))
-        .update("connections", connections =>
-          connections.filterNot(c => {
+        .update("connections", connections => {
+          return connections.filterNot(c => {
             return c.get("from") == lineId || c.get("to") == lineId;
-          })
-        );
+          });
+        });
     }
 
-    case SET_SELECTED_LINE: {
-      return state.set("selectedLineId", payload.lineId);
+    case SELECT_LINE: {
+      if (state.get("isModalNodeSelection")) {
+        return state
+          .set("isModalNodeSelection", false)
+          .update("connections", connections => {
+            return connections.push(
+              Map({
+                id: getNextConnectionId(state),
+                from: state.get("selectedLineId"),
+                to: payload.lineId
+              })
+            );
+          });
+      } else {
+        return state.set("selectedLineId", payload.lineId);
+      }
+    }
+
+    case SET_MODAL_SELECTION: {
+      return state.set("isModalNodeSelection", payload);
+    }
+
+    case PRESS_ESCAPE: {
+      return state.get("isModalNodeSelection")
+        ? state.set("isModalNodeSelection", false)
+        : state;
     }
 
     default: {

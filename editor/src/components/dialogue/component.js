@@ -1,10 +1,16 @@
+// @flow
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { Network } from "vis";
-import { setSelectedLine } from "state/dialogues/actions";
-import { getSelectedLineId, getDialogue } from "state/dialogues/selectors";
+import { selectLine } from "state/dialogues/actions";
+import {
+  getSelectedLineId,
+  isModalSelection,
+  getDialogue
+} from "state/dialogues/selectors";
 import { round, mapValues, isNull, isUndefined } from "lodash";
 import getLevels from "./level_helper";
+import styles from "./styles.css";
 
 const VIS_NETWORK_OPTIONS = {
   layout: {
@@ -88,17 +94,24 @@ class Dialogue extends Component {
   }
 
   render() {
-    return <div style={{ height: "100vh" }} ref="container" />;
+    const { isModalNodeSelection } = this.props;
+    return (
+      <div
+        ref="container"
+        style={{ height: "100vh" }}
+        className={isModalNodeSelection ? styles.inModal : null}
+      />
+    );
   }
 
-  createNetwork(): any {
+  createNetwork() {
     const { container } = this.refs;
 
     const network = new Network(container, {}, VIS_NETWORK_OPTIONS);
 
     network.on("click", ({ pointer: { DOM: coords } }) => {
       const node = network.getNodeAt(coords);
-      this.props.setSelectedLine(node);
+      this.props.selectLine(node);
     });
 
     return network;
@@ -138,10 +151,11 @@ function mapStateToProps(state) {
   return {
     lines: dialogue.get("lines"),
     connections: dialogue.get("connections"),
-    selectedLineId: getSelectedLineId(state)
+    selectedLineId: getSelectedLineId(state),
+    isModalNodeSelection: isModalSelection(state)
   };
 }
 
 export default connect(mapStateToProps, {
-  setSelectedLine
+  selectLine
 })(Dialogue);

@@ -1,4 +1,4 @@
-import { PUSH_NOTICE, POP_NOTICE } from "state/action_types";
+import { PUSH_NOTICE, POP_NOTICE, PRESS_ESCAPE } from "state/action_types";
 
 function showNotice(notice) {
   return {
@@ -12,6 +12,12 @@ function showNotice(notice) {
 function hideNotice() {
   return {
     type: POP_NOTICE
+  };
+}
+
+export function pressEscape() {
+  return {
+    type: PRESS_ESCAPE
   };
 }
 

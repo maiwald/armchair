@@ -1,28 +1,37 @@
+// @flow
 import { isEmpty, trim, toInteger } from "lodash";
 import { fromJS } from "immutable";
 
 import {
-  SET_SELECTED_LINE,
+  SELECT_LINE,
+  SET_MODAL_SELECTION,
   DELETE_LINE,
   UPDATE_LINE,
   CREATE_LINE
 } from "state/action_types";
 
-export function setSelectedLine(lineId) {
+export function setModalSelection(value: boolean) {
   return {
-    type: SET_SELECTED_LINE,
+    type: SET_MODAL_SELECTION,
+    payload: value
+  };
+}
+
+export function selectLine(lineId: number) {
+  return {
+    type: SELECT_LINE,
     payload: { lineId }
   };
 }
 
-export function deleteLine(lineId) {
+export function deleteLine(lineId: number) {
   return {
     type: DELETE_LINE,
     payload: { lineId }
   };
 }
 
-export function updateLine(lineId, lineData) {
+export function updateLine(lineId: number, lineData: any) {
   return {
     type: UPDATE_LINE,
     payload: { lineId, lineData },
@@ -39,7 +48,7 @@ export function updateLine(lineId, lineData) {
   };
 }
 
-export function createLine(lineData) {
+export function createLine(lineData: any) {
   return {
     type: CREATE_LINE,
     payload: { lineData },

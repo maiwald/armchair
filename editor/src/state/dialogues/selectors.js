@@ -20,7 +20,7 @@ export function hasSelectedLine(state: any) {
   return getDialogue(state).get("selectedLineId") != null;
 }
 
-export function getIsModalSelection(state: any): boolean {
+export function isModalSelection(state: any): boolean {
   return getDialogue(state).get("isModalNodeSelection");
 }
 
@@ -32,7 +32,7 @@ export function getSelectedLine(state: any) {
   return getLine(state, getSelectedLineId(state));
 }
 
-export function getOutboundLines(state: any, lineId: string) {
+export function getOutboundLines(state: any, lineId: number) {
   const dialogue = getDialogue(state);
   const childIds = dialogue
     .get("connections")
