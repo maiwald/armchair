@@ -8,43 +8,27 @@ import {
   isInSelectionMode,
   getDialogue
 } from "state/dialogues/selectors";
-import { round, mapValues, isNull, isUndefined } from "lodash";
+import { isEqual, round, mapValues, isNull, isUndefined } from "lodash";
 import getLevels from "./level_helper";
 import styles from "./styles.css";
+import VIS_NETWORK_OPTIONS from "./vis_network_options.json";
 
-const VIS_NETWORK_OPTIONS = {
-  layout: {
-    improvedLayout: true,
-    hierarchical: {
-      direction: "LR",
-      levelSeparation: 200,
-      nodeSpacing: 150
-    }
-  },
-  interaction: {
-    selectConnectedEdges: false,
-    selectable: false
-  },
-  nodes: {
-    shape: "box",
-    fixed: true,
-    widthConstraint: 130
-  },
-  edges: {
-    arrows: {
-      to: {
-        scaleFactor: 0.5
-      }
-    },
-    color: "ccc"
-  },
-  physics: {
-    enabled: false
-  }
+type ValueProps = {
+  nodes: DialogueNode[],
+  edges: DialogueEdge[],
+  selectedNodeId: ?string,
+  isInSelectionMode: boolean
 };
+
+type DispatchProps = {
+  selectLine: (nodeId: string) => void
+};
+
+type Props = ValueProps & DispatchProps;
 
 class Dialogue extends Component {
   network: any;
+  props: Props;
 
   constructor(props) {
     super(props);
@@ -65,32 +49,30 @@ class Dialogue extends Component {
 
   componentDidUpdate(prevProps) {
     if (
-      !this.props.lines.equals(prevProps.lines) ||
-      !this.props.connections.equals(prevProps.connections)
+      !isEqual(this.props.nodes, prevProps.nodes) ||
+      !isEqual(this.props.edges, prevProps.edges)
     ) {
       this.setData();
       this.setSelectedNode();
     }
 
-    if (this.props.selectedLineId != prevProps.selectedLineId) {
+    if (this.props.selectedNodeId != prevProps.selectedNodeId) {
       this.setSelectedNode();
     }
   }
 
   setSelectedNode() {
-    const { selectedLineId } = this.props;
-    if (!isUndefined(selectedLineId)) {
-      this.network.selectNodes([selectedLineId], null);
+    const { selectedNodeId } = this.props;
+    if (!isUndefined(selectedNodeId)) {
+      this.network.selectNodes([selectedNodeId], null);
     } else {
       this.network.unselectAll();
     }
   }
 
   setData() {
-    this.network.setData({
-      nodes: this.getNodes(),
-      edges: this.getEdges()
-    });
+    const { nodes, edges } = this.props;
+    this.network.setData({ nodes, edges });
   }
 
   render() {
@@ -116,42 +98,43 @@ class Dialogue extends Component {
 
     return network;
   }
-
-  getNodes() {
-    const { lines, connections } = this.props;
-    const levels = getLevels(lines, connections);
-
-    return lines
-      .map(l => {
-        return {
-          id: l.get("id"),
-          label: l.get("text"),
-          group: l.get("characterId", 0),
-          level: levels.get(l.get("id"))
-        };
-      })
-      .toJS();
-  }
-
-  getEdges() {
-    return this.props.connections
-      .map(c => {
-        return {
-          from: c.get("from"),
-          to: c.get("to")
-        };
-      })
-      .toJS();
-  }
 }
 
-function mapStateToProps(state) {
+function mapStateToProps(state): ValueProps {
   const dialogue = getDialogue(state);
 
+  const lines = dialogue.get("lines");
+  const connections = dialogue.get("connections");
+
+  const levels = getLevels(lines, connections);
+
+  const nodes: DialogueNode[] = lines
+    .map(l => {
+      return {
+        id: l.get("id"),
+        label: l.get("text"),
+        group: l.get("characterId"),
+        level: levels.get(l.get("id"))
+      };
+    })
+    .toJS();
+
+  const edges: DialogueEdge[] = connections
+    .map(c => {
+      return {
+        from: c.get("from"),
+        to: c.get("to")
+      };
+    })
+    .toJS();
+
+  const selectedNodeId: ?number = getSelectedLineId(state);
+
   return {
-    lines: dialogue.get("lines"),
-    connections: dialogue.get("connections"),
-    selectedLineId: getSelectedLineId(state),
+    nodes,
+    edges,
+    selectedNodeId:
+      typeof selectedNodeId == "number" ? selectedNodeId.toString() : null,
     isInSelectionMode: isInSelectionMode(state)
   };
 }

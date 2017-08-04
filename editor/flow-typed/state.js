@@ -18,6 +18,17 @@ declare type Connection = {|
 declare type Line = {|
   id: number,
   characterId: number,
-  text: string,
-  level: ?number
+  text: string
+|};
+
+declare type DialogueNode = {|
+  id: string,
+  label: string,
+  level: number,
+  group: string
+|};
+
+declare type DialogueEdge = {|
+  from: string,
+  to: string
 |};

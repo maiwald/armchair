@@ -1,5 +1,5 @@
 // @flow
-import { isNull } from "lodash";
+import { map, isNull } from "lodash";
 import { Map } from "immutable";
 
 export function getDialogue(state: any) {
@@ -24,7 +24,7 @@ export function isInSelectionMode(state: any): boolean {
   return getDialogue(state).get("isInSelectionMode");
 }
 
-export function getSelectedLineId(state: any) {
+export function getSelectedLineId(state: any): ?number {
   return getDialogue(state).get("selectedLineId");
 }
 

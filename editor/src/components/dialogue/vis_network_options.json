@@ -1,0 +1,30 @@
+{
+  "layout": {
+    "improvedLayout": true,
+    "hierarchical": {
+      "direction": "LR",
+      "levelSeparation": 200,
+      "nodeSpacing": 150
+    }
+  },
+  "interaction": {
+    "selectConnectedEdges": false,
+    "selectable": false
+  },
+  "nodes": {
+    "shape": "box",
+    "fixed": true,
+    "widthConstraint": 130
+  },
+  "edges": {
+    "arrows": {
+      "to": {
+        "scaleFactor": 0.5
+      }
+    },
+    "color": "ccc"
+  },
+  "physics": {
+    "enabled": false
+  }
+}
