@@ -38,8 +38,6 @@ section {
 
 label {
   display: block;
-  font-size: .8rem;
-  line-height: 1.2rem;
 }
 
 select {
@@ -51,7 +49,7 @@ textarea {
   width: 300px;
   flex-grow: 1;
   margin: 0;
-  padding: 0;
+  padding: 0 2px;
   box-sizing: border-box;
   resize: none;
 }
