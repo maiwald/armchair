@@ -19,7 +19,7 @@ export function getEmptyLine() {
   return Map({ id: undefined, characterId: undefined, text: "" });
 }
 
-export function hasSelectedLine(state: any) {
+export function hasSelectedLine(state: any): boolean {
   return getDialogue(state).get("selectedLineId") != null;
 }
 
