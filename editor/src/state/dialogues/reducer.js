@@ -3,6 +3,7 @@ import { isUndefined } from "lodash";
 
 import {
   SELECT_LINE,
+  HOVER_LINE,
   SET_MODAL_SELECTION,
   DELETE_LINE,
   UPDATE_LINE,
@@ -12,6 +13,7 @@ import {
 
 const initialState = fromJS({
   selectedLineId: undefined,
+  hoveredLineId: undefined,
   isInSelectionMode: false,
   lines: [
     { id: 1, characterId: 1, text: "Hey, who are you?" },
@@ -39,10 +41,20 @@ const initialState = fromJS({
 });
 
 function getNextLineId(state) {
-  return state.get("lines").map(c => c.get("id")).max() + 1;
+  return (
+    state
+      .get("lines")
+      .map(c => c.get("id"))
+      .max() + 1
+  );
 }
 function getNextConnectionId(state) {
-  return state.get("connections").map(l => l.get("id")).max() + 1;
+  return (
+    state
+      .get("connections")
+      .map(l => l.get("id"))
+      .max() + 1
+  );
 }
 
 function getLineIndex(state, lineId) {
@@ -79,6 +91,9 @@ export default function reducer(state = initialState, { type, payload }) {
         .update("selectedLineId", id => {
           return id == lineId ? null : id;
         })
+        .update("hoveredLineId", id => {
+          return id == lineId ? null : id;
+        })
         .update("lines", lines => lines.delete(getLineIndex(state, lineId)))
         .update("connections", connections => {
           return connections.filterNot(c => {
@@ -91,6 +106,10 @@ export default function reducer(state = initialState, { type, payload }) {
       const { lineId } = payload;
 
       if (state.get("isInSelectionMode")) {
+        if (isUndefined(lineId)) {
+          return state;
+        }
+
         return state
           .set("isInSelectionMode", false)
           .update("connections", connections => {
@@ -104,6 +123,16 @@ export default function reducer(state = initialState, { type, payload }) {
           });
       } else {
         return state.set("selectedLineId", lineId);
+      }
+    }
+
+    case HOVER_LINE: {
+      const { lineId } = payload;
+
+      if (state.get("isInSelectionMode")) {
+        return state;
+      } else {
+        return state.set("hoveredLineId", lineId);
       }
     }
 

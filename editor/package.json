@@ -19,6 +19,7 @@
     "css-loader": "^0.28.0",
     "extract-text-webpack-plugin": "^2.1.0",
     "flow-babel-webpack-plugin": "^1.1.0",
+    "flow-bin": "^0.54.0",
     "lodash": "^4.17.4",
     "node-sass": "^4.5.1",
     "sass-loader": "^6.0.3",

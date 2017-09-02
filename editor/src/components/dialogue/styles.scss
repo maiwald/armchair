@@ -1,0 +1,50 @@
+$badge-size: 1.3rem;
+$badge-gutter: 5px;
+
+.container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.in-modal {
+  background: rgba(0, 0, 0, .2);
+}
+
+.node-actions {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 1;
+  position: absolute;
+}
+
+.node-action {
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  border-radius: $badge-size / 2;
+  height: $badge-size;
+  min-height: $badge-size;
+  width: $badge-size;
+  min-width: $badge-size;
+
+  margin-left: $badge-gutter;
+  &:first-node {
+    margin-left: 0
+  }
+
+  background: rgba(90, 90, 90, .2);
+  &:hover {
+    background: rgb(90, 90, 90);
+    text-decoration: none;
+  }
+
+  color: white;
+  font-size: $badge-size * .7;
+  line-height: $badge-size;
+}

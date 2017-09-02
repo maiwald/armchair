@@ -3,13 +3,15 @@
     "improvedLayout": true,
     "hierarchical": {
       "direction": "LR",
-      "levelSeparation": 200,
+      "levelSeparation": 220,
       "nodeSpacing": 150
     }
   },
   "interaction": {
     "selectConnectedEdges": false,
-    "selectable": false
+    "selectable": false,
+    "hover":true,
+    "hoverConnectedEdges": false
   },
   "nodes": {
     "shape": "box",

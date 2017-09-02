@@ -5,6 +5,7 @@ import { isInSelectionMode } from "state/dialogues/selectors";
 
 import {
   SELECT_LINE,
+  HOVER_LINE,
   SET_MODAL_SELECTION,
   DELETE_LINE,
   UPDATE_LINE,
@@ -18,24 +19,27 @@ export function setSelectionMode(value: boolean) {
   };
 }
 
-export function selectLine(lineId: number) {
-  return (dispatch: any => void, getState: void => any) => {
-    if (isInSelectionMode(getState()) && isUndefined(lineId)) {
-      return;
-    }
+export function selectLine(lineId: ?number) {
+  return {
+    type: SELECT_LINE,
+    payload: { lineId }
+  };
+}
 
-    dispatch({
-      type: SELECT_LINE,
-      payload: { lineId }
-    });
+export function hoverLine(lineId: ?number) {
+  return {
+    type: HOVER_LINE,
+    payload: { lineId }
   };
 }
 
 export function deleteLine(lineId: number) {
-  return {
-    type: DELETE_LINE,
-    payload: { lineId }
-  };
+  if (confirm(`Do you really want to delete line ${lineId}?`)) {
+    return {
+      type: DELETE_LINE,
+      payload: { lineId }
+    };
+  }
 }
 
 export function updateLine(lineId: number, lineData: any) {

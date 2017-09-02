@@ -2,6 +2,7 @@ export const RESET_CHARACTERS = "RESET_CHARACTERS";
 export const CREATE_CHARACTER = "CREATE_CHARACTER";
 
 export const SELECT_LINE = "SELECT_LINE";
+export const HOVER_LINE = "HOVER_LINE";
 export const SET_MODAL_SELECTION = "SET_MODAL_SELECTION";
 export const DELETE_LINE = "DELETE_LINE";
 export const UPDATE_LINE = "UPDATE_LINE";

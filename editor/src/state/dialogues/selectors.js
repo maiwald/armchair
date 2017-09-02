@@ -31,6 +31,10 @@ export function getSelectedLineId(state: any): ?number {
   return getDialogue(state).get("selectedLineId");
 }
 
+export function getHoveredLineId(state: any): ?number {
+  return getDialogue(state).get("hoveredLineId");
+}
+
 export function getSelectedLine(state: any) {
   return getLine(state, getSelectedLineId(state));
 }
