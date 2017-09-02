@@ -1,6 +1,7 @@
 // @flow
 import { map, isNull } from "lodash";
 import { Map } from "immutable";
+import getLevels from "./level_helper";
 
 export function getDialogue(state: any) {
   return state.get("dialogue");
@@ -9,7 +10,9 @@ export function getDialogue(state: any) {
 function getLine(state, id) {
   if (isNull(id)) return undefined;
 
-  return getDialogue(state).get("lines").find(line => line.get("id") == id);
+  return getDialogue(state)
+    .get("lines")
+    .find(line => line.get("id") == id);
 }
 
 export function getEmptyLine() {
@@ -40,4 +43,36 @@ export function getOutboundLines(state: any, lineId: number) {
     .map(c => c.get("to"));
 
   return dialogue.get("lines").filter(l => childIds.includes(l.get("id")));
+}
+
+export function getDialogueNodes(state: any): DialogueNode[] {
+  const dialogue = getDialogue(state);
+  const lines = dialogue.get("lines");
+  const connections = dialogue.get("connections");
+  const levels = getLevels(lines, connections);
+
+  return lines
+    .map(l => {
+      return {
+        id: l.get("id"),
+        label: l.get("text"),
+        group: l.get("characterId"),
+        level: levels.get(l.get("id"))
+      };
+    })
+    .toJS();
+}
+
+export function getDialogueEdges(state: any): DialogueEdge[] {
+  const dialogue = getDialogue(state);
+  const connections = dialogue.get("connections");
+  return connections
+    .map(c => {
+      return {
+        id: c.get("id"),
+        from: c.get("from"),
+        to: c.get("to")
+      };
+    })
+    .toJS();
 }

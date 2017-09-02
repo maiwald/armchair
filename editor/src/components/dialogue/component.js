@@ -1,15 +1,16 @@
 // @flow
+
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { Network } from "vis";
 import { selectLine } from "state/dialogues/actions";
 import {
+  getDialogueEdges,
+  getDialogueNodes,
   getSelectedLineId,
-  isInSelectionMode,
-  getDialogue
+  isInSelectionMode
 } from "state/dialogues/selectors";
 import { isEqual, round, mapValues, isNull, isUndefined } from "lodash";
-import getLevels from "./level_helper";
 import styles from "./styles.css";
 import VIS_NETWORK_OPTIONS from "./vis_network_options.json";
 
@@ -63,7 +64,7 @@ class Dialogue extends Component {
 
   setSelectedNode() {
     const { selectedNodeId } = this.props;
-    if (!isUndefined(selectedNodeId)) {
+    if (!isNull(selectedNodeId)) {
       this.network.selectNodes([selectedNodeId], null);
     } else {
       this.network.unselectAll();
@@ -101,44 +102,15 @@ class Dialogue extends Component {
 }
 
 function mapStateToProps(state): ValueProps {
-  const dialogue = getDialogue(state);
-
-  const lines = dialogue.get("lines");
-  const connections = dialogue.get("connections");
-
-  const levels = getLevels(lines, connections);
-
-  const nodes: DialogueNode[] = lines
-    .map(l => {
-      return {
-        id: l.get("id"),
-        label: l.get("text"),
-        group: l.get("characterId"),
-        level: levels.get(l.get("id"))
-      };
-    })
-    .toJS();
-
-  const edges: DialogueEdge[] = connections
-    .map(c => {
-      return {
-        from: c.get("from"),
-        to: c.get("to")
-      };
-    })
-    .toJS();
-
   const selectedNodeId: ?number = getSelectedLineId(state);
 
   return {
-    nodes,
-    edges,
+    nodes: getDialogueNodes(state),
+    edges: getDialogueEdges(state),
     selectedNodeId:
       typeof selectedNodeId == "number" ? selectedNodeId.toString() : null,
     isInSelectionMode: isInSelectionMode(state)
   };
 }
 
-export default connect(mapStateToProps, {
-  selectLine
-})(Dialogue);
+export default connect(mapStateToProps, { selectLine })(Dialogue);

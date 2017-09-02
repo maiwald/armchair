@@ -29,6 +29,7 @@ declare type DialogueNode = {|
 |};
 
 declare type DialogueEdge = {|
+  id: string,
   from: string,
   to: string
 |};
