@@ -1,46 +1,57 @@
-.line-form {
-  min-width: 250px;
-  position: absolute;
-  top: 20px;
-  right: 20px;
+$padding: 16px;
+$gutter: 8px;
 
-  header {
-    margin-bottom: 4px;
-    color: #aaa;
-    display: flex;
+.container {
+  display: flex;
+  flex-direction: column;
 
-    font-size: .8rem;
-    line-height: 14px;
+  box-sizing: border-box;
+  padding: $padding;
+}
 
-    .id {
-      flex-grow: 1;
-    }
-  }
+header {
+  color: #aaa;
+  font-size: .7rem;
+  line-height: 16px;
+}
 
-  section {
-    margin-top: 8px;
-    &:first-child { margin-top: 0; }
-  }
+.form {
+  display: flex;
+  flex-grow: 1;
+}
 
-  label {
-    display: block;
-    font-size: .8rem;
-  }
+section {
+  display: flex;
+  flex-direction: column;
+  margin-left: $gutter;
+  margin-bottom: $gutter;
+  &:first-child { margin-left: 0; }
+}
 
-  select {
-    width: 100%;
-    display: block;
-  }
 
-  textarea {
-    width: 100%;
-    height: 80px;
-    box-sizing: border-box;
-    display: block;
-    resize: vertical;
-  }
+.actions {
+  display: flex;
+  align-content: bottom;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
 
-  button {
-    margin-top: 8px;
-  }
+label {
+  display: block;
+  font-size: .8rem;
+  line-height: 1.2rem;
+}
+
+select {
+  width: 200px;
+  display: block;
+}
+
+textarea {
+  width: 300px;
+  flex-grow: 1;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  resize: none;
 }

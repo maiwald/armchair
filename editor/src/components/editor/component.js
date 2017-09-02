@@ -16,9 +16,14 @@ export default function Editor() {
         <Characters />
       </div>
 
-      <div className={styles.main}>
-        <Dialogue />
-        <LineForm />
+      <div className={styles.container}>
+        <div className={styles.canvas}>
+          <Dialogue />
+        </div>
+
+        <div className={styles.form}>
+          <LineForm />
+        </div>
       </div>
     </div>
   );

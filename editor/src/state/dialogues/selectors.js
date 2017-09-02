@@ -35,16 +35,6 @@ export function getSelectedLine(state: any) {
   return getLine(state, getSelectedLineId(state));
 }
 
-export function getOutboundLines(state: any, lineId: number) {
-  const dialogue = getDialogue(state);
-  const childIds = dialogue
-    .get("connections")
-    .filter(c => c.get("from") == lineId)
-    .map(c => c.get("to"));
-
-  return dialogue.get("lines").filter(l => childIds.includes(l.get("id")));
-}
-
 export function getDialogueNodes(state: any): DialogueNode[] {
   const dialogue = getDialogue(state);
   const lines = dialogue.get("lines");

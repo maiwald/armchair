@@ -10,7 +10,7 @@ import {
   getSelectedLineId,
   isInSelectionMode
 } from "state/dialogues/selectors";
-import { isEqual, round, mapValues, isNull, isUndefined } from "lodash";
+import { compact, isEqual, isNull } from "lodash";
 import styles from "./styles.css";
 import VIS_NETWORK_OPTIONS from "./vis_network_options.json";
 
@@ -78,13 +78,12 @@ class Dialogue extends Component {
 
   render() {
     const { isInSelectionMode } = this.props;
-    return (
-      <div
-        ref="container"
-        style={{ height: "100vh" }}
-        className={isInSelectionMode ? styles.inModal : null}
-      />
-    );
+    const classNames = compact([
+      styles.container,
+      isInSelectionMode ? styles.inModal : null
+    ]).join(" ");
+
+    return <div ref="container" className={classNames} />;
   }
 
   createNetwork() {

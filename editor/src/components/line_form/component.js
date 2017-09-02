@@ -1,21 +1,16 @@
+// @flow
+
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { isEqual, isInteger, pick } from "lodash";
 import {
   createLine,
   updateLine,
-  deleteLine,
   setSelectionMode
 } from "state/dialogues/actions";
-import {
-  getEmptyLine,
-  getSelectedLine,
-  getOutboundLines
-} from "state/dialogues/selectors";
+import { getEmptyLine, getSelectedLine } from "state/dialogues/selectors";
 import { getSortedCharacters } from "state/characters/selectors";
 import styles from "./styles.scss";
-import { infoBox } from "shared_styles/info_box.scss";
-import OutboundLines from "./outbound_lines";
 
 function handleStateUpdate(self, name) {
   return e => {
@@ -47,16 +42,10 @@ class LineForm extends Component {
     const pristine = this.isPristine();
 
     return (
-      <div className={[infoBox, styles.lineForm].join(" ")}>
-        <header>
-          <div className={styles.id}>
-            ID: {lineId}
-          </div>
-          <div className={styles.actions}>
-            {this.getDeleteLink()}
-          </div>
-        </header>
-        <form className={styles.form} onSubmit={this.onSubmit.bind(this)}>
+      <form className={styles.container} onSubmit={this.onSubmit.bind(this)}>
+        <header>Line ID: {lineId}</header>
+
+        <div className={styles.form}>
           <section>
             <label>Character:</label>
             <select
@@ -75,14 +64,9 @@ class LineForm extends Component {
               onChange={handleStateUpdate(this, "text")}
             />
           </section>
+        </div>
 
-          <section>
-            <OutboundLines
-              addOutboundLine={() => setSelectionMode(true)}
-              lines={this.props.outboundLines}
-            />
-          </section>
-
+        <div className={styles.actions}>
           <button type="submit" disabled={pristine}>
             Save
           </button>
@@ -93,21 +77,9 @@ class LineForm extends Component {
           >
             Reset
           </button>
-        </form>
-      </div>
+        </div>
+      </form>
     );
-  }
-
-  getDeleteLink() {
-    const { lineId, deleteLine } = this.props;
-
-    if (isInteger(lineId)) {
-      return (
-        <a onClick={() => deleteLine(lineId)}>
-          <i className="fa fa-trash-o" /> delete
-        </a>
-      );
-    }
   }
 
   getCharacterOptions() {
@@ -151,7 +123,6 @@ function mapStateToProps(state) {
 
   return {
     characters: getSortedCharacters(state),
-    outboundLines: getOutboundLines(state, line.get("id")),
     initialValues: {
       text: line.get("text"),
       characterId: line.get("characterId")
@@ -163,6 +134,5 @@ function mapStateToProps(state) {
 export default connect(mapStateToProps, {
   createLine,
   updateLine,
-  deleteLine,
   setSelectionMode
 })(LineForm);

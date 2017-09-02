@@ -1,8 +1,21 @@
-.main {
+.container {
+  display: flex;
+  flex-direction: column;
   z-index: 0;
-  position: relative;
   height: 100vh;
   width: 100vw;
+}
+
+.canvas {
+  position: relative;
+  flex-grow: 1;
+}
+
+.form {
+  display: flex;
+  justify-content: center;
+  background: rgba(0, 0, 0, .1);
+  height: 200px;
 }
 
 .menu {
