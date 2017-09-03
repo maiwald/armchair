@@ -2,7 +2,13 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { Network } from "vis";
-import { deleteLine, hoverLine, selectLine } from "state/dialogues/actions";
+import {
+  startConnectionSelection,
+  deleteLine,
+  hoverLine,
+  selectLine,
+  clearLineSelection
+} from "state/dialogues/actions";
 import {
   getDialogueEdges,
   getDialogueNodes,
@@ -25,7 +31,9 @@ type ValueProps = {
 type DispatchProps = {
   deleteLine: (?number) => void,
   hoverLine: (?number) => void,
-  selectLine: (?number) => void
+  selectLine: (?number) => void,
+  clearLineSelection: void => void,
+  startConnectionSelection: number => void
 };
 
 type Props = ValueProps & DispatchProps;
@@ -96,13 +104,13 @@ class Dialogue extends Component {
 
   createNetwork() {
     const { container } = this.refs;
-    const { selectLine, hoverLine } = this.props;
+    const { selectLine, clearLineSelection, hoverLine } = this.props;
 
     const network = new Network(container, {}, VIS_NETWORK_OPTIONS);
 
     network.on("click", ({ pointer: { DOM: coords } }) => {
       const node = network.getNodeAt(coords);
-      selectLine(isUndefined(node) ? undefined : parseInt(node));
+      isUndefined(node) ? clearLineSelection() : selectLine(parseInt(node));
     });
 
     network.on("hoverNode", ({ node }) => hoverLine(parseInt(node)));
@@ -112,7 +120,7 @@ class Dialogue extends Component {
   }
 
   getNodeActions() {
-    const { hoveredNodeId, deleteLine } = this.props;
+    const { hoveredNodeId } = this.props;
     if (isNull(hoveredNodeId)) {
       return null;
     } else {
@@ -123,13 +131,15 @@ class Dialogue extends Component {
         >
           <a
             className={styles.nodeAction}
-            onClick={() => deleteLine(parseInt(hoveredNodeId))}
+            onClick={() => this.props.deleteLine(parseInt(hoveredNodeId))}
             title="Delete node"
           >
             <i className="fa fa-trash" />
           </a>
           <a
             className={styles.nodeAction}
+            onClick={() =>
+              this.props.startConnectionSelection(parseInt(hoveredNodeId))}
             title="Add connection to existing line"
           >
             <i className="fa fa-link" />
@@ -190,6 +200,10 @@ function mapStateToProps(state: any): ValueProps {
   };
 }
 
-export default connect(mapStateToProps, { deleteLine, selectLine, hoverLine })(
-  Dialogue
-);
+export default connect(mapStateToProps, {
+  startConnectionSelection,
+  deleteLine,
+  selectLine,
+  clearLineSelection,
+  hoverLine
+})(Dialogue);

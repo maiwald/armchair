@@ -7,7 +7,7 @@ declare type State = {|
 declare type DialogueState = {
   selectedLineId: ?number,
   hoveredLineId: ?number,
-  isInSelectionMode: boolean,
+  nodeConnectionStart: ?number,
   lines: Line[],
   connections: Connection[]
 };

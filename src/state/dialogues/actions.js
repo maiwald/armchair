@@ -4,17 +4,18 @@ import { isInSelectionMode } from "state/dialogues/selectors";
 
 import {
   SELECT_LINE,
+  CLEAR_LINE_SELECTION,
   HOVER_LINE,
-  SET_MODAL_SELECTION,
+  START_CONNECTION_SELECTION,
   DELETE_LINE,
   UPDATE_LINE,
   CREATE_LINE
 } from "state/action_types";
 
-export function setSelectionMode(value: boolean): Action {
+export function startConnectionSelection(lineId: number): Action {
   return {
-    type: SET_MODAL_SELECTION,
-    payload: value
+    type: START_CONNECTION_SELECTION,
+    payload: lineId
   };
 }
 
@@ -22,6 +23,13 @@ export function selectLine(lineId: ?number): Action {
   return {
     type: SELECT_LINE,
     payload: { lineId }
+  };
+}
+
+export function clearLineSelection(): Action {
+  return {
+    type: CLEAR_LINE_SELECTION,
+    payload: null
   };
 }
 

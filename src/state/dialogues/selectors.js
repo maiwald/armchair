@@ -1,5 +1,5 @@
 // @flow
-import { isNull } from "lodash";
+import { isUndefined, isNull } from "lodash";
 import getLevels from "./level_helper";
 
 export function getDialogue(state: State): DialogueState {
@@ -16,7 +16,7 @@ export function hasSelectedLine(state: State): boolean {
 }
 
 export function isInSelectionMode(state: State): boolean {
-  return getDialogue(state).isInSelectionMode;
+  return !isUndefined(getDialogue(state).nodeConnectionStart);
 }
 
 export function getSelectedLineId(state: State): ?number {

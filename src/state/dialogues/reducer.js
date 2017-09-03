@@ -1,10 +1,19 @@
 // @flow
-import { isUndefined, without, max } from "lodash";
+import {
+  find,
+  includes,
+  isUndefined,
+  max,
+  pick,
+  reject,
+  without
+} from "lodash";
 
 import {
   SELECT_LINE,
+  CLEAR_LINE_SELECTION,
   HOVER_LINE,
-  SET_MODAL_SELECTION,
+  START_CONNECTION_SELECTION,
   DELETE_LINE,
   UPDATE_LINE,
   CREATE_LINE,
@@ -14,7 +23,7 @@ import {
 const initialState: DialogueState = {
   selectedLineId: undefined,
   hoveredLineId: undefined,
-  isInSelectionMode: false,
+  nodeConnectionStart: undefined,
   lines: [
     { id: 1, characterId: 1, text: "Hey, who are you?" },
     { id: 2, characterId: 2, text: "I could ask you the same." },
@@ -40,6 +49,18 @@ const initialState: DialogueState = {
   ]
 };
 
+function isValidNewConnection(
+  state: DialogueState,
+  { from, to }: { from: number, to: number }
+): boolean {
+  if (from == to) {
+    return false;
+  } else {
+    const res = find(state.connections, c => c.from == from && c.to == to);
+    return typeof res == "undefined";
+  }
+}
+
 function getNextLineId(state: DialogueState): number {
   return max(state.lines.map(l => l.id)) + 1;
 }
@@ -59,6 +80,10 @@ function getLine(state: DialogueState, lineId: number): Line {
 
 function getLineIndex(state: DialogueState, lineId: number): number {
   return state.lines.findIndex(l => l.id == lineId);
+}
+
+export function isInSelectionMode(state: DialogueState): boolean {
+  return !isUndefined(state.nodeConnectionStart);
 }
 
 export default function reducer(
@@ -95,12 +120,12 @@ export default function reducer(
       return {
         ...state,
         selectedLineId:
-          state.selectedLineId == lineId ? null : state.selectedLineId,
+          state.selectedLineId == lineId ? undefined : state.selectedLineId,
         hoveredLineId:
-          state.hoveredLineId == lineId ? null : state.hoveredLineId,
+          state.hoveredLineId == lineId ? undefined : state.hoveredLineId,
         lines: without(state.lines, getLine(state, lineId)),
-        connections: state.connections.filter(c => {
-          return ![c.from, c.to].includes(lineId);
+        connections: reject(state.connections, c => {
+          return [c.from, c.to].includes(lineId);
         })
       };
     }
@@ -108,24 +133,19 @@ export default function reducer(
     case SELECT_LINE: {
       const { lineId } = payload;
 
-      if (typeof state.selectedLineId == "number" && state.isInSelectionMode) {
-        const from: number = state.selectedLineId;
+      if (typeof state.nodeConnectionStart == "number") {
+        const from: number = state.nodeConnectionStart;
+        const connectionData = { from: from, to: lineId };
 
-        if (typeof lineId == "undefined") {
+        if (!isValidNewConnection(state, connectionData)) {
           return state;
-        }
-
-        if (typeof state.selectedLineId == "number") {
+        } else {
           return {
             ...state,
-            isInSelectionMode: false,
+            nodeConnectionStart: undefined,
             connections: [
               ...state.connections,
-              {
-                id: getNextConnectionId(state),
-                from: from,
-                to: lineId
-              }
+              { ...connectionData, id: getNextConnectionId(state) }
             ]
           };
         }
@@ -134,24 +154,34 @@ export default function reducer(
       }
     }
 
+    case CLEAR_LINE_SELECTION: {
+      return { ...state, selectedLineId: undefined };
+    }
+
     case HOVER_LINE: {
       const { lineId } = payload;
 
-      if (state.isInSelectionMode) {
+      if (typeof state.nodeConnectionStart == "number") {
         return state;
       } else {
         return { ...state, hoveredLineId: lineId };
       }
     }
 
-    case SET_MODAL_SELECTION: {
-      return { ...state, isInSelectionMode: payload };
+    case PRESS_ESCAPE: {
+      return {
+        ...state,
+        selectedLineId: undefined,
+        nodeConnectionStart: undefined
+      };
     }
 
-    case PRESS_ESCAPE: {
-      return state.isInSelectionMode
-        ? { ...state, isInSelectionMode: false }
-        : state;
+    case START_CONNECTION_SELECTION: {
+      return {
+        ...state,
+        nodeConnectionStart: payload,
+        hoveredLineId: undefined
+      };
     }
 
     default: {
