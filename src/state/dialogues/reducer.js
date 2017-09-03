@@ -1,5 +1,5 @@
-import { Map, fromJS } from "immutable";
-import { isUndefined } from "lodash";
+// @flow
+import { isUndefined, without, max } from "lodash";
 
 import {
   SELECT_LINE,
@@ -11,7 +11,7 @@ import {
   PRESS_ESCAPE
 } from "state/action_types";
 
-const initialState = fromJS({
+const initialState: DialogueState = {
   selectedLineId: undefined,
   hoveredLineId: undefined,
   isInSelectionMode: false,
@@ -38,111 +38,119 @@ const initialState = fromJS({
     { id: 9, from: 3, to: 7 },
     { id: 10, from: 7, to: 9 }
   ]
-});
+};
 
-function getNextLineId(state) {
-  return (
-    state
-      .get("lines")
-      .map(c => c.get("id"))
-      .max() + 1
-  );
-}
-function getNextConnectionId(state) {
-  return (
-    state
-      .get("connections")
-      .map(l => l.get("id"))
-      .max() + 1
-  );
+function getNextLineId(state: DialogueState): number {
+  return max(state.lines.map(l => l.id)) + 1;
 }
 
-function getLineIndex(state, lineId) {
-  return state.get("lines").findIndex(line => {
-    return line.get("id") == lineId;
-  });
+function getNextConnectionId(state: DialogueState): number {
+  return max(state.connections.map(c => c.id)) + 1;
 }
 
-export default function reducer(state = initialState, { type, payload }) {
+function getLine(state: DialogueState, lineId: number): Line {
+  const line = state.lines.find(l => l.id == lineId);
+  if (typeof line == "undefined") {
+    throw new Error(`Cannot find line with ID ${lineId}`);
+  } else {
+    return line;
+  }
+}
+
+function getLineIndex(state: DialogueState, lineId: number): number {
+  return state.lines.findIndex(l => l.id == lineId);
+}
+
+export default function reducer(
+  state: DialogueState = initialState,
+  { type, payload }: Action
+): DialogueState {
   switch (type) {
     case CREATE_LINE: {
       const { lineData } = payload;
       const lineId = getNextLineId(state);
-      const line = fromJS(lineData).set("id", lineId);
+      const line = { ...lineData, id: lineId };
 
-      return state
-        .update("lines", lines => lines.push(line))
-        .set("selectedLineId", lineId);
+      return {
+        ...state,
+        lines: [...state["lines"], line],
+        selectedLineId: lineId
+      };
     }
 
     case UPDATE_LINE: {
       const { lineId, lineData } = payload;
-      const line = fromJS(lineData).set("id", lineId);
+      const line = { ...lineData, id: lineId };
 
-      return state
-        .setIn(["lines", getLineIndex(state, lineId)], line)
-        .set("selectedLineId", lineId);
+      return {
+        ...state,
+        lines: [...without(state.lines, getLine(state, lineId)), line],
+        selectedLineId: lineId
+      };
     }
 
     case DELETE_LINE: {
       const { lineId } = payload;
 
-      return state
-        .update("selectedLineId", id => {
-          return id == lineId ? null : id;
+      return {
+        ...state,
+        selectedLineId:
+          state.selectedLineId == lineId ? null : state.selectedLineId,
+        hoveredLineId:
+          state.hoveredLineId == lineId ? null : state.hoveredLineId,
+        lines: without(state.lines, getLine(state, lineId)),
+        connections: state.connections.filter(c => {
+          return ![c.from, c.to].includes(lineId);
         })
-        .update("hoveredLineId", id => {
-          return id == lineId ? null : id;
-        })
-        .update("lines", lines => lines.delete(getLineIndex(state, lineId)))
-        .update("connections", connections => {
-          return connections.filterNot(c => {
-            return c.get("from") == lineId || c.get("to") == lineId;
-          });
-        });
+      };
     }
 
     case SELECT_LINE: {
       const { lineId } = payload;
 
-      if (state.get("isInSelectionMode")) {
-        if (isUndefined(lineId)) {
+      if (typeof state.selectedLineId == "number" && state.isInSelectionMode) {
+        const from: number = state.selectedLineId;
+
+        if (typeof lineId == "undefined") {
           return state;
         }
 
-        return state
-          .set("isInSelectionMode", false)
-          .update("connections", connections => {
-            return connections.push(
-              Map({
+        if (typeof state.selectedLineId == "number") {
+          return {
+            ...state,
+            isInSelectionMode: false,
+            connections: [
+              ...state.connections,
+              {
                 id: getNextConnectionId(state),
-                from: state.get("selectedLineId"),
+                from: from,
                 to: lineId
-              })
-            );
-          });
+              }
+            ]
+          };
+        }
       } else {
-        return state.set("selectedLineId", lineId);
+        return { ...state, selectedLineId: lineId };
       }
     }
 
     case HOVER_LINE: {
       const { lineId } = payload;
 
-      if (state.get("isInSelectionMode")) {
+      if (state.isInSelectionMode) {
         return state;
       } else {
-        return state.set("hoveredLineId", lineId);
+        return { ...state, hoveredLineId: lineId };
       }
     }
 
     case SET_MODAL_SELECTION: {
-      return state.set("isInSelectionMode", payload);
+      return { ...state, isInSelectionMode: payload };
     }
 
     case PRESS_ESCAPE: {
-      return state.get("isInSelectionMode")
-        ? state.set("isInSelectionMode", false)
+      return state.isInSelectionMode
+        ? { ...state, isInSelectionMode: false }
         : state;
     }
 

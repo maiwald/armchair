@@ -1,29 +1,27 @@
-import { Map, fromJS } from "immutable";
-
+// @flow
+import { max } from "lodash";
 import { RESET_CHARACTERS, CREATE_CHARACTER } from "state/action_types";
 
-const initialState = fromJS([
+const initialState: CharacterState = [
   { id: 1, name: "Hugo" },
   { id: 2, name: "Player" },
   { id: 3, name: "Dende" }
-]);
+];
 
-function getNextCharacterId(state) {
-  return state.map(c => c.get("id")).max() + 1;
+function getNextCharacterId(state: CharacterState): number {
+  return max(state.map(c => c.id)) + 1;
 }
 
 export default function characterReducer(
-  state = initialState,
-  { type, payload }
-) {
+  state: CharacterState = initialState,
+  { type, payload }: Action
+): CharacterState {
   switch (type) {
     case RESET_CHARACTERS:
-      return fromJS(payload.characters);
+      return payload.characters;
 
     case CREATE_CHARACTER:
-      return state.push(
-        new Map({ id: getNextCharacterId(state), name: payload.name })
-      );
+      return [...state, { id: getNextCharacterId(state), name: payload.name }];
 
     default:
       return state;

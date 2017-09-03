@@ -1,72 +1,60 @@
 // @flow
-import { map, isNull } from "lodash";
-import { Map } from "immutable";
+import { isNull } from "lodash";
 import getLevels from "./level_helper";
 
-export function getDialogue(state: any) {
-  return state.get("dialogue");
+export function getDialogue(state: State): DialogueState {
+  return state.dialogue;
 }
 
-function getLine(state, id) {
-  if (isNull(id)) return undefined;
-
-  return getDialogue(state)
-    .get("lines")
-    .find(line => line.get("id") == id);
+function getLine(state: State, lineId: ?number): ?Line {
+  if (isNull(lineId)) return undefined;
+  return getDialogue(state).lines.find(l => l.id == lineId);
 }
 
-export function getEmptyLine() {
-  return Map({ id: undefined, characterId: undefined, text: "" });
+export function hasSelectedLine(state: State): boolean {
+  return typeof getDialogue(state).selectedLineId == "number";
 }
 
-export function hasSelectedLine(state: any): boolean {
-  return getDialogue(state).get("selectedLineId") != null;
+export function isInSelectionMode(state: State): boolean {
+  return getDialogue(state).isInSelectionMode;
 }
 
-export function isInSelectionMode(state: any): boolean {
-  return getDialogue(state).get("isInSelectionMode");
+export function getSelectedLineId(state: State): ?number {
+  return getDialogue(state).selectedLineId;
 }
 
-export function getSelectedLineId(state: any): ?number {
-  return getDialogue(state).get("selectedLineId");
+export function getHoveredLineId(state: State): ?number {
+  return getDialogue(state).hoveredLineId;
 }
 
-export function getHoveredLineId(state: any): ?number {
-  return getDialogue(state).get("hoveredLineId");
-}
-
-export function getSelectedLine(state: any) {
+export function getSelectedLine(state: State) {
   return getLine(state, getSelectedLineId(state));
 }
 
-export function getDialogueNodes(state: any): DialogueNode[] {
+export function getDialogueNodes(state: State): DialogueNode[] {
   const dialogue = getDialogue(state);
-  const lines = dialogue.get("lines");
-  const connections = dialogue.get("connections");
+  const lines = dialogue.lines;
+  const connections = dialogue.connections;
   const levels = getLevels(lines, connections);
 
-  return lines
-    .map(l => {
-      return {
-        id: l.get("id"),
-        label: l.get("text"),
-        group: l.get("characterId"),
-        level: levels.get(l.get("id"))
-      };
-    })
-    .toJS();
+  return lines.map(l => {
+    return {
+      id: l.id.toString(),
+      label: l.text,
+      group: l.characterId.toString(),
+      level: levels[l.id]
+    };
+  });
 }
 
-export function getDialogueEdges(state: any): DialogueEdge[] {
+export function getDialogueEdges(state: State): DialogueEdge[] {
   const dialogue = getDialogue(state);
-  const connections = dialogue.get("connections");
-  return connections
-    .map(c => {
-      return {
-        id: c.get("id"),
-        from: c.get("from"),
-        to: c.get("to")
-      };
-    })
-    .toJS();
+  const connections = dialogue.connections;
+  return connections.map(c => {
+    return {
+      id: c.id.toString(),
+      from: c.from.toString(),
+      to: c.to.toString()
+    };
+  });
 }

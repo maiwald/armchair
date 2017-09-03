@@ -10,7 +10,7 @@ import {
   getHoveredLineId,
   isInSelectionMode
 } from "state/dialogues/selectors";
-import { compact, isUndefined, isEqual, isNull, mapValues } from "lodash";
+import { isUndefined, compact, isEqual, isNull, mapValues } from "lodash";
 import styles from "./styles.scss";
 import VIS_NETWORK_OPTIONS from "./vis_network_options.json";
 
@@ -23,9 +23,9 @@ type ValueProps = {
 };
 
 type DispatchProps = {
-  deleteLine: (nodeId: ?number) => void,
-  hoverLine: (nodeId: ?number) => void,
-  selectLine: (nodeId: ?number) => void
+  deleteLine: (?number) => void,
+  hoverLine: (?number) => void,
+  selectLine: (?number) => void
 };
 
 type Props = ValueProps & DispatchProps;

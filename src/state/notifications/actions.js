@@ -1,6 +1,7 @@
+// @flow
 import { PUSH_NOTICE, POP_NOTICE, PRESS_ESCAPE } from "state/action_types";
 
-function showNotice(notice) {
+function showNotice(notice: string): Action {
   return {
     type: PUSH_NOTICE,
     payload: {
@@ -9,19 +10,21 @@ function showNotice(notice) {
   };
 }
 
-function hideNotice() {
+function hideNotice(): Action {
   return {
-    type: POP_NOTICE
+    type: POP_NOTICE,
+    payload: null
   };
 }
 
-export function pressEscape() {
+export function pressEscape(): Action {
   return {
-    type: PRESS_ESCAPE
+    type: PRESS_ESCAPE,
+    payload: null
   };
 }
 
-export function showTimedNotice(notice) {
+export function showTimedNotice(notice: string): ActionThunk {
   return dispatch => {
     dispatch(showNotice(notice));
     setTimeout(() => dispatch(hideNotice()), 4000);

@@ -1,28 +1,46 @@
 // @flow
-
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import { isEqual, isInteger, pick } from "lodash";
-import {
-  createLine,
-  updateLine,
-  setSelectionMode
-} from "state/dialogues/actions";
-import { getEmptyLine, getSelectedLine } from "state/dialogues/selectors";
+import { isUndefined, isEqual, isInteger, pick } from "lodash";
+import typeof { updateLine } from "state/dialogues/actions";
+import { getSelectedLine } from "state/dialogues/selectors";
 import { getSortedCharacters } from "state/characters/selectors";
 import styles from "./styles.scss";
 
-function handleStateUpdate(self, name) {
-  return e => {
+function handleStateUpdate(self: LineForm, name: string) {
+  return (e: SyntheticInputEvent) => {
     const value = e.target.value;
     self.setState({ [name]: value });
   };
 }
 
-class LineForm extends Component {
-  state: any;
+type ValueProps = {
+  characters: Character[],
+  initialValues: {
+    text: string,
+    characterId: number
+  },
+  lineId: number
+};
 
-  constructor(props) {
+type DispatchProps = {
+  handleSubmit: updateLine
+};
+
+type Props = ValueProps & DispatchProps;
+
+export default class LineForm extends Component {
+  state: {
+    text: string,
+    characterId: number,
+    initialValues: {
+      text: string,
+      characterId: number
+    }
+  };
+  props: Props;
+
+  constructor(props: Props) {
     super(props);
 
     this.state = {
@@ -31,14 +49,14 @@ class LineForm extends Component {
     };
   }
 
-  componentWillReceiveProps({ initialValues }) {
+  componentWillReceiveProps({ initialValues }: Props) {
     if (!isEqual(this.props.initialValues, initialValues)) {
       this.setState({ ...initialValues, initialValues });
     }
   }
 
   render() {
-    const { lineId, setSelectionMode } = this.props;
+    const { lineId } = this.props;
     const pristine = this.isPristine();
 
     return (
@@ -85,8 +103,8 @@ class LineForm extends Component {
   getCharacterOptions() {
     return this.props.characters.map(c => {
       return (
-        <option key={c.get("id")} value={c.get("id")}>
-          {c.get("name")}
+        <option key={c.id} value={c.id}>
+          {c.name}
         </option>
       );
     });
@@ -104,35 +122,12 @@ class LineForm extends Component {
     return pick(this.state, ["characterId", "text"]);
   }
 
-  onSubmit(e) {
+  onSubmit(e: SyntheticEvent) {
     e.preventDefault();
 
-    const { lineId, createLine, updateLine } = this.props;
+    const { lineId, handleSubmit } = this.props;
     const data = this.getLineData();
 
-    if (isInteger(lineId)) {
-      updateLine(lineId, data);
-    } else {
-      createLine(data);
-    }
+    handleSubmit(lineId, data);
   }
 }
-
-function mapStateToProps(state) {
-  const line = getSelectedLine(state) || getEmptyLine();
-
-  return {
-    characters: getSortedCharacters(state),
-    initialValues: {
-      text: line.get("text"),
-      characterId: line.get("characterId")
-    },
-    lineId: line.get("id")
-  };
-}
-
-export default connect(mapStateToProps, {
-  createLine,
-  updateLine,
-  setSelectionMode
-})(LineForm);

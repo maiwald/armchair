@@ -1,53 +1,49 @@
-import { List, Map } from "immutable";
+// @flow
+import { isEmpty, without } from "lodash";
 
-export default function getLevels(lines, connections) {
-  let levels = resolveDependencies(
-    lines.map(l => l.get("id")).toSet(),
-    undefined,
-    connections
-  );
+export default function getLevels(lines: Line[], connections: Connection[]) {
+  const levels = resolveDependencies(lines.map(l => l.id), [], connections);
 
   return lines.reduce((memo, l) => {
-    return memo.set(
-      l.get("id"),
-      levels.findIndex(deps => {
-        return deps.contains(l.get("id"));
-      })
-    );
-  }, Map());
+    memo[l.id] = levels.findIndex(deps => {
+      return deps.includes(l.id);
+    });
+    return memo;
+  }, {});
 }
 
 function resolveDependencies(
-  unresolvedIds,
-  resolvedIds = new List(),
-  connections
+  unresolvedIds: number[],
+  resolvedIds: number[][],
+  connections: Connection[]
 ) {
-  if (unresolvedIds.isEmpty()) {
+  if (isEmpty(unresolvedIds)) {
     return resolvedIds;
   } else {
     const resolvableIds = unresolvedIds.filter(lineId => {
-      return getLineDependencies(connections, lineId).isSubset(
-        resolvedIds.flatten()
-      );
+      const dependencies = getLineDependencies(connections, lineId);
+      return dependencies.every(dependencyId => {
+        return resolvedIds.some(ids => ids.includes(dependencyId));
+      });
     });
 
-    if (resolvableIds.isEmpty()) {
+    if (isEmpty(resolvableIds)) {
       throw new Error(
         "cannot calculate line levels because of cyclic dependency!"
       );
     }
 
     return resolveDependencies(
-      unresolvedIds.subtract(resolvableIds),
-      resolvedIds.push(resolvableIds),
+      without(unresolvedIds, ...resolvableIds),
+      resolvedIds.concat([resolvableIds]),
       connections
     );
   }
 }
 
-function getLineDependencies(connections, lineId) {
-  return connections
-    .filter(c => c.get("to") == lineId)
-    .map(c => c.get("from"))
-    .toSet();
+function getLineDependencies(
+  connections: Connection[],
+  lineId: number
+): number[] {
+  return connections.filter(c => c.to == lineId).map(c => c.from);
 }

@@ -1,40 +1,62 @@
-import React from "react";
+// @flow
+import React, { Component } from "react";
 import { connect } from "react-redux";
 import Characters from "components/characters/component";
+import { createLine, updateLine } from "state/dialogues/actions";
 import Dialogue from "components/dialogue/component";
 import LineForm from "components/line_form/component";
 import Notifications from "components/notifications/component";
-import { hasSelectedLine } from "state/dialogues/selectors";
+import { getSelectedLine } from "state/dialogues/selectors";
+import { getSortedCharacters } from "state/characters/selectors";
 import styles from "./styles.css";
 
-function Editor(props) {
-  const formComponent = props.hasSelectedLine ? <LineForm /> : null;
-
-  return (
-    <div>
-      <div className={styles.notifications}>
-        <Notifications />
-      </div>
-
-      <div className={styles.menu}>
-        <Characters />
-      </div>
-
-      <div className={styles.container}>
-        <div className={styles.canvas}>
-          <Dialogue />
+class Editor extends Component {
+  render() {
+    return (
+      <div>
+        <div className={styles.notifications}>
+          <Notifications />
         </div>
 
-        <div className={styles.form}>{formComponent}</div>
+        <div className={styles.menu}>
+          <Characters />
+        </div>
+
+        <div className={styles.container}>
+          <div className={styles.canvas}>
+            <Dialogue />
+          </div>
+
+          <div className={styles.form}>{this.getLineForm()}</div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  getLineForm() {
+    const { selectedLine: line } = this.props;
+
+    if (line != null) {
+      return (
+        <LineForm
+          characters={this.props.characters}
+          handleSubmit={this.props.updateLine}
+          lineId={line.id}
+          initialValues={{
+            text: line.text,
+            characterId: line.characterId
+          }}
+        />
+      );
+    }
+  }
 }
 
 function mapStateToProps(state) {
   return {
-    hasSelectedLine: hasSelectedLine(state)
+    characters: getSortedCharacters(state),
+    selectedLine: getSelectedLine(state)
   };
 }
 
-export default connect(mapStateToProps)(Editor);
+export default connect(mapStateToProps, { createLine, updateLine })(Editor);

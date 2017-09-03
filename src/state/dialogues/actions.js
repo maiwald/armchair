@@ -1,6 +1,5 @@
 // @flow
-import { isEmpty, trim, toInteger, isUndefined } from "lodash";
-import { fromJS } from "immutable";
+import { trim, toInteger, isUndefined } from "lodash";
 import { isInSelectionMode } from "state/dialogues/selectors";
 
 import {
@@ -12,28 +11,28 @@ import {
   CREATE_LINE
 } from "state/action_types";
 
-export function setSelectionMode(value: boolean) {
+export function setSelectionMode(value: boolean): Action {
   return {
     type: SET_MODAL_SELECTION,
     payload: value
   };
 }
 
-export function selectLine(lineId: ?number) {
+export function selectLine(lineId: ?number): Action {
   return {
     type: SELECT_LINE,
     payload: { lineId }
   };
 }
 
-export function hoverLine(lineId: ?number) {
+export function hoverLine(lineId: ?number): Action {
   return {
     type: HOVER_LINE,
     payload: { lineId }
   };
 }
 
-export function deleteLine(lineId: number) {
+export function deleteLine(lineId: number): ?Action {
   if (confirm(`Do you really want to delete line ${lineId}?`)) {
     return {
       type: DELETE_LINE,
@@ -42,7 +41,7 @@ export function deleteLine(lineId: number) {
   }
 }
 
-export function updateLine(lineId: number, lineData: any) {
+export function updateLine(lineId: number, lineData: any): Action {
   return {
     type: UPDATE_LINE,
     payload: { lineId, lineData },
@@ -52,14 +51,14 @@ export function updateLine(lineId: number, lineData: any) {
         msg: "Line must have a character!"
       },
       {
-        fn: () => !isEmpty(lineData["text"]),
+        fn: () => lineData["text"].length != 0,
         msg: "Line must have text!"
       }
     ]
   };
 }
 
-export function createLine(lineData: any) {
+export function createLine(lineData: any): Action {
   return {
     type: CREATE_LINE,
     payload: { lineData },
@@ -69,7 +68,7 @@ export function createLine(lineData: any) {
         msg: "Line must have a character!"
       },
       {
-        fn: () => !isEmpty(lineData["text"]),
+        fn: () => lineData["text"].length != 0,
         msg: "Line must have text!"
       }
     ]

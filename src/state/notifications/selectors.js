@@ -1,3 +1,5 @@
-export function getNotifications(state) {
-  return state.getIn(["ui", "notifications"]);
+// @flow
+
+export function getNotifications(state: State) {
+  return state.ui.notifications;
 }

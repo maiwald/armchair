@@ -1,9 +1,10 @@
+// @flow
 import { isEmpty, trim } from "lodash";
 import { showTimedNotice } from "state/notifications/actions";
 import { getCharacterNames } from "state/characters/selectors";
 import { RESET_CHARACTERS, CREATE_CHARACTER } from "state/action_types";
 
-export function resetCharacters(characters) {
+export function resetCharacters(characters: Character[]) {
   return {
     type: RESET_CHARACTERS,
     payload: {
@@ -12,7 +13,7 @@ export function resetCharacters(characters) {
   };
 }
 
-export function createCharacter(name) {
+export function createCharacter(name: string) {
   const sanitizedName = trim(name);
 
   return {
@@ -22,7 +23,7 @@ export function createCharacter(name) {
     },
     validations: [
       {
-        fn: state => !getCharacterNames(state).includes(sanitizedName),
+        fn: (state: State) => !getCharacterNames(state).includes(sanitizedName),
         msg: `Character '${sanitizedName}' already exists!`
       },
       {
