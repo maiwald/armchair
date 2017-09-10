@@ -2,14 +2,14 @@
 import { drop } from "lodash";
 import { PUSH_NOTICE, POP_NOTICE } from "state/action_types";
 
-const initialState: NotificationState = {
+const initialState: UiState = {
   notifications: []
 };
 
 export default function reducer(
-  state: NotificationState = initialState,
+  state: UiState = initialState,
   { type, payload }: Action
-): NotificationState {
+): UiState {
   switch (type) {
     case PUSH_NOTICE:
       return {

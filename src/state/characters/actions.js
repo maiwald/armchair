@@ -1,6 +1,6 @@
 // @flow
 import { isEmpty, trim } from "lodash";
-import { showTimedNotice } from "state/notifications/actions";
+import { showTimedNotice } from "state/ui/actions";
 import { getCharacterNames } from "state/characters/selectors";
 import { RESET_CHARACTERS, CREATE_CHARACTER } from "state/action_types";
 

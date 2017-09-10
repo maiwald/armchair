@@ -1,7 +1,7 @@
 declare type State = {|
   dialogue: DialogueState,
   characters: CharacterState,
-  ui: NotificationState
+  ui: UiState
 |};
 
 declare type DialogueState = {
@@ -31,7 +31,7 @@ declare type Character = {|
   name: string
 |};
 
-declare type NotificationState = {
+declare type UiState = {
   notifications: Notification[]
 };
 

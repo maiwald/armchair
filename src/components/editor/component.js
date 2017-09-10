@@ -5,7 +5,7 @@ import Characters from "components/characters/component";
 import { createLine, updateLine } from "state/dialogues/actions";
 import Dialogue from "components/dialogue/component";
 import LineForm from "components/line_form/component";
-import Notifications from "components/notifications/component";
+import Notifications from "./notifications";
 import { getSelectedLine } from "state/dialogues/selectors";
 import { getSortedCharacters } from "state/characters/selectors";
 import styles from "./styles.css";

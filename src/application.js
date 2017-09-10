@@ -5,7 +5,7 @@ import store from "state/store";
 import Editor from "components/editor/component";
 import styles from "./application.scss";
 
-import { pressEscape } from "state/notifications/actions";
+import { pressEscape } from "state/ui/actions";
 
 // hotkey binding
 document.addEventListener("keydown", ({ keyCode }) => {

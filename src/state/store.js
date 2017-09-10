@@ -1,7 +1,7 @@
 import characterReducer from "state/characters/reducer";
 import dialogueReducer from "state/dialogues/reducer";
 import thunk from "redux-thunk";
-import uiReducer from "state/notifications/reducer";
+import uiReducer from "state/ui/reducer";
 import validationMiddleware from "state/middlewares/validation";
 import { createStore, applyMiddleware, combineReducers } from "redux";
 

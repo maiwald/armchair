@@ -1,7 +1,7 @@
 // @flow
 import React from "react";
 import { connect } from "react-redux";
-import { getNotifications } from "state/notifications/selectors";
+import { getNotifications } from "state/ui/selectors";
 import { isEmpty } from "lodash";
 
 function Notifications({ notifications }: { notifications: Notification[] }) {

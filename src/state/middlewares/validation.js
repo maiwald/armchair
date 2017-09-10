@@ -1,5 +1,5 @@
 import { each, isEmpty, reject } from "lodash";
-import { showTimedNotice } from "state/notifications/actions";
+import { showTimedNotice } from "state/ui/actions";
 
 export default ({ dispatch, getState }) => next => action => {
   const failures = reject(action.validations || [], ({ fn }) => fn(getState()));
