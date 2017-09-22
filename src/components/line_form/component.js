@@ -1,7 +1,14 @@
 // @flow
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import { isUndefined, isEqual, isInteger, pick } from "lodash";
+import {
+  isEmpty,
+  includes,
+  isUndefined,
+  isEqual,
+  isInteger,
+  pick
+} from "lodash";
 import typeof { updateLine } from "state/dialogues/actions";
 import { getSelectedLine } from "state/dialogues/selectors";
 import { getSortedCharacters } from "state/characters/selectors";
@@ -12,6 +19,13 @@ function handleInputChange(self: LineForm, name: string) {
     const value = e.target.value;
     self.setState({ [name]: value });
   };
+}
+
+function isValidLineData(characters: Character[], lineData: LineData): boolean {
+  return (
+    includes(characters.map(c => c.id), lineData.characterId) &&
+    !isEmpty(lineData.text)
+  );
 }
 
 function getLineData(line: ?Line | State): LineData {
@@ -128,7 +142,11 @@ class LineForm extends Component<ComponentProps, State> {
 
   handleSubmit(e: SyntheticEvent<>) {
     e.preventDefault();
-    this.props.onSubmit(getLineData(this.state));
+
+    const lineData = getLineData(this.state);
+    if (isValidLineData(this.props.characters, lineData)) {
+      this.props.onSubmit(lineData);
+    }
   }
 }
 
