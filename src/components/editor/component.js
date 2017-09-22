@@ -61,7 +61,14 @@ class Editor extends Component<Props, State> {
     const { selectedLine: line } = this.props;
 
     if (line != null) {
-      return <LineForm onSubmit={this.props.updateLine} line={line} />;
+      return (
+        <LineForm
+          onSubmit={(lineData: LineData) => {
+            this.props.updateLine(line.id, lineData);
+          }}
+          line={line}
+        />
+      );
     } else {
       return <a onClick={this.showLineCreationModal.bind(this)}>New Line</a>;
     }
