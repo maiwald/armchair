@@ -8,20 +8,17 @@ type Props = {
   createCharacter: createCharacter
 };
 
-export default class Form extends Component {
-  state: { name: string };
-  props: Props;
-
+export default class Form extends Component<Props, { name: string }> {
   constructor(props: Props) {
     super(props);
     this.state = { name: "" };
   }
 
-  handleChange(event: SyntheticInputEvent) {
+  handleChange(event: SyntheticInputEvent<>) {
     this.setState({ name: event.target.value });
   }
 
-  handleSubmit(event: SyntheticEvent) {
+  handleSubmit(event: SyntheticEvent<>) {
     event.preventDefault();
     this.props.createCharacter(this.state.name);
   }

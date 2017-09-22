@@ -8,12 +8,36 @@ import LineForm from "components/line_form/component";
 import Notifications from "./notifications";
 import { getSelectedLine } from "state/dialogues/selectors";
 import { getSortedCharacters } from "state/characters/selectors";
-import styles from "./styles.css";
+import styles from "./styles.scss";
 
-class Editor extends Component {
+type Props = {
+  selectedLine: ?Line,
+  createLine: typeof createLine,
+  updateLine: typeof updateLine
+};
+
+type State = {
+  showLineCreationModal: boolean
+};
+
+class Editor extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { showLineCreationModal: false };
+  }
+
+  showLineCreationModal() {
+    this.setState({ showLineCreationModal: true });
+  }
+
+  hideLineCreationModal() {
+    this.setState({ showLineCreationModal: false });
+  }
+
   render() {
     return (
       <div>
+        {this.getLineCreationModal()}
         <div className={styles.notifications}>
           <Notifications />
         </div>
@@ -37,16 +61,27 @@ class Editor extends Component {
     const { selectedLine: line } = this.props;
 
     if (line != null) {
+      return <LineForm onSubmit={this.props.updateLine} line={line} />;
+    } else {
+      return <a onClick={this.showLineCreationModal.bind(this)}>New Line</a>;
+    }
+  }
+
+  getLineCreationModal() {
+    if (this.state.showLineCreationModal) {
       return (
-        <LineForm
-          characters={this.props.characters}
-          handleSubmit={this.props.updateLine}
-          lineId={line.id}
-          initialValues={{
-            text: line.text,
-            characterId: line.characterId
-          }}
-        />
+        <div className={styles.modal}>
+          <div>
+            <LineForm
+              onSubmit={(lineData: LineData) => {
+                this.props.createLine(lineData);
+                this.hideLineCreationModal();
+              }}
+              onCancel={this.hideLineCreationModal.bind(this)}
+              line={null}
+            />
+          </div>
+        </div>
       );
     }
   }
@@ -54,9 +89,11 @@ class Editor extends Component {
 
 function mapStateToProps(state) {
   return {
-    characters: getSortedCharacters(state),
     selectedLine: getSelectedLine(state)
   };
 }
 
-export default connect(mapStateToProps, { createLine, updateLine })(Editor);
+export default connect(mapStateToProps, {
+  createLine,
+  updateLine
+})(Editor);

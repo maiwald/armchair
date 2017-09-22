@@ -16,7 +16,7 @@ export default function reducer(
         ...state,
         notifications: [
           ...state.notifications,
-          { id: Date.now(), text: payload.notice }
+          { id: new Date(), text: payload.notice }
         ]
       };
 

@@ -1,4 +1,4 @@
-declare type State = {|
+declare type ApplicationState = {|
   dialogue: DialogueState,
   characters: CharacterState,
   ui: UiState
@@ -24,6 +24,11 @@ declare type Line = {|
   text: string
 |};
 
+declare type LineData = {
+  characterId: ?number,
+  text: string
+};
+
 declare type CharacterState = Character[];
 
 declare type Character = {|
@@ -36,7 +41,7 @@ declare type UiState = {
 };
 
 declare type Notification = {|
-  id: date,
+  id: Date,
   text: string
 |};
 

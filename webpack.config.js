@@ -1,6 +1,7 @@
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const FlowWebpackPlugin = require("flow-webpack-plugin");
+
 const sourceDir = __dirname + "/src";
-const FlowBabelWebpackPlugin = require("flow-babel-webpack-plugin");
 
 module.exports = {
   context: sourceDir,
@@ -20,7 +21,7 @@ module.exports = {
         use: {
           loader: "babel-loader",
           options: {
-            presets: [["env", { modules: false }], "react"],
+            presets: [["env", { modules: false }], "react", "flow"],
             plugins: [require("babel-plugin-transform-object-rest-spread")]
           }
         }
@@ -44,5 +45,5 @@ module.exports = {
       }
     ]
   },
-  plugins: [new ExtractTextPlugin("style.css"), new FlowBabelWebpackPlugin()]
+  plugins: [new ExtractTextPlugin("style.css"), new FlowWebpackPlugin()]
 };

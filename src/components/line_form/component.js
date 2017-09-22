@@ -7,68 +7,71 @@ import { getSelectedLine } from "state/dialogues/selectors";
 import { getSortedCharacters } from "state/characters/selectors";
 import styles from "./styles.scss";
 
-function handleStateUpdate(self: LineForm, name: string) {
-  return (e: SyntheticInputEvent) => {
+function handleInputChange(self: LineForm, name: string) {
+  return (e: SyntheticInputEvent<>) => {
     const value = e.target.value;
     self.setState({ [name]: value });
   };
 }
 
-type ValueProps = {
-  characters: Character[],
-  initialValues: {
-    text: string,
-    characterId: number
-  },
-  lineId: number
-};
-
-type DispatchProps = {
-  handleSubmit: updateLine
-};
-
-type Props = ValueProps & DispatchProps;
-
-export default class LineForm extends Component {
-  state: {
-    text: string,
-    characterId: number,
-    initialValues: {
-      text: string,
-      characterId: number
-    }
-  };
-  props: Props;
-
-  constructor(props: Props) {
-    super(props);
-
-    this.state = {
-      ...props.initialValues,
-      initialValues: props.initialValues
+function getLineData(line: ?Line | State): LineData {
+  if (line) {
+    return {
+      characterId: line.characterId,
+      text: line.text
+    };
+  } else {
+    return {
+      characterId: null,
+      text: ""
     };
   }
+}
 
-  componentWillReceiveProps({ initialValues }: Props) {
-    if (!isEqual(this.props.initialValues, initialValues)) {
-      this.setState({ ...initialValues, initialValues });
+type State = LineData & {
+  initialValues: LineData
+};
+
+type ComponentProps = {
+  characters: Character[],
+  line: ?Line,
+  onCancel?: void => void,
+  onSubmit: LineData => void
+};
+
+class LineForm extends Component<ComponentProps, State> {
+  constructor(props: ComponentProps) {
+    super(props);
+
+    const lineData = getLineData(props.line);
+    this.state = { ...lineData, initialValues: lineData };
+  }
+
+  componentWillReceiveProps({ line }: ComponentProps) {
+    const lineData = getLineData(line);
+
+    if (!isEqual(getLineData(this.props.line), lineData)) {
+      this.setState({ ...lineData, initialValues: lineData });
     }
   }
 
   render() {
-    const { lineId } = this.props;
+    const { line } = this.props;
     const pristine = this.isPristine();
 
     return (
-      <form className={styles.container} onSubmit={this.onSubmit.bind(this)}>
-        <header>Line ID: {lineId}</header>
+      <form
+        className={styles.container}
+        onSubmit={this.handleSubmit.bind(this)}
+      >
+        <header>Line ID: {line ? line.id : "XXX"}</header>
 
         <div className={styles.form}>
           <section>
             <label>Character:</label>
             <select
               value={this.state.characterId || ""}
-              onChange={handleStateUpdate(this, "characterId")}
+              onChange={handleInputChange(this, "characterId")}
             >
               <option key="" />
               {this.getCharacterOptions()}
@@ -79,7 +82,7 @@ export default class LineForm extends Component {
             <label>Text:</label>
             <textarea
               value={this.state.text}
-              onChange={handleStateUpdate(this, "text")}
+              onChange={handleInputChange(this, "text")}
             />
           </section>
         </div>
@@ -90,10 +93,10 @@ export default class LineForm extends Component {
           </button>
           <button
             type="button"
-            disabled={pristine}
-            onClick={this.reset.bind(this)}
+            disabled={!this.props.onCancel && pristine}
+            onClick={this.handleCancel.bind(this)}
           >
-            Reset
+            Cancel
           </button>
         </div>
       </form>
@@ -111,23 +114,26 @@ export default class LineForm extends Component {
   }
 
   isPristine() {
-    return isEqual(this.getLineData(), this.state.initialValues);
+    return isEqual(getLineData(this.state), this.state.initialValues);
   }
 
-  reset() {
-    this.setState(this.state.initialValues);
+  handleCancel() {
+    const { onCancel } = this.props;
+    if (onCancel) {
+      onCancel();
+    } else {
+      this.setState(this.state.initialValues);
+    }
   }
 
-  getLineData() {
-    return pick(this.state, ["characterId", "text"]);
-  }
-
-  onSubmit(e: SyntheticEvent) {
+  handleSubmit(e: SyntheticEvent<>) {
     e.preventDefault();
-
-    const { lineId, handleSubmit } = this.props;
-    const data = this.getLineData();
-
-    handleSubmit(lineId, data);
+    this.props.onSubmit(getLineData(this.state));
   }
 }
+
+export default connect(state => {
+  return {
+    characters: getSortedCharacters(state)
+  };
+}, {})(LineForm);

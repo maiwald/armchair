@@ -38,9 +38,8 @@ type DispatchProps = {
 
 type Props = ValueProps & DispatchProps;
 
-class Dialogue extends Component {
+class Dialogue extends Component<Props> {
   network: any;
-  props: Props;
 
   constructor(props) {
     super(props);

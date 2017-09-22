@@ -5,5 +5,5 @@ declare type Action = {
 
 declare type ActionThunk = (
   dispatch: (Action) => void,
-  getState?: () => State
+  getState?: () => ApplicationState
 ) => void;

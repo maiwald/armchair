@@ -49,7 +49,7 @@ export function deleteLine(lineId: number): ?Action {
   }
 }
 
-export function updateLine(lineId: number, lineData: any): Action {
+export function updateLine(lineId: number, lineData: LineData): Action {
   return {
     type: UPDATE_LINE,
     payload: { lineId, lineData },
@@ -66,7 +66,7 @@ export function updateLine(lineId: number, lineData: any): Action {
   };
 }
 
-export function createLine(lineData: any): Action {
+export function createLine(lineData: LineData): Action {
   return {
     type: CREATE_LINE,
     payload: { lineData },

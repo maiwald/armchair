@@ -23,7 +23,8 @@ export function createCharacter(name: string) {
     },
     validations: [
       {
-        fn: (state: State) => !getCharacterNames(state).includes(sanitizedName),
+        fn: (state: ApplicationState) =>
+          !getCharacterNames(state).includes(sanitizedName),
         msg: `Character '${sanitizedName}' already exists!`
       },
       {
