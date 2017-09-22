@@ -1,6 +1,7 @@
 // @flow
 import { drop } from "lodash";
 import { PUSH_NOTICE, POP_NOTICE } from "state/action_types";
+import { getNextId } from "state/utils";
 
 const initialState: UiState = {
   notifications: []
@@ -16,7 +17,7 @@ export default function reducer(
         ...state,
         notifications: [
           ...state.notifications,
-          { id: new Date(), text: payload.notice }
+          { id: getNextId(state.notifications), text: payload.notice }
         ]
       };
 

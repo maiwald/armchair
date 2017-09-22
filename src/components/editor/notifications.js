@@ -9,7 +9,7 @@ function Notifications({ notifications }: { notifications: Notification[] }) {
     return null;
   } else {
     const items = notifications.map(n => {
-      return <li key={n.id.toString()}>{n.text}</li>;
+      return <li key={n.id}>{n.text}</li>;
     });
 
     return <ul>{items}</ul>;

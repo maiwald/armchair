@@ -1,14 +1,5 @@
 // @flow
-import {
-  find,
-  includes,
-  isUndefined,
-  max,
-  pick,
-  reject,
-  without
-} from "lodash";
-
+import { find, includes, isUndefined, pick, reject, without } from "lodash";
 import {
   SELECT_LINE,
   CLEAR_LINE_SELECTION,
@@ -19,6 +10,7 @@ import {
   CREATE_LINE,
   PRESS_ESCAPE
 } from "state/action_types";
+import { getNextId } from "state/utils";
 
 const initialState: DialogueState = {
   selectedLineId: undefined,
@@ -61,14 +53,6 @@ function isValidNewConnection(
   }
 }
 
-function getNextLineId(state: DialogueState): number {
-  return max(state.lines.map(l => l.id)) + 1;
-}
-
-function getNextConnectionId(state: DialogueState): number {
-  return max(state.connections.map(c => c.id)) + 1;
-}
-
 function getLine(state: DialogueState, lineId: number): Line {
   const line = state.lines.find(l => l.id == lineId);
   if (typeof line == "undefined") {
@@ -93,7 +77,7 @@ export default function reducer(
   switch (type) {
     case CREATE_LINE: {
       const { lineData } = payload;
-      const lineId = getNextLineId(state);
+      const lineId = getNextId(state.lines);
       const line = { ...lineData, id: lineId };
 
       return {
@@ -145,7 +129,7 @@ export default function reducer(
             nodeConnectionStart: undefined,
             connections: [
               ...state.connections,
-              { ...connectionData, id: getNextConnectionId(state) }
+              { ...connectionData, id: getNextId(state.connections) }
             ]
           };
         }

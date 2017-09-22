@@ -41,7 +41,7 @@ declare type UiState = {
 };
 
 declare type Notification = {|
-  id: Date,
+  id: number,
   text: string
 |};
 
