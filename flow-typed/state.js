@@ -25,7 +25,7 @@ declare type Line = {|
 |};
 
 declare type LineData = {
-  characterId: ?number,
+  characterId: number,
   text: string
 };
 

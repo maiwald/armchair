@@ -52,33 +52,13 @@ export function deleteLine(lineId: number): ?Action {
 export function updateLine(lineId: number, lineData: LineData): Action {
   return {
     type: UPDATE_LINE,
-    payload: { lineId, lineData },
-    validations: [
-      {
-        fn: () => toInteger(lineData["characterId"]) != 0,
-        msg: "Line must have a character!"
-      },
-      {
-        fn: () => lineData["text"].length != 0,
-        msg: "Line must have text!"
-      }
-    ]
+    payload: { lineId, lineData }
   };
 }
 
 export function createLine(lineData: LineData): Action {
   return {
     type: CREATE_LINE,
-    payload: { lineData },
-    validations: [
-      {
-        fn: () => toInteger(lineData["characterId"]) != 0,
-        msg: "Line must have a character!"
-      },
-      {
-        fn: () => lineData["text"].length != 0,
-        msg: "Line must have text!"
-      }
-    ]
+    payload: { lineData }
   };
 }

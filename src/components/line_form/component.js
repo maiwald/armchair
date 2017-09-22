@@ -9,24 +9,10 @@ import {
   isInteger,
   pick
 } from "lodash";
-import typeof { updateLine } from "state/dialogues/actions";
+import { showTimedNotice } from "state/ui/actions";
 import { getSelectedLine } from "state/dialogues/selectors";
 import { getSortedCharacters } from "state/characters/selectors";
 import styles from "./styles.scss";
-
-function handleInputChange(self: LineForm, name: string) {
-  return (e: SyntheticInputEvent<>) => {
-    const value = e.target.value;
-    self.setState({ [name]: value });
-  };
-}
-
-function isValidLineData(characters: Character[], lineData: LineData): boolean {
-  return (
-    includes(characters.map(c => c.id), lineData.characterId) &&
-    !isEmpty(lineData.text)
-  );
-}
 
 function getLineData(line: ?Line | State): LineData {
   if (line) {
@@ -36,7 +22,7 @@ function getLineData(line: ?Line | State): LineData {
     };
   } else {
     return {
-      characterId: null,
+      characterId: NaN,
       text: ""
     };
   }
@@ -50,7 +36,8 @@ type ComponentProps = {
   characters: Character[],
   line: ?Line,
   onCancel?: void => void,
-  onSubmit: LineData => void
+  onSubmit: LineData => void,
+  showTimedNotice: string => void
 };
 
 class LineForm extends Component<ComponentProps, State> {
@@ -84,8 +71,9 @@ class LineForm extends Component<ComponentProps, State> {
           <section>
             <label>Character:</label>
             <select
-              value={this.state.characterId || ""}
-              onChange={handleInputChange(this, "characterId")}
+              value={this.state.characterId}
+              onChange={e =>
+                this.setState({ characterId: parseInt(e.target.value) })}
             >
               <option key="" />
               {this.getCharacterOptions()}
@@ -96,7 +84,7 @@ class LineForm extends Component<ComponentProps, State> {
             <label>Text:</label>
             <textarea
               value={this.state.text}
-              onChange={handleInputChange(this, "text")}
+              onChange={e => this.setState({ text: e.target.value })}
             />
           </section>
         </div>
@@ -140,18 +128,39 @@ class LineForm extends Component<ComponentProps, State> {
     }
   }
 
+  isValidLineData(): boolean {
+    const lineData = getLineData(this.state);
+    const { characters, showTimedNotice } = this.props;
+
+    let result = true;
+
+    if (!includes(characters.map(c => c.id), lineData.characterId)) {
+      showTimedNotice("Line must have a valid character!");
+      result = false;
+    }
+
+    if (isEmpty(lineData.text)) {
+      showTimedNotice("Line must have text!");
+      result = false;
+    }
+
+    return result;
+  }
+
   handleSubmit(e: SyntheticEvent<>) {
     e.preventDefault();
 
-    const lineData = getLineData(this.state);
-    if (isValidLineData(this.props.characters, lineData)) {
-      this.props.onSubmit(lineData);
+    if (this.isValidLineData()) {
+      this.props.onSubmit(getLineData(this.state));
     }
   }
 }
 
-export default connect(state => {
-  return {
-    characters: getSortedCharacters(state)
-  };
-}, {})(LineForm);
+export default connect(
+  state => {
+    return {
+      characters: getSortedCharacters(state)
+    };
+  },
+  { showTimedNotice }
+)(LineForm);
