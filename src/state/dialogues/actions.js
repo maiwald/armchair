@@ -5,7 +5,6 @@ import { isInSelectionMode } from "state/dialogues/selectors";
 import {
   SELECT_LINE,
   CLEAR_LINE_SELECTION,
-  HOVER_LINE,
   START_CONNECTION_SELECTION,
   DELETE_LINE,
   UPDATE_LINE,
@@ -30,13 +29,6 @@ export function clearLineSelection(): Action {
   return {
     type: CLEAR_LINE_SELECTION,
     payload: null
-  };
-}
-
-export function hoverLine(lineId: ?number): Action {
-  return {
-    type: HOVER_LINE,
-    payload: { lineId }
   };
 }
 

@@ -5,7 +5,6 @@ import { Network } from "vis";
 import {
   startConnectionSelection,
   deleteLine,
-  hoverLine,
   selectLine,
   clearLineSelection
 } from "state/dialogues/actions";
@@ -13,7 +12,6 @@ import {
   getDialogueEdges,
   getDialogueNodes,
   getSelectedLineId,
-  getHoveredLineId,
   isInSelectionMode
 } from "state/dialogues/selectors";
 import { isUndefined, compact, isEqual, isNull, mapValues } from "lodash";
@@ -24,13 +22,11 @@ type ValueProps = {
   nodes: DialogueNode[],
   edges: DialogueEdge[],
   selectedNodeId: ?string,
-  hoveredNodeId: ?string,
   isInSelectionMode: boolean
 };
 
 type DispatchProps = {
   deleteLine: (?number) => void,
-  hoverLine: (?number) => void,
   selectLine: (?number) => void,
   clearLineSelection: void => void,
   startConnectionSelection: number => void
@@ -38,12 +34,17 @@ type DispatchProps = {
 
 type Props = ValueProps & DispatchProps;
 
-class Dialogue extends Component<Props> {
+type State = {
+  hoveredNodeId: ?string
+};
+
+class Dialogue extends Component<Props, State> {
   network: any;
 
   constructor(props) {
     super(props);
 
+    this.state = { hoveredNodeId: null };
     this.network = null;
   }
 
@@ -103,7 +104,7 @@ class Dialogue extends Component<Props> {
 
   createNetwork() {
     const { container } = this.refs;
-    const { selectLine, clearLineSelection, hoverLine } = this.props;
+    const { selectLine, clearLineSelection } = this.props;
 
     const network = new Network(container, {}, VIS_NETWORK_OPTIONS);
 
@@ -112,14 +113,18 @@ class Dialogue extends Component<Props> {
       isUndefined(node) ? clearLineSelection() : selectLine(parseInt(node));
     });
 
-    network.on("hoverNode", ({ node }) => hoverLine(parseInt(node)));
-    network.on("blurNode", () => hoverLine(undefined));
+    network.on("hoverNode", ({ node }) => {
+      if (!this.props.isInSelectionMode) {
+        this.setState({ hoveredNodeId: node });
+      }
+    });
+    network.on("blurNode", () => this.setState({ hoveredNodeId: null }));
 
     return network;
   }
 
   getNodeActions() {
-    const { hoveredNodeId } = this.props;
+    const { hoveredNodeId } = this.state;
     if (isNull(hoveredNodeId)) {
       return null;
     } else {
@@ -130,15 +135,20 @@ class Dialogue extends Component<Props> {
         >
           <a
             className={styles.nodeAction}
-            onClick={() => this.props.deleteLine(parseInt(hoveredNodeId))}
+            onClick={() => {
+              this.props.deleteLine(parseInt(hoveredNodeId));
+              this.setState({ hoveredNodeId: null });
+            }}
             title="Delete node"
           >
             <i className="fa fa-trash" />
           </a>
           <a
             className={styles.nodeAction}
-            onClick={() =>
-              this.props.startConnectionSelection(parseInt(hoveredNodeId))}
+            onClick={() => {
+              this.props.startConnectionSelection(parseInt(hoveredNodeId));
+              this.setState({ hoveredNodeId: null });
+            }}
             title="Add connection to existing line"
           >
             <i className="fa fa-link" />
@@ -186,15 +196,12 @@ class Dialogue extends Component<Props> {
 
 function mapStateToProps(state: any): ValueProps {
   const selectedNodeId = getSelectedLineId(state);
-  const hoveredNodeId = getHoveredLineId(state);
 
   return {
     nodes: getDialogueNodes(state),
     edges: getDialogueEdges(state),
     selectedNodeId:
       typeof selectedNodeId == "number" ? selectedNodeId.toString() : null,
-    hoveredNodeId:
-      typeof hoveredNodeId == "number" ? hoveredNodeId.toString() : null,
     isInSelectionMode: isInSelectionMode(state)
   };
 }
@@ -203,6 +210,5 @@ export default connect(mapStateToProps, {
   startConnectionSelection,
   deleteLine,
   selectLine,
-  clearLineSelection,
-  hoverLine
+  clearLineSelection
 })(Dialogue);

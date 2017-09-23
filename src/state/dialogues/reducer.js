@@ -3,7 +3,6 @@ import { find, includes, isUndefined, pick, reject, without } from "lodash";
 import {
   SELECT_LINE,
   CLEAR_LINE_SELECTION,
-  HOVER_LINE,
   START_CONNECTION_SELECTION,
   DELETE_LINE,
   UPDATE_LINE,
@@ -14,7 +13,6 @@ import { getNextId } from "state/utils";
 
 const initialState: DialogueState = {
   selectedLineId: undefined,
-  hoveredLineId: undefined,
   nodeConnectionStart: undefined,
   lines: [
     { id: 1, characterId: 1, text: "Hey, who are you?" },
@@ -105,8 +103,6 @@ export default function reducer(
         ...state,
         selectedLineId:
           state.selectedLineId == lineId ? undefined : state.selectedLineId,
-        hoveredLineId:
-          state.hoveredLineId == lineId ? undefined : state.hoveredLineId,
         lines: without(state.lines, getLine(state, lineId)),
         connections: reject(state.connections, c => {
           return [c.from, c.to].includes(lineId);
@@ -142,16 +138,6 @@ export default function reducer(
       return { ...state, selectedLineId: undefined };
     }
 
-    case HOVER_LINE: {
-      const { lineId } = payload;
-
-      if (typeof state.nodeConnectionStart == "number") {
-        return state;
-      } else {
-        return { ...state, hoveredLineId: lineId };
-      }
-    }
-
     case PRESS_ESCAPE: {
       return {
         ...state,
@@ -163,8 +149,7 @@ export default function reducer(
     case START_CONNECTION_SELECTION: {
       return {
         ...state,
-        nodeConnectionStart: payload,
-        hoveredLineId: undefined
+        nodeConnectionStart: payload
       };
     }
 

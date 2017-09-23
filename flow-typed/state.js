@@ -6,7 +6,6 @@ declare type ApplicationState = {|
 
 declare type DialogueState = {
   selectedLineId: ?number,
-  hoveredLineId: ?number,
   nodeConnectionStart: ?number,
   lines: Line[],
   connections: Connection[]

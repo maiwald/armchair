@@ -23,10 +23,6 @@ export function getSelectedLineId(state: ApplicationState): ?number {
   return getDialogue(state).selectedLineId;
 }
 
-export function getHoveredLineId(state: ApplicationState): ?number {
-  return getDialogue(state).hoveredLineId;
-}
-
 export function getSelectedLine(state: ApplicationState) {
   return getLine(state, getSelectedLineId(state));
 }
