@@ -9,50 +9,50 @@
    children])
 
 (defn line-component [{:keys [id text x y]}]
-  [:div
-   {:className "line"
-    :on-mouse-down #(dispatch [:start-drag {:id id :mouse-x (.. % -pageX) :mouse-y (.. % -pageY)}])
-    :on-mouse-up #(dispatch [:end-drag])
-    :style {:position "absolute"
-            :-webkit-user-select "none"
-            :box-sizing "border-box"
-            :user-select "none"
-            :width 200
-            :min-height 30
-            :border "1px solid black"
-            :border-radius 15
-            :background "white"
-            :padding "5px 10px"
-            :top y
-            :left x
-            }}
+  [:div {:on-mouse-down #(dispatch [:start-drag {:id id :mouse-x (.. % -pageX) :mouse-y (.. % -pageY)}])
+         :on-mouse-up #(dispatch [:end-drag])
+         :style {:position "absolute"
+                 :-webkit-user-select "none"
+                 :box-sizing "border-box"
+                 :user-select "none"
+                 :width 200
+                 :min-height 30
+                 :border "1px solid black"
+                 :border-radius 15
+                 :background "white"
+                 :padding "5px 10px"
+                 :top y
+                 :left x
+                 }}
    text])
 
-(defn connection-component [{:keys [start end]}]
-  [:line {:stroke "black"
-          :x1 (+ 200 (:x start))
-          :y1 (+ 15 (:y start))
-          :x2 (:x end)
-          :y2 (+ 15 (:y end))}])
+(defn lines-component []
+  (let [lines @(re-frame/subscribe [:lines])]
+    [:div {:className "lines"}
+     (for [line lines]
+       ^{:key (:id line)} [line-component line])]))
+
+(defn connections-component []
+  (let [connections @(re-frame/subscribe [:connections])]
+    [svg 800 800
+     (for [{:keys [id start end]} connections]
+       ^{:key id} [:line {:stroke "black"
+                          :x1 (+ 200 (:x start))
+                          :y1 (+ 15 (:y start))
+                          :x2 (:x end)
+                          :y2 (+ 15 (:y end))}])
+     ]))
 
 (defn main-panel []
-  (let [lines (re-frame/subscribe [:lines])
-        connections (re-frame/subscribe [:connections])]
-    (fn []
-      [:div {:className "container"
-             :on-mouse-move #(dispatch [:drag {:mouse-x (.. % -pageX)
-                                               :mouse-y (.. % -pageY)}])
-             :style {:position "absolute"
-                     :top 0
-                     :left 0
-                     :height "100%"
-                     :width "100%"
-                     :overflow "hidden"
-                     }}
-       [:div {:className "lines"}
-         (for [line @lines]
-           ^{:key (:id line)} [line-component line])]
-       [svg 800 800
-        (for [connection @connections]
-          ^{:key (:id connection)} [connection-component connection])
-        ]])))
+  [:div {:className "container"
+         :on-mouse-move #(dispatch [:drag {:mouse-x (.. % -pageX)
+                                           :mouse-y (.. % -pageY)}])
+         :style {:position "absolute"
+                 :top 0
+                 :left 0
+                 :height "100%"
+                 :width "100%"
+                 :overflow "hidden"
+                 }}
+   [lines-component]
+   [connections-component]])
