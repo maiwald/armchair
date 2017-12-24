@@ -16,8 +16,12 @@
 
   :profiles
   {:dev
-   {:dependencies [[binaryage/devtools "0.9.4"]]
+   {:dependencies [[binaryage/devtools "0.9.4"]
+                   [figwheel-sidecar "0.5.14"]
+                   [com.cemerick/piggieback "0.2.2"]]
     :plugins      [[lein-figwheel "0.5.13"]]
+    :source-paths ["src/cljs" "dev"]
+    :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
     }}
 
   :cljsbuild
