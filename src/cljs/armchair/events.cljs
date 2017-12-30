@@ -18,6 +18,13 @@
       db)))
 
 (re-frame/reg-event-db
+  :start-drag-all
+  (fn [db [_ position]]
+      (assoc db :dragging {:line-ids (-> db (:lines) (keys) (set))
+                           :start position
+                           :delta [0 0]})))
+
+(re-frame/reg-event-db
   :end-drag
   (fn  [db _]
     (let [{:keys [line-ids delta]} (:dragging db)]
