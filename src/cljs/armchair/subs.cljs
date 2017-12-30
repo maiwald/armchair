@@ -2,7 +2,7 @@
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [clojure.set :refer [difference]]
-            [armchair.position :refer [translate-position]]))
+            [armchair.position :refer [translate-positions]]))
 
 (reg-sub :db-lines #(:lines %))
 (reg-sub :db-connections #(:connections %))
@@ -14,8 +14,8 @@
   :<- [:db-lines]
   :<- [:db-dragging]
   (fn [[lines dragging] _]
-    (if-let [{:keys [line-id delta]} dragging]
-      (update lines line-id translate-position delta)
+    (if-let [{:keys [line-ids delta]} dragging]
+      (translate-positions lines line-ids delta)
       lines)))
 
 (reg-sub

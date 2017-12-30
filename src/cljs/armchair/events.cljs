@@ -1,7 +1,7 @@
 (ns armchair.events
   (:require [re-frame.core :as re-frame]
             [armchair.db :as db]
-            [armchair.position :refer [translate-position position-delta]]))
+            [armchair.position :refer [translate-positions position-delta]]))
 
 (re-frame/reg-event-db
   :initialize-db
@@ -11,8 +11,8 @@
 (re-frame/reg-event-db
   :start-drag
   (fn [db [_ line-id position]]
-    (if-not (= line-id (get-in db [:dragging :line-id]))
-      (assoc db :dragging {:line-id line-id
+    (if-not (contains? (get-in db [:dragging :line-ids]) line-id)
+      (assoc db :dragging {:line-ids #{line-id}
                            :start position
                            :delta [0 0]})
       db)))
@@ -20,9 +20,9 @@
 (re-frame/reg-event-db
   :end-drag
   (fn  [db _]
-    (let [{:keys [line-id delta]} (:dragging db)]
+    (let [{:keys [line-ids delta]} (:dragging db)]
       (-> db
-          (update-in [:lines line-id] translate-position delta)
+          (update :lines translate-positions line-ids delta)
           (dissoc :dragging)))))
 
 (re-frame/reg-event-db
