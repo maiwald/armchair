@@ -3,7 +3,6 @@
 
 (defn line-component [{:keys [id text position]}]
   [:div {:on-mouse-down #(dispatch [:start-drag id])
-         :on-mouse-up #(dispatch [:end-drag])
          :className "line-component"
          :style {:left (first position)
                  :top (second position)}}
@@ -30,6 +29,7 @@
 
 (defn main-panel []
   [:div {:className "container"
-         :on-mouse-move #(dispatch [:move-pointer [(.. % -pageX) (.. % -pageY)]])}
+         :on-mouse-move #(dispatch [:move-pointer [(.. % -pageX) (.. % -pageY)]])
+         :on-mouse-up #(dispatch [:end-drag])}
    [lines-component]
    [connections-component]])
