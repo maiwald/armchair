@@ -1,8 +1,11 @@
 (ns armchair.views
   (:require [re-frame.core :as re-frame :refer [dispatch subscribe]]))
 
+(defn cursor-position [e]
+  [(.. e -pageX) (.. e -pageY)])
+
 (defn line-component [{:keys [id text position]}]
-  [:div {:on-mouse-down #(dispatch [:start-drag id])
+  [:div {:on-mouse-down #(dispatch [:start-drag id (cursor-position %)])
          :className "line-component"
          :style {:left (first position)
                  :top (second position)}}
@@ -29,7 +32,7 @@
 
 (defn main-panel []
   [:div {:className "container"
-         :on-mouse-move #(dispatch [:move-pointer [(.. % -pageX) (.. % -pageY)]])
+         :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
          :on-mouse-up #(dispatch [:end-drag])}
    [lines-component]
    [connections-component]])
