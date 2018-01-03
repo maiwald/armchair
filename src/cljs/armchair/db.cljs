@@ -1,7 +1,12 @@
 (ns armchair.db)
 
 (def default-db
-  {:lines {
+  {
+   :characters {
+                1 { :id 1 :name "Hugo" :color "rgba(255, 0, 0, .6)" }
+                2 { :id 2 :name "Player" :color "rgba(0, 0, 255, .6)" }
+                }
+   :lines {
            1  {:id 1  :character-id 1 :position [   0 200] :text "Hey, who are you?"}
            2  {:id 2  :character-id 2 :position [ 229 198] :text "I could ask you the same."}
            3  {:id 3  :character-id 2 :position [ 259  91] :text "My name does not matter."}

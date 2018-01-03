@@ -4,23 +4,26 @@
 (defn cursor-position [e]
   [(.. e -pageX) (.. e -pageY)])
 
-(defn line-component [{:keys [id text position]}]
+(defn line-component [{:keys [id text position]} character-color]
   [:div {:className "line"
          :on-mouse-down (fn [e] (.stopPropagation e))
-         :style {:left (first position)
+         :style {:border-color character-color
+                 :left (first position)
                  :top (second position)}}
    [:p text]
    [:div {:className "drag-handle fas fa-bars"
           :on-mouse-down (fn [e]
                            (.stopPropagation e)
                            (dispatch [:start-drag id (cursor-position e)]))}]
-    ])
+   ])
 
 (defn lines-component []
-  (let [lines @(subscribe [:lines])]
+  (let [lines @(subscribe [:lines])
+        characters @(subscribe [:characters])]
     [:div {:className "lines"}
-     (for [line lines]
-       ^{:key (:id line)} [line-component line])]))
+     (for [[id line] lines]
+       (let [character-color (get-in characters [(:character-id line) :color])]
+         ^{:key id} [line-component line character-color]))]))
 
 (defn connections-component []
   (let [connections @(subscribe [:connections])]

@@ -5,6 +5,7 @@
             [armchair.position :refer [translate-positions]]))
 
 (reg-sub :db-lines #(:lines %))
+(reg-sub :characters #(:characters %))
 (reg-sub :db-connections #(:connections %))
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-pointer #(:pointer %))
@@ -21,7 +22,7 @@
 (reg-sub
   :lines
   :<- [:lines-with-drag]
-  (fn [lines-with-drag] (vals lines-with-drag)))
+  (fn [lines-with-drag] lines-with-drag))
 
 (reg-sub
   :connections
