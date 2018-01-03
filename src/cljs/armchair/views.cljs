@@ -14,8 +14,7 @@
    [:div {:className "drag-handle fas fa-bars"
           :on-mouse-down (fn [e]
                            (.stopPropagation e)
-                           (dispatch [:start-drag id (cursor-position e)]))}]
-   ])
+                           (dispatch [:start-drag id (cursor-position e)]))}]])
 
 (defn lines-component []
   (let [lines @(subscribe [:lines])
@@ -35,8 +34,7 @@
                           :x1 (+ 200 (first start))
                           :y1 (+ 15 (second start))
                           :x2 (first end)
-                          :y2 (+ 15 (second end))}])
-     ]))
+                          :y2 (+ 15 (second end))}])]))
 
 (defn main-panel []
   [:div {:className "container"}
