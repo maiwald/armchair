@@ -17,17 +17,18 @@ $gray: #888
   height: 220px
   background-color: $gray
 
-.lines, svg
-  position: absolute
-  height: 100%
-  width: 100%
-  overflow: hidden
+.canvas
+  .lines, svg
+    position: absolute
+    height: 100%
+    width: 100%
+    overflow: hidden
 
-.lines
-  z-index: 1
+  .lines
+    z-index: 1
 
-svg
-  z-index: 0
+  svg
+    z-index: 0
 
 .connection
   stroke: $gray
