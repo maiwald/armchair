@@ -1,3 +1,5 @@
+$gray: #888
+
 .container
   position: absolute
   top: 0
@@ -10,14 +12,33 @@ svg
   height: 100%
   width: 100%
 
-.line-component
+  .connection
+    stroke: $gray
+
+.line
+  $outer-margin: 7px
+
+  display: flex
+  align-items: center
   position: absolute
-  cursor: move
   box-sizing: "border-box"
-  user-select: none
   width: 200px
   min-height: 30px
-  border: 1px solid black
+  border: 1px solid $gray
   border-radius: 15px
   background: white
-  padding: 5px 10px
+
+  p
+    flex-grow: 1
+    font-family: "Helvetica"
+    font-size: .9rem
+    margin: $outer-margin
+    cursor: default
+    user-select: none
+    -webkit-user-select: none
+
+  .drag-handle
+    align-self: flex-start
+    margin: $outer-margin $outer-margin 0 0
+    color: $gray
+    cursor: move

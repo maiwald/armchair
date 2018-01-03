@@ -5,13 +5,16 @@
   [(.. e -pageX) (.. e -pageY)])
 
 (defn line-component [{:keys [id text position]}]
-  [:div {:on-mouse-down (fn [e]
-                          (.stopPropagation e)
-                          (dispatch [:start-drag id (cursor-position e)]))
-         :className "line-component"
+  [:div {:className "line"
+         :on-mouse-down (fn [e] (.stopPropagation e))
          :style {:left (first position)
                  :top (second position)}}
-   text])
+   [:p text]
+   [:div {:className "drag-handle fas fa-bars"
+          :on-mouse-down (fn [e]
+                           (.stopPropagation e)
+                           (dispatch [:start-drag id (cursor-position e)]))}]
+    ])
 
 (defn lines-component []
   (let [lines @(subscribe [:lines])]
@@ -25,7 +28,7 @@
            :baseProfile "full"
            :xmlns "http://www.w3.org/2000/svg"}
      (for [{:keys [id start end]} connections]
-       ^{:key id} [:line {:stroke "black"
+       ^{:key id} [:line {:className "connection"
                           :x1 (+ 200 (first start))
                           :y1 (+ 15 (second start))
                           :x2 (first end)
