@@ -39,9 +39,11 @@
      ]))
 
 (defn main-panel []
-  [:div {:className "container"
-         :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
-         :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
-         :on-mouse-up #(dispatch [:end-drag])}
-   [lines-component]
-   [connections-component]])
+  [:div {:className "container"}
+   [:div {:className "canvas"
+          :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
+          :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
+          :on-mouse-up #(dispatch [:end-drag])}
+    [lines-component]
+    [connections-component]]
+   [:div {:className "panel"} "hello!"]])

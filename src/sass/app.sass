@@ -1,19 +1,36 @@
 $gray: #888
 
 .container
+  display: flex
+  flex-direction: column
   position: absolute
   top: 0
   left: 0
+  height: 100vh
+  width: 100vw
+
+.canvas
+  position: relative
+  flex-grow: 1
+
+.panel
+  height: 220px
+  background-color: $gray
+
+.lines, svg
+  position: absolute
   height: 100%
   width: 100%
   overflow: hidden
 
-svg
-  height: 100%
-  width: 100%
+.lines
+  z-index: 1
 
-  .connection
-    stroke: $gray
+svg
+  z-index: 0
+
+.connection
+  stroke: $gray
 
 .line
   $outer-margin: 7px
