@@ -10,6 +10,8 @@
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-pointer #(:pointer %))
 
+(reg-sub :line-form-data #(:line-form-data %))
+
 (reg-sub
   :lines-with-drag
   :<- [:db-lines]

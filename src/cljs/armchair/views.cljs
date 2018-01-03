@@ -4,14 +4,19 @@
 (defn cursor-position [e]
   [(.. e -pageX) (.. e -pageY)])
 
+(defn update-line-form [field]
+  #(dispatch [:update-line-form field (-> % .-target .-value)]))
+
 (defn line-component [{:keys [id text position]} character-color]
   [:div {:className "line"
          :on-mouse-down (fn [e] (.stopPropagation e))
+         :on-click #(dispatch [:select-line id])
          :style {:border-color character-color
                  :left (first position)
                  :top (second position)}}
    [:p text]
    [:div {:className "drag-handle fas fa-bars"
+          :on-click #(.stopPropagation %)
           :on-mouse-down (fn [e]
                            (.stopPropagation e)
                            (dispatch [:start-drag id (cursor-position e)]))}]])
@@ -36,23 +41,30 @@
                           :x2 (first end)
                           :y2 (+ 15 (second end))}])]))
 
-(defn line-form [line]
-  (let [characters (subscribe [:characters])]
-    (fn [{:keys [id text character-id]}]
-      [:form {:className "line-form"}
+(defn line-form []
+  (if-let [{:keys [id text character-id]} @(subscribe [:line-form-data])]
+    (let [characters @(subscribe [:characters])]
+      [:form {:className "line-form"
+              :on-submit (fn [e]
+                           (.preventDefault e)
+                           (dispatch [:save-line-form]))}
        [:div id]
-       [:select {:defaultValue character-id}
-        (for [[id {:keys [display-name]}] @characters]
+       [:select {:value character-id
+                 :on-change (update-line-form :character-id)}
+        (for [[id {:keys [display-name]}] characters]
           ^{:key (str "c" id)} [:option {:value id} display-name])]
-       [:input {:type "text" :defaultValue text}]])))
+       [:input {:on-change (update-line-form :text)
+                :type "text"
+                :value text}]
+       [:input {:type "submit"}
+                ]])))
 
 (defn main-panel []
-  (let [dummy-line (get @(subscribe [:lines]) 2)]
-    [:div {:className "container"}
-     [:div {:className "canvas"
-            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
-            :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
-            :on-mouse-up #(dispatch [:end-drag])}
-      [lines-component]
-      [connections-component]]
-     [:div {:className "panel"} [line-form dummy-line]]]))
+  [:div {:className "container"}
+   [:div {:className "canvas"
+          :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
+          :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
+          :on-mouse-up #(dispatch [:end-drag])}
+    [lines-component]
+    [connections-component]]
+   [:div {:className "panel"} [line-form]]])
