@@ -3,8 +3,8 @@
 (def default-db
   {
    :characters {
-                1 { :id 1 :name "Hugo" :color "rgba(255, 0, 0, .6)" }
-                2 { :id 2 :name "Player" :color "rgba(0, 0, 255, .6)" }
+                1 { :id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)" }
+                2 { :id 2 :display-name "Player" :color "rgba(0, 0, 255, .6)" }
                 }
    :lines {
            1  {:id 1  :character-id 1 :position [   0 200] :text "Hey, who are you?"}

@@ -36,12 +36,23 @@
                           :x2 (first end)
                           :y2 (+ 15 (second end))}])]))
 
+(defn line-form [line]
+  (let [characters (subscribe [:characters])]
+    (fn [{:keys [id text character-id]}]
+      [:form {:className "line-form"}
+       [:div id]
+       [:select {:defaultValue character-id}
+        (for [[id {:keys [display-name]}] @characters]
+          ^{:key (str "c" id)} [:option {:value id} display-name])]
+       [:input {:type "text" :defaultValue text}]])))
+
 (defn main-panel []
-  [:div {:className "container"}
-   [:div {:className "canvas"
-          :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
-          :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
-          :on-mouse-up #(dispatch [:end-drag])}
-    [lines-component]
-    [connections-component]]
-   [:div {:className "panel"} "hello!"]])
+  (let [dummy-line (get @(subscribe [:lines]) 2)]
+    [:div {:className "container"}
+     [:div {:className "canvas"
+            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
+            :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
+            :on-mouse-up #(dispatch [:end-drag])}
+      [lines-component]
+      [connections-component]]
+     [:div {:className "panel"} [line-form dummy-line]]]))
