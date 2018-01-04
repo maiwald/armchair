@@ -49,7 +49,7 @@
 (reg-event-db
   :start-drag-all
   (fn [db [_ position]]
-    (assoc db :dragging {:line-ids (-> db (:lines) (keys) (set))
+    (assoc db :dragging {:line-ids (-> db :lines keys set)
                          :start position
                          :delta [0 0]})))
 
