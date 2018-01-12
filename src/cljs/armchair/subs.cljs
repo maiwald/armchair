@@ -9,8 +9,14 @@
 (reg-sub :db-connections #(:connections %))
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-pointer #(:pointer %))
+(reg-sub :db-selected-line-id #(:selected-line-id %))
 
-(reg-sub :line-form-data #(:line-form-data %))
+(reg-sub
+  :selected-line
+  :<- [:db-lines]
+  :<- [:db-selected-line-id]
+  (fn [[lines id]]
+    (get lines id)))
 
 (reg-sub
   :lines-with-drag

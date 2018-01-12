@@ -1,10 +1,8 @@
 (ns armchair.slds)
 
-(defn form [{:keys [on-submit submit-label]} & children]
-  [:form {:on-submit on-submit}
-   [:div {:className "slds-form slds-form_horizontal"}
-    (map-indexed #(with-meta %2 {:key %1}) children)
-    [:button {:className "slds-button slds-button_brand" :type "submit"} submit-label]]])
+(defn form [& children]
+  [:div {:className "slds-form slds-form_horizontal"}
+   (map-indexed #(with-meta %2 {:key %1}) children)])
 
 (defn input-select [{:keys [label on-change value options]}]
   (let [id (gensym "input-select")]

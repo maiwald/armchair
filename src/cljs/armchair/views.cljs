@@ -5,13 +5,14 @@
 (defn cursor-position [e]
   [(.. e -pageX) (.. e -pageY)])
 
-(defn update-line-form [field]
-  #(dispatch [:update-line-form field (-> % .-target .-value)]))
+(defn update-line-handler [id field]
+  #(dispatch [:update-line id field (-> % .-target .-value)]))
 
 (defn line-component [{:keys [id text position]} character-color]
   [:div {:className "line"
          :on-mouse-down (fn [e] (.stopPropagation e))
-         :on-click #(dispatch [:select-line id])
+         :on-click (fn [e] (.stopPropagation e)
+                     (dispatch [:select-line id]))
          :style {:border-color character-color
                  :left (first position)
                  :top (second position)}}
@@ -43,25 +44,23 @@
                           :y2 (+ 15 (second end))}])]))
 
 (defn line-form []
-  (if-let [{:keys [id text character-id]} @(subscribe [:line-form-data])]
+  (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
     (let [characters @(subscribe [:characters])]
       [:div {:className "line-form"}
        [:div id]
-       [slds/form {:submit-label "Submit"
-                   :on-submit (fn [e]
-                                (.preventDefault e)
-                                (dispatch [:save-line-form]))}
+       [slds/form
         [slds/input-select {:label "Character"
-                            :on-change (update-line-form :character-id)
+                            :on-change (update-line-handler id :character-id)
                             :options (map (fn [[k c]] [k (:display-name c)]) characters)
                             :value character-id}]
         [slds/input-textarea {:label "Text"
-                              :on-change (update-line-form :text)
+                              :on-change (update-line-handler id :text)
                               :value text}]]])))
 
 (defn main-panel []
   [:div {:className "container"}
    [:div {:className "canvas"
+          :on-click #(dispatch [:deselect-line])
           :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
           :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
           :on-mouse-up #(dispatch [:end-drag])}

@@ -11,31 +11,22 @@
 (reg-event-db
   :select-line
   (fn [db [_ line-id]]
-    (if-not (= (:selection db) line-id)
-      (let [data (line-data (get-in db [:lines line-id]))
-            form-data (merge data
-                             {:id line-id :_original data})]
-        (assoc db
-               :selection line-id
-               :line-form-data form-data))
+    (if-not (= (:selected-line-id db) line-id)
+      (assoc db :selected-line-id line-id)
       db)))
 
 (reg-event-db
-  :update-line-form
-  (fn [db [_ field value]]
+  :deselect-line
+  (fn [db [_ line-id]]
+    (dissoc db :selected-line-id)))
+
+(reg-event-db
+  :update-line
+  (fn [db [_ id field value]]
     (let [newValue (condp = field
                      :character-id (int value)
                      value)]
-      (assoc-in db [:line-form-data field] newValue))))
-
-(reg-event-db
-  :save-line-form
-  (fn [db _]
-    (let [line-id (get-in db [:line-form-data :id])
-          data (line-data (get-in db [:line-form-data]))]
-      (-> db
-          (update-in [:lines line-id] merge data)
-          (update-in [:line-form-data :_original] merge data)))))
+      (assoc-in db [:lines id field] newValue))))
 
 (reg-event-db
   :start-drag
