@@ -1,5 +1,6 @@
 (ns armchair.views
-  (:require [re-frame.core :as re-frame :refer [dispatch subscribe]]))
+  (:require [re-frame.core :as re-frame :refer [dispatch subscribe]]
+            [armchair.slds :as slds]))
 
 (defn cursor-position [e]
   [(.. e -pageX) (.. e -pageY)])
@@ -44,20 +45,19 @@
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:line-form-data])]
     (let [characters @(subscribe [:characters])]
-      [:form {:className "line-form"
-              :on-submit (fn [e]
-                           (.preventDefault e)
-                           (dispatch [:save-line-form]))}
+      [:div {:className "line-form"}
        [:div id]
-       [:select {:value character-id
-                 :on-change (update-line-form :character-id)}
-        (for [[id {:keys [display-name]}] characters]
-          ^{:key (str "c" id)} [:option {:value id} display-name])]
-       [:input {:on-change (update-line-form :text)
-                :type "text"
-                :value text}]
-       [:input {:type "submit"}
-                ]])))
+       [slds/form {:submit-label "Submit"
+                   :on-submit (fn [e]
+                                (.preventDefault e)
+                                (dispatch [:save-line-form]))}
+        [slds/input-select {:label "Character"
+                            :on-change (update-line-form :character-id)
+                            :options (map (fn [[k c]] [k (:display-name c)]) characters)
+                            :value character-id}]
+        [slds/input-textarea {:label "Text"
+                              :on-change (update-line-form :text)
+                              :value text}]]])))
 
 (defn main-panel []
   [:div {:className "container"}
