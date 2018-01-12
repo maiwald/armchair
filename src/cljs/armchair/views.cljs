@@ -5,9 +5,6 @@
 (defn cursor-position [e]
   [(.. e -pageX) (.. e -pageY)])
 
-(defn update-line-handler [id field]
-  #(dispatch [:update-line id field (-> % .-target .-value)]))
-
 (defn line-component [{:keys [id text position]} character-color]
   [:div {:className "line"
          :on-mouse-down (fn [e] (.stopPropagation e))
@@ -43,19 +40,22 @@
                           :x2 (first end)
                           :y2 (+ 15 (second end))}])]))
 
+(defn update-line-handler [id field]
+  #(dispatch [:update-line id field (-> % .-target .-value)]))
+
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
     (let [characters @(subscribe [:characters])]
-      [:div {:className "line-form"}
-       [:div id]
-       [slds/form
-        [slds/input-select {:label "Character"
-                            :on-change (update-line-handler id :character-id)
-                            :options (map (fn [[k c]] [k (:display-name c)]) characters)
-                            :value character-id}]
-        [slds/input-textarea {:label "Text"
-                              :on-change (update-line-handler id :text)
-                              :value text}]]])))
+      [:div {:className "slds-grid slds-grid_align-center"}
+       [:div {:className "slds-col slds-size_6-of-12"}
+        [slds/form {:title (str "Line #" id)}
+         [slds/input-select {:label "Character"
+                             :on-change (update-line-handler id :character-id)
+                             :options (map (fn [[k c]] [k (:display-name c)]) characters)
+                             :value character-id}]
+         [slds/input-textarea {:label "Text"
+                               :on-change (update-line-handler id :text)
+                               :value text}]]]])))
 
 (defn main-panel []
   [:div {:className "container"}

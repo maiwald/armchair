@@ -1,7 +1,8 @@
 (ns armchair.slds)
 
-(defn form [& children]
-  [:div {:className "slds-form slds-form_horizontal"}
+(defn form [{:keys [title]} & children]
+  [:div {:className "slds-form slds-form_stacked"}
+   [:div {:className "slds-text-heading_small"} title]
    (map-indexed #(with-meta %2 {:key %1}) children)])
 
 (defn input-select [{:keys [label on-change value options]}]
