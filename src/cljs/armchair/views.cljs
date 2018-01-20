@@ -59,6 +59,9 @@
 
 (defn main-panel []
   [:div {:className "container"}
+   [slds/global-navigation {"Characters" (fn [])
+                            "Locations" (fn [])}]
+
    [:div {:className "canvas"
           :on-click #(dispatch [:deselect-line])
           :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
