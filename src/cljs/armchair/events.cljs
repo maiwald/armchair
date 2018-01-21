@@ -21,6 +21,11 @@
     (dissoc db :selected-line-id)))
 
 (reg-event-db
+  :show-page
+  (fn [db [_ page]]
+    (assoc db :current-page page)))
+
+(reg-event-db
   :update-line
   (fn [db [_ id field value]]
     (let [newValue (case field

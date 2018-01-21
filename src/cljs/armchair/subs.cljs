@@ -11,6 +11,8 @@
 (reg-sub :db-pointer #(:pointer %))
 (reg-sub :db-selected-line-id #(:selected-line-id %))
 
+(reg-sub :current-page #(:current-page %))
+
 (reg-sub
   :selected-line
   :<- [:db-lines]

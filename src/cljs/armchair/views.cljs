@@ -57,11 +57,8 @@
                                :on-change (update-line-handler id :text)
                                :value text}]]]])))
 
-(defn main-panel []
+(defn dialog-component []
   [:div {:className "container"}
-   [slds/global-navigation {"Characters" (fn [])
-                            "Locations" (fn [])}]
-
    [:div {:className "canvas"
           :on-click #(dispatch [:deselect-line])
           :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
@@ -70,3 +67,17 @@
     [lines-component]
     [connections-component]]
    [:div {:className "panel"} [line-form]]])
+
+(defn main-panel []
+  (let [current-page @(subscribe [:current-page])]
+    [:div {:id "page"}
+     [:div {:id "navigation"}
+      [slds/global-navigation
+       {"Home" #(dispatch [:show-page "dialog"])
+        "Characters" #(dispatch [:show-page "master-detail"])
+        "Locations" #(dispatch [:show-page "master-detail"])}]]
+     [:div {:id "content"}
+      (case current-page
+        "dialog" [dialog-component]
+        "master-detail" [:div "Master/Detail"]
+        [:div "Nothing here"])]]))
