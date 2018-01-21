@@ -23,7 +23,7 @@
 (reg-event-db
   :update-line
   (fn [db [_ id field value]]
-    (let [newValue (condp = field
+    (let [newValue (case field
                      :character-id (int value)
                      value)]
       (assoc-in db [:lines id field] newValue))))
