@@ -21,6 +21,13 @@
     (dissoc db :selected-line-id)))
 
 (reg-event-db
+  :select-character
+  (fn [db [_ character-id]]
+    (if-not (= (:selected-character-id db) character-id)
+      (assoc db :selected-character-id character-id)
+      db)))
+
+(reg-event-db
   :show-page
   (fn [db [_ page]]
     (assoc db :current-page page)))

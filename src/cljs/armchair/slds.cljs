@@ -39,3 +39,11 @@
               :className "slds-context-bar__item slds-context-bar__dropdown-trigger slds-dropdown-trigger slds-dropdown-trigger_hover"}
          [:a {:className "slds-context-bar__label-action" :on-click handler} label]])
       ]]]])
+
+(defn master-detail [{:keys [title collection item-view-fn detail-view]}]
+  [:div {:className "slds-grid"}
+   [:div {:className "slds-col slds-size_1-of-4"}
+    [:ul (for [item collection]
+           ^{:key (:id item)} [:li [item-view-fn item]])]]
+   [:div {:className "slds-col slds-size_3-of-4"}
+    detail-view]])

@@ -10,6 +10,7 @@
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-pointer #(:pointer %))
 (reg-sub :db-selected-line-id #(:selected-line-id %))
+(reg-sub :db-selected-character-id #(:selected-character-id %))
 
 (reg-sub :current-page #(:current-page %))
 
@@ -19,6 +20,13 @@
   :<- [:db-selected-line-id]
   (fn [[lines id]]
     (get lines id)))
+
+(reg-sub
+  :selected-character
+  :<- [:characters]
+  :<- [:db-selected-character-id]
+  (fn [[characters id]]
+    (get characters id)))
 
 (reg-sub
   :lines-with-drag

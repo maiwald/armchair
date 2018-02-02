@@ -66,16 +66,30 @@
    [dialogue-graph]
    [:div {:className "panel"} [line-form]]])
 
+(defn character-management []
+  (let [characters @(subscribe [:characters])
+        selected-character @(subscribe [:selected-character])]
+    (.log js/console selected-character)
+    [slds/master-detail {:collection (vals characters)
+                         :item-view-fn (fn [{:keys [id display-name]}]
+                                      [:div
+                                       {:on-click #(dispatch [:select-character id])}
+                                       display-name])
+                         :detail-view (if selected-character
+                                        [:div (:display-name selected-character)]
+                                        [:div "hello detail!"])}]))
+
 (defn main-panel []
   (let [current-page @(subscribe [:current-page])]
     [:div {:id "page"}
      [:div {:id "navigation"}
       [slds/global-navigation
        {"Home" #(dispatch [:show-page "dialogue"])
-        "Characters" #(dispatch [:show-page "master-detail"])
+        "Characters" #(dispatch [:show-page "characters"])
         "Locations" #(dispatch [:show-page "master-detail"])}]]
      [:div {:id "content"}
       (case current-page
         "dialogue" [dialogue-component]
+        "characters" [character-management]
         "master-detail" [:div "Master/Detail"]
         [:div "Nothing here"])]]))
