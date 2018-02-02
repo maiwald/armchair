@@ -57,7 +57,7 @@
                                :on-change (update-line-handler id :text)
                                :value text}]]]])))
 
-(defn dialog-component []
+(defn dialogue-component []
   [:div {:className "container"}
    [:div {:className "canvas"
           :on-click #(dispatch [:deselect-line])
@@ -73,11 +73,11 @@
     [:div {:id "page"}
      [:div {:id "navigation"}
       [slds/global-navigation
-       {"Home" #(dispatch [:show-page "dialog"])
+       {"Home" #(dispatch [:show-page "dialogue"])
         "Characters" #(dispatch [:show-page "master-detail"])
         "Locations" #(dispatch [:show-page "master-detail"])}]]
      [:div {:id "content"}
       (case current-page
-        "dialog" [dialog-component]
+        "dialogue" [dialogue-component]
         "master-detail" [:div "Master/Detail"]
         [:div "Nothing here"])]]))
