@@ -20,26 +20,6 @@
                            (.stopPropagation e)
                            (dispatch [:start-drag id (cursor-position e)]))}]])
 
-(defn lines-component []
-  (let [lines @(subscribe [:lines])
-        characters @(subscribe [:characters])]
-    [:div {:className "lines"}
-     (for [[id line] lines]
-       (let [character-color (get-in characters [(:character-id line) :color])]
-         ^{:key id} [line-component line character-color]))]))
-
-(defn connections-component []
-  (let [connections @(subscribe [:connections])]
-    [:svg {:version "1.1"
-           :baseProfile "full"
-           :xmlns "http://www.w3.org/2000/svg"}
-     (for [{:keys [id start end]} connections]
-       ^{:key id} [:line {:className "connection"
-                          :x1 (+ 200 (first start))
-                          :y1 (+ 15 (second start))
-                          :x2 (first end)
-                          :y2 (+ 15 (second end))}])]))
-
 (defn update-line-handler [id field]
   #(dispatch [:update-line id field (-> % .-target .-value)]))
 
@@ -57,15 +37,33 @@
                                :on-change (update-line-handler id :text)
                                :value text}]]]])))
 
+(defn dialogue-graph []
+  (let [lines @(subscribe [:lines])
+        connections @(subscribe [:connections])
+        characters @(subscribe [:characters])]
+    [:div {:className "canvas"
+           :on-click #(dispatch [:deselect-line])
+           :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
+           :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
+           :on-mouse-up #(dispatch [:end-drag])}
+     [:div {:className "lines"}
+      (for [[id line] lines]
+        (let [character-id (:character-id line)
+              character-color (get-in characters [character-id :color])]
+          ^{:key id} [line-component line character-color]))]
+     [:svg {:version "1.1"
+            :baseProfile "full"
+            :xmlns "http://www.w3.org/2000/svg"}
+      (for [{:keys [id start end]} connections]
+        ^{:key id} [:line {:className "connection"
+                           :x1 (+ 200 (first start))
+                           :y1 (+ 15 (second start))
+                           :x2 (first end)
+                           :y2 (+ 15 (second end))}])]]))
+
 (defn dialogue-component []
   [:div {:className "container"}
-   [:div {:className "canvas"
-          :on-click #(dispatch [:deselect-line])
-          :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
-          :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
-          :on-mouse-up #(dispatch [:end-drag])}
-    [lines-component]
-    [connections-component]]
+   [dialogue-graph]
    [:div {:className "panel"} [line-form]]])
 
 (defn main-panel []
