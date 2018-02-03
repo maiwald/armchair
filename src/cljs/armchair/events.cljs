@@ -1,6 +1,6 @@
 (ns armchair.events
   (:require [re-frame.core :refer [reg-event-db]]
-            [armchair.db :as db :refer [line-data]]
+            [armchair.db :as db]
             [armchair.position :refer [translate-positions position-delta]]))
 
 (reg-event-db

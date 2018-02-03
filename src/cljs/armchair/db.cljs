@@ -1,8 +1,5 @@
 (ns armchair.db)
 
-(defn line-data [line]
-  (select-keys line [:character-id :text]))
-
 (def default-db
   {
    :characters {
