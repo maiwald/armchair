@@ -41,6 +41,11 @@
       (assoc-in db [:lines id field] newValue))))
 
 (reg-event-db
+  :update-character
+  (fn [db [_ id field value]]
+    (assoc-in db [:characters id field] value)))
+
+(reg-event-db
   :start-drag
   (fn [db [_ line-id position]]
     (if-not (contains? (get-in db [:dragging :line-ids]) line-id)

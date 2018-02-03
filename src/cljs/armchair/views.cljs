@@ -23,6 +23,9 @@
 (defn update-line-handler [id field]
   #(dispatch [:update-line id field (-> % .-target .-value)]))
 
+(defn update-character-handler [id field]
+  #(dispatch [:update-character id field (-> % .-target .-value)]))
+
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
     (let [characters @(subscribe [:characters])]
@@ -66,18 +69,29 @@
    [dialogue-graph]
    [:div {:className "panel"} [line-form]]])
 
+(defn character-form [character]
+  (let [{:keys [id display-name color]} character]
+    [slds/form {:title display-name}
+     [slds/input-text {:label "Name"
+                       :on-change (update-character-handler id :display-name)
+                       :value display-name}]
+     [slds/input-text {:label "Color"
+                       :on-change (update-character-handler id :color)
+                       :value color}]]))
+
 (defn character-management []
   (let [characters @(subscribe [:characters])
         selected-character @(subscribe [:selected-character])]
-    (.log js/console selected-character)
-    [slds/master-detail {:collection (vals characters)
-                         :item-view-fn (fn [{:keys [id display-name]}]
-                                      [:div
-                                       {:on-click #(dispatch [:select-character id])}
-                                       display-name])
-                         :detail-view (if selected-character
-                                        [:div (:display-name selected-character)]
-                                        [:div "hello detail!"])}]))
+    [:div
+     [slds/page-header "Characters"]
+     [slds/master-detail {:collection (vals characters)
+                          :item-view-fn (fn [{:keys [id display-name]}]
+                                          [:div
+                                           {:on-click #(dispatch [:select-character id])}
+                                           display-name])
+                          :detail-view (if selected-character
+                                         [character-form selected-character]
+                                         [:div "hello detail!"])}]]))
 
 (defn main-panel []
   (let [current-page @(subscribe [:current-page])]
