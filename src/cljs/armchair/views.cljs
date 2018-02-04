@@ -2,8 +2,20 @@
   (:require [re-frame.core :as re-frame :refer [dispatch subscribe]]
             [armchair.slds :as slds]))
 
+;; Helpers
+
 (defn cursor-position [e]
   [(.. e -pageX) (.. e -pageY)])
+
+(defn record-update-handler [record-event]
+  (fn [id field]
+    (fn [event]
+      (dispatch [record-event id field (-> event .-target .-value)]))))
+
+(def update-line-handler (record-update-handler :update-line))
+(def update-character-handler (record-update-handler :update-character))
+
+;; Components
 
 (defn line-component [{:keys [id text position]} character-color]
   [:div {:className "line"
@@ -19,14 +31,6 @@
           :on-mouse-down (fn [e]
                            (.stopPropagation e)
                            (dispatch [:start-drag id (cursor-position e)]))}]])
-
-(defn record-update-handler [record-event]
-  (fn [id field]
-    (fn [event]
-      (dispatch [record-event id field (-> event .-target .-value)]))))
-
-(def update-line-handler (record-update-handler :update-line))
-(def update-character-handler (record-update-handler :update-character))
 
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
