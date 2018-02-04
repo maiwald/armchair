@@ -20,24 +20,27 @@
                            (.stopPropagation e)
                            (dispatch [:start-drag id (cursor-position e)]))}]])
 
-(defn update-line-handler [id field]
-  #(dispatch [:update-line id field (-> % .-target .-value)]))
+(defn record-update-handler [record-event]
+  (fn [id field]
+    (fn [event]
+      (dispatch [record-event id field (-> event .-target .-value)]))))
 
-(defn update-character-handler [id field]
-  #(dispatch [:update-character id field (-> % .-target .-value)]))
+(def update-line-handler (record-update-handler :update-line))
+(def update-character-handler (record-update-handler :update-character))
 
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
-    (let [characters @(subscribe [:characters])]
+    (let [characters @(subscribe [:characters])
+          update-handler (partial update-line-handler id)]
       [:div {:className "slds-grid slds-grid_align-center"}
        [:div {:className "slds-col slds-size_6-of-12"}
         [slds/form {:title (str "Line #" id)}
          [slds/input-select {:label "Character"
-                             :on-change (update-line-handler id :character-id)
+                             :on-change (update-handler :character-id)
                              :options (map (fn [[k c]] [k (:display-name c)]) characters)
                              :value character-id}]
          [slds/input-textarea {:label "Text"
-                               :on-change (update-line-handler id :text)
+                               :on-change (update-handler :text)
                                :value text}]]]])))
 
 (defn dialogue-graph []
@@ -69,14 +72,14 @@
    [dialogue-graph]
    [:div {:className "panel"} [line-form]]])
 
-(defn character-form [character]
-  (let [{:keys [id display-name color]} character]
+(defn character-form [character update-handler]
+  (let [{:keys [display-name color]} character]
     [slds/form {:title display-name}
      [slds/input-text {:label "Name"
-                       :on-change (update-character-handler id :display-name)
+                       :on-change (update-handler :display-name)
                        :value display-name}]
      [slds/input-text {:label "Color"
-                       :on-change (update-character-handler id :color)
+                       :on-change (update-handler :color)
                        :value color}]]))
 
 (defn character-management []
@@ -90,7 +93,7 @@
                                            {:on-click #(dispatch [:select-character id])}
                                            display-name])
                           :detail-view (if selected-character
-                                         [character-form selected-character]
+                                         [character-form selected-character (partial update-character-handler (:id selected-character))]
                                          [:div "hello detail!"])}]]))
 
 (defn main-panel []
