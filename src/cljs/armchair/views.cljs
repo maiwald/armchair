@@ -97,16 +97,17 @@
                                          [:div "hello detail!"])}]]))
 
 (defn main-panel []
-  (let [current-page @(subscribe [:current-page])]
+  (let [current-page @(subscribe [:current-page])
+        pages (array-map
+                "Dialogue" [dialogue-component]
+                "Characters" [character-management]
+                "Locations" [:div "Master/Detail"])
+        link-map (map
+                   (fn [name] [name #(dispatch [:show-page name])])
+                   (keys pages))]
     [:div {:id "page"}
      [:div {:id "navigation"}
-      [slds/global-navigation
-       {"Home" #(dispatch [:show-page "dialogue"])
-        "Characters" #(dispatch [:show-page "characters"])
-        "Locations" #(dispatch [:show-page "master-detail"])}]]
+      [slds/global-navigation link-map current-page]]
      [:div {:id "content"}
-      (case current-page
-        "dialogue" [dialogue-component]
-        "characters" [character-management]
-        "master-detail" [:div "Master/Detail"]
-        [:div "Nothing here"])]]))
+      (get pages current-page [:div "Nothing"])
+      ]]))

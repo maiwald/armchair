@@ -37,7 +37,7 @@
                   :on-change on-change
                   :value value}]]]))
 
-(defn global-navigation [links]
+(defn global-navigation [links current-page]
   [:div {:className "slds-context-bar"}
    [:div {:className "slds-context-bar__primary"}
     [:div {:className "slds-context-bar__item slds-no-hover"}
@@ -46,7 +46,8 @@
      [:ul {:className "slds-grid"}
       (for [[label handler] links]
         [:li {:key (str "nav-" label)
-              :className "slds-context-bar__item slds-context-bar__dropdown-trigger slds-dropdown-trigger slds-dropdown-trigger_hover"}
+              :className (str "slds-context-bar__item"
+                              (if (= label current-page) " slds-is-active"))}
          [:a {:className "slds-context-bar__label-action" :on-click handler} label]])]]]])
 
 (defn master-detail [{:keys [title collection item-view-fn detail-view]}]
