@@ -46,6 +46,18 @@
       db)))
 
 (reg-event-db
+  :open-character-modal
+  (fn [db [_ id]]
+    (if-not (contains? db :modal)
+      (assoc db :modal {:character-id id})
+      (throw (js/Error. "Attempting to open a modal while modal is open!")))))
+
+(reg-event-db
+  :close-modal
+  (fn [db [_ modal-fn | args]]
+    (dissoc db :modal)))
+
+(reg-event-db
   :show-page
   (fn [db [_ page]]
     (assoc db :current-page page)))

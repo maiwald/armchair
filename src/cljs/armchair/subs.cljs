@@ -14,6 +14,7 @@
 (reg-sub :db-selected-character-id #(:selected-character-id %))
 
 (reg-sub :current-page #(:current-page %))
+(reg-sub :modal #(:modal %))
 
 (reg-sub
   :characters

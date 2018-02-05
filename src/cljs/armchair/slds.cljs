@@ -97,3 +97,21 @@
    [:div {:class "slds-page-header__detail-row"}
     [data-table
      (assoc content-options :table-id title)]]])
+
+(defn modal [{:keys [title close-handler content]}]
+  [:div
+   [:section {:class "slds-modal slds-fade-in-open"}
+    [:div {:class "slds-modal__container"}
+     [:header {:class "slds-modal__header"}
+      [:button {:class "slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                :on-click close-handler
+                :title "Close"}
+       [:svg {:class "slds-button__icon slds-button__icon_large"}
+        [:use {:xlinkHref "/assets/icons/utility-sprite/svg/symbols.svg#close", :xmlnsXlink "http://www.w3.org/1999/xlink"}]]]
+      [:h2 {:class "slds-text-heading_medium slds-hyphenate"} title]]
+     [:div {:class "slds-modal__content slds-p-around_medium"}
+      content]]]
+     ; [:footer {:class "slds-modal__footer"}
+     ;  [:button {:class "slds-button slds-button_neutral"} "Cancel"]
+     ;  [:button {:class "slds-button slds-button_brand"} "Save"]]]]
+   [:div {:class "slds-backdrop slds-backdrop_open"}]])

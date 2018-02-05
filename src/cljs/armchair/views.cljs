@@ -76,15 +76,20 @@
    [dialogue-graph]
    [:div {:class "panel"} [line-form]]])
 
-(defn character-form [character update-handler]
-  (let [{:keys [display-name color]} character]
-    [slds/form {:title display-name}
-     [slds/input-text {:label "Name"
-                       :on-change (update-handler :display-name)
-                       :value display-name}]
-     [slds/input-text {:label "Color"
-                       :on-change (update-handler :color)
-                       :value color}]]))
+(defn character-form-modal []
+  (let [{:keys [character-id]} @(subscribe [:modal])
+        update-handler (partial update-character-handler character-id)]
+    (if-let [character (get @(subscribe [:characters]) character-id)]
+      (let [{:keys [display-name color]} character]
+        [slds/modal {:title display-name
+                     :close-handler #(dispatch [:close-modal])
+                     :content [slds/form
+                               [slds/input-text {:label "Name"
+                                                 :on-change (update-handler :display-name)
+                                                 :value display-name}]
+                               [slds/input-text {:label "Color"
+                                                 :on-change (update-handler :color)
+                                                 :value color}]]}]))))
 
 (defn character-management []
   (let [characters @(subscribe [:characters])]
@@ -96,8 +101,7 @@
                               [:div {:class "slds-text-align_right"}
                                (when (zero? lines)
                                  [slds/symbol-button "delete" {:on-click #(dispatch [:delete-character id])}])
-                               [slds/symbol-button "edit"]
-                               ])}
+                               [slds/symbol-button "edit" {:on-click #(dispatch [:open-character-modal id])}]])}
       :new-resource #(dispatch [:create-new-character])}]))
 
 (defn main-panel []
@@ -110,8 +114,8 @@
                    (fn [name] [name #(dispatch [:show-page name])])
                    (keys pages))]
     [:div {:id "page"}
+     [character-form-modal]
      [:div {:id "navigation"}
       [slds/global-navigation link-map current-page]]
      [:div {:id "content"}
-      (get pages current-page [:div "Nothing"])
-      ]]))
+      (get pages current-page [:div "Nothing"])]]))
