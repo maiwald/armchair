@@ -18,7 +18,7 @@
 ;; Components
 
 (defn line-component [{:keys [id text position]} character-color]
-  [:div {:className "line"
+  [:div {:class "line"
          :on-mouse-down (fn [e] (.stopPropagation e))
          :on-click (fn [e] (.stopPropagation e)
                      (dispatch [:select-line id]))
@@ -26,7 +26,7 @@
                  :left (first position)
                  :top (second position)}}
    [:p text]
-   [:div {:className "drag-handle fas fa-bars"
+   [:div {:class "drag-handle fas fa-bars"
           :on-click #(.stopPropagation %)
           :on-mouse-down (fn [e]
                            (.stopPropagation e)
@@ -36,8 +36,8 @@
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
     (let [characters @(subscribe [:characters])
           update-handler (partial update-line-handler id)]
-      [:div {:className "slds-grid slds-grid_align-center"}
-       [:div {:className "slds-col slds-size_6-of-12"}
+      [:div {:class "slds-grid slds-grid_align-center"}
+       [:div {:class "slds-col slds-size_6-of-12"}
         [slds/form {:title (str "Line #" id)}
          [slds/input-select {:label "Character"
                              :on-change (update-handler :character-id)
@@ -51,12 +51,12 @@
   (let [lines @(subscribe [:lines])
         connections @(subscribe [:connections])
         characters @(subscribe [:characters])]
-    [:div {:className "canvas"
+    [:div {:class "canvas"
            :on-click #(dispatch [:deselect-line])
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
            :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
            :on-mouse-up #(dispatch [:end-drag])}
-     [:div {:className "lines"}
+     [:div {:class "lines"}
       (for [[id line] lines]
         (let [character-id (:character-id line)
               character-color (get-in characters [character-id :color])]
@@ -65,16 +65,16 @@
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
       (for [{:keys [id start end]} connections]
-        ^{:key id} [:line {:className "connection"
+        ^{:key id} [:line {:class "connection"
                            :x1 (+ 200 (first start))
                            :y1 (+ 15 (second start))
                            :x2 (first end)
                            :y2 (+ 15 (second end))}])]]))
 
 (defn dialogue-component []
-  [:div {:className "container"}
+  [:div {:class "container"}
    [dialogue-graph]
-   [:div {:className "panel"} [line-form]]])
+   [:div {:class "panel"} [line-form]]])
 
 (defn character-form [character update-handler]
   (let [{:keys [display-name color]} character]
