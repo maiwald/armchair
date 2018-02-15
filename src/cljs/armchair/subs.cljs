@@ -5,7 +5,7 @@
             [armchair.position :refer [translate-positions]]))
 
 (reg-sub :db-lines #(:lines %))
-(reg-sub :characters #(:characters %))
+(reg-sub :db-characters #(:characters %))
 (reg-sub :db-connections #(:connections %))
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-pointer #(:pointer %))
@@ -13,6 +13,21 @@
 (reg-sub :db-selected-character-id #(:selected-character-id %))
 
 (reg-sub :current-page #(:current-page %))
+
+(reg-sub
+  :characters
+  :<- [:db-characters]
+  :<- [:db-lines]
+  (fn [[characters lines]]
+    (reduce-kv
+      (fn [acc k v]
+        (let [line-count (->> lines
+                              vals
+                              (filter #(= (:character-id %) k))
+                              count)]
+          (assoc acc k (assoc v :lines line-count))))
+      {}
+      characters)))
 
 (reg-sub
   :selected-line

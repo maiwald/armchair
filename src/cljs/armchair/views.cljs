@@ -99,7 +99,7 @@
                       [:div "hello detail!"])]
     [:div
      [slds/resource-page "Characters"
-      {:columns [:id :display-name :color]
+      {:columns [:id :display-name :color :lines]
        :cell-views {:color slds/color-cell}
        :collection (vals characters)
        :item-view-fn item-view-fn

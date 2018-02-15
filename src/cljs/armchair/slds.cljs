@@ -68,10 +68,10 @@
     [:thead {:class "slds-text-title_caps"}
      [:tr
       (for [column columns]
-            [:th {:key column
-                  :scope "col"
-                  :title column}
-             column])
+        [:th {:key column
+              :scope "col"
+              :title column}
+         column])
       [:th {:title "actions"} "actions"]]]
     [:tbody
      (for [item collection]
@@ -81,7 +81,9 @@
            (if-let [cell-view (get cell-views column)]
              [cell-view item column]
              (get item column))])
-        [:td [symbol-button "delete"]]])]]])
+        [:td
+         [symbol-button "edit"]
+         [symbol-button "delete"]]])]]])
 
 (defn resource-page [title content-options]
   [:div {:class "slds-page-header slds-m-around_medium"}
