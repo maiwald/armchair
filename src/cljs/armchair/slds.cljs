@@ -50,18 +50,46 @@
                           (when (= label current-page) " slds-is-active"))}
          [:a {:class "slds-context-bar__label-action" :on-click handler} label]])]]]])
 
-(defn master-detail [{:keys [title collection item-view-fn detail-view]}]
-  [:div {:class "slds-grid slds-gutters"}
-   [:div {:class "slds-col slds-size_1-of-4"}
-    [:ul (for [item collection]
-           ^{:key (:id item)} [:li [item-view-fn item]])]]
-   [:div {:class "slds-col slds-size_3-of-4"}
-    detail-view]])
+(defn color-cell [item column]
+  [:span {:class "slds-badge"
+          :style {:color "rgba(255, 255, 255, .8)"
+                  :background-color (get item column)}}
+   (get item column)])
 
-(defn page-header [title]
+(defn symbol-button [sym]
+  [:button {:class "slds-button slds-button_icon-small slds-button_icon-border-filled"}
+   [:svg {:class "slds-button__icon"}
+    [:use {:xlinkHref (str "/assets/icons/utility-sprite/svg/symbols.svg#" sym)
+           :xmlnsXlink "http://www.w3.org/1999/xlink"}]]])
+
+(defn data-table [{:keys [columns cell-views title collection]}]
+  [:div {:class "slds-grid slds-gutters"}
+   [:table {:class "slds-table slds-table_bordered slds-table_cell-buffer"}
+    [:thead {:class "slds-text-title_caps"}
+     [:tr
+      (for [column columns]
+            [:th {:key column
+                  :scope "col"
+                  :title column}
+             column])
+      [:th {:title "actions"} "actions"]]]
+    [:tbody
+     (for [item collection]
+       [:tr {:key (:id item)}
+        (for [column columns]
+          [:td {:key (str column (:id item))}
+           (if-let [cell-view (get cell-views column)]
+             [cell-view item column]
+             (get item column))])
+        [:td [symbol-button "delete"]]])]]])
+
+(defn resource-page [title content-options]
   [:div {:class "slds-page-header slds-m-around_medium"}
    [:div {:class "slds-grid"}
     [:div {:class "slds-col slds-has-flexi-truncate"}
      [:h1 {:class "slds-page-header__title"} title]]
     [:div {:class "slds-col slds-no-flex"}
-     [:button {:class "slds-button slds-button_neutral"} "New"]]]])
+     [:button {:class "slds-button slds-button_neutral"} "New"]]]
+   [:div {:class "slds-page-header__detail-row"}
+    [data-table
+     content-options]]])

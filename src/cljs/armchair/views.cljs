@@ -88,17 +88,22 @@
 
 (defn character-management []
   (let [characters @(subscribe [:characters])
-        selected-character @(subscribe [:selected-character])]
+        selected-character @(subscribe [:selected-character])
+        item-view-fn (fn [{:keys [id display-name]}]
+                       [:div
+                        {:on-click #(dispatch [:select-character id])}
+                        display-name])
+        detail-view (if selected-character
+                      [character-form selected-character
+                       (partial update-character-handler (:id selected-character))]
+                      [:div "hello detail!"])]
     [:div
-     [slds/page-header "Characters"]
-     [slds/master-detail {:collection (vals characters)
-                          :item-view-fn (fn [{:keys [id display-name]}]
-                                          [:div
-                                           {:on-click #(dispatch [:select-character id])}
-                                           display-name])
-                          :detail-view (if selected-character
-                                         [character-form selected-character (partial update-character-handler (:id selected-character))]
-                                         [:div "hello detail!"])}]]))
+     [slds/resource-page "Characters"
+      {:columns [:id :display-name :color]
+       :cell-views {:color slds/color-cell}
+       :collection (vals characters)
+       :item-view-fn item-view-fn
+       :detail-view detail-view}]]))
 
 (defn main-panel []
   (let [current-page @(subscribe [:current-page])
