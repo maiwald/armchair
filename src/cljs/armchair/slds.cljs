@@ -72,7 +72,9 @@
               :scope "col"
               :title column}
          column])
-      [:th {:title "actions"} "actions"]]]
+      [:th {:class "slds-text-align_right"
+            :title "actions"}
+       "actions"]]]
     [:tbody
      (for [item collection]
        [:tr {:key (:id item)}
@@ -81,7 +83,7 @@
            (if-let [cell-view (get cell-views column)]
              [cell-view item column]
              (get item column))])
-        [:td
+        [:td {:class "slds-text-align_right"}
          [symbol-button "edit"]
          [symbol-button "delete"]]])]]])
 
