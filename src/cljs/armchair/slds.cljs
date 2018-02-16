@@ -64,21 +64,21 @@
     [:use {:xlinkHref (str "/assets/icons/utility-sprite/svg/symbols.svg#" sym)
            :xmlnsXlink "http://www.w3.org/1999/xlink"}]]])
 
-(defn data-table [{:keys [columns cell-views title collection]}]
+(defn data-table [{:keys [table-id columns cell-views title collection]}]
   [:div {:class "slds-grid slds-gutters"}
    [:table {:class "slds-table slds-table_bordered slds-table_cell-buffer"}
     [:thead {:class "slds-text-title_caps"}
      [:tr
       (for [column columns]
-        [:th {:key column
+        [:th {:key (str table-id column)
               :scope "col"
               :title column}
          column])]]
       [:tbody
        (for [item collection]
-         [:tr {:key (:id item)}
+         [:tr {:key (str table-id (:id item))}
           (for [column columns]
-            [:td {:key (str column (:id item))}
+            [:td {:key (str table-id (:id item) column)}
              (if-let [cell-view (get cell-views column)]
                [cell-view item column]
                (get item column))])])]]])
@@ -94,4 +94,4 @@
       "New"]]]
    [:div {:class "slds-page-header__detail-row"}
     [data-table
-     content-options]]])
+     (assoc content-options :table-id title)]]])
