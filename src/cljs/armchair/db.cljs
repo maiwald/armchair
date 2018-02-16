@@ -40,3 +40,7 @@
                   [11 6]
                   }
    })
+
+(defn line-count-for-character [lines character-id]
+  (let [filter-fn #(= (:character-id %) character-id)]
+    (->> lines vals (filter filter-fn) count)))

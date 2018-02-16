@@ -2,6 +2,7 @@
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [clojure.set :refer [difference]]
+            [armchair.db :as db]
             [armchair.position :refer [translate-positions]]))
 
 (reg-sub :db-lines #(:lines %))
@@ -20,12 +21,9 @@
   :<- [:db-lines]
   (fn [[characters lines]]
     (reduce-kv
-      (fn [acc k v]
-        (let [line-count (->> lines
-                              vals
-                              (filter #(= (:character-id %) k))
-                              count)]
-          (assoc acc k (assoc v :lines line-count))))
+      (fn [acc id character]
+        (let [line-count (db/line-count-for-character lines id)]
+          (assoc acc id (assoc character :lines line-count))))
       {}
       characters)))
 

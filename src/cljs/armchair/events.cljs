@@ -39,6 +39,13 @@
       (update db :characters assoc id new-character))))
 
 (reg-event-db
+  :delete-character
+  (fn [db [_ id]]
+    (if (zero? (db/line-count-for-character (:lines db) id))
+      (update db :characters dissoc id)
+      db)))
+
+(reg-event-db
   :show-page
   (fn [db [_ page]]
     (assoc db :current-page page)))

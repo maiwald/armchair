@@ -56,13 +56,15 @@
                   :background-color (get item column)}}
    (get item column)])
 
-(defn symbol-button [sym]
-  [:button {:class "slds-button slds-button_icon-small slds-button_icon-border-filled"}
+(defn symbol-button [sym options]
+  [:button (merge
+             {:class "slds-button slds-button_icon-small slds-button_icon-border-filled"}
+             options)
    [:svg {:class "slds-button__icon"}
     [:use {:xlinkHref (str "/assets/icons/utility-sprite/svg/symbols.svg#" sym)
            :xmlnsXlink "http://www.w3.org/1999/xlink"}]]])
 
-(defn data-table [{:keys [columns cell-views title collection]}]
+(defn data-table [{:keys [columns cell-views delete-resource title collection]}]
   [:div {:class "slds-grid slds-gutters"}
    [:table {:class "slds-table slds-table_bordered slds-table_cell-buffer"}
     [:thead {:class "slds-text-title_caps"}
@@ -85,7 +87,7 @@
              (get item column))])
         [:td {:class "slds-text-align_right"}
          [symbol-button "edit"]
-         [symbol-button "delete"]]])]]])
+         [symbol-button "delete" {:on-click #(delete-resource (:id item))}]]])]]])
 
 (defn resource-page [title content-options]
   [:div {:class "slds-page-header slds-m-around_medium"}
