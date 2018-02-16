@@ -93,7 +93,9 @@
     [:div {:class "slds-col slds-has-flexi-truncate"}
      [:h1 {:class "slds-page-header__title"} title]]
     [:div {:class "slds-col slds-no-flex"}
-     [:button {:class "slds-button slds-button_neutral"} "New"]]]
+     [:button {:class "slds-button slds-button_neutral"
+               :on-click (:new-resource content-options)}
+      "New"]]]
    [:div {:class "slds-page-header__detail-row"}
     [data-table
      content-options]]])

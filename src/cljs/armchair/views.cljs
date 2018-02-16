@@ -100,6 +100,7 @@
     [:div
      [slds/resource-page "Characters"
       {:columns [:id :display-name :color :lines]
+       :new-resource #(dispatch [:create-new-character])
        :cell-views {:color slds/color-cell}
        :collection (vals characters)
        :item-view-fn item-view-fn

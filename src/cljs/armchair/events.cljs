@@ -27,6 +27,17 @@
       (assoc db :selected-character-id character-id)
       db)))
 
+(defn new-id [db resource-type]
+  (let [items (get db resource-type)]
+    (+ 1 (reduce max (keys items)))))
+
+(reg-event-db
+  :create-new-character
+  (fn [db]
+    (let [id (new-id db :characters)
+          new-character {:id id :color "black" :display-name (str "Character #" id)}]
+      (update db :characters assoc id new-character))))
+
 (reg-event-db
   :show-page
   (fn [db [_ page]]
