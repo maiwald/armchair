@@ -2,14 +2,31 @@
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [clojure.set :refer [difference]]
+            [armchair.db :as db]
             [armchair.position :refer [translate-positions]]))
 
 (reg-sub :db-lines #(:lines %))
-(reg-sub :characters #(:characters %))
+(reg-sub :db-characters #(:characters %))
 (reg-sub :db-connections #(:connections %))
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-pointer #(:pointer %))
 (reg-sub :db-selected-line-id #(:selected-line-id %))
+(reg-sub :db-selected-character-id #(:selected-character-id %))
+
+(reg-sub :current-page #(:current-page %))
+(reg-sub :modal #(:modal %))
+
+(reg-sub
+  :characters
+  :<- [:db-characters]
+  :<- [:db-lines]
+  (fn [[characters lines]]
+    (reduce-kv
+      (fn [acc id character]
+        (let [line-count (db/line-count-for-character lines id)]
+          (assoc acc id (assoc character :lines line-count))))
+      {}
+      characters)))
 
 (reg-sub
   :selected-line
@@ -17,6 +34,13 @@
   :<- [:db-selected-line-id]
   (fn [[lines id]]
     (get lines id)))
+
+(reg-sub
+  :selected-character
+  :<- [:characters]
+  :<- [:db-selected-character-id]
+  (fn [[characters id]]
+    (get characters id)))
 
 (reg-sub
   :lines-with-drag
