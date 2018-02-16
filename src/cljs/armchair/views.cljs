@@ -86,27 +86,18 @@
                        :value color}]]))
 
 (defn character-management []
-  (let [characters @(subscribe [:characters])
-        selected-character @(subscribe [:selected-character])
-        item-view-fn (fn [{:keys [id display-name]}]
-                       [:div
-                        {:on-click #(dispatch [:select-character id])}
-                        display-name])
-        detail-view (if selected-character
-                      [character-form selected-character
-                       (partial update-character-handler (:id selected-character))]
-                      [:div "hello detail!"])]
+  (let [characters @(subscribe [:characters])]
     [slds/resource-page "Characters"
      {:columns [:id :display-name :color :lines :actions]
-      :new-resource #(dispatch [:create-new-character])
-      :cell-views {:color slds/color-cell
-                   :actions (fn [{:keys [id]} _]
-                              [:div {:class "slds-text-align_right"}
-                               [slds/symbol-button "edit"]
-                               [slds/symbol-button "delete" {:on-click #(dispatch [:delete-character id])}]])}
       :collection (vals characters)
-      :item-view-fn item-view-fn
-      :detail-view detail-view}]))
+      :cell-views {:color slds/color-cell
+                   :actions (fn [{:keys [id lines]} _]
+                              [:div {:class "slds-text-align_right"}
+                               (when (zero? lines)
+                                 [slds/symbol-button "delete" {:on-click #(dispatch [:delete-character id])}])
+                               [slds/symbol-button "edit"]
+                               ])}
+      :new-resource #(dispatch [:create-new-character])}]))
 
 (defn main-panel []
   (let [current-page @(subscribe [:current-page])
