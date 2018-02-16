@@ -38,7 +38,8 @@
           update-handler (partial update-line-handler id)]
       [:div {:class "slds-grid slds-grid_align-center"}
        [:div {:class "slds-col slds-size_6-of-12"}
-        [slds/form {:title (str "Line #" id)}
+        [slds/form
+         [slds/form-title (str "Line #" id)]
          [slds/input-select {:label "Character"
                              :on-change (update-handler :character-id)
                              :options (map (fn [[k c]] [k (:display-name c)]) characters)

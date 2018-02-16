@@ -1,9 +1,11 @@
 (ns armchair.slds)
 
-(defn form [{:keys [title]} & children]
+(defn form [& children]
   [:div {:class "slds-form slds-form_stacked"}
-   [:div {:class "slds-text-heading_small"} title]
    (map-indexed #(with-meta %2 {:key %1}) children)])
+
+(defn form-title [title]
+  [:div {:class "slds-text-heading_small"} title])
 
 (defn input-text [{:keys [label on-change value]}]
   (let [id (gensym "input-text")]
