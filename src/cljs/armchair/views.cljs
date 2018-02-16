@@ -52,7 +52,6 @@
         connections @(subscribe [:connections])
         characters @(subscribe [:characters])]
     [:div {:class "canvas"
-           :on-click #(dispatch [:deselect-line])
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
            :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
            :on-mouse-up #(dispatch [:end-drag])}

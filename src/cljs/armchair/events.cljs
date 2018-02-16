@@ -1,5 +1,5 @@
 (ns armchair.events
-  (:require [re-frame.core :refer [reg-event-db]]
+  (:require [re-frame.core :refer [reg-event-db reg-event-fx]]
             [armchair.db :as db]
             [armchair.position :refer [translate-positions position-delta]]))
 
@@ -68,17 +68,22 @@
 (reg-event-db
   :start-drag-all
   (fn [db [_ position]]
-    (assoc db :dragging {:line-ids (-> db :lines keys set)
-                         :start position
-                         :delta [0 0]})))
+    (let [all-line-ids (-> db :lines keys set)]
+      (if-not (= all-line-ids (get-in db [:dragging :line-ids]))
+        (assoc db :dragging {:line-ids all-line-ids
+                             :start position
+                             :delta [0 0]})
+        db))))
 
-(reg-event-db
+(reg-event-fx
   :end-drag
-  (fn  [db _]
+  (fn  [{:keys [db]} _]
     (let [{:keys [line-ids delta]} (:dragging db)]
-      (-> db
-          (update :lines translate-positions line-ids delta)
-          (dissoc :dragging)))))
+      (merge
+        {:db (-> db
+                 (update :lines translate-positions line-ids delta)
+                 (dissoc :dragging))}
+        (when (= [0 0] delta) {:dispatch [:deselect-line]})))))
 
 (reg-event-db
   :move-pointer
