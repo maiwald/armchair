@@ -64,7 +64,7 @@
     [:use {:xlinkHref (str "/assets/icons/utility-sprite/svg/symbols.svg#" sym)
            :xmlnsXlink "http://www.w3.org/1999/xlink"}]]])
 
-(defn data-table [{:keys [columns cell-views delete-resource title collection]}]
+(defn data-table [{:keys [columns cell-views title collection]}]
   [:div {:class "slds-grid slds-gutters"}
    [:table {:class "slds-table slds-table_bordered slds-table_cell-buffer"}
     [:thead {:class "slds-text-title_caps"}
@@ -73,21 +73,15 @@
         [:th {:key column
               :scope "col"
               :title column}
-         column])
-      [:th {:class "slds-text-align_right"
-            :title "actions"}
-       "actions"]]]
-    [:tbody
-     (for [item collection]
-       [:tr {:key (:id item)}
-        (for [column columns]
-          [:td {:key (str column (:id item))}
-           (if-let [cell-view (get cell-views column)]
-             [cell-view item column]
-             (get item column))])
-        [:td {:class "slds-text-align_right"}
-         [symbol-button "edit"]
-         [symbol-button "delete" {:on-click #(delete-resource (:id item))}]]])]]])
+         column])]]
+      [:tbody
+       (for [item collection]
+         [:tr {:key (:id item)}
+          (for [column columns]
+            [:td {:key (str column (:id item))}
+             (if-let [cell-view (get cell-views column)]
+               [cell-view item column]
+               (get item column))])])]]])
 
 (defn resource-page [title content-options]
   [:div {:class "slds-page-header slds-m-around_medium"}

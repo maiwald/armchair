@@ -96,15 +96,17 @@
                       [character-form selected-character
                        (partial update-character-handler (:id selected-character))]
                       [:div "hello detail!"])]
-    [:div
-     [slds/resource-page "Characters"
-      {:columns [:id :display-name :color :lines]
-       :new-resource #(dispatch [:create-new-character])
-       :delete-resource #(dispatch [:delete-character %])
-       :cell-views {:color slds/color-cell}
-       :collection (vals characters)
-       :item-view-fn item-view-fn
-       :detail-view detail-view}]]))
+    [slds/resource-page "Characters"
+     {:columns [:id :display-name :color :lines :actions]
+      :new-resource #(dispatch [:create-new-character])
+      :cell-views {:color slds/color-cell
+                   :actions (fn [{:keys [id]} _]
+                              [:div {:class "slds-text-align_right"}
+                               [slds/symbol-button "edit"]
+                               [slds/symbol-button "delete" {:on-click #(dispatch [:delete-character id])}]])}
+      :collection (vals characters)
+      :item-view-fn item-view-fn
+      :detail-view detail-view}]))
 
 (defn main-panel []
   (let [current-page @(subscribe [:current-page])
