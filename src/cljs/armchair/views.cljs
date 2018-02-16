@@ -115,6 +115,8 @@
                    (keys pages))]
     [:div {:id "page"}
      [character-form-modal]
+     [:a {:id "reset"
+          :on-click #(dispatch [:reset-db])} "reset"]
      [:div {:id "navigation"}
       [slds/global-navigation link-map current-page]]
      [:div {:id "content"}

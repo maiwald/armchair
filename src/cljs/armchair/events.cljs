@@ -9,6 +9,11 @@
     db/default-db))
 
 (reg-event-db
+  :reset-db
+  (fn [db _]
+    (merge db (select-keys db/default-db [:characters :lines]))))
+
+(reg-event-db
   :select-line
   (fn [db [_ line-id]]
     (if-not (= (:selected-line-id db) line-id)
