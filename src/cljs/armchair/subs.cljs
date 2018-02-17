@@ -12,7 +12,7 @@
 (reg-sub :db-pointer #(:pointer %))
 (reg-sub :db-selected-line-id #(:selected-line-id %))
 (reg-sub :db-selected-character-id #(:selected-character-id %))
-
+(reg-sub :locations #(:locations %))
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
 

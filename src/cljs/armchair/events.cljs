@@ -11,7 +11,7 @@
 (reg-event-db
   :reset-db
   (fn [db _]
-    (merge db (select-keys db/default-db [:characters :lines]))))
+    (merge db (select-keys db/default-db [:characters :locations :lines]))))
 
 (reg-event-db
   :select-line
@@ -25,16 +25,11 @@
   (fn [db [_ line-id]]
     (dissoc db :selected-line-id)))
 
-(reg-event-db
-  :select-character
-  (fn [db [_ character-id]]
-    (if-not (= (:selected-character-id db) character-id)
-      (assoc db :selected-character-id character-id)
-      db)))
+;; Resources
 
 (defn new-id [db resource-type]
   (let [items (get db resource-type)]
-    (+ 1 (reduce max (keys items)))))
+    (+ 1 (reduce max 0 (keys items)))))
 
 (reg-event-db
   :create-new-character
@@ -51,11 +46,42 @@
       db)))
 
 (reg-event-db
+  :update-character
+  (fn [db [_ id field value]]
+    (assoc-in db [:characters id field] value)))
+
+(reg-event-db
   :open-character-modal
   (fn [db [_ id]]
     (if-not (contains? db :modal)
       (assoc db :modal {:character-id id})
       (throw (js/Error. "Attempting to open a modal while modal is open!")))))
+
+(reg-event-db
+  :create-new-location
+  (fn [db]
+    (let [id (new-id db :locations)
+          new-location {:id id :color "black" :display-name (str "location #" id)}]
+      (update db :locations assoc id new-location))))
+
+(reg-event-db
+  :delete-location
+  (fn [db [_ id]]
+    (update db :locations dissoc id)))
+
+(reg-event-db
+  :update-location
+  (fn [db [_ id field value]]
+    (assoc-in db [:locations id field] value)))
+
+(reg-event-db
+  :open-location-modal
+  (fn [db [_ id]]
+    (if-not (contains? db :modal)
+      (assoc db :modal {:location-id id})
+      (throw (js/Error. "Attempting to open a modal while modal is open!")))))
+
+;; Page
 
 (reg-event-db
   :close-modal
@@ -75,10 +101,7 @@
                      value)]
       (assoc-in db [:lines id field] newValue))))
 
-(reg-event-db
-  :update-character
-  (fn [db [_ id field value]]
-    (assoc-in db [:characters id field] value)))
+;; Mouse, Drag & Drop
 
 (reg-event-db
   :start-drag

@@ -14,6 +14,7 @@
 
 (def update-line-handler (record-update-handler :update-line))
 (def update-character-handler (record-update-handler :update-character))
+(def update-location-handler (record-update-handler :update-location))
 
 ;; Components
 
@@ -104,17 +105,41 @@
                                [slds/symbol-button "edit" {:on-click #(dispatch [:open-character-modal id])}]])}
       :new-resource #(dispatch [:create-new-character])}]))
 
+(defn location-form-modal []
+  (let [{:keys [location-id]} @(subscribe [:modal])
+        update-handler (partial update-location-handler location-id)]
+    (if-let [location (get @(subscribe [:locations]) location-id)]
+      (let [display-name (:display-name location)]
+        [slds/modal {:title display-name
+                     :close-handler #(dispatch [:close-modal])
+                     :content [slds/form
+                               [slds/input-text {:label "Name"
+                                                 :on-change (update-handler :display-name)
+                                                 :value display-name}]]}]))))
+
+(defn location-management []
+  (let [locations @(subscribe [:locations])]
+    [slds/resource-page "Locations"
+     {:columns [:id :display-name :actions]
+      :collection (vals locations)
+      :cell-views {:actions (fn [{:keys [id lines]} _]
+                              [:div {:class "slds-text-align_right"}
+                               [slds/symbol-button "delete" {:on-click #(dispatch [:delete-location id])}]
+                               [slds/symbol-button "edit" {:on-click #(dispatch [:open-location-modal id])}]])}
+      :new-resource #(dispatch [:create-new-location])}]))
+
 (defn main-panel []
   (let [current-page @(subscribe [:current-page])
         pages (array-map
                 "Dialogue" [dialogue-component]
                 "Characters" [character-management]
-                "Locations" [:div "Master/Detail"])
+                "Locations" [location-management])
         link-map (map
                    (fn [name] [name #(dispatch [:show-page name])])
                    (keys pages))]
     [:div {:id "page"}
      [character-form-modal]
+     [location-form-modal]
      [:a {:id "reset"
           :on-click #(dispatch [:reset-db])} "reset"]
      [:div {:id "navigation"}

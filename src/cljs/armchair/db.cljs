@@ -3,6 +3,10 @@
 (def default-db
   {
    :current-page "Dialogue"
+   :locations {
+               1 { :id 1 :display-name "Park - Camp" }
+               2 { :id 2 :display-name "Park - Entrance" }
+               }
    :characters {
                 1 { :id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)" }
                 2 { :id 2 :display-name "Player" :color "rgba(0, 0, 255, .6)" }
