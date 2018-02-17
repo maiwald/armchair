@@ -83,7 +83,6 @@
   :<- [:dialogue-connections]
   (fn [[lines connections]]
     (map (fn [[start end]]
-           {:id (str start end)
-            :start (get-in lines [start :position])
+           {:start (get-in lines [start :position])
             :end (get-in lines [end :position])})
          connections)))

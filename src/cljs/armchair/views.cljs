@@ -61,16 +61,17 @@
       (for [[id line] lines]
         (let [character-id (:character-id line)
               character-color (get-in characters [character-id :color])]
-          ^{:key id} [line-component line character-color]))]
+          ^{:key (str "line" id)} [line-component line character-color]))]
      [:svg {:version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
-      (for [{:keys [id start end]} connections]
-        ^{:key id} [:line {:class "connection"
-                           :x1 (+ 200 (first start))
-                           :y1 (+ 15 (second start))
-                           :x2 (first end)
-                           :y2 (+ 15 (second end))}])]]))
+      (for [{:keys [start end]} connections]
+        [:line {:class "connection"
+                :key (str "connection" start "-" end)
+                :x1 (+ 200 (first start))
+                :y1 (+ 15 (second start))
+                :x2 (first end)
+                :y2 (+ 15 (second end))}])]]))
 
 (defn dialogue-component []
   [:div {:class "container"}
