@@ -10,8 +10,10 @@
 (reg-sub :db-connections #(:connections %))
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-pointer #(:pointer %))
+(reg-sub :db-selected-dialogue-id #(:selected-dialogue-id %))
 (reg-sub :db-selected-line-id #(:selected-line-id %))
 (reg-sub :db-selected-character-id #(:selected-character-id %))
+
 (reg-sub :locations #(:locations %))
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
@@ -43,13 +45,32 @@
     (get characters id)))
 
 (reg-sub
-  :lines-with-drag
+  :dialogue-lines
   :<- [:db-lines]
+  :<- [:db-selected-dialogue-id]
+  (fn [[lines selected-dialogue-id]]
+    (reduce
+      #(assoc %1 (:id %2) %2)
+      {}
+      (filter #(= selected-dialogue-id (:dialogue-id %)) (vals lines)))))
+
+(reg-sub
+  :lines-with-drag
+  :<- [:dialogue-lines]
   :<- [:db-dragging]
   (fn [[lines dragging] _]
     (if-let [{:keys [line-ids delta]} dragging]
       (translate-positions lines line-ids delta)
       lines)))
+
+(reg-sub
+  :dialogue-connections
+  :<- [:db-connections]
+  :<- [:dialogue-lines]
+  (fn [[connections lines]]
+    (filter (fn [[a b]] (and (contains? lines a)
+                             (contains? lines b)))
+            connections)))
 
 (reg-sub
   :lines
@@ -59,7 +80,7 @@
 (reg-sub
   :connections
   :<- [:lines-with-drag]
-  :<- [:db-connections]
+  :<- [:dialogue-connections]
   (fn [[lines connections]]
     (map (fn [[start end]]
            {:id (str start end)

@@ -3,6 +3,7 @@
 (def default-db
   {
    :current-page "Dialogue"
+   :selected-dialogue-id 1
    :locations {
                1 { :id 1 :display-name "Park - Camp" }
                2 { :id 2 :display-name "Park - Entrance" }
