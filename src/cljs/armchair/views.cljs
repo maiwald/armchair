@@ -128,8 +128,10 @@
       :collection (vals locations)
       :cell-views {:actions (fn [{:keys [id lines]} _]
                               [:div {:class "slds-text-align_right"}
-                               [slds/symbol-button "trash-alt" {:on-click #(dispatch [:delete-location id])}]
-                               [slds/symbol-button "edit" {:on-click #(dispatch [:open-location-modal id])}]])}
+                               [slds/symbol-button "trash-alt"
+                                {:on-click #(dispatch [:delete-location id])}]
+                               [slds/symbol-button "edit"
+                                {:on-click #(dispatch [:open-location-modal id])}]])}
       :new-resource #(dispatch [:create-new-location])}]))
 
 (defn main-panel []
