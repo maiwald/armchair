@@ -1,6 +1,7 @@
 (ns armchair.views
   (:require [re-frame.core :as re-frame :refer [dispatch subscribe]]
-            [armchair.slds :as slds]))
+            [armchair.slds :as slds]
+            [armchair.config :as config]))
 
 ;; Helpers
 
@@ -20,18 +21,24 @@
 
 (defn line-component [{:keys [id text position]} character-color]
   [:div {:class "line"
-         :on-mouse-down (fn [e] (.stopPropagation e))
-         :on-click (fn [e] (.stopPropagation e)
-                     (dispatch [:select-line id]))
+         :on-mouse-down (fn [e]
+                          (.preventDefault e)
+                          (.stopPropagation e)
+                          (dispatch [:start-drag id (cursor-position e)]))
+         :on-mouse-up (fn [e]
+                        (.preventDefault e)
+                        (.stopPropagation e)
+                        (dispatch [:end-drag id]))
          :style {:border-color character-color
+                 :width (str config/line-width "px")
                  :left (first position)
                  :top (second position)}}
    [:p text]
-   [:div {:class "drag-handle fas fa-bars"
-          :on-click #(.stopPropagation %)
+   [:div {:class "connection-handle fas fa-link"
           :on-mouse-down (fn [e]
+                           (.preventDefault e)
                            (.stopPropagation e)
-                           (dispatch [:start-drag id (cursor-position e)]))}]])
+                           (dispatch [:start-connection id (cursor-position e)]))}]])
 
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
@@ -55,8 +62,9 @@
         characters @(subscribe [:characters])]
     [:div {:class "canvas"
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
-           :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
-           :on-mouse-up #(dispatch [:end-drag])}
+           :on-mouse-down (fn [e] (.preventDefault e)
+                            (dispatch [:start-drag-all (cursor-position e)]))
+           :on-mouse-up #(dispatch [:end-drag-all])}
      [:button {:class "new-line-button slds-button slds-button_neutral"
                :on-click #(dispatch [:create-new-line])}
       [:i {:class "slds-button__icon slds-button__icon_left fas fa-plus"}]
@@ -69,13 +77,14 @@
      [:svg {:version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
-      (for [{:keys [start end]} connections]
-        [:line {:class "connection"
-                :key (str "connection" start "-" end)
-                :x1 (+ 200 (first start))
-                :y1 (+ 15 (second start))
+      (for [{:keys [kind start end]} connections]
+        [:line {:class kind
+                :stroke-dasharray (when (= kind :drag-connection) "3, 3")
+                :key (str "connection" kind start "-" end)
+                :x1 (first start)
+                :y1 (second start)
                 :x2 (first end)
-                :y2 (+ 15 (second end))}])]]))
+                :y2 (second end)}])]]))
 
 (defn dialogue-component []
   [:div {:class "container"}
@@ -129,8 +138,10 @@
       :collection (vals locations)
       :cell-views {:actions (fn [{:keys [id lines]} _]
                               [:div {:class "slds-text-align_right"}
-                               [slds/symbol-button "trash-alt" {:on-click #(dispatch [:delete-location id])}]
-                               [slds/symbol-button "edit" {:on-click #(dispatch [:open-location-modal id])}]])}
+                               [slds/symbol-button "trash-alt"
+                                {:on-click #(dispatch [:delete-location id])}]
+                               [slds/symbol-button "edit"
+                                {:on-click #(dispatch [:open-location-modal id])}]])}
       :new-resource #(dispatch [:create-new-location])}]))
 
 (defn main-panel []

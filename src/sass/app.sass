@@ -56,7 +56,8 @@ $gray: #888
     top: 20px
     right: 20px
 
-.connection
+.connection,
+.drag-connection
   stroke: $gray
 
 .line
@@ -65,8 +66,7 @@ $gray: #888
   display: flex
   align-items: center
   position: absolute
-  box-sizing: "border-box"
-  width: 200px
+  box-sizing: border-box
   min-height: 30px
   border: 1px solid $gray
   border-radius: 15px
@@ -81,8 +81,7 @@ $gray: #888
     user-select: none
     -webkit-user-select: none
 
-  .drag-handle
+  .connection-handle
     align-self: flex-start
     margin: $outer-margin $outer-margin 0 0
     color: $gray
-    cursor: move

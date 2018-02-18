@@ -11,7 +11,8 @@
 (reg-event-db
   :reset-db
   (fn [db _]
-    (merge db (select-keys db/default-db [:characters :locations :lines]))))
+    (merge db (select-keys db/default-db
+                           [:characters :locations :lines :connections]))))
 
 (reg-event-db
   :select-line
@@ -115,6 +116,15 @@
 ;; Mouse, Drag & Drop
 
 (reg-event-db
+  :start-connection
+  (fn [db [_ line-id position]]
+    (if-not (= (get-in db [:dragging :connection-start]) line-id)
+      (assoc db :dragging {:connection-start line-id
+                           :start position
+                           :delta [0 0]})
+      db)))
+
+(reg-event-db
   :start-drag
   (fn [db [_ line-id position]]
     (if-not (contains? (get-in db [:dragging :line-ids]) line-id)
@@ -122,6 +132,22 @@
                            :start position
                            :delta [0 0]})
       db)))
+
+(reg-event-fx
+  :end-drag
+  (fn [{:keys [db]} [_ line-id]]
+    (let [{:keys [line-ids connection-start delta]} (:dragging db)
+          is-click? (= [0 0] delta)]
+      (if (= line-ids #{line-id})
+        (merge
+          {:db (-> db
+                   (update :lines translate-positions line-ids delta)
+                   (dissoc :dragging))}
+          (when is-click?
+            {:dispatch [:select-line line-id]}))
+        {:db (-> db
+                 (update :connections conj [connection-start line-id])
+                 (dissoc :dragging))}))))
 
 (reg-event-db
   :start-drag-all
@@ -134,8 +160,8 @@
         db))))
 
 (reg-event-fx
-  :end-drag
-  (fn  [{:keys [db]} _]
+  :end-drag-all
+  (fn [{:keys [db]} _]
     (let [{:keys [line-ids delta]} (:dragging db)
           is-click? (= [0 0] delta)]
       (merge

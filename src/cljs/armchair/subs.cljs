@@ -3,7 +3,8 @@
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [clojure.set :refer [difference]]
             [armchair.db :as db]
-            [armchair.position :refer [translate-positions]]))
+            [armchair.config :as config]
+            [armchair.position :refer [apply-delta translate-positions]]))
 
 (reg-sub :db-lines #(:lines %))
 (reg-sub :db-characters #(:characters %))
@@ -80,9 +81,21 @@
 (reg-sub
   :connections
   :<- [:lines-with-drag]
+  :<- [:db-dragging]
   :<- [:dialogue-connections]
-  (fn [[lines connections]]
-    (map (fn [[start end]]
-           {:start (get-in lines [start :position])
-            :end (get-in lines [end :position])})
-         connections)))
+  (fn [[lines dragging connections]]
+    (let [start-offset #(apply-delta % [(- config/line-width 15) 15])
+          end-offset #(apply-delta % [15 15])
+          connection->positions (fn [[start end]]
+                                  {:kind :connection
+                                   :start (start-offset (get-in lines [start :position]))
+                                   :end (end-offset (get-in lines [end :position]))})
+          view-connections (map connection->positions connections)]
+      (if-let [start (:connection-start dragging)]
+        (let [base-position (start-offset (get-in lines [start :position]))]
+          (conj
+            view-connections
+            {:kind :drag-connection
+             :start base-position
+             :end (apply-delta base-position (:delta dragging))}))
+          view-connections))))
