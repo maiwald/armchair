@@ -20,18 +20,17 @@
 
 (defn line-component [{:keys [id text position]} character-color]
   [:div {:class "line"
-         :on-mouse-down (fn [e] (.stopPropagation e))
-         :on-click (fn [e] (.stopPropagation e)
-                     (dispatch [:select-line id]))
+         :on-mouse-down (fn [e]
+                          (.stopPropagation e)
+                          (dispatch [:start-drag id (cursor-position e)]))
+         :on-mouse-up (fn [e]
+                        (.stopPropagation e)
+                        (dispatch [:end-drag id]))
          :style {:border-color character-color
                  :left (first position)
                  :top (second position)}}
    [:p text]
-   [:div {:class "drag-handle fas fa-bars"
-          :on-click #(.stopPropagation %)
-          :on-mouse-down (fn [e]
-                           (.stopPropagation e)
-                           (dispatch [:start-drag id (cursor-position e)]))}]])
+   [:div {:class "drag-handle fas fa-bars"}]])
 
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
@@ -56,7 +55,7 @@
     [:div {:class "canvas"
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
            :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
-           :on-mouse-up #(dispatch [:end-drag])}
+           :on-mouse-up #(dispatch [:end-drag-all])}
      [:button {:class "new-line-button slds-button slds-button_neutral"
                :on-click #(dispatch [:create-new-line])}
       [:i {:class "slds-button__icon slds-button__icon_left fas fa-plus"}]

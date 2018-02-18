@@ -123,6 +123,19 @@
                            :delta [0 0]})
       db)))
 
+(reg-event-fx
+  :end-drag
+  (fn [{:keys [db]} [_ line-id]]
+    (let [{:keys [line-ids delta]} (:dragging db)
+          is-click? (= [0 0] delta)]
+      (if (= line-ids #{line-id})
+        (merge
+          {:db (-> db
+                   (update :lines translate-positions line-ids delta)
+                   (dissoc :dragging))}
+        (when is-click?
+          {:dispatch [:select-line line-id]}))))))
+
 (reg-event-db
   :start-drag-all
   (fn [db [_ position]]
@@ -134,8 +147,8 @@
         db))))
 
 (reg-event-fx
-  :end-drag
-  (fn  [{:keys [db]} _]
+  :end-drag-all
+  (fn [{:keys [db]} _]
     (let [{:keys [line-ids delta]} (:dragging db)
           is-click? (= [0 0] delta)]
       (merge
