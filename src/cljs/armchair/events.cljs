@@ -125,12 +125,13 @@
 (reg-event-fx
   :end-drag
   (fn  [{:keys [db]} _]
-    (let [{:keys [line-ids delta]} (:dragging db)]
+    (let [{:keys [line-ids delta]} (:dragging db)
+          is-click? (= [0 0] delta)]
       (merge
         {:db (-> db
                  (update :lines translate-positions line-ids delta)
                  (dissoc :dragging))}
-        (when (= [0 0] delta) {:dispatch [:deselect-line]})))))
+        (when is-click? {:dispatch [:deselect-line]})))))
 
 (reg-event-db
   :move-pointer
