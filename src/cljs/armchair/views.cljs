@@ -1,6 +1,7 @@
 (ns armchair.views
   (:require [re-frame.core :as re-frame :refer [dispatch subscribe]]
-            [armchair.slds :as slds]))
+            [armchair.slds :as slds]
+            [armchair.config :as config]))
 
 ;; Helpers
 
@@ -29,6 +30,7 @@
                         (.stopPropagation e)
                         (dispatch [:end-drag id]))
          :style {:border-color character-color
+                 :width (str config/line-width "px")
                  :left (first position)
                  :top (second position)}}
    [:p text]
@@ -75,13 +77,14 @@
      [:svg {:version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
-      (for [{:keys [start end]} connections]
-        [:line {:class "connection"
-                :key (str "connection" start "-" end)
-                :x1 (+ 200 (first start))
-                :y1 (+ 15 (second start))
+      (for [{:keys [kind start end]} connections]
+        [:line {:class kind
+                :stroke-dasharray (when (= kind :drag-connection) "3, 3")
+                :key (str "connection" kind start "-" end)
+                :x1 (first start)
+                :y1 (second start)
                 :x2 (first end)
-                :y2 (+ 15 (second end))}])]]))
+                :y2 (second end)}])]]))
 
 (defn dialogue-component []
   [:div {:class "container"}

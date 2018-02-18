@@ -2,3 +2,5 @@
 
 (def debug?
   ^boolean goog.DEBUG)
+
+(def line-width 200)
