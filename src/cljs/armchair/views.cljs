@@ -21,9 +21,11 @@
 (defn line-component [{:keys [id text position]} character-color]
   [:div {:class "line"
          :on-mouse-down (fn [e]
+                          (.preventDefault e)
                           (.stopPropagation e)
                           (dispatch [:start-drag id (cursor-position e)]))
          :on-mouse-up (fn [e]
+                        (.preventDefault e)
                         (.stopPropagation e)
                         (dispatch [:end-drag id]))
          :style {:border-color character-color
@@ -32,6 +34,7 @@
    [:p text]
    [:div {:class "connection-handle fas fa-link"
           :on-mouse-down (fn [e]
+                           (.preventDefault e)
                            (.stopPropagation e)
                            (dispatch [:start-connection id (cursor-position e)]))}]])
 
@@ -57,7 +60,8 @@
         characters @(subscribe [:characters])]
     [:div {:class "canvas"
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
-           :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
+           :on-mouse-down (fn [e] (.preventDefault e)
+                            (dispatch [:start-drag-all (cursor-position e)]))
            :on-mouse-up #(dispatch [:end-drag-all])}
      [:button {:class "new-line-button slds-button slds-button_neutral"
                :on-click #(dispatch [:create-new-line])}
