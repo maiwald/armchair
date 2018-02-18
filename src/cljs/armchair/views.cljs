@@ -30,7 +30,10 @@
                  :left (first position)
                  :top (second position)}}
    [:p text]
-   [:div {:class "drag-handle fas fa-bars"}]])
+   [:div {:class "connection-handle fas fa-link"
+          :on-mouse-down (fn [e]
+                           (.stopPropagation e)
+                           (dispatch [:start-connection id (cursor-position e)]))}]])
 
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
