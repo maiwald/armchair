@@ -26,7 +26,8 @@
        [:select {:class "slds-select"
                  :id id
                  :on-change on-change
-                 :value value}
+                 :value (or value "nil")}
+        [:option {:key (str id "nil") :value "nil" :disabled "disabled"}]
         (for [[k v] options] [:option {:key (str id k) :value k} v])]]]]))
 
 (defn input-textarea [{:keys [label on-change value]}]

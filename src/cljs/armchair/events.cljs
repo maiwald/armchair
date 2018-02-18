@@ -61,7 +61,7 @@
   :create-new-location
   (fn [db]
     (let [id (new-id db :locations)
-          new-location {:id id :color "black" :display-name (str "location #" id)}]
+          new-location {:id id :display-name (str "location #" id)}]
       (update db :locations assoc id new-location))))
 
 (reg-event-db
@@ -81,6 +81,25 @@
       (assoc db :modal {:location-id id})
       (throw (js/Error. "Attempting to open a modal while modal is open!")))))
 
+(reg-event-db
+  :create-new-line
+  (fn [db]
+    (let [id (new-id db :lines)
+          new-line {:id id
+                    :character-id nil
+                    :dialogue-id (:selected-dialogue-id db)
+                    :position [20 20]
+                    :text (str "Line #" id)}]
+      (update db :lines assoc id new-line))))
+
+(reg-event-db
+  :update-line
+  (fn [db [_ id field value]]
+    (let [newValue (case field
+                     :character-id (int value)
+                     value)]
+      (assoc-in db [:lines id field] newValue))))
+
 ;; Page
 
 (reg-event-db
@@ -92,14 +111,6 @@
   :show-page
   (fn [db [_ page]]
     (assoc db :current-page page)))
-
-(reg-event-db
-  :update-line
-  (fn [db [_ id field value]]
-    (let [newValue (case field
-                     :character-id (int value)
-                     value)]
-      (assoc-in db [:lines id field] newValue))))
 
 ;; Mouse, Drag & Drop
 

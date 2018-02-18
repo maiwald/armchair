@@ -57,10 +57,13 @@
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
            :on-mouse-down #(dispatch [:start-drag-all (cursor-position %)])
            :on-mouse-up #(dispatch [:end-drag])}
+     [:button {:class "new-line-button slds-button slds-button_neutral"
+               :on-click #(dispatch [:create-new-line])}
+      "New"]
      [:div {:class "lines"}
       (for [[id line] lines]
         (let [character-id (:character-id line)
-              character-color (get-in characters [character-id :color])]
+              character-color (get-in characters [character-id :color] "black")]
           ^{:key (str "line" id)} [line-component line character-color]))]
      [:svg {:version "1.1"
             :baseProfile "full"
