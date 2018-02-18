@@ -59,6 +59,7 @@
            :on-mouse-up #(dispatch [:end-drag])}
      [:button {:class "new-line-button slds-button slds-button_neutral"
                :on-click #(dispatch [:create-new-line])}
+      [:i {:class "slds-button__icon slds-button__icon_left fas fa-plus"}]
       "New"]
      [:div {:class "lines"}
       (for [[id line] lines]
@@ -105,7 +106,7 @@
                    :actions (fn [{:keys [id lines]} _]
                               [:div {:class "slds-text-align_right"}
                                (when (zero? lines)
-                                 [slds/symbol-button "delete" {:on-click #(dispatch [:delete-character id])}])
+                                 [slds/symbol-button "trash-alt" {:on-click #(dispatch [:delete-character id])}])
                                [slds/symbol-button "edit" {:on-click #(dispatch [:open-character-modal id])}]])}
       :new-resource #(dispatch [:create-new-character])}]))
 
@@ -128,7 +129,7 @@
       :collection (vals locations)
       :cell-views {:actions (fn [{:keys [id lines]} _]
                               [:div {:class "slds-text-align_right"}
-                               [slds/symbol-button "delete" {:on-click #(dispatch [:delete-location id])}]
+                               [slds/symbol-button "trash-alt" {:on-click #(dispatch [:delete-location id])}]
                                [slds/symbol-button "edit" {:on-click #(dispatch [:open-location-modal id])}]])}
       :new-resource #(dispatch [:create-new-location])}]))
 

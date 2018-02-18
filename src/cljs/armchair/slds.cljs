@@ -63,9 +63,7 @@
   [:button (merge
              {:class "slds-button slds-button_icon-small slds-button_icon-border-filled"}
              options)
-   [:svg {:class "slds-button__icon"}
-    [:use {:xlinkHref (str "/assets/icons/utility-sprite/svg/symbols.svg#" sym)
-           :xmlnsXlink "http://www.w3.org/1999/xlink"}]]])
+   [:i {:class (str "slds-button__icon fas fa-" sym)} ]])
 
 (defn data-table [{:keys [table-id columns cell-views title collection]}]
   [:div {:class "slds-grid slds-gutters"}
@@ -94,6 +92,7 @@
     [:div {:class "slds-col slds-no-flex"}
      [:button {:class "slds-button slds-button_neutral"
                :on-click (:new-resource content-options)}
+      [:i {:class "slds-button__icon slds-button__icon_left fas fa-plus"}]
       "New"]]]
    [:div {:class "slds-page-header__detail-row"}
     [data-table
