@@ -133,17 +133,19 @@
                            :delta [0 0]})
       db)))
 
+(defn is-click? [delta]
+  (every? #(> 2 (.abs js/Math %)) delta))
+
 (reg-event-fx
   :end-drag
   (fn [{:keys [db]} [_ line-id]]
-    (let [{:keys [line-ids connection-start delta]} (:dragging db)
-          is-click? (= [0 0] delta)]
+    (let [{:keys [line-ids connection-start delta]} (:dragging db)]
       (if (= line-ids #{line-id})
         (merge
           {:db (-> db
                    (update :lines translate-positions line-ids delta)
                    (dissoc :dragging))}
-          (when is-click?
+          (when (is-click? delta)
             {:dispatch [:select-line line-id]}))
         {:db (-> db
                  (update :connections conj [connection-start line-id])
@@ -162,13 +164,12 @@
 (reg-event-fx
   :end-drag-all
   (fn [{:keys [db]} _]
-    (let [{:keys [line-ids delta]} (:dragging db)
-          is-click? (= [0 0] delta)]
+    (let [{:keys [line-ids delta]} (:dragging db)]
       (merge
         {:db (-> db
                  (update :lines translate-positions line-ids delta)
                  (dissoc :dragging))}
-        (when is-click? {:dispatch [:deselect-line]})))))
+        (when (is-click? delta) {:dispatch [:deselect-line]})))))
 
 (reg-event-db
   :move-pointer
