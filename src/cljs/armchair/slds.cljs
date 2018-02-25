@@ -110,8 +110,8 @@
         [:use {:xlinkHref "/assets/icons/utility-sprite/svg/symbols.svg#close", :xmlnsXlink "http://www.w3.org/1999/xlink"}]]]
       [:h2 {:class "slds-text-heading_medium slds-hyphenate"} title]]
      [:div {:class "slds-modal__content slds-p-around_medium"}
-      content]]]
-     ; [:footer {:class "slds-modal__footer"}
-     ;  [:button {:class "slds-button slds-button_neutral"} "Cancel"]
-     ;  [:button {:class "slds-button slds-button_brand"} "Save"]]]]
+      content]
+     [:footer {:class "slds-modal__footer"}
+      [:button {:class "slds-button slds-button_brand"
+                :on-click close-handler} "Ok"]]]]
    [:div {:class "slds-backdrop slds-backdrop_open"}]])
