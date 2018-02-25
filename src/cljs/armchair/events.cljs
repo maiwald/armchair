@@ -154,7 +154,8 @@
 (reg-event-db
   :start-drag-all
   (fn [db [_ position]]
-    (let [all-line-ids (-> db :lines keys set)]
+    (let [dialogue-lines (db/lines-for-dialogue (:lines db) (:selected-dialogue-id db))
+          all-line-ids (-> dialogue-lines keys set)]
       (if-not (= all-line-ids (get-in db [:dragging :line-ids]))
         (assoc db :dragging {:line-ids all-line-ids
                              :start position

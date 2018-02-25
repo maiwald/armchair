@@ -81,6 +81,11 @@
                :dialogue-id 1
                :position [1012 284]
                :text "Trying to sound ominous or what?! Get outa here!"}
+           15 {:id 15
+               :character-id 1
+               :dialogue-id 2
+               :position [112 284]
+               :text "Stray line of other dialogue."}
            }
    :connections #{
                   [1 2]
@@ -100,6 +105,11 @@
                   [11 6]
                   }
    })
+
+(defn lines-for-dialogue [lines dialogue-id]
+  (let [in-dialogue? #(= dialogue-id (:dialogue-id %))
+        dialogue-line-ids (for [[id line] lines :when (in-dialogue? line)] id)]
+    (select-keys lines dialogue-line-ids)))
 
 (defn line-count-for-character [lines character-id]
   (let [filter-fn #(= (:character-id %) character-id)]

@@ -1,4 +1,5 @@
-(ns armchair.position)
+(ns armchair.position
+  (:require [clojure.set :refer [intersection]]))
 
 (defn position-delta [[start-x start-y] [current-x current-y]]
   [(- current-x start-x)
@@ -11,4 +12,5 @@
   (update item :position apply-delta delta))
 
 (defn translate-positions [items ids delta]
-  (reduce #(update %1 %2 translate-position delta) items ids))
+  (let [relevant-ids (intersection (-> items keys set) ids)]
+    (reduce #(update %1 %2 translate-position delta) items relevant-ids)))
