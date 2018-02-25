@@ -50,10 +50,9 @@
   :<- [:db-lines]
   :<- [:db-selected-dialogue-id]
   (fn [[lines selected-dialogue-id]]
-    (reduce
-      #(assoc %1 (:id %2) %2)
-      {}
-      (filter #(= selected-dialogue-id (:dialogue-id %)) (vals lines)))))
+    (let [in-dialogue? #(= selected-dialogue-id (:dialogue-id %))
+          dialogue-line-ids (for [[id line] lines :when (in-dialogue? line)] id)]
+      (select-keys lines dialogue-line-ids))))
 
 (reg-sub
   :lines-with-drag
