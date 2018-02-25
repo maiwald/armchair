@@ -15,8 +15,8 @@
 
 ;; Components
 
-(defn line-component [{:keys [id text position character-color]}]
-  [:div {:class "line"
+(defn draggable [{:keys [id position]} component]
+  [:div {:class "draggable"
          :on-mouse-down (fn [e]
                           (.preventDefault e)
                           (.stopPropagation e)
@@ -25,16 +25,21 @@
                         (.preventDefault e)
                         (.stopPropagation e)
                         (dispatch [:end-drag id]))
-         :style {:border-color character-color
-                 :width (str config/line-width "px")
-                 :left (first position)
+         :style {:left (first position)
                  :top (second position)}}
-   [:p text]
-   [:div {:class "connection-handle fas fa-link"
-          :on-mouse-down (fn [e]
-                           (.preventDefault e)
-                           (.stopPropagation e)
-                           (dispatch [:start-connection id (cursor-position e)]))}]])
+   component])
+
+(defn line-component [{:keys [id text position character-color]}]
+  [draggable {:id id :position position}
+   [:div {:class "line"
+          :style {:border-color character-color
+                  :width (str config/line-width "px")}}
+    [:p text]
+    [:div {:class "connection-handle fas fa-link"
+           :on-mouse-down (fn [e]
+                            (.preventDefault e)
+                            (.stopPropagation e)
+                            (dispatch [:start-connection id (cursor-position e)]))}]]])
 
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
@@ -55,7 +60,7 @@
 (defn dialogue-graph []
   (let [lines @(subscribe [:lines])
         connections @(subscribe [:connections])]
-    [:div {:class "canvas"
+    [:div {:class "graph"
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
            :on-mouse-down (fn [e] (.preventDefault e)
                             (dispatch [:start-drag-all (cursor-position e)]))
@@ -64,10 +69,11 @@
                :on-click #(dispatch [:create-new-line])}
       [:i {:class "slds-button__icon slds-button__icon_left fas fa-plus"}]
       "New"]
-     [:div {:class "lines"}
+     [:div {:class "graph__items"}
       (for [[id line] lines]
           ^{:key (str "line" id)} [line-component line])]
-     [:svg {:version "1.1"
+     [:svg {:className "graph__connections"
+            :version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
       (for [{:keys [kind start end]} connections]
