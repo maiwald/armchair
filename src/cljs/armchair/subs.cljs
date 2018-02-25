@@ -73,7 +73,14 @@
 (reg-sub
   :lines
   :<- [:lines-with-drag]
-  (fn [lines-with-drag] lines-with-drag))
+  :<- [:db-characters]
+  (fn [[lines-with-drag characters]]
+    (reduce-kv
+      (fn [acc id line]
+        (let [character (get characters (:character-id line))]
+          (assoc acc id (assoc line :character-color (:color character)))))
+      {}
+      lines-with-drag)))
 
 (reg-sub
   :connections

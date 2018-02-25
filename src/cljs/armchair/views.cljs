@@ -19,7 +19,7 @@
 
 ;; Components
 
-(defn line-component [{:keys [id text position]} character-color]
+(defn line-component [{:keys [id text position character-color]}]
   [:div {:class "line"
          :on-mouse-down (fn [e]
                           (.preventDefault e)
@@ -58,8 +58,7 @@
 
 (defn dialogue-graph []
   (let [lines @(subscribe [:lines])
-        connections @(subscribe [:connections])
-        characters @(subscribe [:characters])]
+        connections @(subscribe [:connections])]
     [:div {:class "canvas"
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
            :on-mouse-down (fn [e] (.preventDefault e)
@@ -71,9 +70,7 @@
       "New"]
      [:div {:class "lines"}
       (for [[id line] lines]
-        (let [character-id (:character-id line)
-              character-color (get-in characters [character-id :color] "black")]
-          ^{:key (str "line" id)} [line-component line character-color]))]
+          ^{:key (str "line" id)} [line-component line])]
      [:svg {:version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
