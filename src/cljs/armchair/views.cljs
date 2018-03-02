@@ -8,14 +8,10 @@
 (defn cursor-position [e]
   [(.. e -pageX) (.. e -pageY)])
 
-(defn record-update-handler [record-event]
-  (fn [id field]
+(defn record-update-handler [record-type id field]
+  (let [record-event (keyword (str "update-" (name record-type)))]
     (fn [event]
       (dispatch [record-event id field (-> event .-target .-value)]))))
-
-(def update-line-handler (record-update-handler :update-line))
-(def update-character-handler (record-update-handler :update-character))
-(def update-location-handler (record-update-handler :update-location))
 
 ;; Components
 
@@ -43,7 +39,7 @@
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
     (let [characters @(subscribe [:characters])
-          update-handler (partial update-line-handler id)]
+          update-handler (partial record-update-handler :line id)]
       [:div {:class "slds-grid slds-grid_align-center"}
        [:div {:class "slds-col slds-size_6-of-12"}
         [slds/form
@@ -90,7 +86,7 @@
 
 (defn character-form-modal []
   (let [{:keys [character-id]} @(subscribe [:modal])
-        update-handler (partial update-character-handler character-id)]
+        update-handler (partial record-update-handler :character character-id)]
     (if-let [character (get @(subscribe [:characters]) character-id)]
       (let [{:keys [display-name color]} character]
         [slds/modal {:title display-name
@@ -118,7 +114,7 @@
 
 (defn location-form-modal []
   (let [{:keys [location-id]} @(subscribe [:modal])
-        update-handler (partial update-location-handler location-id)]
+        update-handler (partial record-update-handler :location location-id)]
     (if-let [location (get @(subscribe [:locations]) location-id)]
       (let [display-name (:display-name location)]
         [slds/modal {:title display-name
