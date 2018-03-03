@@ -8,6 +8,15 @@
 (defn cursor-position [e]
   [(.. e -pageX) (.. e -pageY)])
 
+(defn mousedown
+  "Only handle left button mousedown event"
+  [handler]
+  (fn [e]
+    (when (zero? (.-button e))
+      (.preventDefault e)
+      (.stopPropagation e)
+      (handler e))))
+
 (defn record-update-handler [record-type id field]
   (let [record-event (keyword (str "update-" (name record-type)))]
     (fn [event]
@@ -17,10 +26,7 @@
 
 (defn draggable [{:keys [id position]} component]
   [:div {:class "draggable"
-         :on-mouse-down (fn [e]
-                          (.preventDefault e)
-                          (.stopPropagation e)
-                          (dispatch [:start-drag id (cursor-position e)]))
+         :on-mouse-down (mousedown #(dispatch [:start-drag id (cursor-position %)]))
          :on-mouse-up (fn [e]
                         (.preventDefault e)
                         (.stopPropagation e)
@@ -36,10 +42,7 @@
                   :width (str config/line-width "px")}}
     [:p text]
     [:div {:class "connection-handle fas fa-link"
-           :on-mouse-down (fn [e]
-                            (.preventDefault e)
-                            (.stopPropagation e)
-                            (dispatch [:start-connection id (cursor-position e)]))}]]])
+           :on-mouse-down (mousedown #(dispatch [:start-connection id (cursor-position %)]))}]]])
 
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
@@ -62,8 +65,7 @@
         connections @(subscribe [:connections])]
     [:div {:class "graph"
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
-           :on-mouse-down (fn [e] (.preventDefault e)
-                            (dispatch [:start-drag-all (cursor-position e)]))
+           :on-mouse-down (mousedown #(dispatch [:start-drag-all (cursor-position %)]))
            :on-mouse-up #(dispatch [:end-drag-all])}
      [:button {:class "new-line-button slds-button slds-button_neutral"
                :on-click #(dispatch [:create-new-line])}
