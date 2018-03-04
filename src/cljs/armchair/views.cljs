@@ -17,6 +17,9 @@
       (.stopPropagation e)
       (handler e))))
 
+(defn start-drag-handler [position-ids]
+  (mousedown #(dispatch [:start-drag position-ids (cursor-position %)])))
+
 (defn record-update-handler [record-type id field]
   (let [record-event (keyword (str "update-" (name record-type)))]
     (fn [event]
@@ -24,19 +27,19 @@
 
 ;; Components
 
-(defn draggable [{:keys [id position]} component]
+(defn draggable [{:keys [id position position-id]} component]
   [:div {:class "draggable"
-         :on-mouse-down (mousedown #(dispatch [:start-drag id (cursor-position %)]))
+         :on-mouse-down (start-drag-handler #{position-id})
          :on-mouse-up (fn [e]
                         (.preventDefault e)
                         (.stopPropagation e)
-                        (dispatch [:end-drag id]))
+                        (dispatch [:end-drag-line id]))
          :style {:left (first position)
                  :top (second position)}}
    component])
 
-(defn line-component [{:keys [id text position character-color]}]
-  [draggable {:id id :position position}
+(defn line-component [{:keys [id text character-color] :as line}]
+  [draggable (select-keys line [:id :position :position-id])
    [:div {:class "line"
           :style {:border-color character-color
                   :width (str config/line-width "px")}}
@@ -62,10 +65,11 @@
 
 (defn dialogue-graph []
   (let [lines @(subscribe [:lines])
-        connections @(subscribe [:connections])]
+        connections @(subscribe [:connections])
+        position-ids (->> lines vals (map :position-id) set)]
     [:div {:class "graph"
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
-           :on-mouse-down (mousedown #(dispatch [:start-drag-all (cursor-position %)]))
+           :on-mouse-down (start-drag-handler position-ids)
            :on-mouse-up #(dispatch [:end-drag-all])}
      [:button {:class "new-line-button slds-button slds-button_neutral"
                :on-click #(dispatch [:create-new-line])}

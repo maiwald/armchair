@@ -4,6 +4,22 @@
   {
    :current-page "Dialogue"
    :selected-dialogue-id 1
+   :positions {
+               1 [0 200]
+               2 [229 198]
+               3 [259 91]
+               4 [450 214]
+               5 [695 178]
+               6 [699 239]
+               7 [939 90]
+               8 [965 183]
+               9 [1216 197]
+               10 [230 280]
+               11 [457 280]
+               12 [764 314]
+               13 [1012 284]
+               15 [112 284]
+               }
    :locations {
                1 { :id 1 :display-name "Park - Camp" }
                2 { :id 2 :display-name "Park - Entrance" }
@@ -19,72 +35,72 @@
            1  {:id 1
                :character-id 1
                :dialogue-id 1
-               :position [0 200]
+               :position-id 1
                :text "Hey, who are you?"}
            2  {:id 2
                :character-id 2
                :dialogue-id 1
-               :position [229 198]
+               :position-id 2
                :text "I could ask you the same."}
            3  {:id 3
                :character-id 2
                :dialogue-id 1
-               :position [259  91]
+               :position-id 3
                :text "My name does not matter."}
            4  {:id 4
                :character-id 1
                :dialogue-id 1
-               :position [450 214]
+               :position-id 4
                :text "I am Hugo. And you...?"}
            5  {:id 5
                :character-id 2
                :dialogue-id 1
-               :position [695 178]
+               :position-id 5
                :text "I am Hugo as well."}
            6  {:id 6
                :character-id 2
                :dialogue-id 1
-               :position [699 239]
+               :position-id 6
                :text "None of your business!"}
            7  {:id 7
                :character-id 1
                :dialogue-id 1
-               :position [939  90]
+               :position-id 7
                :text "Fine, be a jerk."}
            8  {:id 8
                :character-id 1
                :dialogue-id 1
-               :position [965 183]
+               :position-id 8
                :text "Nice to meet you!"}
            9  {:id 9
                :character-id 1
                :dialogue-id 1
-               :position [1216 197]
+               :position-id 9
                :text "Ok, bye!"}
            10 {:id 10
                :character-id 2
                :dialogue-id 1
-               :position [230 280]
+               :position-id 10
                :text "Hello Hugo!"}
            11 {:id 11
                :character-id 1
                :dialogue-id 1
-               :position [457 280]
+               :position-id 11
                :text "How do you know my name?"}
            12 {:id 12
                :character-id 2
                :dialogue-id 1
-               :position [764 314]
+               :position-id 12
                :text "We have met before. In the land far beyond."}
            13 {:id 13
                :character-id 1
                :dialogue-id 1
-               :position [1012 284]
+               :position-id 13
                :text "Trying to sound ominous or what?! Get outa here!"}
            15 {:id 15
                :character-id 1
                :dialogue-id 2
-               :position [112 284]
+               :position-id 15
                :text "Stray line of other dialogue."}
            }
    :connections #{
@@ -104,7 +120,7 @@
                   [12 13]
                   [11 6]
                   }
-   })
+  })
 
 (defn lines-for-dialogue [lines dialogue-id]
   (let [in-dialogue? #(= dialogue-id (:dialogue-id %))

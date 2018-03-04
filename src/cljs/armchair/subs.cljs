@@ -10,6 +10,7 @@
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-connections #(:connections %))
 (reg-sub :db-dragging #(:dragging %))
+(reg-sub :db-positions #(:positions %))
 (reg-sub :db-pointer #(:pointer %))
 (reg-sub :db-selected-dialogue-id #(:selected-dialogue-id %))
 (reg-sub :db-selected-line-id #(:selected-line-id %))
@@ -53,12 +54,25 @@
     (db/lines-for-dialogue lines selected-dialogue-id)))
 
 (reg-sub
+  :dragged-positions
+  :<- [:db-dragging]
+  :<- [:db-positions]
+  (fn [[dragging positions]]
+    (if-let [{:keys [position-ids delta]} dragging]
+      (translate-positions positions position-ids delta)
+      positions)))
+
+(reg-sub
   :lines-with-drag
   :<- [:dialogue-lines]
-  :<- [:db-dragging]
-  (fn [[lines dragging] _]
-    (if-let [{:keys [line-ids delta]} dragging]
-      (translate-positions lines line-ids delta)
+  :<- [:dragged-positions]
+  (fn [[lines positions] _]
+    (reduce-kv
+      (fn [acc k v]
+        (let [position (get positions (:position-id v))]
+          (assoc acc k
+                 (assoc v :position position))))
+      {}
       lines)))
 
 (reg-sub
