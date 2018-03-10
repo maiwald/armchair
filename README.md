@@ -1,22 +1,28 @@
-# armchair
+# Armchair
 
-A [re-frame](https://github.com/Day8/re-frame) application designed to ... well, that part is up to you.
+Armchair will be an Editor for complex branching dialogue in games.
+
+I have a rather intricate plans for what I want to to with dialogue in a little
+game I am working on that an off-the-shelf editor was not an option. :)
 
 ## Development Mode
 
-### Run application:
-
+Start your repl 
 ```
-lein clean
-lein figwheel dev
+lein repl
 ```
 
-Figwheel will automatically push cljs changes to the browser.
+and then start everything in there. 
+
+```clojure
+(start)
+```
+
+I don't remember why I don't just use `lein figwheel dev` anymore...
 
 Wait a bit, then browse to [http://localhost:3449](http://localhost:3449).
 
 ## Production Build
-
 
 To compile clojurescript to javascript:
 
