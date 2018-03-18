@@ -29,6 +29,26 @@
     (fn [event]
       (dispatch [record-event id field (-> event .-target .-value)]))))
 
+;; Drag & Drop
+
+(defn draggable [{:keys [position position-id]} component]
+  [:div {:class "draggable"
+         :on-mouse-down (start-drag-handler #{position-id})
+         :on-mouse-up (event-only #(dispatch [:end-drag]))
+         :style {:left (first position)
+                 :top (second position)}}
+   component])
+
+(defn draggable-container [items kind component]
+  (let [position-ids (->> items vals (map :position-id) set)]
+    [:div {:class "draggable-container"
+           :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
+           :on-mouse-down (start-drag-handler position-ids)
+           :on-mouse-up #(dispatch [:end-drag])}
+     (for [[id item] items]
+       ^{:key (str kind id)} [draggable (select-keys item [:position :position-id])
+                              [component item]])]))
+
 ;; Components
 
 (defn line-component [{:keys [id text character-color] :as line}]
@@ -58,24 +78,6 @@
                                [slds/input-textarea {:label "Text"
                                                      :on-change (update-handler :text)
                                                      :value text}]]}]))))
-
-(defn draggable [{:keys [position position-id]} component]
-  [:div {:class "draggable"
-         :on-mouse-down (start-drag-handler #{position-id})
-         :on-mouse-up (event-only #(dispatch [:end-drag]))
-         :style {:left (first position)
-                 :top (second position)}}
-   component])
-
-(defn draggable-container [items kind component]
-  (let [position-ids (->> items vals (map :position-id) set)]
-    [:div {:class "draggable-container"
-           :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
-           :on-mouse-down (start-drag-handler position-ids)
-           :on-mouse-up #(dispatch [:end-drag])}
-     (for [[id item] items]
-       ^{:key (str kind id)} [draggable (select-keys item [:position :position-id])
-                              [component item]])]))
 
 (defn dialogue-component []
   (let [lines @(subscribe [:lines])
