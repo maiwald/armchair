@@ -27,25 +27,13 @@
 
 ;; Components
 
-(defn draggable [{:keys [id position position-id]} component]
-  [:div {:class "draggable"
-         :on-mouse-down (start-drag-handler #{position-id})
-         :on-mouse-up (fn [e]
-                        (.preventDefault e)
-                        (.stopPropagation e)
-                        (dispatch [:end-drag-line id]))
-         :style {:left (first position)
-                 :top (second position)}}
-   component])
-
 (defn line-component [{:keys [id text character-color] :as line}]
-  [draggable (select-keys line [:id :position :position-id])
-   [:div {:class "line"
-          :style {:border-color character-color
-                  :width (str config/line-width "px")}}
-    [:p text]
-    [:div {:class "connection-handle fas fa-link"
-           :on-mouse-down (mousedown #(dispatch [:start-connection id (cursor-position %)]))}]]])
+  [:div {:class "line"
+         :style {:border-color character-color
+                 :width (str config/line-width "px")}}
+   [:p text]
+   [:div {:class "connection-handle fas fa-link"
+          :on-mouse-down (mousedown #(dispatch [:start-connection id (cursor-position %)]))}]])
 
 (defn line-form []
   (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
@@ -63,21 +51,35 @@
                                :on-change (update-handler :text)
                                :value text}]]]])))
 
-(defn dialogue-graph []
-  (let [lines @(subscribe [:lines])
-        connections @(subscribe [:connections])
-        position-ids (->> lines vals (map :position-id) set)]
-    [:div {:class "graph"
+(defn draggable [{:keys [id position position-id]} component]
+  [:div {:class "draggable"
+         :on-mouse-down (start-drag-handler #{position-id})
+         :on-mouse-up (fn [e]
+                        (.preventDefault e)
+                        (.stopPropagation e)
+                        (dispatch [:end-drag-line id]))
+         :style {:left (first position)
+                 :top (second position)}}
+   component])
+
+(defn draggable-container [items kind component]
+  (let [position-ids (->> items vals (map :position-id) set)]
+    [:div {:class "draggable-container"
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
            :on-mouse-down (start-drag-handler position-ids)
            :on-mouse-up #(dispatch [:end-drag-all])}
-     [:button {:class "new-line-button slds-button slds-button_neutral"
-               :on-click #(dispatch [:create-new-line])}
-      [:i {:class "slds-button__icon slds-button__icon_left fas fa-plus"}]
-      "New"]
+     (for [[id item] items]
+       ^{:key (str kind id)} [draggable (select-keys item [:id :position :position-id])
+                              [component item]])]))
+
+(defn dialogue-graph []
+  (let [lines @(subscribe [:lines])
+        connections @(subscribe [:connections])]
+    [:div {:class "graph"}
+     [:div {:class "new-line-button"}
+      [slds/add-button "New" #(dispatch [:create-new-line])]]
      [:div {:class "graph__items"}
-      (for [[id line] lines]
-          ^{:key (str "line" id)} [line-component line])]
+      [draggable-container lines "line" line-component]]
      [:svg {:className "graph__connections"
             :version "1.1"
             :baseProfile "full"

@@ -59,6 +59,11 @@
                   :background-color (get item column)}}
    (get item column)])
 
+(defn add-button [label click-handler]
+  [:button {:class "slds-button slds-button_neutral"
+            :on-click click-handler}
+   [:i {:class "slds-button__icon slds-button__icon_left fas fa-plus"}] label])
+
 (defn symbol-button [sym options]
   [:button (merge
              {:class "slds-button slds-button_icon-small slds-button_icon-border-filled"}
@@ -90,10 +95,7 @@
     [:div {:class "slds-col slds-has-flexi-truncate"}
      [:h1 {:class "slds-page-header__title"} title]]
     [:div {:class "slds-col slds-no-flex"}
-     [:button {:class "slds-button slds-button_neutral"
-               :on-click (:new-resource content-options)}
-      [:i {:class "slds-button__icon slds-button__icon_left fas fa-plus"}]
-      "New"]]]
+     [add-button "New" (:new-resource content-options)]]]
    [:div {:class "slds-page-header__detail-row"}
     [data-table
      (assoc content-options :table-id title)]]])

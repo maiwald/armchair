@@ -32,13 +32,19 @@ $gray: #888
 .panel
   height: 220px
 
+.draggable-container
+  position: absolute
+  height: 100%
+  width: 100%
+  overflow: hidden
+
+  .draggable
+    position: absolute
+
 .graph
   position: relative
   background-color: white
   flex-grow: 1
-
-  .draggable
-    position: absolute
 
   & &__items, & &__connections
     position: absolute
