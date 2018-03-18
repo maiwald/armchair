@@ -1,7 +1,7 @@
 (ns armchair.subs
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
-            [clojure.set :refer [difference]]
+            [clojure.set :refer [difference subset?]]
             [armchair.db :as db]
             [armchair.config :as config]
             [armchair.position :refer [apply-delta translate-positions]]))
@@ -80,9 +80,8 @@
   :<- [:db-connections]
   :<- [:dialogue-lines]
   (fn [[connections lines]]
-    (filter (fn [[a b]] (and (contains? lines a)
-                             (contains? lines b)))
-            connections)))
+    (let [line-keys (-> lines keys set)]
+      (filter #(subset? (set %) line-keys) connections))))
 
 (reg-sub
   :lines
