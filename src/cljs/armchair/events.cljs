@@ -26,7 +26,7 @@
 
 (reg-event-db
   :deselect-line
-  (fn [db [_ line-id]]
+  (fn [db _]
     (dissoc db :selected-line-id)))
 
 ;; Resources
@@ -121,6 +121,17 @@
 
 ;; Mouse, Drag & Drop
 
+(defn dragging? [dragging]
+  (and dragging
+       (every? #(> 2 (.abs js/Math %)) (:delta dragging))))
+
+(reg-event-db
+  :move-pointer
+  (fn [db [_ position]]
+    (if-let [start (get-in db [:dragging :start])]
+      (assoc-in db [:dragging :delta] (position-delta start position))
+      db)))
+
 (reg-event-db
   :start-connection
   (fn [db [_ line-id position]]
@@ -128,6 +139,15 @@
       (assoc db :dragging {:connection-start line-id
                            :start position
                            :delta [0 0]})
+      db)))
+
+(reg-event-db
+  :end-connection
+  (fn [db [_ end-id]]
+    (if-let [start-id (get-in db [:dragging :connection-start])]
+      (if-not (= start-id end-id)
+        (update db :connections conj [start-id end-id])
+        db)
       db)))
 
 (reg-event-db
@@ -139,35 +159,10 @@
                            :delta [0 0]})
       db)))
 
-(defn is-click? [delta]
-  (every? #(> 2 (.abs js/Math %)) delta))
-
-(reg-event-fx
-  :end-drag-line
-  (fn [{:keys [db]} [_ line-id]]
-    (let [{:keys [position-ids connection-start delta]} (:dragging db)
-          new-db (-> db
-                     (update :positions translate-positions position-ids delta)
-                     (dissoc :dragging))]
-      (cond
-        (is-click? delta) {:db new-db
-                           :dispatch [:select-line line-id]}
-        (not= line-id connection-start) {:db (update new-db :connections conj [connection-start line-id])}
-        :else {:db new-db}))))
-
-(reg-event-fx
-  :end-drag-all
-  (fn [{:keys [db]} _]
-    (let [{:keys [position-ids delta]} (:dragging db)]
-      (merge
-        {:db (-> db
-                 (update :positions translate-positions position-ids delta)
-                 (dissoc :dragging))}
-        (when (is-click? delta) {:dispatch [:deselect-line]})))))
-
 (reg-event-db
-  :move-pointer
-  (fn [db [_ position]]
-    (if-let [start (get-in db [:dragging :start])]
-      (assoc-in db [:dragging :delta] (position-delta start position))
-      db)))
+  :end-drag
+  (fn [db _]
+    (if-let [{:keys [delta position-ids]} (:dragging db)]
+      (-> db
+          (update :positions translate-positions position-ids delta)
+          (dissoc :dragging)))))

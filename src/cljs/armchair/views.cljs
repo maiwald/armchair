@@ -6,16 +6,20 @@
 ;; Helpers
 
 (defn cursor-position [e]
-  [(.. e -pageX) (.. e -pageY)])
+  [(.-pageX e) (.-pageY e)])
+
+(defn event-only [handler]
+  (fn [e]
+    (.preventDefault e)
+    (.stopPropagation e)
+    (handler e)))
 
 (defn mousedown
   "Only handle left button mousedown event"
   [handler]
   (fn [e]
     (when (zero? (.-button e))
-      (.preventDefault e)
-      (.stopPropagation e)
-      (handler e))))
+      ((event-only handler) e))))
 
 (defn start-drag-handler [position-ids]
   (mousedown #(dispatch [:start-drag position-ids (cursor-position %)])))
@@ -29,6 +33,7 @@
 
 (defn line-component [{:keys [id text character-color] :as line}]
   [:div {:class "line"
+         :on-mouse-up #(dispatch [:end-connection id])
          :style {:border-color character-color
                  :width (str config/line-width "px")}}
    [:p text]
@@ -51,13 +56,10 @@
                                :on-change (update-handler :text)
                                :value text}]]]])))
 
-(defn draggable [{:keys [id position position-id]} component]
+(defn draggable [{:keys [position position-id]} component]
   [:div {:class "draggable"
          :on-mouse-down (start-drag-handler #{position-id})
-         :on-mouse-up (fn [e]
-                        (.preventDefault e)
-                        (.stopPropagation e)
-                        (dispatch [:end-drag-line id]))
+         :on-mouse-up (event-only #(dispatch [:end-drag]))
          :style {:left (first position)
                  :top (second position)}}
    component])
@@ -67,9 +69,9 @@
     [:div {:class "draggable-container"
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
            :on-mouse-down (start-drag-handler position-ids)
-           :on-mouse-up #(dispatch [:end-drag-all])}
+           :on-mouse-up #(dispatch [:end-drag])}
      (for [[id item] items]
-       ^{:key (str kind id)} [draggable (select-keys item [:id :position :position-id])
+       ^{:key (str kind id)} [draggable (select-keys item [:position :position-id])
                               [component item]])]))
 
 (defn dialogue-graph []
