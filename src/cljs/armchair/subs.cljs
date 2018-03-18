@@ -20,16 +20,18 @@
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
 
+(defn map-values [f m]
+  (into {} (for [[k v] m] [k (f v)])))
+
 (reg-sub
   :characters
   :<- [:db-characters]
   :<- [:db-lines]
   (fn [[characters lines]]
-    (reduce-kv
-      (fn [acc id character]
-        (let [line-count (db/line-count-for-character lines id)]
-          (assoc acc id (assoc character :lines line-count))))
-      {}
+    (map-values
+      (fn [character]
+        (let [line-count (db/line-count-for-character lines (:id character))]
+          (assoc character :lines line-count)))
       characters)))
 
 (reg-sub
@@ -67,12 +69,10 @@
   :<- [:dialogue-lines]
   :<- [:dragged-positions]
   (fn [[lines positions] _]
-    (reduce-kv
-      (fn [acc k v]
-        (let [position (get positions (:position-id v))]
-          (assoc acc k
-                 (assoc v :position position))))
-      {}
+    (map-values
+      (fn [line]
+        (let [position (get positions (:position-id line))]
+          (assoc line :position position)))
       lines)))
 
 (reg-sub
@@ -88,11 +88,10 @@
   :<- [:lines-with-drag]
   :<- [:db-characters]
   (fn [[lines-with-drag characters]]
-    (reduce-kv
-      (fn [acc id line]
+    (map-values
+      (fn [line]
         (let [character (get characters (:character-id line))]
-          (assoc acc id (assoc line :character-color (:color character)))))
-      {}
+          (assoc line :character-color (:color character))))
       lines-with-drag)))
 
 (reg-sub
