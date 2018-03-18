@@ -74,7 +74,7 @@
        ^{:key (str kind id)} [draggable (select-keys item [:position :position-id])
                               [component item]])]))
 
-(defn dialogue-graph []
+(defn dialogue-component []
   (let [lines @(subscribe [:lines])
         connections @(subscribe [:connections])]
     [:div {:class "graph"}
@@ -94,11 +94,6 @@
                 :y1 (second start)
                 :x2 (first end)
                 :y2 (second end)}])]]))
-
-(defn dialogue-component []
-  [:div {:class "container"}
-   [dialogue-graph]
-   [:div {:class "panel"} [line-form]]])
 
 (defn character-form-modal []
   (let [{:keys [character-id]} @(subscribe [:modal])
@@ -153,7 +148,7 @@
                                 {:on-click #(dispatch [:open-location-modal id])}]])}
       :new-resource #(dispatch [:create-new-location])}]))
 
-(defn main-panel []
+(defn root []
   (let [current-page @(subscribe [:current-page])
         pages (array-map
                 "Dialogue" [dialogue-component]

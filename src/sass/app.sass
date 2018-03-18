@@ -1,5 +1,12 @@
 $gray: #888
 
+=fill-container
+  position: absolute
+  top: 0
+  left: 0
+  height: 100%
+  width: 100%
+
 #reset
   position: absolute
   right: 0
@@ -8,48 +15,27 @@ $gray: #888
   z-index: 1000
 
 #page
+  +fill-container
   display: flex
   flex-direction: column
-  position: absolute
-  top: 0
-  left: 0
-  height: 100%
-  width: 100%
 
   #content
     position: relative
     flex-grow: 1
 
-.container
-  display: flex
-  flex-direction: column
-  position: absolute
-  top: 0
-  left: 0
-  height: 100%
-  width: 100%
-
-.panel
-  height: 220px
-
 .draggable-container
-  position: absolute
-  height: 100%
-  width: 100%
+  +fill-container
   overflow: hidden
 
   .draggable
     position: absolute
 
 .graph
-  position: relative
+  +fill-container
   background-color: white
-  flex-grow: 1
 
   & &__items, & &__connections
-    position: absolute
-    height: 100%
-    width: 100%
+    +fill-container
     overflow: hidden
 
   & &__connections
