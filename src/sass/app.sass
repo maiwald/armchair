@@ -31,7 +31,7 @@ $gray: #888
     position: absolute
 
 .graph
-  +fill-container
+  @include fill-container
   background-color: white
 
   & &__items, & &__connections
@@ -44,7 +44,7 @@ $gray: #888
   & &__items
     z-index: 2
 
-  .new-line-button
+  .new-item-button
     z-index: 3
     position: absolute
     top: 20px
@@ -53,6 +53,36 @@ $gray: #888
 .connection,
 .drag-connection
   stroke: $gray
+
+%item-action
+  color: lighten($gray, 30%)
+
+  &:hover
+    color: $gray
+
+.location
+  display: flex
+  box-sizing: border-box
+  min-height: 30px
+  border: 1px solid $gray
+  border-radius: 15px
+  width: 200px
+  background: white
+
+  .name
+    flex-grow: 1
+    font-family: "Helvetica"
+    font-size: .9rem
+    margin: 7px
+    cursor: default
+    user-select: none
+    -webkit-user-select: none
+
+  .delete-action, .edit-action
+    @extend %item-action
+    cursor: pointer
+    align-self: flex-start
+    margin: 7px 7px 0 0
 
 .line
   $outer-margin: 7px
@@ -75,9 +105,6 @@ $gray: #888
     -webkit-user-select: none
 
   .connection-handle
+    @extend %item-action
     align-self: flex-start
     margin: $outer-margin $outer-margin 0 0
-    color: lighten($gray, 30%)
-
-    &:hover
-      color: $gray

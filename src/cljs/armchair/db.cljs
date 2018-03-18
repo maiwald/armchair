@@ -19,10 +19,12 @@
                12 [764 314]
                13 [1012 284]
                15 [112 284]
+               16 [229 198]
+               17 [259 91]
                }
    :locations {
-               1 { :id 1 :display-name "Park - Camp" }
-               2 { :id 2 :display-name "Park - Entrance" }
+               1 { :id 1 :position-id 16 :display-name "Park - Camp" }
+               2 { :id 2 :position-id 17 :display-name "Park - Entrance" }
                }
    :characters {
                 1 { :id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)" }

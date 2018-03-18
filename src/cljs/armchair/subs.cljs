@@ -7,6 +7,7 @@
             [armchair.position :refer [apply-delta translate-positions]]))
 
 (reg-sub :db-lines #(:lines %))
+(reg-sub :db-locations #(:locations %))
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-connections #(:connections %))
 (reg-sub :db-dragging #(:dragging %))
@@ -16,12 +17,22 @@
 (reg-sub :db-selected-line-id #(:selected-line-id %))
 (reg-sub :db-selected-character-id #(:selected-character-id %))
 
-(reg-sub :locations #(:locations %))
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
 
 (defn map-values [f m]
   (into {} (for [[k v] m] [k (f v)])))
+
+(reg-sub
+  :locations
+  :<- [:db-locations]
+  :<- [:dragged-positions]
+  (fn [[locations positions] _]
+    (map-values
+      (fn [location]
+        (let [position (get positions (:position-id location))]
+          (assoc location :position position)))
+      locations)))
 
 (reg-sub
   :characters

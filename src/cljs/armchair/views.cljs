@@ -78,7 +78,7 @@
   (let [lines @(subscribe [:lines])
         connections @(subscribe [:connections])]
     [:div {:class "graph"}
-     [:div {:class "new-line-button"}
+     [:div {:class "new-item-button"}
       [slds/add-button "New" #(dispatch [:create-new-line])]]
      [:div {:class "graph__items"}
       [draggable-container lines "line" line-component]]
@@ -135,18 +135,21 @@
                                                  :on-change (update-handler :display-name)
                                                  :value display-name}]]}]))))
 
+(defn location-component [{:keys [id display-name] :as location}]
+  [:div {:class "location"}
+   [:p {:class "name"} display-name]
+   [:div {:class "delete-action fas fa-trash"
+          :on-click #(dispatch [:delete-location id])}]
+   [:div {:class "edit-action fas fa-edit"
+          :on-click #(dispatch [:open-location-modal id])}]])
+
 (defn location-management []
   (let [locations @(subscribe [:locations])]
-    [slds/resource-page "Locations"
-     {:columns [:id :display-name :actions]
-      :collection (vals locations)
-      :cell-views {:actions (fn [{:keys [id lines]} _]
-                              [:div {:class "slds-text-align_right"}
-                               [slds/symbol-button "trash-alt"
-                                {:on-click #(dispatch [:delete-location id])}]
-                               [slds/symbol-button "edit"
-                                {:on-click #(dispatch [:open-location-modal id])}]])}
-      :new-resource #(dispatch [:create-new-location])}]))
+    [:div {:class "graph"}
+     [:div {:class "new-item-button"}
+      [slds/add-button "New" #(dispatch [:create-new-location])]]
+     [:div {:class "graph__items"}
+      [draggable-container locations "location" location-component]]]))
 
 (defn root []
   (let [current-page @(subscribe [:current-page])

@@ -35,6 +35,12 @@
   (let [items (get db resource-type)]
     (+ 1 (reduce max 0 (keys items)))))
 
+(defn with-new-position [func]
+  (fn [db]
+    (let [position-id (new-id db :positions)]
+      (func (assoc-in db [:positions position-id] [20 20])
+            position-id))))
+
 (reg-event-db
   :create-new-character
   (fn [db]
@@ -63,10 +69,12 @@
 
 (reg-event-db
   :create-new-location
-  (fn [db]
-    (let [id (new-id db :locations)
-          new-location {:id id :display-name (str "location #" id)}]
-      (update db :locations assoc id new-location))))
+  (with-new-position
+    (fn [db position-id]
+      (let [id (new-id db :locations)]
+        (assoc-in db [:locations id] {:id id
+                                      :display-name (str "location #" id)
+                                      :position-id position-id})))))
 
 (reg-event-db
   :delete-location
@@ -87,17 +95,14 @@
 
 (reg-event-db
   :create-new-line
-  (fn [db]
-    (let [line-id (new-id db :lines)
-          position-id (new-id db :positions)
-          new-line {:id line-id
-                    :character-id nil
-                    :dialogue-id (:selected-dialogue-id db)
-                    :position-id position-id
-                    :text (str "Line #" line-id)}]
-      (-> db
-          (assoc-in [:lines line-id] new-line)
-          (assoc-in [:positions position-id] [20 20])))))
+  (with-new-position
+    (fn [db position-id]
+      (let [id (new-id db :lines)]
+        (assoc-in db [:lines id] {:id id
+                                  :character-id nil
+                                  :dialogue-id (:selected-dialogue-id db)
+                                  :position-id position-id
+                                  :text (str "Line #" id)})))))
 
 (reg-event-db
   :update-line
