@@ -1,5 +1,12 @@
 $gray: #888
 
+=fill-container
+  position: absolute
+  top: 0
+  left: 0
+  height: 100%
+  width: 100%
+
 #reset
   position: absolute
   right: 0
@@ -8,50 +15,37 @@ $gray: #888
   z-index: 1000
 
 #page
+  +fill-container
   display: flex
   flex-direction: column
-  position: absolute
-  top: 0
-  left: 0
-  height: 100%
-  width: 100%
 
   #content
     position: relative
     flex-grow: 1
 
-.container
-  display: flex
-  flex-direction: column
-  position: absolute
-  top: 0
-  left: 0
-  height: 100%
-  width: 100%
+.draggable-container
+  +fill-container
+  overflow: hidden
 
-.canvas
-  position: relative
-  background-color: white
-  flex-grow: 1
-
-.panel
-  height: 220px
-
-.canvas
-  .lines, svg
+  .draggable
     position: absolute
-    height: 100%
-    width: 100%
+
+.graph
+  @include fill-container
+  background-color: white
+
+  & &__items, & &__connections
+    +fill-container
     overflow: hidden
 
-  svg
-    z-index: 0
-
-  .lines
+  & &__connections
     z-index: 1
 
-  .new-line-button
+  & &__items
     z-index: 2
+
+  .new-item-button
+    z-index: 3
     position: absolute
     top: 20px
     right: 20px
@@ -60,12 +54,41 @@ $gray: #888
 .drag-connection
   stroke: $gray
 
+%item-action
+  color: lighten($gray, 30%)
+
+  &:hover
+    color: $gray
+
+.location
+  display: flex
+  box-sizing: border-box
+  min-height: 30px
+  border: 1px solid $gray
+  border-radius: 15px
+  width: 200px
+  background: white
+
+  .name
+    flex-grow: 1
+    font-family: "Helvetica"
+    font-size: .9rem
+    margin: 7px
+    cursor: default
+    user-select: none
+    -webkit-user-select: none
+
+  .delete-action, .edit-action
+    @extend %item-action
+    cursor: pointer
+    align-self: flex-start
+    margin: 7px 7px 0 0
+
 .line
   $outer-margin: 7px
 
   display: flex
   align-items: center
-  position: absolute
   box-sizing: border-box
   min-height: 30px
   border: 1px solid $gray
@@ -81,10 +104,13 @@ $gray: #888
     user-select: none
     -webkit-user-select: none
 
-  .connection-handle
+  .edit-action
+    @extend %item-action
+    cursor: pointer
     align-self: flex-start
     margin: $outer-margin $outer-margin 0 0
-    color: lighten($gray, 30%)
 
-    &:hover
-      color: $gray
+  .connection-handle
+    @extend %item-action
+    align-self: flex-start
+    margin: $outer-margin $outer-margin 0 0

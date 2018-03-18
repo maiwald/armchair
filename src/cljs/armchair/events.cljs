@@ -11,26 +11,23 @@
 (reg-event-db
   :reset-db
   (fn [db _]
-    (merge db (select-keys db/default-db
-                           [:characters :locations :lines :connections]))))
-
-(reg-event-db
-  :select-line
-  (fn [db [_ line-id]]
-    (if-not (= (:selected-line-id db) line-id)
-      (assoc db :selected-line-id line-id)
-      db)))
-
-(reg-event-db
-  :deselect-line
-  (fn [db [_ line-id]]
-    (dissoc db :selected-line-id)))
+    (merge db (select-keys db/default-db [:positions
+                                          :characters
+                                          :locations
+                                          :lines
+                                          :connections]))))
 
 ;; Resources
 
 (defn new-id [db resource-type]
   (let [items (get db resource-type)]
     (+ 1 (reduce max 0 (keys items)))))
+
+(defn with-new-position [func]
+  (fn [db]
+    (let [position-id (new-id db :positions)]
+      (func (assoc-in db [:positions position-id] [20 20])
+            position-id))))
 
 (reg-event-db
   :create-new-character
@@ -60,10 +57,12 @@
 
 (reg-event-db
   :create-new-location
-  (fn [db]
-    (let [id (new-id db :locations)
-          new-location {:id id :display-name (str "location #" id)}]
-      (update db :locations assoc id new-location))))
+  (with-new-position
+    (fn [db position-id]
+      (let [id (new-id db :locations)]
+        (assoc-in db [:locations id] {:id id
+                                      :display-name (str "location #" id)
+                                      :position-id position-id})))))
 
 (reg-event-db
   :delete-location
@@ -84,14 +83,14 @@
 
 (reg-event-db
   :create-new-line
-  (fn [db]
-    (let [id (new-id db :lines)
-          new-line {:id id
-                    :character-id nil
-                    :dialogue-id (:selected-dialogue-id db)
-                    :position [20 20]
-                    :text (str "Line #" id)}]
-      (update db :lines assoc id new-line))))
+  (with-new-position
+    (fn [db position-id]
+      (let [id (new-id db :lines)]
+        (assoc-in db [:lines id] {:id id
+                                  :character-id nil
+                                  :dialogue-id (:selected-dialogue-id db)
+                                  :position-id position-id
+                                  :text (str "Line #" id)})))))
 
 (reg-event-db
   :update-line
@@ -100,6 +99,13 @@
                      :character-id (int value)
                      value)]
       (assoc-in db [:lines id field] newValue))))
+
+(reg-event-db
+  :open-line-modal
+  (fn [db [_ id]]
+    (if-not (contains? db :modal)
+      (assoc db :modal {:line-id id})
+      (throw (js/Error. "Attempting to open a modal while modal is open!")))))
 
 ;; Page
 
@@ -115,6 +121,17 @@
 
 ;; Mouse, Drag & Drop
 
+(defn dragging? [dragging]
+  (and dragging
+       (every? #(> 2 (.abs js/Math %)) (:delta dragging))))
+
+(reg-event-db
+  :move-pointer
+  (fn [db [_ position]]
+    (if-let [start (get-in db [:dragging :start])]
+      (assoc-in db [:dragging :delta] (position-delta start position))
+      db)))
+
 (reg-event-db
   :start-connection
   (fn [db [_ line-id position]]
@@ -125,56 +142,27 @@
       db)))
 
 (reg-event-db
+  :end-connection
+  (fn [db [_ end-id]]
+    (if-let [start-id (get-in db [:dragging :connection-start])]
+      (if-not (= start-id end-id)
+        (update db :connections conj [start-id end-id])
+        db)
+      db)))
+
+(reg-event-db
   :start-drag
-  (fn [db [_ line-id position]]
-    (if-not (contains? (get-in db [:dragging :line-ids]) line-id)
-      (assoc db :dragging {:line-ids #{line-id}
+  (fn [db [_ position-ids position]]
+    (if-not (= position-ids (get-in db [:dragging :position-ids]))
+      (assoc db :dragging {:position-ids position-ids
                            :start position
                            :delta [0 0]})
       db)))
 
-(defn is-click? [delta]
-  (every? #(> 2 (.abs js/Math %)) delta))
-
-(reg-event-fx
+(reg-event-db
   :end-drag
-  (fn [{:keys [db]} [_ line-id]]
-    (let [{:keys [line-ids connection-start delta]} (:dragging db)]
-      (if (= line-ids #{line-id})
-        (merge
-          {:db (-> db
-                   (update :lines translate-positions line-ids delta)
-                   (dissoc :dragging))}
-          (when (is-click? delta)
-            {:dispatch [:select-line line-id]}))
-        {:db (-> db
-                 (update :connections conj [connection-start line-id])
-                 (dissoc :dragging))}))))
-
-(reg-event-db
-  :start-drag-all
-  (fn [db [_ position]]
-    (let [dialogue-lines (db/lines-for-dialogue (:lines db) (:selected-dialogue-id db))
-          all-line-ids (-> dialogue-lines keys set)]
-      (if-not (= all-line-ids (get-in db [:dragging :line-ids]))
-        (assoc db :dragging {:line-ids all-line-ids
-                             :start position
-                             :delta [0 0]})
-        db))))
-
-(reg-event-fx
-  :end-drag-all
-  (fn [{:keys [db]} _]
-    (let [{:keys [line-ids delta]} (:dragging db)]
-      (merge
-        {:db (-> db
-                 (update :lines translate-positions line-ids delta)
-                 (dissoc :dragging))}
-        (when (is-click? delta) {:dispatch [:deselect-line]})))))
-
-(reg-event-db
-  :move-pointer
-  (fn [db [_ position]]
-    (if-let [start (get-in db [:dragging :start])]
-      (assoc-in db [:dragging :delta] (position-delta start position))
-      db)))
+  (fn [db _]
+    (if-let [{:keys [delta position-ids]} (:dragging db)]
+      (-> db
+          (update :positions translate-positions position-ids delta)
+          (dissoc :dragging)))))

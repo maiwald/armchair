@@ -8,9 +8,6 @@
 (defn apply-delta [position delta]
   (mapv + position delta))
 
-(defn translate-position [item delta]
-  (update item :position apply-delta delta))
-
-(defn translate-positions [items ids delta]
-  (let [relevant-ids (intersection (-> items keys set) ids)]
-    (reduce #(update %1 %2 translate-position delta) items relevant-ids)))
+(defn translate-positions [positions ids delta]
+  (let [relevant-ids (intersection (-> positions keys set) ids)]
+    (reduce #(update %1 %2 apply-delta delta) positions relevant-ids)))

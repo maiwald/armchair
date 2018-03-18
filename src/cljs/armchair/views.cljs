@@ -6,7 +6,23 @@
 ;; Helpers
 
 (defn cursor-position [e]
-  [(.. e -pageX) (.. e -pageY)])
+  [(.-pageX e) (.-pageY e)])
+
+(defn event-only [handler]
+  (fn [e]
+    (.preventDefault e)
+    (.stopPropagation e)
+    (handler e)))
+
+(defn mousedown
+  "Only handle left button mousedown event"
+  [handler]
+  (fn [e]
+    (when (zero? (.-button e))
+      ((event-only handler) e))))
+
+(defn start-drag-handler [position-ids]
+  (mousedown #(dispatch [:start-drag position-ids (cursor-position %)])))
 
 (defn record-update-handler [record-type id field]
   (let [record-event (keyword (str "update-" (name record-type)))]
@@ -15,74 +31,72 @@
 
 ;; Components
 
-(defn line-component [{:keys [id text position character-color]}]
+(defn line-component [{:keys [id text character-color] :as line}]
   [:div {:class "line"
-         :on-mouse-down (fn [e]
-                          (.preventDefault e)
-                          (.stopPropagation e)
-                          (dispatch [:start-drag id (cursor-position e)]))
-         :on-mouse-up (fn [e]
-                        (.preventDefault e)
-                        (.stopPropagation e)
-                        (dispatch [:end-drag id]))
+         :on-mouse-up #(dispatch [:end-connection id])
          :style {:border-color character-color
-                 :width (str config/line-width "px")
-                 :left (first position)
-                 :top (second position)}}
+                 :width (str config/line-width "px")}}
    [:p text]
+   [:div {:class "connection-handle fas fa-edit"
+          :on-click #(dispatch [:open-line-modal id])}]
    [:div {:class "connection-handle fas fa-link"
-          :on-mouse-down (fn [e]
-                           (.preventDefault e)
-                           (.stopPropagation e)
-                           (dispatch [:start-connection id (cursor-position e)]))}]])
+          :on-mouse-down (mousedown #(dispatch [:start-connection id (cursor-position %)]))}]])
 
-(defn line-form []
-  (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
-    (let [characters @(subscribe [:characters])
-          update-handler (partial record-update-handler :line id)]
-      [:div {:class "slds-grid slds-grid_align-center"}
-       [:div {:class "slds-col slds-size_6-of-12"}
-        [slds/form
-         [slds/form-title (str "Line #" id)]
-         [slds/input-select {:label "Character"
-                             :on-change (update-handler :character-id)
-                             :options (map (fn [[k c]] [k (:display-name c)]) characters)
-                             :value character-id}]
-         [slds/input-textarea {:label "Text"
-                               :on-change (update-handler :text)
-                               :value text}]]]])))
+(defn line-form-modal []
+  (let [{:keys [line-id]} @(subscribe [:modal])
+        update-handler (partial record-update-handler :line line-id)]
+    (if-let [line (get @(subscribe [:lines]) line-id)]
+      (let [{:keys [id text character-id color]} line
+            characters @(subscribe [:characters])]
+        [slds/modal {:title (str "Line #" id)
+                     :close-handler #(dispatch [:close-modal])
+                     :content [slds/form
+                               [slds/input-select {:label "Character"
+                                                   :on-change (update-handler :character-id)
+                                                   :options (map (fn [[k c]] [k (:display-name c)]) characters)
+                                                   :value character-id}]
+                               [slds/input-textarea {:label "Text"
+                                                     :on-change (update-handler :text)
+                                                     :value text}]]}]))))
 
-(defn dialogue-graph []
+(defn draggable [{:keys [position position-id]} component]
+  [:div {:class "draggable"
+         :on-mouse-down (start-drag-handler #{position-id})
+         :on-mouse-up (event-only #(dispatch [:end-drag]))
+         :style {:left (first position)
+                 :top (second position)}}
+   component])
+
+(defn draggable-container [items kind component]
+  (let [position-ids (->> items vals (map :position-id) set)]
+    [:div {:class "draggable-container"
+           :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
+           :on-mouse-down (start-drag-handler position-ids)
+           :on-mouse-up #(dispatch [:end-drag])}
+     (for [[id item] items]
+       ^{:key (str kind id)} [draggable (select-keys item [:position :position-id])
+                              [component item]])]))
+
+(defn dialogue-component []
   (let [lines @(subscribe [:lines])
         connections @(subscribe [:connections])]
-    [:div {:class "canvas"
-           :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
-           :on-mouse-down (fn [e] (.preventDefault e)
-                            (dispatch [:start-drag-all (cursor-position e)]))
-           :on-mouse-up #(dispatch [:end-drag-all])}
-     [:button {:class "new-line-button slds-button slds-button_neutral"
-               :on-click #(dispatch [:create-new-line])}
-      [:i {:class "slds-button__icon slds-button__icon_left fas fa-plus"}]
-      "New"]
-     [:div {:class "lines"}
-      (for [[id line] lines]
-          ^{:key (str "line" id)} [line-component line])]
-     [:svg {:version "1.1"
+    [:div {:class "graph"}
+     [:div {:class "new-item-button"}
+      [slds/add-button "New" #(dispatch [:create-new-line])]]
+     [:div {:class "graph__items"}
+      [draggable-container lines "line" line-component]]
+     [:svg {:className "graph__connections"
+            :version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
-      (for [{:keys [kind start end]} connections]
+      (for [{:keys [id kind start end]} connections]
         [:line {:class kind
                 :stroke-dasharray (when (= kind :drag-connection) "3, 3")
-                :key (str "connection" kind start "-" end)
+                :key id
                 :x1 (first start)
                 :y1 (second start)
                 :x2 (first end)
                 :y2 (second end)}])]]))
-
-(defn dialogue-component []
-  [:div {:class "container"}
-   [dialogue-graph]
-   [:div {:class "panel"} [line-form]]])
 
 (defn character-form-modal []
   (let [{:keys [character-id]} @(subscribe [:modal])
@@ -124,20 +138,23 @@
                                                  :on-change (update-handler :display-name)
                                                  :value display-name}]]}]))))
 
+(defn location-component [{:keys [id display-name] :as location}]
+  [:div {:class "location"}
+   [:p {:class "name"} display-name]
+   [:div {:class "delete-action fas fa-trash"
+          :on-click #(dispatch [:delete-location id])}]
+   [:div {:class "edit-action fas fa-edit"
+          :on-click #(dispatch [:open-location-modal id])}]])
+
 (defn location-management []
   (let [locations @(subscribe [:locations])]
-    [slds/resource-page "Locations"
-     {:columns [:id :display-name :actions]
-      :collection (vals locations)
-      :cell-views {:actions (fn [{:keys [id lines]} _]
-                              [:div {:class "slds-text-align_right"}
-                               [slds/symbol-button "trash-alt"
-                                {:on-click #(dispatch [:delete-location id])}]
-                               [slds/symbol-button "edit"
-                                {:on-click #(dispatch [:open-location-modal id])}]])}
-      :new-resource #(dispatch [:create-new-location])}]))
+    [:div {:class "graph"}
+     [:div {:class "new-item-button"}
+      [slds/add-button "New" #(dispatch [:create-new-location])]]
+     [:div {:class "graph__items"}
+      [draggable-container locations "location" location-component]]]))
 
-(defn main-panel []
+(defn root []
   (let [current-page @(subscribe [:current-page])
         pages (array-map
                 "Dialogue" [dialogue-component]
@@ -147,6 +164,7 @@
                    (fn [name] [name #(dispatch [:show-page name])])
                    (keys pages))]
     [:div {:id "page"}
+     [line-form-modal]
      [character-form-modal]
      [location-form-modal]
      [:a {:id "reset"
