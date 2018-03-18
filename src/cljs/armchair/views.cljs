@@ -37,24 +37,27 @@
          :style {:border-color character-color
                  :width (str config/line-width "px")}}
    [:p text]
+   [:div {:class "connection-handle fas fa-edit"
+          :on-click #(dispatch [:open-line-modal id])}]
    [:div {:class "connection-handle fas fa-link"
           :on-mouse-down (mousedown #(dispatch [:start-connection id (cursor-position %)]))}]])
 
-(defn line-form []
-  (if-let [{:keys [id text character-id]} @(subscribe [:selected-line])]
-    (let [characters @(subscribe [:characters])
-          update-handler (partial record-update-handler :line id)]
-      [:div {:class "slds-grid slds-grid_align-center"}
-       [:div {:class "slds-col slds-size_6-of-12"}
-        [slds/form
-         [slds/form-title (str "Line #" id)]
-         [slds/input-select {:label "Character"
-                             :on-change (update-handler :character-id)
-                             :options (map (fn [[k c]] [k (:display-name c)]) characters)
-                             :value character-id}]
-         [slds/input-textarea {:label "Text"
-                               :on-change (update-handler :text)
-                               :value text}]]]])))
+(defn line-form-modal []
+  (let [{:keys [line-id]} @(subscribe [:modal])
+        update-handler (partial record-update-handler :line line-id)]
+    (if-let [line (get @(subscribe [:lines]) line-id)]
+      (let [{:keys [id text character-id color]} line
+            characters @(subscribe [:characters])]
+        [slds/modal {:title (str "Line #" id)
+                     :close-handler #(dispatch [:close-modal])
+                     :content [slds/form
+                               [slds/input-select {:label "Character"
+                                                   :on-change (update-handler :character-id)
+                                                   :options (map (fn [[k c]] [k (:display-name c)]) characters)
+                                                   :value character-id}]
+                               [slds/input-textarea {:label "Text"
+                                                     :on-change (update-handler :text)
+                                                     :value text}]]}]))))
 
 (defn draggable [{:keys [position position-id]} component]
   [:div {:class "draggable"
@@ -161,6 +164,7 @@
                    (fn [name] [name #(dispatch [:show-page name])])
                    (keys pages))]
     [:div {:id "page"}
+     [line-form-modal]
      [character-form-modal]
      [location-form-modal]
      [:a {:id "reset"

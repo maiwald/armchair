@@ -14,8 +14,6 @@
 (reg-sub :db-positions #(:positions %))
 (reg-sub :db-pointer #(:pointer %))
 (reg-sub :db-selected-dialogue-id #(:selected-dialogue-id %))
-(reg-sub :db-selected-line-id #(:selected-line-id %))
-(reg-sub :db-selected-character-id #(:selected-character-id %))
 
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
@@ -44,20 +42,6 @@
         (let [line-count (db/line-count-for-character lines (:id character))]
           (assoc character :lines line-count)))
       characters)))
-
-(reg-sub
-  :selected-line
-  :<- [:db-lines]
-  :<- [:db-selected-line-id]
-  (fn [[lines id]]
-    (get lines id)))
-
-(reg-sub
-  :selected-character
-  :<- [:characters]
-  :<- [:db-selected-character-id]
-  (fn [[characters id]]
-    (get characters id)))
 
 (reg-sub
   :dialogue-lines
@@ -127,4 +111,4 @@
              :kind :drag-connection
              :start base-position
              :end (apply-delta base-position (:delta dragging))}))
-          view-connections))))
+        view-connections))))

@@ -17,18 +17,6 @@
                                           :lines
                                           :connections]))))
 
-(reg-event-db
-  :select-line
-  (fn [db [_ line-id]]
-    (if-not (= (:selected-line-id db) line-id)
-      (assoc db :selected-line-id line-id)
-      db)))
-
-(reg-event-db
-  :deselect-line
-  (fn [db _]
-    (dissoc db :selected-line-id)))
-
 ;; Resources
 
 (defn new-id [db resource-type]
@@ -111,6 +99,13 @@
                      :character-id (int value)
                      value)]
       (assoc-in db [:lines id field] newValue))))
+
+(reg-event-db
+  :open-line-modal
+  (fn [db [_ id]]
+    (if-not (contains? db :modal)
+      (assoc db :modal {:line-id id})
+      (throw (js/Error. "Attempting to open a modal while modal is open!")))))
 
 ;; Page
 
