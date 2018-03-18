@@ -84,10 +84,10 @@
             :version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
-      (for [{:keys [kind start end]} connections]
+      (for [{:keys [id kind start end]} connections]
         [:line {:class kind
                 :stroke-dasharray (when (= kind :drag-connection) "3, 3")
-                :key (str "connection" kind start "-" end)
+                :key id
                 :x1 (first start)
                 :y1 (second start)
                 :x2 (first end)

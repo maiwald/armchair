@@ -105,6 +105,7 @@
           end-offset #(apply-delta % [15 15])
           connection->positions (fn [[start end]]
                                   {:kind :connection
+                                   :id (str "connection-" start "-" end)
                                    :start (start-offset (get-in lines [start :position]))
                                    :end (end-offset (get-in lines [end :position]))})
           view-connections (map connection->positions connections)]
@@ -112,7 +113,8 @@
         (let [base-position (start-offset (get-in lines [start :position]))]
           (conj
             view-connections
-            {:kind :drag-connection
+            {:id (str "connection-" start "-?")
+             :kind :drag-connection
              :start base-position
              :end (apply-delta base-position (:delta dragging))}))
           view-connections))))
