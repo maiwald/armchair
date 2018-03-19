@@ -99,7 +99,7 @@
         connections @(subscribe [:connections])]
     [:div {:class "full-page"}
      [:div {:class "new-item-button"}
-      [slds/add-button "New" #(dispatch [:create-new-line])]]
+      [slds/add-button "New" #(dispatch [:create-line])]]
      [graph {:kind "line"
              :items lines
              :connections connections
@@ -131,7 +131,7 @@
                                (when (zero? lines)
                                  [slds/symbol-button "trash-alt" {:on-click #(dispatch [:delete-character id])}])
                                [slds/symbol-button "edit" {:on-click #(dispatch [:open-character-modal id])}]])}
-      :new-resource #(dispatch [:create-new-character])}]))
+      :new-resource #(dispatch [:create-character])}]))
 
 (defn location-form-modal []
   (let [{:keys [location-id]} @(subscribe [:modal])
@@ -157,7 +157,7 @@
   (let [locations @(subscribe [:locations])]
     [:div {:class "full-page"}
      [:div {:class "new-item-button"}
-      [slds/add-button "New" #(dispatch [:create-new-location])]]
+      [slds/add-button "New" #(dispatch [:create-location])]]
      [graph {:kind "location"
              :items locations
              :item-component location-component}]]))

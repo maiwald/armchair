@@ -30,7 +30,7 @@
             position-id))))
 
 (reg-event-db
-  :create-new-character
+  :create-character
   (fn [db]
     (let [id (new-id db :characters)
           new-character {:id id :color "black" :display-name (str "Character #" id)}]
@@ -56,7 +56,7 @@
       (throw (js/Error. "Attempting to open a modal while modal is open!")))))
 
 (reg-event-db
-  :create-new-location
+  :create-location
   (with-new-position
     (fn [db position-id]
       (let [id (new-id db :locations)]
@@ -82,7 +82,7 @@
       (throw (js/Error. "Attempting to open a modal while modal is open!")))))
 
 (reg-event-db
-  :create-new-line
+  :create-line
   (with-new-position
     (fn [db position-id]
       (let [id (new-id db :lines)]
