@@ -72,6 +72,8 @@
          :style {:border-color character-color
                  :width (str config/line-width "px")}}
    [:p text]
+   [:div {:class "edit-action fas fa-trash"
+          :on-click #(dispatch [:delete-line id])}]
    [:div {:class "edit-action fas fa-edit"
           :on-click #(dispatch [:open-line-modal id])}]
    [:div {:class "connection-handle fas fa-link"

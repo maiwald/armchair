@@ -101,6 +101,15 @@
       (assoc-in db [:lines id field] newValue))))
 
 (reg-event-db
+  :delete-line
+  (fn [db [_ id]]
+    (let [line-connection? (fn [connection] (some #(= id %) connection))
+          remove-connections #(->> % (remove line-connection?) set)]
+      (-> db
+          (update :lines dissoc id)
+          (update :connections remove-connections)))))
+
+(reg-event-db
   :open-line-modal
   (fn [db [_ id]]
     (if-not (contains? db :modal)

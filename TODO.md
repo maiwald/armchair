@@ -1,5 +1,4 @@
 # TODO
-- add deleting lines/connections
 - connect locations
 - introduce epochs
 - assign dialogues to locations (and epochs?)
