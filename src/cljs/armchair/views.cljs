@@ -29,25 +29,40 @@
     (fn [event]
       (dispatch [record-event id field (-> event .-target .-value)]))))
 
-;; Drag & Drop
+;; Graph (drag & drop)
 
-(defn draggable [{:keys [position position-id]} component]
-  [:div {:class "draggable"
+(defn graph-item [{:keys [position position-id]} component]
+  [:div {:class "graph__item"
          :on-mouse-down (start-drag-handler #{position-id})
          :on-mouse-up (event-only #(dispatch [:end-drag]))
          :style {:left (first position)
                  :top (second position)}}
    component])
 
-(defn draggable-container [items kind component]
-  (let [position-ids (->> items vals (map :position-id) set)]
-    [:div {:class (str "draggable-container " (when @(subscribe [:dragging?]) "draggable-container_is-dragging"))
+(defn graph-connection [{:keys [id kind start end]}]
+  [:line {:class (str "graph__connection "
+                      (when (= kind :drag-connection) "graph__connection_is-drag"))
+          :key id
+          :x1 (first start)
+          :y1 (second start)
+          :x2 (first end)
+          :y2 (second end)}])
+
+(defn graph [{:keys [items kind item-component connections] :or {connections '()}}]
+  (let [position-ids (->> items vals (map :position-id) set)
+        dragging? @(subscribe [:dragging?])]
+    [:div {:class (str "graph "
+                       (when dragging? "graph_is-dragging"))
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
            :on-mouse-down (start-drag-handler position-ids)
            :on-mouse-up #(dispatch [:end-drag])}
+     [:svg {:class "graph__connection-container" :version "1.1"
+            :baseProfile "full"
+            :xmlns "http://www.w3.org/2000/svg"}
+      (for [connection connections]
+        ^{:key (:id connection)} [graph-connection connection])]
      (for [[id item] items]
-       ^{:key (str kind id)} [draggable (select-keys item [:position :position-id])
-                              [component item]])]))
+       ^{:key (str kind id)} [graph-item item [item-component item]])]))
 
 ;; Components
 
@@ -57,6 +72,8 @@
          :style {:border-color character-color
                  :width (str config/line-width "px")}}
    [:p text]
+   [:div {:class "edit-action fas fa-trash"
+          :on-click #(dispatch [:delete-line id])}]
    [:div {:class "edit-action fas fa-edit"
           :on-click #(dispatch [:open-line-modal id])}]
    [:div {:class "connection-handle fas fa-link"
@@ -82,23 +99,13 @@
 (defn dialogue-component []
   (let [lines @(subscribe [:lines])
         connections @(subscribe [:connections])]
-    [:div {:class "graph"}
+    [:div {:class "full-page"}
      [:div {:class "new-item-button"}
-      [slds/add-button "New" #(dispatch [:create-new-line])]]
-     [:div {:class "graph__items"}
-      [draggable-container lines "line" line-component]]
-     [:svg {:className "graph__connections"
-            :version "1.1"
-            :baseProfile "full"
-            :xmlns "http://www.w3.org/2000/svg"}
-      (for [{:keys [id kind start end]} connections]
-        [:line {:class kind
-                :stroke-dasharray (when (= kind :drag-connection) "3, 3")
-                :key id
-                :x1 (first start)
-                :y1 (second start)
-                :x2 (first end)
-                :y2 (second end)}])]]))
+      [slds/add-button "New" #(dispatch [:create-line])]]
+     [graph {:kind "line"
+             :items lines
+             :connections connections
+             :item-component line-component}]]))
 
 (defn character-form-modal []
   (let [{:keys [character-id]} @(subscribe [:modal])
@@ -126,7 +133,7 @@
                                (when (zero? lines)
                                  [slds/symbol-button "trash-alt" {:on-click #(dispatch [:delete-character id])}])
                                [slds/symbol-button "edit" {:on-click #(dispatch [:open-character-modal id])}]])}
-      :new-resource #(dispatch [:create-new-character])}]))
+      :new-resource #(dispatch [:create-character])}]))
 
 (defn location-form-modal []
   (let [{:keys [location-id]} @(subscribe [:modal])
@@ -150,11 +157,12 @@
 
 (defn location-management []
   (let [locations @(subscribe [:locations])]
-    [:div {:class "graph"}
+    [:div {:class "full-page"}
      [:div {:class "new-item-button"}
-      [slds/add-button "New" #(dispatch [:create-new-location])]]
-     [:div {:class "graph__items"}
-      [draggable-container locations "location" location-component]]]))
+      [slds/add-button "New" #(dispatch [:create-location])]]
+     [graph {:kind "location"
+             :items locations
+             :item-component location-component}]]))
 
 (defn root []
   (let [current-page @(subscribe [:current-page])

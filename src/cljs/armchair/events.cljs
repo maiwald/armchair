@@ -1,5 +1,6 @@
 (ns armchair.events
   (:require [re-frame.core :refer [reg-event-db reg-event-fx]]
+            [clojure.set :refer [difference]]
             [armchair.db :as db]
             [armchair.position :refer [translate-positions position-delta]]))
 
@@ -30,7 +31,7 @@
             position-id))))
 
 (reg-event-db
-  :create-new-character
+  :create-character
   (fn [db]
     (let [id (new-id db :characters)
           new-character {:id id :color "black" :display-name (str "Character #" id)}]
@@ -56,7 +57,7 @@
       (throw (js/Error. "Attempting to open a modal while modal is open!")))))
 
 (reg-event-db
-  :create-new-location
+  :create-location
   (with-new-position
     (fn [db position-id]
       (let [id (new-id db :locations)]
@@ -82,7 +83,7 @@
       (throw (js/Error. "Attempting to open a modal while modal is open!")))))
 
 (reg-event-db
-  :create-new-line
+  :create-line
   (with-new-position
     (fn [db position-id]
       (let [id (new-id db :lines)]
@@ -99,6 +100,19 @@
                      :character-id (int value)
                      value)]
       (assoc-in db [:lines id field] newValue))))
+
+(reg-event-db
+  :delete-line
+  (fn [db [_ id]]
+    (let [line-connections (filter (fn [[start end]] (or (= start id)
+                                                         (= end id)))
+                                   (:connections db))]
+      (if (or (empty? line-connections)
+              ^boolean (.confirm js/window (str "Really delete Line #" id "?")))
+        (-> db
+            (update :lines dissoc id)
+            (update :connections difference line-connections))
+        db))))
 
 (reg-event-db
   :open-line-modal
