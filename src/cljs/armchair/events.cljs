@@ -1,5 +1,6 @@
 (ns armchair.events
   (:require [re-frame.core :refer [reg-event-db reg-event-fx]]
+            [clojure.set :refer [difference]]
             [armchair.db :as db]
             [armchair.position :refer [translate-positions position-delta]]))
 
@@ -103,11 +104,15 @@
 (reg-event-db
   :delete-line
   (fn [db [_ id]]
-    (let [line-connection? (fn [connection] (some #(= id %) connection))
-          remove-connections #(->> % (remove line-connection?) set)]
-      (-> db
-          (update :lines dissoc id)
-          (update :connections remove-connections)))))
+    (let [line-connections (filter (fn [[start end]] (or (= start id)
+                                                         (= end id)))
+                                   (:connections db))]
+      (if (or (empty? line-connections)
+              ^boolean (.confirm js/window (str "Really delete Line #" id "?")))
+        (-> db
+            (update :lines dissoc id)
+            (update :connections difference line-connections))
+        db))))
 
 (reg-event-db
   :open-line-modal
