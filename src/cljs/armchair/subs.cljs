@@ -51,6 +51,12 @@
     (db/lines-for-dialogue lines selected-dialogue-id)))
 
 (reg-sub
+  :dragging?
+  :<- [:db-dragging]
+  (fn [dragging]
+    (some? dragging)))
+
+(reg-sub
   :dragged-positions
   :<- [:db-dragging]
   :<- [:db-positions]

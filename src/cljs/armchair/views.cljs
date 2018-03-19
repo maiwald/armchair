@@ -41,7 +41,7 @@
 
 (defn draggable-container [items kind component]
   (let [position-ids (->> items vals (map :position-id) set)]
-    [:div {:class "draggable-container"
+    [:div {:class (str "draggable-container " (when @(subscribe [:dragging?]) "draggable-container_is-dragging"))
            :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
            :on-mouse-down (start-drag-handler position-ids)
            :on-mouse-up #(dispatch [:end-drag])}

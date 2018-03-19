@@ -27,6 +27,11 @@ $gray: #888
   +fill-container
   overflow: hidden
 
+  &_is-dragging, &_is-dragging *
+    cursor: -moz-grabbing !important
+    cursor: -webkit-grabbing !important
+    cursor: grabbing !important
+
   .draggable
     position: absolute
 
@@ -34,14 +39,14 @@ $gray: #888
   @include fill-container
   background-color: white
 
-  & &__items, & &__connections
+  &__items, &__connections
     +fill-container
     overflow: hidden
 
-  & &__connections
+  &__connections
     z-index: 1
 
-  & &__items
+  &__items
     z-index: 2
 
   .new-item-button
@@ -112,5 +117,8 @@ $gray: #888
 
   .connection-handle
     @extend %item-action
+    cursor: -moz-grab
+    cursor: -webkit-grab
+    cursor: grab
     align-self: flex-start
     margin: $outer-margin $outer-margin 0 0
