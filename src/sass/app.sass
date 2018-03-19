@@ -23,7 +23,7 @@ $gray: #888
     position: relative
     flex-grow: 1
 
-.draggable-container
+.graph
   +fill-container
   overflow: hidden
 
@@ -32,32 +32,27 @@ $gray: #888
     cursor: -webkit-grabbing !important
     cursor: grabbing !important
 
-  .draggable
+  &__item
     position: absolute
 
-.graph
-  @include fill-container
-  background-color: white
-
-  &__items, &__connections
+  &__connection-container
     +fill-container
-    overflow: hidden
 
-  &__connections
-    z-index: 1
+  &__connection
+    stroke: $gray
 
-  &__items
-    z-index: 2
+    &_is-drag
+      stroke-dasharray: 3, 3
+
+.full-page
+  +fill-container
+  background-color: white
 
   .new-item-button
     z-index: 3
     position: absolute
     top: 20px
     right: 20px
-
-.connection,
-.drag-connection
-  stroke: $gray
 
 %item-action
   color: lighten($gray, 30%)
