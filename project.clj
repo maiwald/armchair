@@ -18,7 +18,8 @@
   {:dev
    {:dependencies [[binaryage/devtools "0.9.4"]
                    [figwheel-sidecar "0.5.14"]
-                   [com.cemerick/piggieback "0.2.2"]]
+                   [com.cemerick/piggieback "0.2.2"]
+                   [day8.re-frame/re-frame-10x "0.2.1"]]
     :plugins      [[lein-figwheel "0.5.13"]]
     :source-paths ["src/cljs" "dev"]
     :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
@@ -34,8 +35,10 @@
                     :output-dir           "resources/public/js/compiled/out"
                     :asset-path           "js/compiled/out"
                     :source-map-timestamp true
-                    :preloads             [devtools.preload]
+                    :preloads             [devtools.preload day8.re-frame-10x.preload]
+                    :closure-defines      {"re_frame.trace.trace_enabled_QMARK_" true}
                     :external-config      {:devtools/config {:features-to-install :all}}
+                    :optimizations        :none
                     }}
 
     {:id           "min"
