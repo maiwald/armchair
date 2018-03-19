@@ -9,7 +9,7 @@
 (reg-sub :db-lines #(:lines %))
 (reg-sub :db-locations #(:locations %))
 (reg-sub :db-characters #(:characters %))
-(reg-sub :db-connections #(:connections %))
+(reg-sub :db-line-connections #(:line-connections %))
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-positions #(:positions %))
 (reg-sub :db-pointer #(:pointer %))
@@ -77,12 +77,12 @@
       lines)))
 
 (reg-sub
-  :dialogue-connections
-  :<- [:db-connections]
+  :dialogue-line-connections
+  :<- [:db-line-connections]
   :<- [:dialogue-lines]
-  (fn [[connections lines]]
+  (fn [[line-connections lines]]
     (let [line-keys (-> lines keys set)]
-      (filter #(subset? (set %) line-keys) connections))))
+      (filter #(subset? (set %) line-keys) line-connections))))
 
 (reg-sub
   :lines
@@ -96,10 +96,10 @@
       lines-with-drag)))
 
 (reg-sub
-  :connections
+  :line-connections
   :<- [:lines-with-drag]
   :<- [:db-dragging]
-  :<- [:dialogue-connections]
+  :<- [:dialogue-line-connections]
   (fn [[lines dragging connections]]
     (let [start-offset #(apply-delta % [(- config/line-width 15) 15])
           end-offset #(apply-delta % [15 15])

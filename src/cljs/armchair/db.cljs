@@ -105,7 +105,7 @@
                :position-id 15
                :text "Stray line of other dialogue."}
            }
-   :connections #{
+   :line-connections #{
                   [1 2]
                   [2 4]
                   [4 5]

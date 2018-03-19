@@ -98,13 +98,13 @@
 
 (defn dialogue-component []
   (let [lines @(subscribe [:lines])
-        connections @(subscribe [:connections])]
+        line-connections @(subscribe [:line-connections])]
     [:div {:class "full-page"}
      [:div {:class "new-item-button"}
       [slds/add-button "New" #(dispatch [:create-line])]]
      [graph {:kind "line"
              :items lines
-             :connections connections
+             :connections line-connections
              :item-component line-component}]]))
 
 (defn character-form-modal []

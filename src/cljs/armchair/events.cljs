@@ -16,7 +16,7 @@
                                           :characters
                                           :locations
                                           :lines
-                                          :connections]))))
+                                          :line-connections]))))
 
 ;; Resources
 
@@ -106,12 +106,12 @@
   (fn [db [_ id]]
     (let [line-connections (filter (fn [[start end]] (or (= start id)
                                                          (= end id)))
-                                   (:connections db))]
+                                   (:line-connections db))]
       (if (or (empty? line-connections)
               ^boolean (.confirm js/window (str "Really delete Line #" id "?")))
         (-> db
             (update :lines dissoc id)
-            (update :connections difference line-connections))
+            (update :line-connections difference line-connections))
         db))))
 
 (reg-event-db
@@ -160,7 +160,7 @@
   (fn [db [_ end-id]]
     (if-let [start-id (get-in db [:dragging :connection-start])]
       (if-not (= start-id end-id)
-        (update db :connections conj [start-id end-id])
+        (update db :line-connections conj [start-id end-id])
         db)
       db)))
 
