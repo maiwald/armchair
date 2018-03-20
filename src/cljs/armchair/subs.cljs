@@ -67,8 +67,8 @@
   :<- [:db-positions]
   :<- [:db-pointer]
   (fn [[dragging positions pointer]]
-    (if-let [{:keys [position-ids start]} dragging]
-      (translate-positions positions position-ids (position-delta start pointer))
+    (if-let [{:keys [position-ids start-position]} dragging]
+      (translate-positions positions position-ids (position-delta start-position pointer))
       positions)))
 
 (reg-sub
@@ -115,7 +115,7 @@
   (fn [[lines connecting pointer]]
     (if-let [start (:line-id connecting)]
       (let [base-position (start-offset (get-in lines [start :position]))
-            delta (position-delta (:start connecting) pointer)
+            delta (position-delta (:start-position connecting) pointer)
             end-position (apply-delta base-position delta)]
         {:id (str "connection-" start "-?")
          :kind :drag-connection

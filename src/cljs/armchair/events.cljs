@@ -150,7 +150,8 @@
     (assert (nil? (:connecting db))
             "Attempting to start connecting lines while already in progress!")
     (assoc db
-           :connecting {:line-id line-id :start position}
+           :connecting {:line-id line-id
+                        :start-position position}
            :pointer position)))
 
 (reg-event-db
@@ -176,7 +177,7 @@
             "Attempting to start drag while already in progress!")
     (assoc db
            :dragging {:position-ids position-ids
-                      :start position}
+                      :start-position position}
            :pointer position)))
 
 (reg-event-db
@@ -184,8 +185,8 @@
   (fn [{:keys [dragging pointer] :as db} _]
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
-    (let [{:keys [start position-ids]} dragging
-          delta (position-delta start pointer)]
+    (let [{:keys [start-position position-ids]} dragging
+          delta (position-delta start-position pointer)]
       (-> db
           (update :positions translate-positions position-ids delta)
           (dissoc :dragging :pointer)))))
