@@ -1,9 +1,12 @@
 (ns armchair.views
-  (:require [re-frame.core :as re-frame :refer [dispatch subscribe]]
+  (:require [re-frame.core :as re-frame]
             [armchair.slds :as slds]
             [armchair.config :as config]))
 
 ;; Helpers
+
+(def <sub (comp deref re-frame.core/subscribe))
+(def >evt re-frame.core/dispatch)
 
 (defn cursor-position [e]
   [(.-pageX e) (.-pageY e)])
@@ -24,18 +27,18 @@
 (defn record-update-handler [record-type id field]
   (let [record-event (keyword (str "update-" (name record-type)))]
     (fn [event]
-      (dispatch [record-event id field (-> event .-target .-value)]))))
+      (>evt [record-event id field (-> event .-target .-value)]))))
 
 ;; Graph (drag & drop)
 
 (defn start-dragging-handler [position-ids]
-  (mousedown #(dispatch [:start-dragging position-ids (cursor-position %)])))
+  (mousedown #(>evt [:start-dragging position-ids (cursor-position %)])))
 
 (defn graph-item [{:keys [position position-id]} component]
-  (let [dragging? @(subscribe [:dragging?])]
+  (let [dragging? (<sub [:dragging?])]
     [:div {:class "graph__item"
            :on-mouse-down (start-dragging-handler #{position-id})
-           :on-mouse-up (when dragging? (event-only #(dispatch [:end-dragging])))
+           :on-mouse-up (when dragging? (event-only #(>evt [:end-dragging])))
            :style {:left (first position)
                    :top (second position)}}
      component]))
@@ -51,14 +54,14 @@
 
 (defn graph [{:keys [items kind item-component connections] :or {connections '()}}]
   (let [position-ids (->> items vals (map :position-id) set)
-        connecting? @(subscribe [:connecting?])
-        dragging? @(subscribe [:dragging?])]
+        connecting? (<sub [:connecting?])
+        dragging? (<sub [:dragging?])]
     [:div {:class (str "graph " (when (or dragging? connecting?) "graph_is-dragging"))
            :on-mouse-down (start-dragging-handler position-ids)
-           :on-mouse-move (when (or dragging? connecting?) #(dispatch [:move-pointer (cursor-position %)]))
+           :on-mouse-move (when (or dragging? connecting?) #(>evt [:move-pointer (cursor-position %)]))
            :on-mouse-up (cond
-                          connecting? (event-only #(dispatch [:abort-connecting]))
-                          dragging? (event-only #(dispatch [:end-dragging])))}
+                          connecting? (event-only #(>evt [:abort-connecting]))
+                          dragging? (event-only #(>evt [:end-dragging])))}
      [:svg {:class "graph__connection-container" :version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
@@ -70,27 +73,27 @@
 ;; Components
 
 (defn line-component [{:keys [id text character-color] :as line}]
-  (let [connecting? @(subscribe [:connecting?])]
+  (let [connecting? (<sub [:connecting?])]
     [:div {:class "line"
-           :on-mouse-up (when connecting? #(dispatch [:end-connecting-lines id]))
+           :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:border-color character-color
                    :width (str config/line-width "px")}}
      [:p text]
      [:div {:class "edit-action fas fa-trash"
-            :on-click #(dispatch [:delete-line id])}]
+            :on-click #(>evt [:delete-line id])}]
      [:div {:class "edit-action fas fa-edit"
-            :on-click #(dispatch [:open-line-modal id])}]
+            :on-click #(>evt [:open-line-modal id])}]
      [:div {:class "connection-handle fas fa-link"
-            :on-mouse-down (mousedown #(dispatch [:start-connecting-lines id (cursor-position %)]))}]]))
+            :on-mouse-down (mousedown #(>evt [:start-connecting-lines id (cursor-position %)]))}]]))
 
 (defn line-form-modal []
-  (let [{:keys [line-id]} @(subscribe [:modal])
+  (let [{:keys [line-id]} (<sub [:modal])
         update-handler (partial record-update-handler :line line-id)]
-    (if-let [line (get @(subscribe [:lines]) line-id)]
+    (if-let [line (get (<sub [:lines]) line-id)]
       (let [{:keys [id text character-id color]} line
-            characters @(subscribe [:characters])]
+            characters (<sub [:characters])]
         [slds/modal {:title (str "Line #" id)
-                     :close-handler #(dispatch [:close-modal])
+                     :close-handler #(>evt [:close-modal])
                      :content [slds/form
                                [slds/input-select {:label "Character"
                                                    :on-change (update-handler :character-id)
@@ -103,19 +106,19 @@
 (defn dialogue-component []
   [:div {:class "full-page"}
    [:div {:class "new-item-button"}
-    [slds/add-button "New" #(dispatch [:create-line])]]
+    [slds/add-button "New" #(>evt [:create-line])]]
    [graph {:kind "line"
-           :items @(subscribe [:lines])
-           :connections @(subscribe [:line-connections])
+           :items (<sub [:lines])
+           :connections (<sub [:line-connections])
            :item-component line-component}]])
 
 (defn character-form-modal []
-  (let [{:keys [character-id]} @(subscribe [:modal])
+  (let [{:keys [character-id]} (<sub [:modal])
         update-handler (partial record-update-handler :character character-id)]
-    (if-let [character (get @(subscribe [:characters]) character-id)]
+    (if-let [character (get (<sub [:characters]) character-id)]
       (let [{:keys [display-name color]} character]
         [slds/modal {:title display-name
-                     :close-handler #(dispatch [:close-modal])
+                     :close-handler #(>evt [:close-modal])
                      :content [slds/form
                                [slds/input-text {:label "Name"
                                                  :on-change (update-handler :display-name)
@@ -125,7 +128,7 @@
                                                  :value color}]]}]))))
 
 (defn character-management []
-  (let [characters @(subscribe [:characters])]
+  (let [characters (<sub [:characters])]
     [slds/resource-page "Characters"
      {:columns [:id :display-name :color :lines :actions]
       :collection (vals characters)
@@ -133,60 +136,59 @@
                    :actions (fn [{:keys [id lines]} _]
                               [:div {:class "slds-text-align_right"}
                                (when (zero? lines)
-                                 [slds/symbol-button "trash-alt" {:on-click #(dispatch [:delete-character id])}])
-                               [slds/symbol-button "edit" {:on-click #(dispatch [:open-character-modal id])}]])}
-      :new-resource #(dispatch [:create-character])}]))
+                                 [slds/symbol-button "trash-alt" {:on-click #(>evt [:delete-character id])}])
+                               [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}
+      :new-resource #(>evt [:create-character])}]))
 
 (defn location-form-modal []
-  (let [{:keys [location-id]} @(subscribe [:modal])
+  (let [{:keys [location-id]} (<sub [:modal])
         update-handler (partial record-update-handler :location location-id)]
-    (if-let [location (get @(subscribe [:locations]) location-id)]
+    (if-let [location (get (<sub [:locations]) location-id)]
       (let [display-name (:display-name location)]
         [slds/modal {:title display-name
-                     :close-handler #(dispatch [:close-modal])
+                     :close-handler #(>evt [:close-modal])
                      :content [slds/form
                                [slds/input-text {:label "Name"
                                                  :on-change (update-handler :display-name)
                                                  :value display-name}]]}]))))
 
 (defn location-component [{:keys [id display-name] :as location}]
-  (let [connecting? @(subscribe [:connecting?])]
+  (let [connecting? (<sub [:connecting?])]
     [:div {:class "location"
-           :on-mouse-up (when connecting? #(dispatch [:end-connecting-locations id]))
+           :on-mouse-up (when connecting? #(>evt [:end-connecting-locations id]))
            :style {:width (str config/line-width "px")}}
      [:p {:class "name"} display-name]
      [:div {:class "delete-action fas fa-trash"
-            :on-click #(dispatch [:delete-location id])}]
+            :on-click #(>evt [:delete-location id])}]
      [:div {:class "edit-action fas fa-edit"
-            :on-click #(dispatch [:open-location-modal id])}]
+            :on-click #(>evt [:open-location-modal id])}]
      [:div {:class "connection-handle fas fa-link"
-            :on-mouse-down (mousedown #(dispatch [:start-connecting-locations id (cursor-position %)]))}]]))
+            :on-mouse-down (mousedown #(>evt [:start-connecting-locations id (cursor-position %)]))}]]))
 
 (defn location-management []
-  (.log js/console @(subscribe [:location-connections]))
   [:div {:class "full-page"}
    [:div {:class "new-item-button"}
-    [slds/add-button "New" #(dispatch [:create-location])]]
+    [slds/add-button "New" #(>evt [:create-location])]]
    [graph {:kind "location"
-           :items @(subscribe [:locations])
-           :connections @(subscribe [:location-connections])
+           :items (<sub [:locations])
+           :connections (<sub [:location-connections])
            :item-component location-component}]])
 
 (defn root []
-  (let [current-page @(subscribe [:current-page])
+  (let [current-page (<sub [:current-page])
         pages (array-map
                 "Dialogue" [dialogue-component]
                 "Characters" [character-management]
                 "Locations" [location-management])
         link-map (map
-                   (fn [name] [name #(dispatch [:show-page name])])
+                   (fn [name] [name #(>evt [:show-page name])])
                    (keys pages))]
     [:div {:id "page"}
      [line-form-modal]
      [character-form-modal]
      [location-form-modal]
      [:a {:id "reset"
-          :on-click #(dispatch [:reset-db])} "reset"]
+          :on-click #(>evt [:reset-db])} "reset"]
      [:div {:id "navigation"}
       [slds/global-navigation link-map current-page]]
      [:div {:id "content"}
