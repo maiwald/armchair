@@ -8,6 +8,7 @@
 
 (reg-sub :db-lines #(:lines %))
 (reg-sub :db-locations #(:locations %))
+(reg-sub :db-location-connections #(:location-connections %))
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-line-connections #(:line-connections %))
 (reg-sub :db-dragging #(:dragging %))
@@ -133,6 +134,37 @@
                                    :id (str "connection-" start "-" end)
                                    :start (start-offset (get-in lines [start :position]))
                                    :end (end-offset (get-in lines [end :position]))})]
+      (if (some? connecting-connection)
+        (conj (map connection->positions connections) connecting-connection)
+        (map connection->positions connections)))))
+
+(reg-sub
+  :location-connecting-connection
+  :<- [:locations]
+  :<- [:db-connecting]
+  :<- [:db-pointer]
+  (fn [[locations connecting pointer]]
+    (if-let [start (:location-id connecting)]
+      (let [base-position (start-offset (get-in locations [start :position]))
+            delta (position-delta (:start-position connecting) pointer)
+            end-position (apply-delta base-position delta)]
+        {:id (str "connection-" start "-?")
+         :kind :drag-connection
+         :start base-position
+         :end end-position}))))
+
+(reg-sub
+  :location-connections
+  :<- [:locations]
+  :<- [:db-location-connections]
+  :<- [:location-connecting-connection]
+  (fn [[locations connections connecting-connection]]
+    (let [connection->positions (fn [c]
+                                  (let [[start end] (sort c)]
+                                    {:kind :connection
+                                     :id (str "connection-" start "-" end)
+                                     :start (start-offset (get-in locations [start :position]))
+                                     :end (end-offset (get-in locations [end :position]))}))]
       (if (some? connecting-connection)
         (conj (map connection->positions connections) connecting-connection)
         (map connection->positions connections)))))

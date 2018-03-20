@@ -60,31 +60,7 @@ $gray: #888
   &:hover
     color: $gray
 
-.location
-  display: flex
-  box-sizing: border-box
-  min-height: 30px
-  border: 1px solid $gray
-  border-radius: 15px
-  width: 200px
-  background: white
-
-  .name
-    flex-grow: 1
-    font-family: "Helvetica"
-    font-size: .9rem
-    margin: 7px
-    cursor: default
-    user-select: none
-    -webkit-user-select: none
-
-  .delete-action, .edit-action
-    @extend %item-action
-    cursor: pointer
-    align-self: flex-start
-    margin: 7px 7px 0 0
-
-.line
+.line, .location
   $outer-margin: 7px
 
   display: flex
@@ -95,7 +71,7 @@ $gray: #888
   border-radius: 15px
   background: white
 
-  p
+  p, .name
     flex-grow: 1
     font-family: "Helvetica"
     font-size: .9rem
@@ -104,7 +80,7 @@ $gray: #888
     user-select: none
     -webkit-user-select: none
 
-  .edit-action
+  .delete-action, .edit-action
     @extend %item-action
     cursor: pointer
     align-self: flex-start

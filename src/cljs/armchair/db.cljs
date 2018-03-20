@@ -26,6 +26,9 @@
                1 { :id 1 :position-id 16 :display-name "Park - Camp" }
                2 { :id 2 :position-id 17 :display-name "Park - Entrance" }
                }
+   :location-connections #{
+                           #{1 2}
+                           }
    :characters {
                 1 { :id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)" }
                 2 { :id 2 :display-name "Player" :color "rgba(0, 0, 255, .6)" }
@@ -106,22 +109,22 @@
                :text "Stray line of other dialogue."}
            }
    :line-connections #{
-                  [1 2]
-                  [2 4]
-                  [4 5]
-                  [4 6]
-                  [6 7]
-                  [5 8]
-                  [8 9]
-                  [1 3]
-                  [3 7]
-                  [7 9]
-                  [1 10]
-                  [10 11]
-                  [11 12]
-                  [12 13]
-                  [11 6]
-                  }
+                       [1 2]
+                       [2 4]
+                       [4 5]
+                       [4 6]
+                       [6 7]
+                       [5 8]
+                       [8 9]
+                       [1 3]
+                       [3 7]
+                       [7 9]
+                       [1 10]
+                       [10 11]
+                       [11 12]
+                       [12 13]
+                       [11 6]
+                       }
   })
 
 (defn lines-for-dialogue [lines dialogue-id]

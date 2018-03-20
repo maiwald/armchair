@@ -15,6 +15,7 @@
     (merge db (select-keys db/default-db [:positions
                                           :characters
                                           :locations
+                                          :location-connections
                                           :lines
                                           :line-connections]))))
 
@@ -150,8 +151,8 @@
     (assert (nil? (:connecting db))
             "Attempting to start connecting lines while already in progress!")
     (assoc db
-           :connecting {:line-id line-id
-                        :start-position position}
+           :connecting {:start-position position
+                        :line-id line-id}
            :pointer position)))
 
 (reg-event-db
@@ -165,6 +166,29 @@
             (update :line-connections conj [start-id end-id])
             (dissoc :connecting :pointer))
         db))))
+
+(reg-event-db
+  :start-connecting-locations
+  (fn [db [_ location-id position]]
+    (assert (nil? (:connecting db))
+            "Attempting to start connecting locations while already in progress!")
+    (assoc db
+           :connecting {:start-position position
+                        :location-id location-id}
+           :pointer position)))
+
+(reg-event-db
+  :end-connecting-locations
+  (fn [db [_ end-id]]
+    (assert (some? (:connecting db))
+            "Attempting to end connecting while not in progress!")
+    (let [start-id (get-in db [:connecting :location-id])]
+      (if-not (= start-id end-id)
+        (-> db
+            (update :location-connections conj #{start-id end-id})
+            (dissoc :connecting :pointer))
+        db))))
+
 
 (reg-event-db
   :abort-connecting

@@ -101,15 +101,13 @@
                                                      :value text}]]}]))))
 
 (defn dialogue-component []
-  (let [lines @(subscribe [:lines])
-        line-connections @(subscribe [:line-connections])]
-    [:div {:class "full-page"}
-     [:div {:class "new-item-button"}
-      [slds/add-button "New" #(dispatch [:create-line])]]
-     [graph {:kind "line"
-             :items lines
-             :connections line-connections
-             :item-component line-component}]]))
+  [:div {:class "full-page"}
+   [:div {:class "new-item-button"}
+    [slds/add-button "New" #(dispatch [:create-line])]]
+   [graph {:kind "line"
+           :items @(subscribe [:lines])
+           :connections @(subscribe [:line-connections])
+           :item-component line-component}]])
 
 (defn character-form-modal []
   (let [{:keys [character-id]} @(subscribe [:modal])
@@ -152,21 +150,27 @@
                                                  :value display-name}]]}]))))
 
 (defn location-component [{:keys [id display-name] :as location}]
-  [:div {:class "location"}
-   [:p {:class "name"} display-name]
-   [:div {:class "delete-action fas fa-trash"
-          :on-click #(dispatch [:delete-location id])}]
-   [:div {:class "edit-action fas fa-edit"
-          :on-click #(dispatch [:open-location-modal id])}]])
+  (let [connecting? @(subscribe [:connecting?])]
+    [:div {:class "location"
+           :on-mouse-up (when connecting? #(dispatch [:end-connecting-locations id]))
+           :style {:width (str config/line-width "px")}}
+     [:p {:class "name"} display-name]
+     [:div {:class "delete-action fas fa-trash"
+            :on-click #(dispatch [:delete-location id])}]
+     [:div {:class "edit-action fas fa-edit"
+            :on-click #(dispatch [:open-location-modal id])}]
+     [:div {:class "connection-handle fas fa-link"
+            :on-mouse-down (mousedown #(dispatch [:start-connecting-locations id (cursor-position %)]))}]]))
 
 (defn location-management []
-  (let [locations @(subscribe [:locations])]
-    [:div {:class "full-page"}
-     [:div {:class "new-item-button"}
-      [slds/add-button "New" #(dispatch [:create-location])]]
-     [graph {:kind "location"
-             :items locations
-             :item-component location-component}]]))
+  (.log js/console @(subscribe [:location-connections]))
+  [:div {:class "full-page"}
+   [:div {:class "new-item-button"}
+    [slds/add-button "New" #(dispatch [:create-location])]]
+   [graph {:kind "location"
+           :items @(subscribe [:locations])
+           :connections @(subscribe [:location-connections])
+           :item-component location-component}]])
 
 (defn root []
   (let [current-page @(subscribe [:current-page])
