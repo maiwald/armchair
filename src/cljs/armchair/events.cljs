@@ -52,9 +52,9 @@
 (reg-event-db
   :open-character-modal
   (fn [db [_ id]]
-    (if-not (contains? db :modal)
-      (assoc db :modal {:character-id id})
-      (throw (js/Error. "Attempting to open a modal while modal is open!")))))
+    (assert (not (contains? db :modal))
+            "Attempting to open a modal while modal is open!")
+    (assoc db :modal {:character-id id})))
 
 (reg-event-db
   :create-location
@@ -78,9 +78,9 @@
 (reg-event-db
   :open-location-modal
   (fn [db [_ id]]
-    (if-not (contains? db :modal)
-      (assoc db :modal {:location-id id})
-      (throw (js/Error. "Attempting to open a modal while modal is open!")))))
+    (assert (not (contains? db :modal))
+            "Attempting to open a modal while modal is open!")
+    (assoc db :modal {:location-id id})))
 
 (reg-event-db
   :create-line
@@ -117,9 +117,9 @@
 (reg-event-db
   :open-line-modal
   (fn [db [_ id]]
-    (if-not (contains? db :modal)
-      (assoc db :modal {:line-id id})
-      (throw (js/Error. "Attempting to open a modal while modal is open!")))))
+    (assert (not (contains? db :modal))
+            "Attempting to open a modal while modal is open!")
+    (assoc db :modal {:line-id id})))
 
 ;; Page
 
