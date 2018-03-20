@@ -179,4 +179,5 @@
     (if-let [{:keys [delta position-ids]} (:dragging db)]
       (-> db
           (update :positions translate-positions position-ids delta)
-          (dissoc :dragging)))))
+          (dissoc :dragging))
+      db)))

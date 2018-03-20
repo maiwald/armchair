@@ -32,12 +32,13 @@
 ;; Graph (drag & drop)
 
 (defn graph-item [{:keys [position position-id]} component]
-  [:div {:class "graph__item"
-         :on-mouse-down (start-drag-handler #{position-id})
-         :on-mouse-up (event-only #(dispatch [:end-drag]))
-         :style {:left (first position)
-                 :top (second position)}}
-   component])
+  (let [dragging? @(subscribe [:dragging?])]
+    [:div {:class "graph__item"
+           :on-mouse-down (start-drag-handler #{position-id})
+           :on-mouse-up (when dragging? (event-only #(dispatch [:end-drag])))
+           :style {:left (first position)
+                   :top (second position)}}
+     component]))
 
 (defn graph-connection [{:keys [id kind start end]}]
   [:line {:class (str "graph__connection "
@@ -51,11 +52,10 @@
 (defn graph [{:keys [items kind item-component connections] :or {connections '()}}]
   (let [position-ids (->> items vals (map :position-id) set)
         dragging? @(subscribe [:dragging?])]
-    [:div {:class (str "graph "
-                       (when dragging? "graph_is-dragging"))
-           :on-mouse-move #(dispatch [:move-pointer (cursor-position %)])
+    [:div {:class (str "graph " (when dragging? "graph_is-dragging"))
            :on-mouse-down (start-drag-handler position-ids)
-           :on-mouse-up #(dispatch [:end-drag])}
+           :on-mouse-move (when dragging? #(dispatch [:move-pointer (cursor-position %)]))
+           :on-mouse-up (when dragging? (event-only #(dispatch [:end-drag])))}
      [:svg {:class "graph__connection-container" :version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
