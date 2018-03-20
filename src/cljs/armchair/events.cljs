@@ -142,42 +142,50 @@
 (reg-event-db
   :move-pointer
   (fn [db [_ position]]
-    (if-let [start (get-in db [:dragging :start])]
-      (assoc-in db [:dragging :delta] (position-delta start position))
-      db)))
+    (assoc db :pointer position)))
 
 (reg-event-db
-  :start-connection
+  :start-connecting-lines
   (fn [db [_ line-id position]]
-    (if-not (= (get-in db [:dragging :connection-start]) line-id)
-      (assoc db :dragging {:connection-start line-id
-                           :start position
-                           :delta [0 0]})
-      db)))
+    (assert (nil? (:connecting db))
+            "Attempting to start connecting lines while already in progress!")
+    (assoc db
+           :connecting {:line-id line-id :start position}
+           :pointer position)))
 
 (reg-event-db
-  :end-connection
+  :end-connecting-lines
   (fn [db [_ end-id]]
-    (if-let [start-id (get-in db [:dragging :connection-start])]
+    (assert (some? (:connecting db))
+            "Attempting to end connecting while not in progress!")
+    (let [start-id (get-in db [:connecting :line-id])]
       (if-not (= start-id end-id)
-        (update db :line-connections conj [start-id end-id])
-        db)
-      db)))
+        (-> db
+            (update :line-connections conj [start-id end-id])
+            (dissoc :connecting :pointer))
+        db))))
 
 (reg-event-db
-  :start-drag
+  :abort-connecting
+  (fn [db _] (dissoc db :connecting)))
+
+(reg-event-db
+  :start-dragging
   (fn [db [_ position-ids position]]
-    (if-not (= position-ids (get-in db [:dragging :position-ids]))
-      (assoc db :dragging {:position-ids position-ids
-                           :start position
-                           :delta [0 0]})
-      db)))
+    (assert (nil? (:dragging db))
+            "Attempting to start drag while already in progress!")
+    (assoc db
+           :dragging {:position-ids position-ids
+                      :start position}
+           :pointer position)))
 
 (reg-event-db
-  :end-drag
-  (fn [db _]
-    (if-let [{:keys [delta position-ids]} (:dragging db)]
+  :end-dragging
+  (fn [{:keys [dragging pointer] :as db} _]
+    (assert (some? dragging)
+            "Attempting to end drag while not in progress!")
+    (let [{:keys [start position-ids]} dragging
+          delta (position-delta start pointer)]
       (-> db
           (update :positions translate-positions position-ids delta)
-          (dissoc :dragging))
-      db)))
+          (dissoc :dragging :pointer)))))

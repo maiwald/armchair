@@ -4,13 +4,14 @@
             [clojure.set :refer [difference subset?]]
             [armchair.db :as db]
             [armchair.config :as config]
-            [armchair.position :refer [apply-delta translate-positions]]))
+            [armchair.position :refer [position-delta apply-delta translate-positions]]))
 
 (reg-sub :db-lines #(:lines %))
 (reg-sub :db-locations #(:locations %))
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-line-connections #(:line-connections %))
 (reg-sub :db-dragging #(:dragging %))
+(reg-sub :db-connecting #(:connecting %))
 (reg-sub :db-positions #(:positions %))
 (reg-sub :db-pointer #(:pointer %))
 (reg-sub :db-selected-dialogue-id #(:selected-dialogue-id %))
@@ -53,16 +54,21 @@
 (reg-sub
   :dragging?
   :<- [:db-dragging]
-  (fn [dragging]
-    (some? dragging)))
+  (fn [dragging] (some? dragging)))
+
+(reg-sub
+  :connecting?
+  :<- [:db-connecting]
+  (fn [connecting] (some? connecting)))
 
 (reg-sub
   :dragged-positions
   :<- [:db-dragging]
   :<- [:db-positions]
-  (fn [[dragging positions]]
-    (if-let [{:keys [position-ids delta]} dragging]
-      (translate-positions positions position-ids delta)
+  :<- [:db-pointer]
+  (fn [[dragging positions pointer]]
+    (if-let [{:keys [position-ids start]} dragging]
+      (translate-positions positions position-ids (position-delta start pointer))
       positions)))
 
 (reg-sub
@@ -95,26 +101,38 @@
           (assoc line :character-color (:color character))))
       lines-with-drag)))
 
+(defn start-offset [position]
+  (apply-delta position [(- config/line-width 15) 15]))
+
+(defn end-offset [position]
+  (apply-delta position [15 15]))
+
+(reg-sub
+  :line-connecting-connection
+  :<- [:lines-with-drag]
+  :<- [:db-connecting]
+  :<- [:db-pointer]
+  (fn [[lines connecting pointer]]
+    (if-let [start (:line-id connecting)]
+      (let [base-position (start-offset (get-in lines [start :position]))
+            delta (position-delta (:start connecting) pointer)
+            end-position (apply-delta base-position delta)]
+        {:id (str "connection-" start "-?")
+         :kind :drag-connection
+         :start base-position
+         :end end-position}))))
+
 (reg-sub
   :line-connections
   :<- [:lines-with-drag]
-  :<- [:db-dragging]
   :<- [:dialogue-line-connections]
-  (fn [[lines dragging connections]]
-    (let [start-offset #(apply-delta % [(- config/line-width 15) 15])
-          end-offset #(apply-delta % [15 15])
-          connection->positions (fn [[start end]]
+  :<- [:line-connecting-connection]
+  (fn [[lines connections connecting-connection]]
+    (let [connection->positions (fn [[start end]]
                                   {:kind :connection
                                    :id (str "connection-" start "-" end)
                                    :start (start-offset (get-in lines [start :position]))
-                                   :end (end-offset (get-in lines [end :position]))})
-          view-connections (map connection->positions connections)]
-      (if-let [start (:connection-start dragging)]
-        (let [base-position (start-offset (get-in lines [start :position]))]
-          (conj
-            view-connections
-            {:id (str "connection-" start "-?")
-             :kind :drag-connection
-             :start base-position
-             :end (apply-delta base-position (:delta dragging))}))
-        view-connections))))
+                                   :end (end-offset (get-in lines [end :position]))})]
+      (if (some? connecting-connection)
+        (conj (map connection->positions connections) connecting-connection)
+        (map connection->positions connections)))))

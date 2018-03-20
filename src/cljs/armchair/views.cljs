@@ -21,9 +21,6 @@
     (when (zero? (.-button e))
       ((event-only handler) e))))
 
-(defn start-drag-handler [position-ids]
-  (mousedown #(dispatch [:start-drag position-ids (cursor-position %)])))
-
 (defn record-update-handler [record-type id field]
   (let [record-event (keyword (str "update-" (name record-type)))]
     (fn [event]
@@ -31,11 +28,14 @@
 
 ;; Graph (drag & drop)
 
+(defn start-dragging-handler [position-ids]
+  (mousedown #(dispatch [:start-dragging position-ids (cursor-position %)])))
+
 (defn graph-item [{:keys [position position-id]} component]
   (let [dragging? @(subscribe [:dragging?])]
     [:div {:class "graph__item"
-           :on-mouse-down (start-drag-handler #{position-id})
-           :on-mouse-up (when dragging? (event-only #(dispatch [:end-drag])))
+           :on-mouse-down (start-dragging-handler #{position-id})
+           :on-mouse-up (when dragging? (event-only #(dispatch [:end-dragging])))
            :style {:left (first position)
                    :top (second position)}}
      component]))
@@ -51,11 +51,14 @@
 
 (defn graph [{:keys [items kind item-component connections] :or {connections '()}}]
   (let [position-ids (->> items vals (map :position-id) set)
+        connecting? @(subscribe [:connecting?])
         dragging? @(subscribe [:dragging?])]
-    [:div {:class (str "graph " (when dragging? "graph_is-dragging"))
-           :on-mouse-down (start-drag-handler position-ids)
-           :on-mouse-move (when dragging? #(dispatch [:move-pointer (cursor-position %)]))
-           :on-mouse-up (when dragging? (event-only #(dispatch [:end-drag])))}
+    [:div {:class (str "graph " (when (or dragging? connecting?) "graph_is-dragging"))
+           :on-mouse-down (start-dragging-handler position-ids)
+           :on-mouse-move (when (or dragging? connecting?) #(dispatch [:move-pointer (cursor-position %)]))
+           :on-mouse-up (cond
+                          connecting? (event-only #(dispatch [:abort-connecting]))
+                          dragging? (event-only #(dispatch [:end-dragging])))}
      [:svg {:class "graph__connection-container" :version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
@@ -67,17 +70,18 @@
 ;; Components
 
 (defn line-component [{:keys [id text character-color] :as line}]
-  [:div {:class "line"
-         :on-mouse-up #(dispatch [:end-connection id])
-         :style {:border-color character-color
-                 :width (str config/line-width "px")}}
-   [:p text]
-   [:div {:class "edit-action fas fa-trash"
-          :on-click #(dispatch [:delete-line id])}]
-   [:div {:class "edit-action fas fa-edit"
-          :on-click #(dispatch [:open-line-modal id])}]
-   [:div {:class "connection-handle fas fa-link"
-          :on-mouse-down (mousedown #(dispatch [:start-connection id (cursor-position %)]))}]])
+  (let [connecting? @(subscribe [:connecting?])]
+    [:div {:class "line"
+           :on-mouse-up (when connecting? #(dispatch [:end-connecting-lines id]))
+           :style {:border-color character-color
+                   :width (str config/line-width "px")}}
+     [:p text]
+     [:div {:class "edit-action fas fa-trash"
+            :on-click #(dispatch [:delete-line id])}]
+     [:div {:class "edit-action fas fa-edit"
+            :on-click #(dispatch [:open-line-modal id])}]
+     [:div {:class "connection-handle fas fa-link"
+            :on-mouse-down (mousedown #(dispatch [:start-connecting-lines id (cursor-position %)]))}]]))
 
 (defn line-form-modal []
   (let [{:keys [line-id]} @(subscribe [:modal])
