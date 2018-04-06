@@ -8,21 +8,16 @@
 (def <sub (comp deref re-frame.core/subscribe))
 (def >evt re-frame.core/dispatch)
 
-(defn cursor-position [e]
-  [(.-pageX e) (.-pageY e)])
-
-(defn event-only [handler]
+(defn e-> [handler]
   (fn [e]
     (.preventDefault e)
     (.stopPropagation e)
     (handler e)))
 
-(defn mousedown
-  "Only handle left button mousedown event"
-  [handler]
-  (fn [e]
-    (when (zero? (.-button e))
-      ((event-only handler) e))))
+(defn e->pointer [e]
+  [(.-pageX e) (.-pageY e)])
+
+(def left-button? #(zero? (.-button %)))
 
 (defn record-update-handler [record-type id field]
   (let [record-event (keyword (str "update-" (name record-type)))]
@@ -32,13 +27,14 @@
 ;; Graph (drag & drop)
 
 (defn start-dragging-handler [position-ids]
-  (mousedown #(>evt [:start-dragging position-ids (cursor-position %)])))
+  (e-> #(when (left-button? %)
+          (>evt [:start-dragging position-ids (e->pointer %)]))))
 
 (defn graph-item [{:keys [position position-id]} component]
   (let [dragging? (<sub [:dragging?])]
     [:div {:class "graph__item"
            :on-mouse-down (start-dragging-handler #{position-id})
-           :on-mouse-up (when dragging? (event-only #(>evt [:end-dragging])))
+           :on-mouse-up (e-> #(when dragging? (>evt [:end-dragging])))
            :style {:left (first position)
                    :top (second position)}}
      component]))
@@ -58,10 +54,11 @@
         dragging? (<sub [:dragging?])]
     [:div {:class (str "graph " (when (or dragging? connecting?) "graph_is-dragging"))
            :on-mouse-down (start-dragging-handler position-ids)
-           :on-mouse-move (when (or dragging? connecting?) #(>evt [:move-pointer (cursor-position %)]))
-           :on-mouse-up (cond
-                          connecting? (event-only #(>evt [:abort-connecting]))
-                          dragging? (event-only #(>evt [:end-dragging])))}
+           :on-mouse-move (e-> #(when (or dragging? connecting?)
+                                  (>evt [:move-pointer (e->pointer %)])))
+           :on-mouse-up (e-> #(cond
+                                connecting? (>evt [:abort-connecting])
+                                dragging? (>evt [:end-dragging])))}
      [:svg {:class "graph__connection-container" :version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
@@ -84,7 +81,8 @@
      [:div {:class "edit-action fas fa-edit"
             :on-click #(>evt [:open-line-modal id])}]
      [:div {:class "connection-handle fas fa-link"
-            :on-mouse-down (mousedown #(>evt [:start-connecting-lines id (cursor-position %)]))}]]))
+            :on-mouse-down (e-> #(when (left-button? %)
+                                   (>evt [:start-connecting-lines id (e->pointer %)])))}]]))
 
 (defn line-form-modal []
   (let [{:keys [line-id]} (<sub [:modal])
@@ -163,7 +161,8 @@
      [:div {:class "edit-action fas fa-edit"
             :on-click #(>evt [:open-location-modal id])}]
      [:div {:class "connection-handle fas fa-link"
-            :on-mouse-down (mousedown #(>evt [:start-connecting-locations id (cursor-position %)]))}]]))
+            :on-mouse-down (e-> #(when (left-button? %)
+                                   (>evt [:start-connecting-locations id (e->pointer %)])))}]]))
 
 (defn location-management []
   [:div {:class "full-page"}
