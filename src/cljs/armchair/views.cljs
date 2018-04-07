@@ -1,6 +1,7 @@
 (ns armchair.views
   (:require [re-frame.core :as re-frame]
             [armchair.slds :as slds]
+            [armchair.position :refer [apply-delta]]
             [armchair.config :as config]))
 
 ;; Helpers
@@ -39,16 +40,17 @@
                    :top (second position)}}
      component]))
 
-(defn graph-connection [{:keys [id kind start end]}]
+(defn graph-connection [{:keys [kind start end]}]
   [:line {:class (str "graph__connection "
                       (when (= kind :drag-connection) "graph__connection_is-drag"))
-          :key id
           :x1 (first start)
           :y1 (second start)
           :x2 (first end)
           :y2 (second end)}])
 
-(defn graph [{:keys [items kind item-component connections] :or {connections '()}}]
+(defn graph [{:keys [items kind item-component connections connection-transform]
+              :or {connections '()
+                   connection-transform identity}}]
   (let [position-ids (->> items vals (map :position-id) set)
         connecting? (<sub [:connecting?])
         dragging? (<sub [:dragging?])]
@@ -62,8 +64,10 @@
      [:svg {:class "graph__connection-container" :version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
-      (for [connection connections]
-        ^{:key (:id connection)} [graph-connection connection])]
+      (for [[start end] connections]
+        ^{:key (str kind ":" start "->" end)}
+        [graph-connection (connection-transform {:start (get-in items [start :position])
+                                                :end (get-in items [end :position])})])]
      (for [[id item] items]
        ^{:key (str kind id)} [graph-item item [item-component item]])]))
 
@@ -102,13 +106,17 @@
                                                      :value text}]]}]))))
 
 (defn dialogue-component []
-  [:div {:class "full-page"}
-   [:div {:class "new-item-button"}
-    [slds/add-button "New" #(>evt [:create-line])]]
-   [graph {:kind "line"
-           :items (<sub [:lines])
-           :connections (<sub [:line-connections])
-           :item-component line-component}]])
+  (let [{:keys [lines connections]} (<sub [:dialogue])]
+    [:div {:class "full-page"}
+     [:div {:class "new-item-button"}
+      [slds/add-button "New" #(>evt [:create-line])]]
+     [graph {:kind "line"
+             :items lines
+             :connections connections
+             :connection-transform (fn [{:keys [start end]}]
+                                     {:start (apply-delta start [(- config/line-width 15) 15])
+                                      :end (apply-delta end [15 15])})
+             :item-component line-component}]]))
 
 (defn character-form-modal []
   (let [{:keys [character-id]} (<sub [:modal])
@@ -165,13 +173,17 @@
                                    (>evt [:start-connecting-locations id (e->pointer %)])))}]]))
 
 (defn location-management []
-  [:div {:class "full-page"}
-   [:div {:class "new-item-button"}
-    [slds/add-button "New" #(>evt [:create-location])]]
-   [graph {:kind "location"
-           :items (<sub [:locations])
-           :connections (<sub [:location-connections])
-           :item-component location-component}]])
+  (let [{:keys [locations connections]} (<sub [:location-map])]
+    [:div {:class "full-page"}
+     [:div {:class "new-item-button"}
+      [slds/add-button "New" #(>evt [:create-location])]]
+     [graph {:kind "location"
+             :items locations
+             :connections connections
+             :connection-transform (fn [{:keys [start end]}]
+                                     {:start (apply-delta start [(/ config/line-width 2) 15])
+                                      :end (apply-delta end [(/ config/line-width 2) 15])})
+             :item-component location-component}]]))
 
 (defn root []
   (let [current-page (<sub [:current-page])

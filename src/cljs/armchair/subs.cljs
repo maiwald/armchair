@@ -6,11 +6,14 @@
             [armchair.config :as config]
             [armchair.position :refer [position-delta apply-delta translate-positions]]))
 
-(reg-sub :db-lines #(:lines %))
-(reg-sub :db-locations #(:locations %))
-(reg-sub :db-location-connections #(:location-connections %))
 (reg-sub :db-characters #(:characters %))
+
+(reg-sub :db-lines #(:lines %))
 (reg-sub :db-line-connections #(:line-connections %))
+
+(reg-sub :locations #(:locations %))
+(reg-sub :db-location-connections #(:location-connections %))
+
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-connecting #(:connecting %))
 (reg-sub :db-positions #(:positions %))
@@ -21,17 +24,6 @@
 
 (defn map-values [f m]
   (into {} (for [[k v] m] [k (f v)])))
-
-(reg-sub
-  :locations
-  :<- [:db-locations]
-  :<- [:dragged-positions]
-  (fn [[locations positions] _]
-    (map-values
-      (fn [location]
-        (let [position (get positions (:position-id location))]
-          (assoc location :position position)))
-      locations)))
 
 (reg-sub
   :characters
@@ -65,90 +57,34 @@
       positions)))
 
 (reg-sub
-  :lines-with-drag
+  :dialogue
   :<- [:db-lines]
+  :<- [:db-line-connections]
+  :<- [:db-characters]
   :<- [:dragged-positions]
-  (fn [[lines positions] _]
-    (map-values
-      (fn [line]
-        (let [position (get positions (:position-id line))]
-          (assoc line :position position)))
-      lines)))
+  (fn [[lines connections characters positions]]
+    (let [position-map (map-values #(positions (:position-id %)) lines)]
+      {:lines (map-values #(assoc %
+                                  :position (get positions (:position-id %))
+                                  :character-color (get-in characters [(:character-id %) :color]))
+                          lines)
+       :connections connections})))
+
+(reg-sub
+  :location-map
+  :<- [:locations]
+  :<- [:db-location-connections]
+  :<- [:dragged-positions]
+  (fn [[locations connections positions]]
+    (let [position-map (map-values #(positions (:position-id %)) locations)]
+      {:locations (map-values #(assoc % :position (get positions (:position-id %)))
+                              locations)
+       :connections (map sort connections)})))
 
 (reg-sub
   :lines
-  :<- [:lines-with-drag]
+  :<- [:db-lines]
   :<- [:db-characters]
-  (fn [[lines-with-drag characters]]
-    (map-values
-      (fn [line]
-        (let [character (get characters (:character-id line))]
-          (assoc line :character-color (:color character))))
-      lines-with-drag)))
-
-(defn start-offset [position]
-  (apply-delta position [(- config/line-width 15) 15]))
-
-(defn end-offset [position]
-  (apply-delta position [15 15]))
-
-(reg-sub
-  :line-connecting-connection
-  :<- [:lines-with-drag]
-  :<- [:db-connecting]
-  :<- [:db-pointer]
-  (fn [[lines connecting pointer]]
-    (if-let [start (:line-id connecting)]
-      (let [base-position (start-offset (get-in lines [start :position]))
-            delta (position-delta (:start-position connecting) pointer)
-            end-position (apply-delta base-position delta)]
-        {:id (str "connection-" start "-?")
-         :kind :drag-connection
-         :start base-position
-         :end end-position}))))
-
-(reg-sub
-  :line-connections
-  :<- [:lines-with-drag]
-  :<- [:db-line-connections]
-  :<- [:line-connecting-connection]
-  (fn [[lines connections connecting-connection]]
-    (let [connection->positions (fn [[start end]]
-                                  {:kind :connection
-                                   :id (str "connection-" start "-" end)
-                                   :start (start-offset (get-in lines [start :position]))
-                                   :end (end-offset (get-in lines [end :position]))})]
-      (if (some? connecting-connection)
-        (conj (map connection->positions connections) connecting-connection)
-        (map connection->positions connections)))))
-
-(reg-sub
-  :location-connecting-connection
-  :<- [:locations]
-  :<- [:db-connecting]
-  :<- [:db-pointer]
-  (fn [[locations connecting pointer]]
-    (if-let [start (:location-id connecting)]
-      (let [base-position (start-offset (get-in locations [start :position]))
-            delta (position-delta (:start-position connecting) pointer)
-            end-position (apply-delta base-position delta)]
-        {:id (str "connection-" start "-?")
-         :kind :drag-connection
-         :start base-position
-         :end end-position}))))
-
-(reg-sub
-  :location-connections
-  :<- [:locations]
-  :<- [:db-location-connections]
-  :<- [:location-connecting-connection]
-  (fn [[locations connections connecting-connection]]
-    (let [connection->positions (fn [c]
-                                  (let [[start end] (sort c)]
-                                    {:kind :connection
-                                     :id (str "connection-" start "-" end)
-                                     :start (start-offset (get-in locations [start :position]))
-                                     :end (end-offset (get-in locations [end :position]))}))]
-      (if (some? connecting-connection)
-        (conj (map connection->positions connections) connecting-connection)
-        (map connection->positions connections)))))
+  (fn [[lines characters]]
+    (map-values #(assoc % :character-color (get-in characters [(:character-id %) :color]))
+                lines)))
