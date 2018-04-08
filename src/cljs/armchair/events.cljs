@@ -136,10 +136,6 @@
 
 ;; Mouse, Drag & Drop
 
-(defn dragging? [dragging]
-  (and dragging
-       (every? #(> 2 (.abs js/Math %)) (:delta dragging))))
-
 (reg-event-db
   :move-pointer
   (fn [db [_ position]]
