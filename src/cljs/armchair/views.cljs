@@ -32,8 +32,9 @@
           (>evt [:start-dragging position-ids (e->pointer %)]))))
 
 (defn graph-item [{:keys [position position-id]} component]
-  (let [dragging? (<sub [:dragging?])]
-    [:div {:class "graph__item"
+  (let [dragging? (<sub [:dragging? position-id])]
+    [:div {:class (str "graph__item "
+                       (when dragging? "graph__item_is-dragging"))
            :on-mouse-down (start-dragging-handler #{position-id})
            :on-mouse-up (e-> #(when dragging? (>evt [:end-dragging])))
            :style {:left (first position)

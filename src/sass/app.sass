@@ -34,9 +34,14 @@ $gray: #888
 
   &__item
     position: absolute
+    z-index: 2
+
+    &_is-dragging
+      z-index: 3
 
   &__connection-container
     +fill-container
+    z-index: 1
 
   &__connection
     stroke: $gray
@@ -70,6 +75,9 @@ $gray: #888
   border: 1px solid $gray
   border-radius: 15px
   background: white
+
+  .graph__item_is-dragging &
+    box-shadow: 2px 2px 10px 0px rgba(0, 0, 0, .2)
 
   p, .name
     flex-grow: 1
