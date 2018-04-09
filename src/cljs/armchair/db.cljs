@@ -3,7 +3,6 @@
 (def default-db
   {
    :current-page "Dialogue"
-   :selected-dialogue-id 1
    :positions {
                1 [0 200]
                2 [229 198]
@@ -18,7 +17,6 @@
                11 [457 280]
                12 [764 314]
                13 [1012 284]
-               15 [112 284]
                16 [229 198]
                17 [259 91]
                }
@@ -26,6 +24,9 @@
                1 { :id 1 :position-id 16 :display-name "Park - Camp" }
                2 { :id 2 :position-id 17 :display-name "Park - Entrance" }
                }
+   :location-connections #{
+                           #{1 2}
+                           }
    :characters {
                 1 { :id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)" }
                 2 { :id 2 :display-name "Player" :color "rgba(0, 0, 255, .6)" }
@@ -99,35 +100,25 @@
                :dialogue-id 1
                :position-id 13
                :text "Trying to sound ominous or what?! Get outa here!"}
-           15 {:id 15
-               :character-id 1
-               :dialogue-id 2
-               :position-id 15
-               :text "Stray line of other dialogue."}
            }
-   :connections #{
-                  [1 2]
-                  [2 4]
-                  [4 5]
-                  [4 6]
-                  [6 7]
-                  [5 8]
-                  [8 9]
-                  [1 3]
-                  [3 7]
-                  [7 9]
-                  [1 10]
-                  [10 11]
-                  [11 12]
-                  [12 13]
-                  [11 6]
-                  }
+   :line-connections #{
+                       [1 2]
+                       [2 4]
+                       [4 5]
+                       [4 6]
+                       [6 7]
+                       [5 8]
+                       [8 9]
+                       [1 3]
+                       [3 7]
+                       [7 9]
+                       [1 10]
+                       [10 11]
+                       [11 12]
+                       [12 13]
+                       [11 6]
+                       }
   })
-
-(defn lines-for-dialogue [lines dialogue-id]
-  (let [in-dialogue? #(= dialogue-id (:dialogue-id %))
-        dialogue-line-ids (for [[id line] lines :when (in-dialogue? line)] id)]
-    (select-keys lines dialogue-line-ids)))
 
 (defn line-count-for-character [lines character-id]
   (let [filter-fn #(= (:character-id %) character-id)]

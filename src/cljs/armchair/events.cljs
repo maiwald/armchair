@@ -15,8 +15,9 @@
     (merge db (select-keys db/default-db [:positions
                                           :characters
                                           :locations
+                                          :location-connections
                                           :lines
-                                          :connections]))))
+                                          :line-connections]))))
 
 ;; Resources
 
@@ -52,9 +53,9 @@
 (reg-event-db
   :open-character-modal
   (fn [db [_ id]]
-    (if-not (contains? db :modal)
-      (assoc db :modal {:character-id id})
-      (throw (js/Error. "Attempting to open a modal while modal is open!")))))
+    (assert (not (contains? db :modal))
+            "Attempting to open a modal while modal is open!")
+    (assoc db :modal {:character-id id})))
 
 (reg-event-db
   :create-location
@@ -78,9 +79,9 @@
 (reg-event-db
   :open-location-modal
   (fn [db [_ id]]
-    (if-not (contains? db :modal)
-      (assoc db :modal {:location-id id})
-      (throw (js/Error. "Attempting to open a modal while modal is open!")))))
+    (assert (not (contains? db :modal))
+            "Attempting to open a modal while modal is open!")
+    (assoc db :modal {:location-id id})))
 
 (reg-event-db
   :create-line
@@ -106,20 +107,20 @@
   (fn [db [_ id]]
     (let [line-connections (filter (fn [[start end]] (or (= start id)
                                                          (= end id)))
-                                   (:connections db))]
+                                   (:line-connections db))]
       (if (or (empty? line-connections)
               ^boolean (.confirm js/window (str "Really delete Line #" id "?")))
         (-> db
             (update :lines dissoc id)
-            (update :connections difference line-connections))
+            (update :line-connections difference line-connections))
         db))))
 
 (reg-event-db
   :open-line-modal
   (fn [db [_ id]]
-    (if-not (contains? db :modal)
-      (assoc db :modal {:line-id id})
-      (throw (js/Error. "Attempting to open a modal while modal is open!")))))
+    (assert (not (contains? db :modal))
+            "Attempting to open a modal while modal is open!")
+    (assoc db :modal {:line-id id})))
 
 ;; Page
 
@@ -135,48 +136,75 @@
 
 ;; Mouse, Drag & Drop
 
-(defn dragging? [dragging]
-  (and dragging
-       (every? #(> 2 (.abs js/Math %)) (:delta dragging))))
-
 (reg-event-db
   :move-pointer
   (fn [db [_ position]]
-    (if-let [start (get-in db [:dragging :start])]
-      (assoc-in db [:dragging :delta] (position-delta start position))
-      db)))
+    (assoc db :pointer position)))
 
 (reg-event-db
-  :start-connection
+  :start-connecting-lines
   (fn [db [_ line-id position]]
-    (if-not (= (get-in db [:dragging :connection-start]) line-id)
-      (assoc db :dragging {:connection-start line-id
-                           :start position
-                           :delta [0 0]})
-      db)))
+    (assert (nil? (:connecting db))
+            "Attempting to start connecting lines while already in progress!")
+    (assoc db
+           :connecting {:start-position position
+                        :line-id line-id}
+           :pointer position)))
 
 (reg-event-db
-  :end-connection
+  :end-connecting-lines
   (fn [db [_ end-id]]
-    (if-let [start-id (get-in db [:dragging :connection-start])]
+    (assert (some? (:connecting db))
+            "Attempting to end connecting while not in progress!")
+    (let [start-id (get-in db [:connecting :line-id])
+          new-db (dissoc db :connecting :pointer)]
       (if-not (= start-id end-id)
-        (update db :connections conj [start-id end-id])
-        db)
-      db)))
+        (update new-db :line-connections conj [start-id end-id])
+        new-db))))
 
 (reg-event-db
-  :start-drag
+  :start-connecting-locations
+  (fn [db [_ location-id position]]
+    (assert (nil? (:connecting db))
+            "Attempting to start connecting locations while already in progress!")
+    (assoc db
+           :connecting {:start-position position
+                        :location-id location-id}
+           :pointer position)))
+
+(reg-event-db
+  :end-connecting-locations
+  (fn [db [_ end-id]]
+    (assert (some? (:connecting db))
+            "Attempting to end connecting while not in progress!")
+    (let [start-id (get-in db [:connecting :location-id])
+          new-db (dissoc db :connecting :pointer)]
+      (if-not (= start-id end-id)
+        (update new-db :location-connections conj #{start-id end-id})
+        new-db))))
+
+
+(reg-event-db
+  :abort-connecting
+  (fn [db _] (dissoc db :connecting)))
+
+(reg-event-db
+  :start-dragging
   (fn [db [_ position-ids position]]
-    (if-not (= position-ids (get-in db [:dragging :position-ids]))
-      (assoc db :dragging {:position-ids position-ids
-                           :start position
-                           :delta [0 0]})
-      db)))
+    (assert (nil? (:dragging db))
+            "Attempting to start drag while already in progress!")
+    (assoc db
+           :dragging {:position-ids position-ids
+                      :start-position position}
+           :pointer position)))
 
 (reg-event-db
-  :end-drag
-  (fn [db _]
-    (if-let [{:keys [delta position-ids]} (:dragging db)]
+  :end-dragging
+  (fn [{:keys [dragging pointer] :as db} _]
+    (assert (some? dragging)
+            "Attempting to end drag while not in progress!")
+    (let [{:keys [start-position position-ids]} dragging
+          delta (position-delta start-position pointer)]
       (-> db
           (update :positions translate-positions position-ids delta)
-          (dissoc :dragging)))))
+          (dissoc :dragging :pointer)))))
