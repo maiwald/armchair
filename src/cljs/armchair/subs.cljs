@@ -45,9 +45,14 @@
       (some? dragging))))
 
 (reg-sub
-  :connecting?
+  :connector
   :<- [:db-connecting]
-  (fn [connecting] (some? connecting)))
+  :<- [:db-pointer]
+  (fn [[connecting pointer]]
+    (when connecting
+      {:start (:start-position connecting)
+       :end pointer
+       :kind :connector})))
 
 (reg-sub
   :dragged-positions

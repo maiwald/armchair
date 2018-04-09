@@ -15,8 +15,13 @@
     (.stopPropagation e)
     (handler e)))
 
-(defn e->pointer [e]
-  [(.-pageX e) (.-pageY e)])
+(defn e->graph-pointer [e]
+  (let [rect (-> js/document
+                 (.getElementsByClassName "graph")
+                 (aget 0)
+                 .getBoundingClientRect)]
+    [(- (.-pageX e) (.-x rect))
+     (- (.-pageY e) (.-y rect))]))
 
 (def left-button? #(zero? (.-button %)))
 
@@ -29,7 +34,7 @@
 
 (defn start-dragging-handler [position-ids]
   (e-> #(when (left-button? %)
-          (>evt [:start-dragging position-ids (e->pointer %)]))))
+          (>evt [:start-dragging position-ids (e->graph-pointer %)]))))
 
 (defn graph-item [{:keys [position position-id]} component]
   (let [dragging? (<sub [:dragging? position-id])]
@@ -43,7 +48,7 @@
 
 (defn graph-connection [{:keys [kind start end]}]
   [:line {:class (str "graph__connection "
-                      (when (= kind :drag-connection) "graph__connection_is-drag"))
+                      (when (= kind :connector) "graph__connection_is-connector"))
           :x1 (first start)
           :y1 (second start)
           :x2 (first end)
@@ -53,12 +58,13 @@
               :or {connections '()
                    connection-transform identity}}]
   (let [position-ids (->> items vals (map :position-id) set)
-        connecting? (<sub [:connecting?])
+        connector (<sub [:connector])
+        connecting? (some? connector)
         dragging? (<sub [:dragging?])]
     [:div {:class (str "graph " (when (or dragging? connecting?) "graph_is-dragging"))
            :on-mouse-down (start-dragging-handler position-ids)
            :on-mouse-move (e-> #(when (or dragging? connecting?)
-                                  (>evt [:move-pointer (e->pointer %)])))
+                                  (>evt [:move-pointer (e->graph-pointer %)])))
            :on-mouse-up (e-> #(cond
                                 connecting? (>evt [:abort-connecting])
                                 dragging? (>evt [:end-dragging])))}
@@ -68,14 +74,15 @@
       (for [[start end] connections]
         ^{:key (str kind ":" start "->" end)}
         [graph-connection (connection-transform {:start (get-in items [start :position])
-                                                :end (get-in items [end :position])})])]
+                                                :end (get-in items [end :position])})])
+      (when connecting? [graph-connection connector])]
      (for [[id item] items]
        ^{:key (str kind id)} [graph-item item [item-component item]])]))
 
 ;; Components
 
 (defn line-component [{:keys [id text character-color] :as line}]
-  (let [connecting? (<sub [:connecting?])]
+  (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:border-color character-color
@@ -87,7 +94,7 @@
             :on-click #(>evt [:open-line-modal id])}]
      [:div {:class "connection-handle fas fa-link"
             :on-mouse-down (e-> #(when (left-button? %)
-                                   (>evt [:start-connecting-lines id (e->pointer %)])))}]]))
+                                   (>evt [:start-connecting-lines id (e->graph-pointer %)])))}]]))
 
 (defn line-form-modal []
   (let [{:keys [line-id]} (<sub [:modal])
@@ -160,7 +167,7 @@
                                                  :value display-name}]]}]))))
 
 (defn location-component [{:keys [id display-name] :as location}]
-  (let [connecting? (<sub [:connecting?])]
+  (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "location"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-locations id]))
            :style {:width (str config/line-width "px")}}
@@ -171,7 +178,7 @@
             :on-click #(>evt [:open-location-modal id])}]
      [:div {:class "connection-handle fas fa-link"
             :on-mouse-down (e-> #(when (left-button? %)
-                                   (>evt [:start-connecting-locations id (e->pointer %)])))}]]))
+                                   (>evt [:start-connecting-locations id (e->graph-pointer %)])))}]]))
 
 (defn location-management []
   (let [{:keys [locations connections]} (<sub [:location-map])]

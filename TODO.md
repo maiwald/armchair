@@ -1,5 +1,4 @@
 # TODO
-- connect locations
 - introduce epochs
 - assign dialogues to locations (and epochs?)
 - rethink navigation/routing?
