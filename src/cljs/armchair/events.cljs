@@ -156,12 +156,11 @@
   (fn [db [_ end-id]]
     (assert (some? (:connecting db))
             "Attempting to end connecting while not in progress!")
-    (let [start-id (get-in db [:connecting :line-id])]
+    (let [start-id (get-in db [:connecting :line-id])
+          new-db (dissoc db :connecting :pointer)]
       (if-not (= start-id end-id)
-        (-> db
-            (update :line-connections conj [start-id end-id])
-            (dissoc :connecting :pointer))
-        db))))
+        (update new-db :line-connections conj [start-id end-id])
+        new-db))))
 
 (reg-event-db
   :start-connecting-locations
@@ -178,12 +177,11 @@
   (fn [db [_ end-id]]
     (assert (some? (:connecting db))
             "Attempting to end connecting while not in progress!")
-    (let [start-id (get-in db [:connecting :location-id])]
+    (let [start-id (get-in db [:connecting :location-id])
+          new-db (dissoc db :connecting :pointer)]
       (if-not (= start-id end-id)
-        (-> db
-            (update :location-connections conj #{start-id end-id})
-            (dissoc :connecting :pointer))
-        db))))
+        (update new-db :location-connections conj #{start-id end-id})
+        new-db))))
 
 
 (reg-event-db
