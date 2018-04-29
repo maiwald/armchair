@@ -81,6 +81,9 @@
 
 ;; Components
 
+(defn icon [glyph]
+  [:i {:class (str "fas fa-" glyph)}])
+
 (defn line-component [{:keys [id text character-color] :as line}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
@@ -88,13 +91,18 @@
            :style {:border-color character-color
                    :width (str config/line-width "px")}}
      [:p text]
-     [:div {:class "edit-action fas fa-trash"
-            :on-click #(>evt [:delete-line id])}]
-     [:div {:class "edit-action fas fa-edit"
-            :on-click #(>evt [:open-line-modal id])}]
-     [:div {:class "connection-handle fas fa-link"
-            :on-mouse-down (e-> #(when (left-button? %)
-                                   (>evt [:start-connecting-lines id (e->graph-pointer %)])))}]]))
+     [:div {:class "item-actions"
+            :on-mouse-down (e-> identity)}
+      [:div {:class "item-action"
+             :on-click #(>evt [:delete-line id])}
+       [icon "trash"]]
+      [:div {:class "item-action"
+             :on-click #(>evt [:open-line-modal id])}
+       [icon "edit"]]
+      [:div {:class "item-action item-action_connect"
+             :on-mouse-down (e-> #(when (left-button? %)
+                                    (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
+       [icon "link"]]]]))
 
 (defn line-form-modal []
   (let [{:keys [line-id]} (<sub [:modal])
@@ -172,13 +180,18 @@
            :on-mouse-up (when connecting? #(>evt [:end-connecting-locations id]))
            :style {:width (str config/line-width "px")}}
      [:p {:class "name"} display-name]
-     [:div {:class "delete-action fas fa-trash"
-            :on-click #(>evt [:delete-location id])}]
-     [:div {:class "edit-action fas fa-edit"
-            :on-click #(>evt [:open-location-modal id])}]
-     [:div {:class "connection-handle fas fa-link"
-            :on-mouse-down (e-> #(when (left-button? %)
-                                   (>evt [:start-connecting-locations id (e->graph-pointer %)])))}]]))
+     [:div {:class "item-actions"
+            :on-mouse-down (e-> identity)}
+      [:div {:class "item-action"
+             :on-click #(>evt [:delete-location id])}
+       [icon "trash"]]
+      [:div {:class "item-action"
+             :on-click #(>evt [:open-location-modal id])}
+       [icon "edit"]]
+      [:div {:class "item-action item-action_connect"
+             :on-mouse-down (e-> #(when (left-button? %)
+                                    (>evt [:start-connecting-locations id (e->graph-pointer %)])))}
+       [icon "link"]]]]))
 
 (defn location-management []
   (let [{:keys [locations connections]} (<sub [:location-map])]

@@ -59,12 +59,6 @@ $gray: #888
     top: 20px
     right: 20px
 
-%item-action
-  color: lighten($gray, 30%)
-
-  &:hover
-    color: $gray
-
 .line, .location
   $outer-margin: 7px
 
@@ -88,16 +82,28 @@ $gray: #888
     user-select: none
     -webkit-user-select: none
 
-  .delete-action, .edit-action
-    @extend %item-action
-    cursor: pointer
+  .item-actions
     align-self: flex-start
+    align-items: flex-end
+    display: flex
     margin: $outer-margin $outer-margin 0 0
 
-  .connection-handle
-    @extend %item-action
-    cursor: -moz-grab
-    cursor: -webkit-grab
-    cursor: grab
-    align-self: flex-start
-    margin: $outer-margin $outer-margin 0 0
+  .item-action
+    display: flex
+    justify-content: flex-start
+    align-items: flex-start
+    color: lighten($gray, 30%)
+    width: 16px
+    margin-right: 4px
+
+    &:last-child
+      margin-right: 0
+
+    &:hover
+      color: $gray
+      cursor: pointer
+
+    &_connect
+      cursor: -moz-grab
+      cursor: -webkit-grab
+      cursor: grab
