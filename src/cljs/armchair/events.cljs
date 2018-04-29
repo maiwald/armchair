@@ -69,7 +69,14 @@
 (reg-event-db
   :delete-location
   (fn [db [_ id]]
-    (update db :locations dissoc id)))
+    (let [location-connections (filter #(contains? % id)
+                                       (:location-connections db))]
+      (if (or (empty? location-connections)
+              ^boolean (.confirm js/window (str "Really delete location #" id "?")))
+        (-> db
+            (update :locations dissoc id)
+            (update :location-connections difference location-connections))
+        db))))
 
 (reg-event-db
   :update-location
@@ -105,8 +112,7 @@
 (reg-event-db
   :delete-line
   (fn [db [_ id]]
-    (let [line-connections (filter (fn [[start end]] (or (= start id)
-                                                         (= end id)))
+    (let [line-connections (filter #(contains? (set %) id)
                                    (:line-connections db))]
       (if (or (empty? line-connections)
               ^boolean (.confirm js/window (str "Really delete Line #" id "?")))
