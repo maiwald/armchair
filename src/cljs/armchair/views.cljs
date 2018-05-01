@@ -61,7 +61,9 @@
         connector (<sub [:connector])
         connecting? (some? connector)
         dragging? (<sub [:dragging?])]
-    [:div {:class (str "graph " (when (or dragging? connecting?) "graph_is-dragging"))
+    [:div {:class (str "graph "
+                       (when dragging? "graph_is-dragging")
+                       (when connecting? "graph_is-connecting"))
            :on-mouse-down (start-dragging-handler position-ids)
            :on-mouse-move (e-> #(when (or dragging? connecting?)
                                   (>evt [:move-pointer (e->graph-pointer %)])))

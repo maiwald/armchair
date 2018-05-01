@@ -82,7 +82,11 @@ $gray: #888
     user-select: none
     -webkit-user-select: none
 
-  .item-actions
+  .item-actions, .graph_is-connecting &:hover .item-actions
+    display: none
+
+  &:hover .item-actions
+    display: flex
     position: absolute
     right: 0
     top: -12px
@@ -91,7 +95,6 @@ $gray: #888
     padding-left: 4px
     padding-right: 0
     align-items: flex-end
-    display: flex
     margin: $outer-margin $outer-margin 0 0
 
   .item-action
