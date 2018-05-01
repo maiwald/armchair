@@ -1,4 +1,5 @@
 # TODO
+- remove single connections
 - introduce epochs
 - assign dialogues to locations (and epochs?)
 - rethink navigation/routing?
