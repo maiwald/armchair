@@ -38,8 +38,8 @@
 
 (defn graph-item [{:keys [position position-id]} component]
   (let [dragging? (<sub [:dragging? position-id])]
-    [:div {:class (str "graph__item "
-                       (when dragging? "graph__item_is-dragging"))
+    [:div {:class ["graph__item"
+                   (when dragging? "graph__item_is-dragging")]
            :on-mouse-down (start-dragging-handler #{position-id})
            :on-mouse-up (e-> #(when dragging? (>evt [:end-dragging])))
            :style {:left (first position)
@@ -47,8 +47,8 @@
      component]))
 
 (defn graph-connection [{:keys [kind start end]}]
-  [:line {:class (str "graph__connection "
-                      (when (= kind :connector) "graph__connection_is-connector"))
+  [:line {:class ["graph__connection"
+                  (when (= kind :connector) "graph__connection_is-connector")]
           :x1 (first start)
           :y1 (second start)
           :x2 (first end)
@@ -61,9 +61,9 @@
         connector (<sub [:connector])
         connecting? (some? connector)
         dragging? (<sub [:dragging?])]
-    [:div {:class (str "graph "
-                       (when dragging? "graph_is-dragging")
-                       (when connecting? "graph_is-connecting"))
+    [:div {:class ["graph"
+                   (when dragging? "graph_is-dragging")
+                   (when connecting? "graph_is-connecting")]
            :on-mouse-down (start-dragging-handler position-ids)
            :on-mouse-move (e-> #(when (or dragging? connecting?)
                                   (>evt [:move-pointer (e->graph-pointer %)])))
