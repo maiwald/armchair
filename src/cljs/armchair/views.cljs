@@ -216,10 +216,11 @@
       {:component-did-mount (fn [] (start-game (.getContext @canvas-ref "2d")))
        :component-will-unmount (fn [] (end-game))
        :reagent-render (fn []
-                         [:canvas {:id "game-canvas"
-                                   :height 600
-                                   :width 800
-                                   :ref (fn [el] (reset! canvas-ref el))}])})))
+                         [:div {:id "game-container"}
+                          [:canvas {:id "game-canvas"
+                                    :height 450
+                                    :width 800
+                                    :ref (fn [el] (reset! canvas-ref el))}]])})))
 
   (defn root []
     (let [current-page (<sub [:current-page])
