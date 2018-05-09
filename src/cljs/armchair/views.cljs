@@ -1,5 +1,7 @@
 (ns armchair.views
   (:require [re-frame.core :as re-frame]
+            [reagent.core :as r]
+            [armchair.game :refer [start-game end-game]]
             [armchair.slds :as slds]
             [armchair.position :refer [apply-delta]]
             [armchair.config :as config]))
@@ -208,12 +210,24 @@
                                       :end (apply-delta end [(/ config/line-width 2) 15])})
              :item-component location-component}]]))
 
-(defn root []
-  (let [current-page (<sub [:current-page])
+(defn game-canvas []
+  (let [canvas-ref (atom nil)]
+    (r/create-class
+      {:component-did-mount (fn [] (start-game (.getContext @canvas-ref "2d")))
+       :component-will-unmount (fn [] (end-game))
+       :reagent-render (fn []
+                         [:canvas {:id "game-canvas"
+                                   :height 600
+                                   :width 800
+                                   :ref (fn [el] (reset! canvas-ref el))}])})))
+
+  (defn root []
+    (let [current-page (<sub [:current-page])
         pages (array-map
                 "Dialogue" [dialogue-component]
                 "Characters" [character-management]
-                "Locations" [location-management])
+                "Locations" [location-management]
+                "Game" [game-canvas])
         link-map (map
                    (fn [name] [name #(>evt [:show-page name])])
                    (keys pages))]
