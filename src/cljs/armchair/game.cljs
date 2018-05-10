@@ -29,8 +29,12 @@
    [ 1 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
    ])
 
+(def inital-game-state
+  {:player [1 13]})
+
 (def textures ["grass"
-               "wall"])
+               "wall"
+               "player"])
 
 (def context (atom nil))
 (def texture-atlas (atom nil))
@@ -62,12 +66,17 @@
                     (* 32 x)
                     (* 32 y)))))
 
+(defn draw-player [state]
+  (let [[x y] (:player state)]
+    (draw-texture :player (* 32 x) (* 32 y))))
+
 (defn start-game [c]
   (.log js/console "start-game")
   (reset! context c)
   (go
     (reset! texture-atlas (<! (get-texture-atlas-chan)))
-    (draw-level)))
+    (draw-level)
+    (draw-player inital-game-state)))
 
 (defn end-game []
   (.log js/console "end-game"))
