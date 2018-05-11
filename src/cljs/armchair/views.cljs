@@ -223,8 +223,8 @@
        :reagent-render (fn []
                          [:div {:id "game-container"}
                           [:canvas {:id "game-canvas"
-                                    :on-mouse-move #(put! @game-input [:highlight (relative-pointer % @canvas-ref)])
-                                    :on-mouse-out #(put! @game-input [:highlight nil])
+                                    :on-mouse-move #(put! @game-input [:cursor-position (relative-pointer % @canvas-ref)])
+                                    :on-mouse-out #(put! @game-input [:cursor-position nil])
                                     :height 450
                                     :width 800
                                     :ref (fn [el] (reset! canvas-ref el))}]])})))

@@ -4,7 +4,7 @@
 
 
 (def initial-game-state
-  {:cursor nil
+  {:highlight nil
    :player [(* 32 1) (* 32 13)]
    :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
            [ 0 1 0 1 1 1 1 1 1 1 1 0 1 1 ]
@@ -73,16 +73,13 @@
   (draw-texture :player x y))
 
 (defn draw-highlight [highlight]
-  (if-let [[cursor-x cursor-y] highlight]
-    (let [
-           x (* (quot cursor-x 32) 32)
-           y (* (quot cursor-y 32) 32)]
+  (if-let [[x y] highlight]
     (doto @context
-        c/save!
-        (c/set-stroke-style! "rgba(255, 255, 0, .7)")
-        (c/set-line-width! "2")
-        (c/draw-rect! x y 32 32)
-        c/restore!))))
+      c/save!
+      (c/set-stroke-style! "rgba(255, 255, 0, .7)")
+      (c/set-line-width! "2")
+      (c/draw-rect! x y 32 32)
+      c/restore!)))
 
 (defn render [state]
   (js/requestAnimationFrame
@@ -90,13 +87,16 @@
        (c/clear! @context)
        (draw-level (:level state))
        (draw-player (:player state))
-       (draw-highlight (:cursor state)))))
+       (draw-highlight (:highlight state)))))
 
 (defn game-loop [input-chan]
   (let [state (atom initial-game-state)]
     (go-loop [[cmd payload] (<! input-chan)]
              (case cmd
-               :highlight (swap! state assoc :cursor payload))
+               :cursor-position (swap! state assoc :highlight
+                                       (when-let [[cursor-x cursor-y] payload]
+                                         [(* (quot cursor-x 32) 32)
+                                          (* (quot cursor-y 32) 32)])))
              (recur (<! input-chan)))
     (add-watch state
                :state-update
