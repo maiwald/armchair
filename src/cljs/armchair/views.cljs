@@ -80,7 +80,7 @@
       (for [[start end] connections]
         ^{:key (str kind ":" start "->" end)}
         [graph-connection (connection-transform {:start (get-in items [start :position])
-                                                :end (get-in items [end :position])})])
+                                                 :end (get-in items [end :position])})])
       (when connecting? [graph-connection connector])]
      (for [[id item] items]
        ^{:key (str kind id)} [graph-item item [item-component item]])]))
@@ -224,8 +224,8 @@
                                     :width 800
                                     :ref (fn [el] (reset! canvas-ref el))}]])})))
 
-  (defn root []
-    (let [current-page (<sub [:current-page])
+(defn root []
+  (let [current-page (<sub [:current-page])
         pages (array-map
                 "Dialogue" [dialogue-component]
                 "Characters" [character-management]
