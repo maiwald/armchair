@@ -4,7 +4,8 @@
             [armchair.game :refer [start-game end-game]]
             [armchair.slds :as slds]
             [armchair.position :refer [apply-delta]]
-            [armchair.config :as config]))
+            [armchair.config :as config]
+            [clojure.core.async :refer [put!]]))
 
 ;; Helpers
 
@@ -213,13 +214,17 @@
              :item-component location-component}]]))
 
 (defn game-canvas []
-  (let [canvas-ref (atom nil)]
+  (let [canvas-ref (atom nil)
+        game-input (atom nil)]
     (r/create-class
-      {:component-did-mount (fn [] (start-game (.getContext @canvas-ref "2d")))
+      {:component-did-mount (fn []
+                              (reset! game-input (start-game (.getContext @canvas-ref "2d"))))
        :component-will-unmount (fn [] (end-game))
        :reagent-render (fn []
                          [:div {:id "game-container"}
                           [:canvas {:id "game-canvas"
+                                    :on-mouse-move #(put! @game-input [:highlight (relative-pointer % @canvas-ref)])
+                                    :on-mouse-out #(put! @game-input [:highlight nil])
                                     :height 450
                                     :width 800
                                     :ref (fn [el] (reset! canvas-ref el))}]])})))

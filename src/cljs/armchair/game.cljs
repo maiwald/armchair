@@ -1,36 +1,38 @@
 (ns armchair.game
-  (:require [clojure.core.async :refer [chan put! go <! >!]]))
+  (:require [clojure.core.async :refer [chan put! take! go go-loop <! >!]]
+            [armchair.canvas :as c]))
 
-(def level
-  [[ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
-   [ 0 1 0 1 1 1 1 1 1 1 1 0 1 1 ]
-   [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
-   [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
-   [ 0 1 0 1 0 0 1 1 1 1 1 0 1 0 ]
-   [ 0 0 0 1 1 1 1 0 0 1 0 0 1 0 ]
-   [ 0 0 1 1 0 0 1 0 0 1 0 1 1 0 ]
-   [ 0 1 1 1 1 0 1 0 0 1 1 1 1 0 ]
-   [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
-   [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
-   [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
-   [ 0 0 0 0 1 0 1 0 0 1 0 0 0 0 ]
-   [ 0 1 0 1 1 1 1 1 1 1 1 0 1 0 ]
-   [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
-   [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
-   [ 0 1 0 1 0 0 1 1 1 1 1 0 1 0 ]
-   [ 0 1 0 1 1 1 1 0 0 1 0 0 1 0 ]
-   [ 0 1 1 1 0 0 1 0 0 1 0 1 1 0 ]
-   [ 0 1 1 1 1 0 1 0 0 1 0 1 1 0 ]
-   [ 0 0 0 0 0 0 1 0 0 1 0 1 1 0 ]
-   [ 0 1 1 1 1 0 1 1 0 1 0 1 0 0 ]
-   [ 0 1 1 1 1 0 1 1 0 1 1 1 0 0 ]
-   [ 0 1 0 1 1 0 1 0 0 1 0 1 0 0 ]
-   [ 0 1 0 1 1 1 1 1 1 1 0 1 1 0 ]
-   [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
-   ])
 
 (def inital-game-state
-  {:player [1 13]})
+  {:cursor nil
+   :player [(* 32 1) (* 32 13)]
+   :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+           [ 0 1 0 1 1 1 1 1 1 1 1 0 1 1 ]
+           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
+           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
+           [ 0 1 0 1 0 0 1 1 1 1 1 0 1 0 ]
+           [ 0 0 0 1 1 1 1 0 0 1 0 0 1 0 ]
+           [ 0 0 1 1 0 0 1 0 0 1 0 1 1 0 ]
+           [ 0 1 1 1 1 0 1 0 0 1 1 1 1 0 ]
+           [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
+           [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
+           [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
+           [ 0 0 0 0 1 0 1 0 0 1 0 0 0 0 ]
+           [ 0 1 0 1 1 1 1 1 1 1 1 0 1 0 ]
+           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
+           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
+           [ 0 1 0 1 0 0 1 1 1 1 1 0 1 0 ]
+           [ 0 1 0 1 1 1 1 0 0 1 0 0 1 0 ]
+           [ 0 1 1 1 0 0 1 0 0 1 0 1 1 0 ]
+           [ 0 1 1 1 1 0 1 0 0 1 0 1 1 0 ]
+           [ 0 0 0 0 0 0 1 0 0 1 0 1 1 0 ]
+           [ 1 1 1 1 1 0 1 1 0 1 0 1 0 0 ]
+           [ 0 1 1 1 1 0 1 1 0 1 1 1 0 0 ]
+           [ 0 1 0 1 1 0 1 0 0 1 0 1 0 0 ]
+           [ 0 1 0 1 1 1 1 1 1 1 0 1 1 0 ]
+           [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+           ]
+   })
 
 (def textures ["grass"
                "wall"
@@ -54,9 +56,10 @@
       @atlas)))
 
 (defn draw-texture [texture x y]
-  (.drawImage @context (@texture-atlas texture) x y))
+  (when @texture-atlas
+    (c/draw-image! @context (@texture-atlas texture) x y)))
 
-(defn draw-level []
+(defn draw-level [level]
   (let [cols (count (first level))
         rows (count level)]
     (doseq [x (range 0 rows)
@@ -66,17 +69,50 @@
                     (* 32 x)
                     (* 32 y)))))
 
-(defn draw-player [state]
-  (let [[x y] (:player state)]
-    (draw-texture :player (* 32 x) (* 32 y))))
+(defn draw-player [[x y]]
+  (draw-texture :player x y))
+
+(defn draw-highlight [highlight]
+  (if-let [[cursor-x cursor-y] highlight]
+    (let [
+           x (* (quot cursor-x 32) 32)
+           y (* (quot cursor-y 32) 32)]
+    (doto @context
+        c/save!
+        (c/set-stroke-style! "rgba(255, 255, 0, .7)")
+        (c/set-line-width! "2")
+        (c/draw-rect! x y 32 32)
+        c/restore!))))
+
+(defn render [state]
+  (c/clear! @context)
+  (draw-level (:level state))
+  (draw-player (:player state))
+  (draw-highlight (:cursor state)))
+
+(defn game-loop [input-chan]
+  (let [state (atom inital-game-state)
+        state-chan (chan)]
+    (go-loop [[cmd payload] (<! input-chan)]
+             (case cmd
+               :highlight (swap! state assoc :cursor payload))
+             (put! state-chan @state)
+             (recur (<! input-chan)))
+    (go-loop [state (<! state-chan)]
+      (js/requestAnimationFrame #(render state))
+      (recur (<! state-chan)))
+    (put! state-chan @state)
+    input-chan))
 
 (defn start-game [c]
   (.log js/console "start-game")
   (reset! context c)
-  (go
-    (reset! texture-atlas (<! (get-texture-atlas-chan)))
-    (draw-level)
-    (draw-player inital-game-state)))
+  (let [input-chan (chan)]
+    (take! (get-texture-atlas-chan)
+           #(do
+              (reset! texture-atlas %)
+              (game-loop input-chan)))
+    input-chan))
 
 (defn end-game []
   (.log js/console "end-game"))
