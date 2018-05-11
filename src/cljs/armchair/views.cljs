@@ -17,13 +17,15 @@
     (.stopPropagation e)
     (handler e)))
 
+(defn relative-pointer [e elem]
+  (let [rect (.getBoundingClientRect elem)]
+    [(- (.-clientX e) (.-left rect))
+     (- (.-clientY e) (.-top rect))]))
+
 (defn e->graph-pointer [e]
-  (let [rect (-> js/document
-                 (.getElementsByClassName "graph")
-                 (aget 0)
-                 .getBoundingClientRect)]
-    [(- (.-pageX e) (.-x rect))
-     (- (.-pageY e) (.-y rect))]))
+  (relative-pointer e (-> js/document
+                          (.getElementsByClassName "graph")
+                          (aget 0))))
 
 (def left-button? #(zero? (.-button %)))
 
