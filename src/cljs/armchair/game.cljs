@@ -3,7 +3,7 @@
             [armchair.canvas :as c]))
 
 
-(def inital-game-state
+(def initial-game-state
   {:cursor nil
    :player [(* 32 1) (* 32 13)]
    :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
@@ -85,24 +85,24 @@
         c/restore!))))
 
 (defn render [state]
-  (c/clear! @context)
-  (draw-level (:level state))
-  (draw-player (:player state))
-  (draw-highlight (:cursor state)))
+  (js/requestAnimationFrame
+    #(do
+       (c/clear! @context)
+       (draw-level (:level state))
+       (draw-player (:player state))
+       (draw-highlight (:cursor state)))))
 
 (defn game-loop [input-chan]
-  (let [state (atom inital-game-state)
-        state-chan (chan)]
+  (let [state (atom initial-game-state)]
     (go-loop [[cmd payload] (<! input-chan)]
              (case cmd
                :highlight (swap! state assoc :cursor payload))
-             (put! state-chan @state)
              (recur (<! input-chan)))
-    (go-loop [state (<! state-chan)]
-      (js/requestAnimationFrame #(render state))
-      (recur (<! state-chan)))
-    (put! state-chan @state)
-    input-chan))
+    (add-watch state
+               :state-update
+               (fn [_ _ old-state new-state] (render new-state)))
+    (render @state))
+    input-chan)
 
 (defn start-game [c]
   (.log js/console "start-game")
