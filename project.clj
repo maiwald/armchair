@@ -2,7 +2,8 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/clojurescript "1.9.946"]
                  [reagent "0.8.0"]
-                 [re-frame "0.10.5"]]
+                 [re-frame "0.10.5"]
+                 [tailrecursion/cljs-priority-map "1.2.1"]]
 
   :plugins [[lein-cljsbuild "1.1.5"]]
 

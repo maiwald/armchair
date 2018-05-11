@@ -1,6 +1,7 @@
 (ns armchair.game
   (:require [clojure.core.async :refer [chan put! take! go go-loop <! >!]]
-            [armchair.canvas :as c]))
+            [armchair.canvas :as c]
+            [armchair.pathfinding :as path]))
 
 
 (def initial-game-state
@@ -78,8 +79,18 @@
       c/save!
       (c/set-stroke-style! "rgba(255, 255, 0, .7)")
       (c/set-line-width! "2")
-      (c/draw-rect! (* 32 x) (* 32 y) 32 32)
+      (c/stroke-rect! (* 32 x) (* 32 y) 32 32)
       c/restore!)))
+
+(defn draw-path [{:keys [level player highlight]}]
+  (if highlight
+    (doseq [[x y] (path/a-star level player highlight)]
+      (doto @context
+        c/save!
+        (c/set-fill-style! "rgba(255, 255, 0, .2)")
+        (c/set-line-width! "2")
+        (c/fill-rect! (* 32 x) (* 32 y) 32 32)
+        c/restore!))))
 
 (defn render [state]
   (js/requestAnimationFrame
@@ -87,6 +98,7 @@
        (c/clear! @context)
        (draw-level (:level state))
        (draw-player (:player state))
+       (draw-path state)
        (draw-highlight (:highlight state)))))
 
 (defn game-loop [input-chan]
