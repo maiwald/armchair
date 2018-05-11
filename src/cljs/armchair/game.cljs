@@ -5,7 +5,7 @@
 
 (def initial-game-state
   {:highlight nil
-   :player [(* 32 1) (* 32 13)]
+   :player [1 13]
    :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
            [ 0 1 0 1 1 1 1 1 1 1 1 0 1 1 ]
            [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
@@ -70,7 +70,7 @@
                     (* 32 y)))))
 
 (defn draw-player [[x y]]
-  (draw-texture :player x y))
+  (draw-texture :player (* 32 x) (* 32 y)))
 
 (defn draw-highlight [highlight]
   (if-let [[x y] highlight]
@@ -78,7 +78,7 @@
       c/save!
       (c/set-stroke-style! "rgba(255, 255, 0, .7)")
       (c/set-line-width! "2")
-      (c/draw-rect! x y 32 32)
+      (c/draw-rect! (* 32 x) (* 32 y) 32 32)
       c/restore!)))
 
 (defn render [state]
@@ -95,8 +95,8 @@
              (case cmd
                :cursor-position (swap! state assoc :highlight
                                        (when-let [[cursor-x cursor-y] payload]
-                                         [(* (quot cursor-x 32) 32)
-                                          (* (quot cursor-y 32) 32)])))
+                                         [(quot cursor-x 32)
+                                          (quot cursor-y 32)])))
              (recur (<! input-chan)))
     (add-watch state
                :state-update
