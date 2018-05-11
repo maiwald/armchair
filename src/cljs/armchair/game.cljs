@@ -100,9 +100,11 @@
              (recur (<! input-chan)))
     (add-watch state
                :state-update
-               (fn [_ _ old-state new-state] (render new-state)))
+               (fn [_ _ old-state new-state]
+                 (if-not (= old-state new-state)
+                   (render new-state))))
     (render @state))
-    input-chan)
+  input-chan)
 
 (defn start-game [c]
   (.log js/console "start-game")
