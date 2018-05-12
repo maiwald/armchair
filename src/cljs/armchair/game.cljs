@@ -44,7 +44,7 @@
 
 (defn get-texture-atlas-chan []
   (let [atlas (atom {})
-        loaded (chan (count textures))]
+        loaded (chan)]
     (run! (fn [texture-name]
             (let [image (js/Image.)]
               (set! (.-onload image) #(put! loaded [texture-name image]))
@@ -93,6 +93,7 @@
         c/restore!))))
 
 (defn render [state]
+  (.debug js/console "render")
   (js/requestAnimationFrame
     #(do
        (c/clear! @context)
@@ -100,6 +101,8 @@
        (draw-player (:player state))
        (draw-path state)
        (draw-highlight (:highlight state)))))
+
+;; Game Loop
 
 (defn game-loop [input-chan]
   (let [state (atom initial-game-state)]
@@ -119,7 +122,7 @@
   input-chan)
 
 (defn start-game [c]
-  (.log js/console "start-game")
+  (.debug js/console "start-game")
   (reset! context c)
   (let [input-chan (chan)]
     (take! (get-texture-atlas-chan)
@@ -129,4 +132,4 @@
     input-chan))
 
 (defn end-game []
-  (.log js/console "end-game"))
+  (.debug js/console "end-game"))
