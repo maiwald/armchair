@@ -226,7 +226,8 @@
                                     :on-mouse-move #(let [c (relative-pointer % @canvas-ref)]
                                                       (put! @game-input [:cursor-position c]))
                                     :on-mouse-out #(put! @game-input [:cursor-position nil])
-                                    :on-click #(put! @game-input [:animate])
+                                    :on-click #(let [c (relative-pointer % @canvas-ref)]
+                                                 (put! @game-input [:animate c]))
                                     :height 450
                                     :width 800
                                     :ref (fn [el] (reset! canvas-ref el))}]])})))

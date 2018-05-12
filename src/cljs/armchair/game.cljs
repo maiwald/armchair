@@ -6,6 +6,7 @@
 ;; Definitions
 
 (def tile-size 32)
+(def tile-move-time 1000) ; miliseconds
 
 ;; Conversion Helpers
 
@@ -125,43 +126,51 @@
        (draw-path state)
        (draw-highlight (:highlight state)))))
 
-
 ;; Input Handlers
 
 (defn handle-cursor-position [state coord]
   (assoc state :highlight (when coord (normalize-to-tile coord))))
 
-(defn handle-animate [state channel]
+(def animation (atom nil))
+
+(defn move-to [state to]
+  {:started (.now js/performance)
+   :from (:player state)
+   :to to})
+
+(defn handle-animate [state coord channel]
+  (reset! animation (move-to state (normalize-to-tile coord)))
   (put! channel true)
-  (assoc state
-         :player (tile->coord [1 13])
-         :animate (tile->coord [2 13]))
-  )
+  (assoc state :player (tile->coord [1 13])))
 
 (defn start-input-loop [state-atom channel animation-chan]
   (go-loop [[cmd payload] (<! channel)]
            (let [handler (case cmd
                            :cursor-position handle-cursor-position
-                           :animate (fn [state _] (handle-animate state animation-chan))
+                           :animate #(handle-animate %1 %2 animation-chan)
                            (fn [state _] state))]
              (reset! state-atom (handler @state-atom payload)))
            (recur (<! channel))))
 
 ;; Animations
 
-(def animations (atom nil))
+(defn abs [x] (.abs js/Math x))
+(defn round [x] (.round js/Math x))
 
 (defn start-animation-loop [state-atom channel]
-    (go-loop [anim (<! channel)]
-             (.log js/console "in loop")
-             (let [{s :player t :animate} @state-atom]
-               (.log js/console "coords" s t)
-               (if (or (nil? t)
-                        (= s t))
-                 (swap! state-atom dissoc :animate)
-                 (do (swap! state-atom assoc :player [(inc (first s)) (second s)])
-                     (js/setTimeout #(put! channel true) 100)))
-               (recur (<! channel)))))
+  (go-loop [_ (<! channel)]
+           (let [{s :started [fx fy] :from [tx ty] :to} @animation
+                 passed (- (.now js/performance) s)
+                 pct (/ passed tile-move-time)
+                 dx (- tx fx)
+                 dy (- ty fy)]
+             (if (< passed tile-move-time)
+               (swap! state-atom assoc :player [(+ fx (round (* pct dx)))
+                                                (+ fy (round (* pct dy)))])
+               (do (swap! state-atom assoc :player [tx ty])
+                   (reset! animation nil)))
+             (when @animation (js/requestAnimationFrame #(put! channel true))))
+           (recur (<! channel))))
 
 ;; Game Loop
 
@@ -176,7 +185,6 @@
     (add-watch state
                :state-update
                (fn [_ _ old-state new-state]
-                 (.log js/console "in watch")
                  (when (not= old-state new-state)
                    (render new-state))))
     (take! (get-texture-atlas-chan)
