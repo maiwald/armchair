@@ -48,11 +48,12 @@
            ]
    })
 
+;; Textures
+
 (def textures ["grass"
                "wall"
                "player"])
 
-(def context (atom nil))
 (def texture-atlas (atom nil))
 
 (defn get-texture-atlas-chan []
@@ -69,9 +70,13 @@
           (swap! atlas assoc (keyword texture-name) texture-image)))
       @atlas)))
 
+;; Rendering
+
+(def ctx (atom nil))
+
 (defn draw-texture [texture coord]
   (when @texture-atlas
-    (c/draw-image! @context (@texture-atlas texture) coord)))
+    (c/draw-image! @ctx (@texture-atlas texture) coord)))
 
 (defn draw-level [level]
   (let [cols (count (first level))
@@ -82,12 +87,12 @@
       (draw-texture ({0 :wall 1 :grass} value)
                     (tile->coord [x y])))))
 
-(defn draw-player [state]
-  (draw-texture :player (:player state)))
+(defn draw-player [player]
+  (draw-texture :player player))
 
 (defn draw-highlight [highlight-coord]
   (when highlight-coord
-    (doto @context
+    (doto @ctx
       c/save!
       (c/set-stroke-style! "rgba(255, 255, 0, .7)")
       (c/set-line-width! "2")
@@ -100,7 +105,7 @@
                         level
                         (coord->tile player)
                         (coord->tile highlight))]
-      (doto @context
+      (doto @ctx
         c/save!
         (c/set-fill-style! "rgba(255, 255, 0, .2)")
         (c/set-line-width! "2")
@@ -111,38 +116,48 @@
   (.debug js/console "render")
   (js/requestAnimationFrame
     #(do
-       (c/clear! @context)
+       (c/clear! @ctx)
        (draw-level (:level state))
-       (draw-player state)
+       (draw-player (:player state))
        (draw-path state)
        (draw-highlight (:highlight state)))))
 
+
+;; Input Handlers
+
+(defn handle-cursor-position [state coord]
+  (assoc state :highlight (when coord (normalize-to-tile coord))))
+
+(defn start-input-loop [state input-chan]
+  (go-loop [[cmd payload] (<! input-chan)]
+           (let [handler (case cmd
+                           :cursor-position handle-cursor-position
+                           (fn [state _] state))]
+             (reset! state (handler @state payload)))
+           (recur (<! input-chan))))
+
 ;; Game Loop
 
-(defn game-loop [input-chan]
-  (let [state (atom initial-game-state)]
-    (go-loop [[cmd payload] (<! input-chan)]
-             (case cmd
-               :cursor-position (when payload
-                                  (swap! state assoc :highlight (normalize-to-tile payload))))
-             (recur (<! input-chan)))
-    (add-watch state
-               :state-update
-               (fn [_ _ old-state new-state]
-                 (if-not (= old-state new-state)
-                   (render new-state))))
-    (render @state))
-  input-chan)
+(def state (atom nil))
 
-(defn start-game [c]
+(defn start-game [context]
   (.debug js/console "start-game")
-  (reset! context c)
+  (reset! state initial-game-state)
+  (reset! ctx context)
+  (add-watch state
+             :state-update
+             (fn [_ _ old-state new-state]
+               (if-not (= old-state new-state)
+                 (render new-state))))
   (let [input-chan (chan)]
     (take! (get-texture-atlas-chan)
-           #(do
-              (reset! texture-atlas %)
-              (game-loop input-chan)))
+           #(do (reset! texture-atlas %)
+                (start-input-loop state input-chan)
+                (render @state)))
     input-chan))
 
 (defn end-game []
-  (.debug js/console "end-game"))
+  (.debug js/console "end-game")
+  (remove-watch state :state-update)
+  (reset! state nil)
+  (reset! ctx nil))
