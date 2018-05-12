@@ -3,14 +3,17 @@
             [armchair.canvas :as c]
             [armchair.pathfinding :as path]))
 
+;; Definitions
+
+(def tile-size 32)
 
 ;; Conversion Helpers
 
 (defn tile->coord [[tx ty]]
-  [(* 32 tx) (* 32 ty)])
+  [(* tile-size tx) (* tile-size ty)])
 
 (defn coord->tile [[cx cy]]
-  [(quot cx 32) (quot cy 32)])
+  [(quot cx tile-size) (quot cy tile-size)])
 
 (defn normalize-to-tile [coord]
   (-> coord coord->tile tile->coord))
@@ -96,7 +99,7 @@
       c/save!
       (c/set-stroke-style! "rgba(255, 255, 0, .7)")
       (c/set-line-width! "2")
-      (c/stroke-rect! highlight-coord 32 32)
+      (c/stroke-rect! highlight-coord tile-size tile-size)
       c/restore!)))
 
 (defn draw-path [{:keys [level player highlight]}]
@@ -109,7 +112,7 @@
         c/save!
         (c/set-fill-style! "rgba(255, 255, 0, .2)")
         (c/set-line-width! "2")
-        (c/fill-rect! (tile->coord path-tile) 32 32)
+        (c/fill-rect! (tile->coord path-tile) tile-size tile-size)
         c/restore!))))
 
 (defn render [state]
