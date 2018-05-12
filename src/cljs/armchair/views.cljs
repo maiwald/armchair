@@ -225,6 +225,7 @@
                           [:canvas {:id "game-canvas"
                                     :on-mouse-move #(put! @game-input [:cursor-position (relative-pointer % @canvas-ref)])
                                     :on-mouse-out #(put! @game-input [:cursor-position nil])
+                                    :on-click #(put! @game-input [:animate])
                                     :height 450
                                     :width 800
                                     :ref (fn [el] (reset! canvas-ref el))}]])})))

@@ -128,13 +128,37 @@
 (defn handle-cursor-position [state coord]
   (assoc state :highlight (when coord (normalize-to-tile coord))))
 
-(defn start-input-loop [state input-chan]
-  (go-loop [[cmd payload] (<! input-chan)]
+(defn handle-animate [state channel]
+  (put! channel true)
+  (assoc state
+         :player (tile->coord [1 13])
+         :animate (tile->coord [2 13]))
+  )
+
+(defn start-input-loop [state-atom channel animation-chan]
+  (go-loop [[cmd payload] (<! channel)]
            (let [handler (case cmd
                            :cursor-position handle-cursor-position
+                           :animate (fn [state _] (handle-animate state animation-chan))
                            (fn [state _] state))]
-             (reset! state (handler @state payload)))
-           (recur (<! input-chan))))
+             (reset! state-atom (handler @state-atom payload)))
+           (recur (<! channel))))
+
+;; Animations
+
+(def animations (atom nil))
+
+(defn start-animation-loop [state-atom channel]
+    (go-loop [anim (<! channel)]
+             (.log js/console "in loop")
+             (let [{s :player t :animate} @state-atom]
+               (.log js/console "coords" s t)
+               (if (or (nil? t)
+                        (= s t))
+                 (swap! state-atom dissoc :animate)
+                 (do (swap! state-atom assoc :player [(inc (first s)) (second s)])
+                     (js/setTimeout #(put! channel true) 100)))
+               (recur (<! channel)))))
 
 ;; Game Loop
 
@@ -144,15 +168,18 @@
   (.debug js/console "start-game")
   (reset! state initial-game-state)
   (reset! ctx context)
-  (add-watch state
-             :state-update
-             (fn [_ _ old-state new-state]
-               (if-not (= old-state new-state)
-                 (render new-state))))
-  (let [input-chan (chan)]
+  (let [input-chan (chan)
+        animation-chan (chan)]
+    (add-watch state
+               :state-update
+               (fn [_ _ old-state new-state]
+                 (.log js/console "in watch")
+                 (when (not= old-state new-state)
+                   (render new-state))))
     (take! (get-texture-atlas-chan)
            #(do (reset! texture-atlas %)
-                (start-input-loop state input-chan)
+                (start-input-loop state input-chan animation-chan)
+                (start-animation-loop state animation-chan)
                 (render @state)))
     input-chan))
 
