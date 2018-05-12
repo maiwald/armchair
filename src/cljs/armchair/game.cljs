@@ -4,9 +4,22 @@
             [armchair.pathfinding :as path]))
 
 
+;; Conversion Helpers
+
+(defn tile->coord [[tx ty]]
+  [(* 32 tx) (* 32 ty)])
+
+(defn coord->tile [[cx cy]]
+  [(quot cx 32) (quot cy 32)])
+
+(defn normalize-to-tile [coord]
+  (-> coord coord->tile tile->coord))
+
+;; State
+
 (def initial-game-state
   {:highlight nil
-   :player [1 13]
+   :player (tile->coord [1 13])
    :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
            [ 0 1 0 1 1 1 1 1 1 1 1 0 1 1 ]
            [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
@@ -56,9 +69,9 @@
           (swap! atlas assoc (keyword texture-name) texture-image)))
       @atlas)))
 
-(defn draw-texture [texture x y]
+(defn draw-texture [texture coord]
   (when @texture-atlas
-    (c/draw-image! @context (@texture-atlas texture) x y)))
+    (c/draw-image! @context (@texture-atlas texture) coord)))
 
 (defn draw-level [level]
   (let [cols (count (first level))
@@ -67,29 +80,31 @@
             y (range 0 cols)
             :let [value (get-in level [x y])]]
       (draw-texture ({0 :wall 1 :grass} value)
-                    (* 32 x)
-                    (* 32 y)))))
+                    (tile->coord [x y])))))
 
-(defn draw-player [[x y]]
-  (draw-texture :player (* 32 x) (* 32 y)))
+(defn draw-player [state]
+  (draw-texture :player (:player state)))
 
-(defn draw-highlight [highlight]
-  (if-let [[x y] highlight]
+(defn draw-highlight [highlight-coord]
+  (when highlight-coord
     (doto @context
       c/save!
       (c/set-stroke-style! "rgba(255, 255, 0, .7)")
       (c/set-line-width! "2")
-      (c/stroke-rect! (* 32 x) (* 32 y) 32 32)
+      (c/stroke-rect! highlight-coord 32 32)
       c/restore!)))
 
 (defn draw-path [{:keys [level player highlight]}]
   (if highlight
-    (doseq [[x y] (path/a-star level player highlight)]
+    (doseq [path-tile (path/a-star
+                        level
+                        (coord->tile player)
+                        (coord->tile highlight))]
       (doto @context
         c/save!
         (c/set-fill-style! "rgba(255, 255, 0, .2)")
         (c/set-line-width! "2")
-        (c/fill-rect! (* 32 x) (* 32 y) 32 32)
+        (c/fill-rect! (tile->coord path-tile) 32 32)
         c/restore!))))
 
 (defn render [state]
@@ -98,7 +113,7 @@
     #(do
        (c/clear! @context)
        (draw-level (:level state))
-       (draw-player (:player state))
+       (draw-player state)
        (draw-path state)
        (draw-highlight (:highlight state)))))
 
@@ -108,10 +123,8 @@
   (let [state (atom initial-game-state)]
     (go-loop [[cmd payload] (<! input-chan)]
              (case cmd
-               :cursor-position (swap! state assoc :highlight
-                                       (when-let [[cursor-x cursor-y] payload]
-                                         [(quot cursor-x 32)
-                                          (quot cursor-y 32)])))
+               :cursor-position (when payload
+                                  (swap! state assoc :highlight (normalize-to-tile payload))))
              (recur (<! input-chan)))
     (add-watch state
                :state-update
