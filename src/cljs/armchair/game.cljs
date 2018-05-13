@@ -6,7 +6,7 @@
 ;; Definitions
 
 (def tile-size 32)
-(def tile-move-time 1000) ; miliseconds
+(def tile-move-time 200) ; miliseconds
 
 ;; Conversion Helpers
 
@@ -136,19 +136,28 @@
 (defn round [x] (.round js/Math x))
 
 (defn move [from to duration]
-  {:started (.now js/performance)
+  {:start (.now js/performance)
    :from from
    :to to
    :duration duration})
 
+(defn move-sequence [coords duration-per-tile]
+  (let [start (.now js/performance)
+        segments (partition-all 2 (interleave coords (rest coords)))]
+    (map-indexed (fn [idx [from to]]
+                   {:start (+ start (* idx duration-per-tile))
+                    :from from
+                    :to to
+                    :duration duration-per-tile})
+                 segments)))
+
 (defn start-animation-loop [channel]
   (go-loop [_ (<! channel)]
-           (.log js/console (first @animations))
-           (if-let [{started :started
+           (if-let [{start :start
                      [fx fy] :from
                      [tx ty] :to
                      duration :duration} (first @animations)]
-             (let [passed (- (.now js/performance) started)
+             (let [passed (- (.now js/performance) start)
                    pct (/ passed duration)
                    dx (- tx fx)
                    dy (- ty fy)]
@@ -168,19 +177,8 @@
 (defn handle-animate [coord]
   (let [path-tiles (path/a-star (:level @state)
                                 (coord->tile (:player @state))
-                                (coord->tile (normalize-to-tile coord)))
-        segments (partition-all 2 (interleave path-tiles (rest path-tiles)))]
-    (.log js/console (map (fn [[from to]]
-                            (move (tile->coord from)
-                                  (tile->coord to)
-                                  tile-move-time))
-                          segments))
-    (.log js/console segments)
-    (reset! animations (map (fn [[from to]]
-                              (move (tile->coord from)
-                                    (tile->coord to)
-                                    tile-move-time))
-                            segments))))
+                                (coord->tile (normalize-to-tile coord)))]
+    (reset! animations (move-sequence (map tile->coord path-tiles) tile-move-time))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
@@ -207,7 +205,7 @@
     (add-watch animations
                :animation-update
                (fn [_ _ old-state new-state]
-                 (when (and (nil? old-state)
+                 (when (and (empty? old-state)
                             (some? new-state))
                    (put! animation-chan true))))
     (take! (get-texture-atlas-chan)
