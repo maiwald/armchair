@@ -130,28 +130,33 @@
 
 ;; Animations
 
-(def animation (atom nil))
+(def animations (atom (list)))
 
 (defn abs [x] (.abs js/Math x))
 (defn round [x] (.round js/Math x))
 
-(defn move [from to]
+(defn move [from to duration]
   {:started (.now js/performance)
    :from from
-   :to to})
+   :to to
+   :duration duration})
 
 (defn start-animation-loop [channel]
   (go-loop [_ (<! channel)]
-           (if-let [{s :started [fx fy] :from [tx ty] :to} @animation]
-             (let [passed (- (.now js/performance) s)
-                   pct (/ passed tile-move-time)
+           (.log js/console (first @animations))
+           (if-let [{started :started
+                     [fx fy] :from
+                     [tx ty] :to
+                     duration :duration} (first @animations)]
+             (let [passed (- (.now js/performance) started)
+                   pct (/ passed duration)
                    dx (- tx fx)
                    dy (- ty fy)]
-               (if (< passed tile-move-time)
+               (if (<= pct 1)
                  (swap! state assoc :player [(+ fx (round (* pct dx)))
                                              (+ fy (round (* pct dy)))])
                  (do (swap! state assoc :player [tx ty])
-                     (reset! animation nil)))
+                     (swap! animations rest)))
                (js/setTimeout #(put! channel true), 0)))
            (recur (<! channel))))
 
@@ -161,8 +166,21 @@
   (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
 
 (defn handle-animate [coord]
-  (.log js/console (move (:player @state) (normalize-to-tile coord)))
-  (reset! animation (move (:player @state) (normalize-to-tile coord))))
+  (let [path-tiles (path/a-star (:level @state)
+                                (coord->tile (:player @state))
+                                (coord->tile (normalize-to-tile coord)))
+        segments (partition-all 2 (interleave path-tiles (rest path-tiles)))]
+    (.log js/console (map (fn [[from to]]
+                            (move (tile->coord from)
+                                  (tile->coord to)
+                                  tile-move-time))
+                          segments))
+    (.log js/console segments)
+    (reset! animations (map (fn [[from to]]
+                              (move (tile->coord from)
+                                    (tile->coord to)
+                                    tile-move-time))
+                            segments))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
@@ -177,7 +195,7 @@
 
 (defn start-game [context]
   (reset! state initial-game-state)
-  (reset! animation nil)
+  (reset! animations nil)
   (reset! ctx context)
   (let [input-chan (chan)
         animation-chan (chan)]
@@ -186,7 +204,7 @@
                (fn [_ _ old-state new-state]
                  (when (not= old-state new-state)
                    (render new-state))))
-    (add-watch animation
+    (add-watch animations
                :animation-update
                (fn [_ _ old-state new-state]
                  (when (and (nil? old-state)
@@ -201,7 +219,7 @@
 
 (defn end-game []
   (remove-watch state :state-update)
-  (remove-watch animation :animation-update)
+  (remove-watch animations :animation-update)
   (reset! state nil)
-  (reset! animation nil)
+  (reset! animations nil)
   (reset! ctx nil))
