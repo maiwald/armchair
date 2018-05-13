@@ -119,11 +119,12 @@
 (defn render [state]
   (js/requestAnimationFrame
     #(do
-       (c/clear! @ctx)
-       (draw-level (:level state))
-       (draw-player (:player state))
-       (draw-path state)
-       (draw-highlight (:highlight state)))))
+       (when @ctx
+         (c/clear! @ctx)
+         (draw-level (:level state))
+         (draw-player (:player state))
+         (draw-path state)
+         (draw-highlight (:highlight state))))))
 
 ;; Input Handlers
 
@@ -140,7 +141,7 @@
 (defn handle-animate [state coord channel]
   (reset! animation (move-to state (normalize-to-tile coord)))
   (put! channel true)
-  (assoc state :player (tile->coord [1 13])))
+  state)
 
 (defn start-input-loop [state-atom channel animation-chan]
   (go-loop [[cmd payload] (<! channel)]
@@ -158,17 +159,17 @@
 
 (defn start-animation-loop [state-atom channel]
   (go-loop [_ (<! channel)]
-           (let [{s :started [fx fy] :from [tx ty] :to} @animation
-                 passed (- (.now js/performance) s)
-                 pct (/ passed tile-move-time)
-                 dx (- tx fx)
-                 dy (- ty fy)]
-             (if (< passed tile-move-time)
-               (swap! state-atom assoc :player [(+ fx (round (* pct dx)))
-                                                (+ fy (round (* pct dy)))])
-               (do (swap! state-atom assoc :player [tx ty])
-                   (reset! animation nil)))
-             (when @animation (js/requestAnimationFrame #(put! channel true))))
+           (if-let [{s :started [fx fy] :from [tx ty] :to} @animation]
+             (let [passed (- (.now js/performance) s)
+                   pct (/ passed tile-move-time)
+                   dx (- tx fx)
+                   dy (- ty fy)]
+               (if (< passed tile-move-time)
+                 (swap! state-atom assoc :player [(+ fx (round (* pct dx)))
+                                                  (+ fy (round (* pct dy)))])
+                 (do (swap! state-atom assoc :player [tx ty])
+                     (reset! animation nil)))
+               (js/requestAnimationFrame #(put! channel true))))
            (recur (<! channel))))
 
 ;; Game Loop
