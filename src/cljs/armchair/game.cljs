@@ -117,7 +117,6 @@
         c/restore!))))
 
 (defn render [state]
-  (.debug js/console "render")
   (js/requestAnimationFrame
     #(do
        (c/clear! @ctx)
@@ -177,7 +176,6 @@
 (def state (atom nil))
 
 (defn start-game [context]
-  (.debug js/console "start-game")
   (reset! state initial-game-state)
   (reset! ctx context)
   (let [input-chan (chan)
@@ -195,7 +193,6 @@
     input-chan))
 
 (defn end-game []
-  (.debug js/console "end-game")
   (remove-watch state :state-update)
   (reset! state nil)
   (reset! ctx nil))
