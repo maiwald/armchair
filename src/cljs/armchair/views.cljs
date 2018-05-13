@@ -1,8 +1,11 @@
 (ns armchair.views
   (:require [re-frame.core :as re-frame]
+            [reagent.core :as r]
+            [armchair.game :refer [start-game end-game]]
             [armchair.slds :as slds]
             [armchair.position :refer [apply-delta]]
-            [armchair.config :as config]))
+            [armchair.config :as config]
+            [clojure.core.async :refer [put!]]))
 
 ;; Helpers
 
@@ -15,13 +18,15 @@
     (.stopPropagation e)
     (handler e)))
 
+(defn relative-pointer [e elem]
+  (let [rect (.getBoundingClientRect elem)]
+    [(- (.-clientX e) (.-left rect))
+     (- (.-clientY e) (.-top rect))]))
+
 (defn e->graph-pointer [e]
-  (let [rect (-> js/document
-                 (.getElementsByClassName "graph")
-                 (aget 0)
-                 .getBoundingClientRect)]
-    [(- (.-pageX e) (.-x rect))
-     (- (.-pageY e) (.-y rect))]))
+  (relative-pointer e (-> js/document
+                          (.getElementsByClassName "graph")
+                          (aget 0))))
 
 (def left-button? #(zero? (.-button %)))
 
@@ -76,7 +81,7 @@
       (for [[start end] connections]
         ^{:key (str kind ":" start "->" end)}
         [graph-connection (connection-transform {:start (get-in items [start :position])
-                                                :end (get-in items [end :position])})])
+                                                 :end (get-in items [end :position])})])
       (when connecting? [graph-connection connector])]
      (for [[id item] items]
        ^{:key (str kind id)} [graph-item item [item-component item]])]))
@@ -208,12 +213,32 @@
                                       :end (apply-delta end [(/ config/line-width 2) 15])})
              :item-component location-component}]]))
 
+(defn game-canvas []
+  (let [canvas-ref (atom nil)
+        game-input (atom nil)]
+    (r/create-class
+      {:component-did-mount (fn []
+                              (reset! game-input (start-game (.getContext @canvas-ref "2d"))))
+       :component-will-unmount (fn [] (end-game))
+       :reagent-render (fn []
+                         [:div {:id "game-container"}
+                          [:canvas {:id "game-canvas"
+                                    :on-mouse-move #(let [c (relative-pointer % @canvas-ref)]
+                                                      (put! @game-input [:cursor-position c]))
+                                    :on-mouse-out #(put! @game-input [:cursor-position nil])
+                                    :on-click #(let [c (relative-pointer % @canvas-ref)]
+                                                 (put! @game-input [:animate c]))
+                                    :height 450
+                                    :width 800
+                                    :ref (fn [el] (reset! canvas-ref el))}]])})))
+
 (defn root []
   (let [current-page (<sub [:current-page])
         pages (array-map
                 "Dialogue" [dialogue-component]
                 "Characters" [character-management]
-                "Locations" [location-management])
+                "Locations" [location-management]
+                "Game" [game-canvas])
         link-map (map
                    (fn [name] [name #(>evt [:show-page name])])
                    (keys pages))]

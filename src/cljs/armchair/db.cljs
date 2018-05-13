@@ -2,7 +2,7 @@
 
 (def default-db
   {
-   :current-page "Dialogue"
+   :current-page "Game"
    :positions {
                1 [0 200]
                2 [229 198]
