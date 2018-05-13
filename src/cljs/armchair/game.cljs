@@ -21,6 +21,8 @@
 
 ;; State
 
+(def state (atom nil))
+
 (def initial-game-state
   {:highlight nil
    :player (tile->coord [1 13])
@@ -126,38 +128,19 @@
          (draw-path state)
          (draw-highlight (:highlight state))))))
 
-;; Input Handlers
-
-(defn handle-cursor-position [state coord]
-  (assoc state :highlight (when coord (normalize-to-tile coord))))
+;; Animations
 
 (def animation (atom nil))
-
-(defn move-to [state to]
-  {:started (.now js/performance)
-   :from (:player state)
-   :to to})
-
-(defn handle-animate [state coord channel]
-  (reset! animation (move-to state (normalize-to-tile coord)))
-  (put! channel true)
-  state)
-
-(defn start-input-loop [state-atom channel animation-chan]
-  (go-loop [[cmd payload] (<! channel)]
-           (let [handler (case cmd
-                           :cursor-position handle-cursor-position
-                           :animate #(handle-animate %1 %2 animation-chan)
-                           (fn [state _] state))]
-             (reset! state-atom (handler @state-atom payload)))
-           (recur (<! channel))))
-
-;; Animations
 
 (defn abs [x] (.abs js/Math x))
 (defn round [x] (.round js/Math x))
 
-(defn start-animation-loop [state-atom channel]
+(defn move [from to]
+  {:started (.now js/performance)
+   :from from
+   :to to})
+
+(defn start-animation-loop [channel]
   (go-loop [_ (<! channel)]
            (if-let [{s :started [fx fy] :from [tx ty] :to} @animation]
              (let [passed (- (.now js/performance) s)
@@ -165,19 +148,36 @@
                    dx (- tx fx)
                    dy (- ty fy)]
                (if (< passed tile-move-time)
-                 (swap! state-atom assoc :player [(+ fx (round (* pct dx)))
-                                                  (+ fy (round (* pct dy)))])
-                 (do (swap! state-atom assoc :player [tx ty])
+                 (swap! state assoc :player [(+ fx (round (* pct dx)))
+                                             (+ fy (round (* pct dy)))])
+                 (do (swap! state assoc :player [tx ty])
                      (reset! animation nil)))
                (js/setTimeout #(put! channel true), 0)))
            (recur (<! channel))))
 
-;; Game Loop
+;; Input Handlers
 
-(def state (atom nil))
+(defn handle-cursor-position [coord]
+  (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
+
+(defn handle-animate [coord]
+  (.log js/console (move (:player @state) (normalize-to-tile coord)))
+  (reset! animation (move (:player @state) (normalize-to-tile coord))))
+
+(defn start-input-loop [channel]
+  (go-loop [[cmd payload] (<! channel)]
+           (let [handler (case cmd
+                           :cursor-position handle-cursor-position
+                           :animate handle-animate
+                           identity)]
+             (handler payload)
+             (recur (<! channel)))))
+
+;; Game Loop
 
 (defn start-game [context]
   (reset! state initial-game-state)
+  (reset! animation nil)
   (reset! ctx context)
   (let [input-chan (chan)
         animation-chan (chan)]
@@ -186,14 +186,22 @@
                (fn [_ _ old-state new-state]
                  (when (not= old-state new-state)
                    (render new-state))))
+    (add-watch animation
+               :animation-update
+               (fn [_ _ old-state new-state]
+                 (when (and (nil? old-state)
+                            (some? new-state))
+                   (put! animation-chan true))))
     (take! (get-texture-atlas-chan)
            #(do (reset! texture-atlas %)
-                (start-input-loop state input-chan animation-chan)
-                (start-animation-loop state animation-chan)
+                (start-input-loop input-chan)
+                (start-animation-loop animation-chan)
                 (render @state)))
     input-chan))
 
 (defn end-game []
   (remove-watch state :state-update)
+  (remove-watch animation :animation-update)
   (reset! state nil)
+  (reset! animation nil)
   (reset! ctx nil))
