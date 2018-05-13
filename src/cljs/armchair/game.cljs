@@ -166,7 +166,7 @@
                                              (+ fy (round (* pct dy)))])
                  (do (swap! state assoc :player [tx ty])
                      (swap! animations rest)))
-               (js/setTimeout #(put! channel true), 0)))
+               (js/requestAnimationFrame #(put! channel true)))
            (recur (<! channel))))
 
 ;; Input Handlers
