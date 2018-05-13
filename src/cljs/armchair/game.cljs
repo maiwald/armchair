@@ -169,7 +169,7 @@
                                                   (+ fy (round (* pct dy)))])
                  (do (swap! state-atom assoc :player [tx ty])
                      (reset! animation nil)))
-               (js/requestAnimationFrame #(put! channel true))))
+               (js/setTimeout #(put! channel true), 0)))
            (recur (<! channel))))
 
 ;; Game Loop
