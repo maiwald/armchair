@@ -25,7 +25,8 @@
 
 (def initial-game-state
   {:highlight nil
-   :player (tile->coord [1 13])
+   :entities {:player (tile->coord [1 13])
+              :enemy (tile->coord [12 4])}
    :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
            [ 0 1 0 1 1 1 1 1 1 1 1 0 1 1 ]
            [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
@@ -105,12 +106,12 @@
       (c/stroke-rect! highlight-coord tile-size tile-size)
       c/restore!)))
 
-(defn draw-path [{:keys [level player highlight]}]
-  (if highlight
+(defn draw-path [level start end]
+  (if (and start end)
     (doseq [path-tile (path/a-star
                         level
-                        (coord->tile player)
-                        (coord->tile highlight))]
+                        (coord->tile start)
+                        (coord->tile end))]
       (doto @ctx
         c/save!
         (c/set-fill-style! "rgba(255, 255, 0, .2)")
@@ -120,13 +121,15 @@
 
 (defn render [state]
   (js/requestAnimationFrame
-    #(do
+    #(let [{level :level
+            highlight :highlight
+            {player :player} :entities} state]
        (when @ctx
          (c/clear! @ctx)
-         (draw-level (:level state))
-         (draw-player (:player state))
-         (draw-path state)
-         (draw-highlight (:highlight state))))))
+         (draw-level level)
+         (draw-player player)
+         (draw-path level player highlight)
+         (draw-highlight highlight)))))
 
 ;; Animations
 
@@ -162,9 +165,9 @@
                    dx (- tx fx)
                    dy (- ty fy)]
                (if (<= pct 1)
-                 (swap! state assoc :player [(+ fx (round (* pct dx)))
-                                             (+ fy (round (* pct dy)))])
-                 (do (swap! state assoc :player [tx ty])
+                 (swap! state assoc-in [:entities :player] [(+ fx (round (* pct dx)))
+                                                            (+ fy (round (* pct dy)))])
+                 (do (swap! state assoc-in [:entities :player] [tx ty])
                      (swap! animations rest)))
                (js/requestAnimationFrame #(put! channel true))))
            (recur (<! channel))))
@@ -176,7 +179,7 @@
 
 (defn handle-animate [coord]
   (let [path-tiles (path/a-star (:level @state)
-                                (coord->tile (:player @state))
+                                (coord->tile (get-in @state [:entities :player]))
                                 (coord->tile (normalize-to-tile coord)))]
     (reset! animations (move-sequence (map tile->coord path-tiles) tile-move-time))))
 
