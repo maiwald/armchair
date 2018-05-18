@@ -137,15 +137,16 @@
 
 (defn abs [x] (.abs js/Math x))
 (defn round [x] (.round js/Math x))
+(defn *now [] (.now js/performance))
 
-(defn move [from to duration]
-  {:start (.now js/performance)
+(defn *move [from to duration]
+  {:start (*now)
    :from from
    :to to
    :duration duration})
 
-(defn move-sequence [coords duration-per-tile]
-  (let [start (.now js/performance)
+(defn *move-sequence [coords duration-per-tile]
+  (let [start (*now)
         segments (partition-all 2 (interleave coords (rest coords)))]
     (map-indexed (fn [idx [from to]]
                    {:start (+ start (* idx duration-per-tile))
@@ -154,22 +155,33 @@
                     :duration duration-per-tile})
                  segments)))
 
+(defn *animated-position [animation]
+  (let [{start :start
+         [fx fy] :from
+         [tx ty] :to
+         duration :duration} animation
+        passed (- (*now) start)
+        pct (/ passed duration)]
+    (if (<= pct 1)
+      (let [dx (- tx fx)
+            dy (- ty fy)]
+        [(+ fx (round (* pct dx)))
+         (+ fy (round (* pct dy)))])
+      [tx ty])))
+
+(defn *animation-done? [animation]
+  (let [{start :start
+         duration :duration} animation]
+    (< (+ start duration) (*now))))
+
 (defn start-animation-loop [channel]
   (go-loop [_ (<! channel)]
-           (if-let [{start :start
-                     [fx fy] :from
-                     [tx ty] :to
-                     duration :duration} (first @animations)]
-             (let [passed (- (.now js/performance) start)
-                   pct (/ passed duration)
-                   dx (- tx fx)
-                   dy (- ty fy)]
-               (if (<= pct 1)
-                 (swap! state assoc-in [:entities :player] [(+ fx (round (* pct dx)))
-                                                            (+ fy (round (* pct dy)))])
-                 (do (swap! state assoc-in [:entities :player] [tx ty])
-                     (swap! animations rest)))
-               (js/requestAnimationFrame #(put! channel true))))
+           (if-let [animation (first @animations)]
+             (do
+               (swap! state assoc-in [:entities :player] (*animated-position animation))
+               (if-not (*animation-done? animation)
+                 (js/requestAnimationFrame #(put! channel true))
+                 (swap! animations rest))))
            (recur (<! channel))))
 
 ;; Input Handlers
@@ -181,7 +193,7 @@
   (let [path-tiles (path/a-star (:level @state)
                                 (coord->tile (get-in @state [:entities :player]))
                                 (coord->tile (normalize-to-tile coord)))]
-    (reset! animations (move-sequence (map tile->coord path-tiles) tile-move-time))))
+    (reset! animations (*move-sequence (map tile->coord path-tiles) tile-move-time))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
