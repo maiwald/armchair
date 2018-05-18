@@ -59,7 +59,8 @@
 
 (def textures ["grass"
                "wall"
-               "player"])
+               "player"
+               "enemy"])
 
 (def texture-atlas (atom nil))
 
@@ -94,9 +95,6 @@
       (draw-texture ({0 :wall 1 :grass} value)
                     (tile->coord [x y])))))
 
-(defn draw-player [player]
-  (draw-texture :player player))
-
 (defn draw-highlight [highlight-coord]
   (when highlight-coord
     (doto @ctx
@@ -123,27 +121,23 @@
   (js/requestAnimationFrame
     #(let [{level :level
             highlight :highlight
-            {player :player} :entities} state]
+            {player :player
+             enemy :enemy} :entities} state]
        (when @ctx
          (c/clear! @ctx)
          (draw-level level)
-         (draw-player player)
+         (draw-texture :player player)
+         (draw-texture :enemy enemy)
          (draw-path level player highlight)
          (draw-highlight highlight)))))
 
 ;; Animations
 
-(def animations (atom (list)))
+(def animation-map (atom {}))
 
 (defn abs [x] (.abs js/Math x))
 (defn round [x] (.round js/Math x))
 (defn *now [] (.now js/performance))
-
-(defn *move [from to duration]
-  {:start (*now)
-   :from from
-   :to to
-   :duration duration})
 
 (defn *move-sequence [coords duration-per-tile]
   (let [start (*now)
@@ -154,6 +148,10 @@
                     :to to
                     :duration duration-per-tile})
                  segments)))
+
+(defn *move [level from-tile to-tile]
+  (let [path-tiles (path/a-star level from-tile to-tile)]
+    (*move-sequence (map tile->coord path-tiles) tile-move-time)))
 
 (defn *animated-position [animation]
   (let [{start :start
@@ -174,14 +172,24 @@
          duration :duration} animation]
     (< (+ start duration) (*now))))
 
+(defn has-animations? [animation-map]
+  (not-every? empty? (vals animation-map)))
+
 (defn start-animation-loop [channel]
   (go-loop [_ (<! channel)]
-           (if-let [animation (first @animations)]
-             (do
-               (swap! state assoc-in [:entities :player] (*animated-position animation))
-               (if-not (*animation-done? animation)
-                 (js/requestAnimationFrame #(put! channel true))
-                 (swap! animations rest))))
+           (if (has-animations? @animation-map)
+             (let [animated-positions (into {} (for [[entity animations] @animation-map
+                                                     :when (some? (first animations))]
+                                                 [entity (*animated-position (first animations))]))
+                   new-animation-map (into {} (for [[entity animations] @animation-map
+                                                    :when (some? (first animations))]
+                                                [entity (if (*animation-done? (first animations))
+                                                          (rest animations)
+                                                          animations)]))]
+               (swap! state update :entities merge animated-positions)
+               (reset! animation-map new-animation-map)
+               (if (has-animations? new-animation-map)
+                 (js/requestAnimationFrame #(put! channel true)))))
            (recur (<! channel))))
 
 ;; Input Handlers
@@ -190,10 +198,11 @@
   (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
 
 (defn handle-animate [coord]
-  (let [path-tiles (path/a-star (:level @state)
-                                (coord->tile (get-in @state [:entities :player]))
-                                (coord->tile (normalize-to-tile coord)))]
-    (reset! animations (*move-sequence (map tile->coord path-tiles) tile-move-time))))
+  (let [target-tile (coord->tile coord)
+        {level :level {player :player enemy :enemy} :entities} @state
+        player-animations (*move level (coord->tile player) target-tile)]
+    (reset! animation-map {:player player-animations
+                           :enemy (take (count player-animations) (*move level (coord->tile enemy) target-tile))})))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
@@ -208,7 +217,7 @@
 
 (defn start-game [context]
   (reset! state initial-game-state)
-  (reset! animations nil)
+  (reset! animation-map nil)
   (reset! ctx context)
   (let [input-chan (chan)
         animation-chan (chan)]
@@ -217,11 +226,11 @@
                (fn [_ _ old-state new-state]
                  (when (not= old-state new-state)
                    (render new-state))))
-    (add-watch animations
+    (add-watch animation-map
                :animation-update
                (fn [_ _ old-state new-state]
-                 (when (and (empty? old-state)
-                            (some? new-state))
+                 (when (and (not (has-animations? old-state))
+                            (has-animations? new-state))
                    (put! animation-chan true))))
     (take! (get-texture-atlas-chan)
            #(do (reset! texture-atlas %)
@@ -232,7 +241,7 @@
 
 (defn end-game []
   (remove-watch state :state-update)
-  (remove-watch animations :animation-update)
+  (remove-watch animation-map :animation-update)
   (reset! state nil)
-  (reset! animations nil)
+  (reset! animation-map nil)
   (reset! ctx nil))
