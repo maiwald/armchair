@@ -215,11 +215,23 @@
 
 (defn game-canvas []
   (let [canvas-ref (atom nil)
-        game-input (atom nil)]
+        game-input (atom nil)
+        key-listener (fn [e]
+                       (when-let [action (case (.-code e)
+                                           ("ArrowUp" "KeyW") "UP!"
+                                           ("ArrowRight" "KeyD") "RIGHT!"
+                                           ("ArrowDown" "KeyS") "DOWN!"
+                                           ("ArrowLeft" "KeyA") "Left!"
+                                           nil)]
+                         (.preventDefault e)
+                         (.log js/console action)))]
     (r/create-class
       {:component-did-mount (fn []
-                              (reset! game-input (start-game (.getContext @canvas-ref "2d"))))
-       :component-will-unmount (fn [] (end-game))
+                              (reset! game-input (start-game (.getContext @canvas-ref "2d")))
+                              (.addEventListener js/document "keyup" key-listener))
+       :component-will-unmount (fn []
+                                 (.removeEventListener js/document "keyup" key-listener)
+                                 (end-game))
        :reagent-render (fn []
                          [:div {:id "game-container"}
                           [:canvas {:id "game-canvas"
