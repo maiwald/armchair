@@ -119,14 +119,12 @@
         c/restore!))))
 
 (defn render [state]
-  (js/requestAnimationFrame
-    #(do
-       (when @ctx
-         (c/clear! @ctx)
-         (draw-level (:level state))
-         (draw-player (:player state))
-         (draw-path state)
-         (draw-highlight (:highlight state))))))
+  (when @ctx
+    (c/clear! @ctx)
+    (draw-level (:level state))
+    (draw-player (:player state))
+    (draw-path state)
+    (draw-highlight (:highlight state))))
 
 ;; Animations
 
@@ -201,7 +199,7 @@
                :state-update
                (fn [_ _ old-state new-state]
                  (when (not= old-state new-state)
-                   (render new-state))))
+                   (js/requestAnimationFrame #(render new-state)))))
     (add-watch animations
                :animation-update
                (fn [_ _ old-state new-state]
@@ -209,10 +207,11 @@
                             (some? new-state))
                    (put! animation-chan true))))
     (take! (get-texture-atlas-chan)
-           #(do (reset! texture-atlas %)
-                (start-input-loop input-chan)
-                (start-animation-loop animation-chan)
-                (render @state)))
+           (fn [loaded-atlas]
+             (reset! texture-atlas loaded-atlas)
+             (start-input-loop input-chan)
+             (start-animation-loop animation-chan)
+             (js/requestAnimationFrame #(render @state))))
     input-chan))
 
 (defn end-game []
