@@ -149,21 +149,32 @@
                     :duration duration-per-tile})
                  segments)))
 
+(defn animated-position [animation now]
+  (let [{start :start
+         [fx fy] :from
+         [tx ty] :to
+         duration :duration} animation
+        passed (- now start)
+        pct (/ passed duration)]
+    (if (<= pct 1)
+      (let [dx (- tx fx)
+            dy (- ty fy)]
+        [(+ fx (round (* pct dx)))
+         (+ fy (round (* pct dy)))])
+      [tx ty])))
+
+(defn animation-done? [animation now]
+  (let [{start :start
+         duration :duration} animation]
+    (< (+ start duration) now)))
+
 (defn start-animation-loop [channel]
   (go-loop [_ (<! channel)]
-           (if-let [{start :start
-                     [fx fy] :from
-                     [tx ty] :to
-                     duration :duration} (first @animations)]
-             (let [passed (- (.now js/performance) start)
-                   pct (/ passed duration)
-                   dx (- tx fx)
-                   dy (- ty fy)]
-               (if (<= pct 1)
-                 (swap! state assoc :player [(+ fx (round (* pct dx)))
-                                             (+ fy (round (* pct dy)))])
-                 (do (swap! state assoc :player [tx ty])
-                     (swap! animations rest)))
+           (if-let [animation (first @animations)]
+             (let [now (.now js/performance)]
+               (swap! state assoc :player (animated-position animation now))
+               (if (animation-done? animation now)
+                 (swap! animations rest))
                (js/requestAnimationFrame #(put! channel true))))
            (recur (<! channel))))
 
