@@ -223,8 +223,7 @@
                                            ("ArrowDown" "KeyS") (put! @game-input [:move :down])
                                            ("ArrowLeft" "KeyA") (put! @game-input [:move :left])
                                            nil)]
-                         (.preventDefault e)
-                         (.log js/console action)))]
+                         (.preventDefault e)))]
     (r/create-class
       {:component-did-mount (fn []
                               (reset! game-input (start-game (.getContext @canvas-ref "2d")))

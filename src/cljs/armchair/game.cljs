@@ -1,5 +1,5 @@
 (ns armchair.game
-  (:require [clojure.core.async :refer [chan put! take! go go-loop <! >!]]
+  (:require [clojure.core.async :refer [chan sliding-buffer put! take! go go-loop <! >!]]
             [armchair.canvas :as c]
             [armchair.position :refer [apply-delta]]
             [armchair.pathfinding :as path]))
@@ -7,7 +7,8 @@
 ;; Definitions
 
 (def tile-size 32)
-(def tile-move-time 200) ; miliseconds
+(def time-factor 1)
+(def tile-move-time 150) ; miliseconds
 (def direction-map {:up [0 -1]
                     :down [0 1]
                     :left [-1 0]
@@ -131,28 +132,29 @@
     (draw-path state)
     (draw-highlight (:highlight state))))
 
+;; Input Handlers
+
+(def move-q (atom #queue []))
+
+(defn handle-move [direction]
+  (swap! move-q conj direction))
+
+(defn handle-cursor-position [coord]
+  (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
+
+(defn start-input-loop [channel]
+  (go-loop [[cmd payload] (<! channel)]
+           (let [handler (case cmd
+                           :cursor-position handle-cursor-position
+                           :move handle-move
+                           ; :animate handle-animate
+                           identity)]
+             (handler payload)
+             (recur (<! channel)))))
+
 ;; Animations
 
-(def animations (atom (list)))
-
-(defn abs [x] (.abs js/Math x))
 (defn round [x] (.round js/Math x))
-
-(defn move [from to duration]
-  {:start (.now js/performance)
-   :from from
-   :to to
-   :duration duration})
-
-(defn move-sequence [coords duration-per-tile]
-  (let [start (.now js/performance)
-        segments (partition-all 2 (interleave coords (rest coords)))]
-    (map-indexed (fn [idx [from to]]
-                   {:start (+ start (* idx duration-per-tile))
-                    :from from
-                    :to to
-                    :duration duration-per-tile})
-                 segments)))
 
 (defn animated-position [animation now]
   (let [{start :start
@@ -173,57 +175,51 @@
          duration :duration} animation]
     (< (+ start duration) now)))
 
+(defn animate-move [destination-tile move-chan]
+  (let [anim-c (chan 1)
+        destination (tile->coord destination-tile)
+        animation {:start (* time-factor (.now js/performance))
+                   :from (:player @state)
+                   :to destination
+                   :duration tile-move-time}]
+    (go-loop [_ (<! anim-c)]
+             (js/requestAnimationFrame
+               (fn [now]
+                 (if (animation-done? animation (* time-factor now))
+                   (do
+                     (swap! state assoc :player destination)
+                     (swap! move-q pop)
+                     (put! move-chan true))
+                   (do
+                     (render (update @state :player #(animated-position animation (* time-factor now))))
+                     (put! anim-c true)))))
+             (recur (<! anim-c)))
+    (put! anim-c true)))
+
 (defn start-animation-loop [channel]
   (go-loop [_ (<! channel)]
-           (if-let [animation (first @animations)]
-             (let [now (.now js/performance)]
-               (swap! state assoc :player (animated-position animation now))
-               (if (animation-done? animation now)
-                 (swap! animations rest))
-               (js/requestAnimationFrame #(put! channel true))))
+           (when-let [direction (first @move-q)]
+             (let [position-delta (direction-map direction)
+                   new-position (apply-delta (coord->tile (:player @state)) position-delta)]
+               (if (path/walkable? (:level @state) new-position)
+                 (animate-move new-position channel)
+                 (when-not (empty? (swap! move-q pop)) (put! channel true)))))
            (recur (<! channel))))
-
-;; Input Handlers
-
-(defn handle-cursor-position [coord]
-  (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
-
-(defn handle-animate [coord]
-  (let [path-tiles (path/a-star (:level @state)
-                                (coord->tile (:player @state))
-                                (coord->tile (normalize-to-tile coord)))]
-    (reset! animations (move-sequence (map tile->coord path-tiles) tile-move-time))))
-
-(defn handle-move [direction]
-  (let [position-delta (direction-map direction)
-        new-position (apply-delta (coord->tile (:player @state)) position-delta)]
-    (if (path/walkable? (:level @state) new-position)
-      (swap! state assoc :player (tile->coord new-position)))))
-
-(defn start-input-loop [channel]
-  (go-loop [[cmd payload] (<! channel)]
-           (let [handler (case cmd
-                           :cursor-position handle-cursor-position
-                           :move handle-move
-                           :animate handle-animate
-                           identity)]
-             (handler payload)
-             (recur (<! channel)))))
 
 ;; Game Loop
 
 (defn start-game [context]
   (reset! state initial-game-state)
-  (reset! animations nil)
+  (reset! move-q #queue [])
   (reset! ctx context)
   (let [input-chan (chan)
-        animation-chan (chan)]
+        animation-chan (chan (sliding-buffer 1))]
     (add-watch state
                :state-update
                (fn [_ _ old-state new-state]
                  (when (not= old-state new-state)
                    (js/requestAnimationFrame #(render new-state)))))
-    (add-watch animations
+    (add-watch move-q
                :animation-update
                (fn [_ _ old-state new-state]
                  (when (and (empty? old-state)
@@ -239,7 +235,7 @@
 
 (defn end-game []
   (remove-watch state :state-update)
-  (remove-watch animations :animation-update)
+  (remove-watch move-q :animation-update)
   (reset! state nil)
-  (reset! animations nil)
+  (reset! move-q nil)
   (reset! ctx nil))
