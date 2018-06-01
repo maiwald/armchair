@@ -1,12 +1,17 @@
 (ns armchair.game
   (:require [clojure.core.async :refer [chan put! take! go go-loop <! >!]]
             [armchair.canvas :as c]
+            [armchair.position :refer [apply-delta]]
             [armchair.pathfinding :as path]))
 
 ;; Definitions
 
 (def tile-size 32)
 (def tile-move-time 200) ; miliseconds
+(def direction-map {:up [0 -1]
+                    :down [0 1]
+                    :left [-1 0]
+                    :right [1 0]})
 
 ;; Conversion Helpers
 
@@ -189,10 +194,17 @@
                                 (coord->tile (normalize-to-tile coord)))]
     (reset! animations (move-sequence (map tile->coord path-tiles) tile-move-time))))
 
+(defn handle-move [direction]
+  (let [position-delta (direction-map direction)
+        new-position (apply-delta (coord->tile (:player @state)) position-delta)]
+    (if (path/walkable? (:level @state) new-position)
+      (swap! state assoc :player (tile->coord new-position)))))
+
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
            (let [handler (case cmd
                            :cursor-position handle-cursor-position
+                           :move handle-move
                            :animate handle-animate
                            identity)]
              (handler payload)

@@ -218,19 +218,19 @@
         game-input (atom nil)
         key-listener (fn [e]
                        (when-let [action (case (.-code e)
-                                           ("ArrowUp" "KeyW") "UP!"
-                                           ("ArrowRight" "KeyD") "RIGHT!"
-                                           ("ArrowDown" "KeyS") "DOWN!"
-                                           ("ArrowLeft" "KeyA") "Left!"
+                                           ("ArrowUp" "KeyW") (put! @game-input [:move :up])
+                                           ("ArrowRight" "KeyD") (put! @game-input [:move :right])
+                                           ("ArrowDown" "KeyS") (put! @game-input [:move :down])
+                                           ("ArrowLeft" "KeyA") (put! @game-input [:move :left])
                                            nil)]
                          (.preventDefault e)
                          (.log js/console action)))]
     (r/create-class
       {:component-did-mount (fn []
                               (reset! game-input (start-game (.getContext @canvas-ref "2d")))
-                              (.addEventListener js/document "keyup" key-listener))
+                              (.addEventListener js/document "keydown" key-listener))
        :component-will-unmount (fn []
-                                 (.removeEventListener js/document "keyup" key-listener)
+                                 (.removeEventListener js/document "keydown" key-listener)
                                  (end-game))
        :reagent-render (fn []
                          [:div {:id "game-container"}
