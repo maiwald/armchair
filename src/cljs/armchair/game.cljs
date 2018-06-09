@@ -8,7 +8,7 @@
 
 (def tile-size 32)
 (def time-factor 1)
-(def tile-move-time 150) ; miliseconds
+(def tile-move-time 150) ; milliseconds
 (def direction-map {:up [0 -1]
                     :down [0 1]
                     :left [-1 0]
@@ -184,15 +184,16 @@
                    :duration tile-move-time}]
     (go-loop [_ (<! anim-c)]
              (js/requestAnimationFrame
-               (fn [now]
-                 (if (animation-done? animation (* time-factor now))
-                   (do
-                     (swap! state assoc :player destination)
-                     (swap! move-q pop)
-                     (put! move-chan true))
-                   (do
-                     (render (update @state :player #(animated-position animation (* time-factor now))))
-                     (put! anim-c true)))))
+               (fn []
+                 (let [now (.now js/performance)]
+                   (if (animation-done? animation (* time-factor now))
+                     (do
+                       (swap! state assoc :player destination)
+                       (swap! move-q pop)
+                       (put! move-chan true))
+                     (do
+                       (render (update @state :player #(animated-position animation (* time-factor now))))
+                       (put! anim-c true))))))
              (recur (<! anim-c)))
     (put! anim-c true)))
 
