@@ -170,10 +170,8 @@
          (+ fy (round (* pct dy)))])
       [tx ty])))
 
-(defn animation-done? [animation now]
-  (let [{start :start
-         duration :duration} animation]
-    (< (+ start duration) now)))
+(defn animation-done? [{start :start duration :duration} now]
+  (< (+ start duration) now))
 
 (defn animate-move [destination-tile move-chan]
   (let [anim-c (chan 1)
@@ -185,15 +183,15 @@
     (go-loop [_ (<! anim-c)]
              (js/requestAnimationFrame
                (fn []
-                 (let [now (.now js/performance)]
-                   (if (animation-done? animation (* time-factor now))
+                 (let [now (* time-factor (.now js/performance))]
+                   (if-not (animation-done? animation now)
+                     (do
+                       (render (update @state :player #(animated-position animation now)))
+                       (put! anim-c true))
                      (do
                        (swap! state assoc :player destination)
                        (swap! move-q pop)
-                       (put! move-chan true))
-                     (do
-                       (render (update @state :player #(animated-position animation (* time-factor now))))
-                       (put! anim-c true))))))
+                       (put! move-chan true))))))
              (recur (<! anim-c)))
     (put! anim-c true)))
 
