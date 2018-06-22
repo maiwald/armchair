@@ -1,12 +1,12 @@
 (ns armchair.game
   (:require [clojure.core.async :refer [chan sliding-buffer put! take! go go-loop <! >!]]
             [armchair.canvas :as c]
+            [armchair.config :refer [tile-size]]
             [armchair.position :refer [apply-delta]]
             [armchair.pathfinding :as path]))
 
 ;; Definitions
 
-(def tile-size 32)
 (def time-factor 1)
 (def tile-move-time 150) ; milliseconds
 (def direction-map {:up [0 -1]
@@ -32,6 +32,7 @@
 (def initial-game-state
   {:highlight nil
    :player (tile->coord [1 13])
+   :player-direction :up
    :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
            [ 0 1 0 1 1 1 1 1 1 1 1 0 1 1 ]
            [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
@@ -64,7 +65,8 @@
 
 (def textures ["grass"
                "wall"
-               "player"])
+               "player"
+               "arrow"])
 
 (def texture-atlas (atom nil))
 
@@ -89,6 +91,10 @@
 (defn draw-texture [texture coord]
   (when @texture-atlas
     (c/draw-image! @ctx (@texture-atlas texture) coord)))
+
+(defn draw-texture-rotated [texture coord deg]
+  (when @texture-atlas
+    (c/draw-image-rotated! @ctx (@texture-atlas texture) coord deg)))
 
 (defn draw-level [level]
   (let [cols (count (first level))
@@ -129,6 +135,13 @@
     (c/clear! @ctx)
     (draw-level (:level state))
     (draw-player (:player state))
+    (draw-texture-rotated
+      :arrow
+      (:player state)
+      ((:player-direction state) {:up 0
+                                  :right 90
+                                  :down 180
+                                  :left 270}))
     (draw-path state)
     (draw-highlight (:highlight state))))
 
@@ -200,6 +213,7 @@
            (when-let [direction (first @move-q)]
              (let [position-delta (direction-map direction)
                    new-position (apply-delta (coord->tile (:player @state)) position-delta)]
+               (swap! state assoc :player-direction direction)
                (if (path/walkable? (:level @state) new-position)
                  (animate-move new-position channel)
                  (when-not (empty? (swap! move-q pop)) (put! channel true)))))
