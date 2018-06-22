@@ -112,7 +112,7 @@
   (when highlight-coord
     (doto @ctx
       c/save!
-      (c/set-stroke-style! "rgba(255, 255, 0, .7)")
+      (c/set-stroke-style! "rgb(255, 255, 0)")
       (c/set-line-width! "2")
       (c/stroke-rect! highlight-coord tile-size tile-size)
       c/restore!)))
@@ -126,24 +126,23 @@
       (doto @ctx
         c/save!
         (c/set-fill-style! "rgba(255, 255, 0, .2)")
-        (c/set-line-width! "2")
         (c/fill-rect! (tile->coord path-tile) tile-size tile-size)
         c/restore!))))
 
-(defn render [state]
+(defn render [view-state]
   (when @ctx
     (c/clear! @ctx)
-    (draw-level (:level state))
-    (draw-player (:player state))
+    (draw-level (:level @state))
+    (draw-path @state)
+    (draw-player (:player view-state))
+    (draw-highlight (:highlight @state)))
     (draw-texture-rotated
       :arrow
-      (:player state)
-      ((:player-direction state) {:up 0
-                                  :right 90
-                                  :down 180
-                                  :left 270}))
-    (draw-path state)
-    (draw-highlight (:highlight state))))
+      (:player view-state)
+      ((:player-direction view-state) {:up 0
+                                       :right 90
+                                       :down 180
+                                       :left 270})))
 
 ;; Input Handlers
 
