@@ -4,6 +4,9 @@
 (defn save! [ctx] (.save ctx))
 (defn restore! [ctx] (.restore ctx))
 
+(defn height [ctx] (.-height (.-canvas ctx)))
+(defn width [ctx] (.-width (.-canvas ctx)))
+
 (defn draw-image! [ctx image [x y]]
   (.drawImage ctx image x y))
 
@@ -31,5 +34,4 @@
   (set! (.-lineWidth ctx) value))
 
 (defn clear! [ctx]
-  (let [canvas (.-canvas ctx)]
-    (.clearRect ctx 0 0 (.-width canvas) (.-height canvas))))
+  (.clearRect ctx 0 0 (width ctx) (height ctx)))

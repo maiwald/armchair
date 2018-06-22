@@ -123,12 +123,11 @@
 
 (defn draw-highlight [highlight-coord]
   (when highlight-coord
-    (doto @ctx
-      c/save!
-      (c/set-stroke-style! "rgb(255, 255, 0)")
-      (c/set-line-width! "2")
-      (c/stroke-rect! highlight-coord tile-size tile-size)
-      c/restore!)))
+    (c/save! @ctx)
+    (c/set-stroke-style! @ctx "rgb(255, 255, 0)")
+    (c/set-line-width! @ctx "2")
+    (c/stroke-rect! @ctx highlight-coord tile-size tile-size)
+    (c/restore! @ctx)))
 
 (defn draw-path [{:keys [level player highlight]}]
   (if highlight
@@ -136,11 +135,17 @@
                         walkable?
                         (coord->tile player)
                         (coord->tile highlight))]
-      (doto @ctx
-        c/save!
-        (c/set-fill-style! "rgba(255, 255, 0, .2)")
-        (c/fill-rect! (tile->coord path-tile) tile-size tile-size)
-        c/restore!))))
+      (c/save! @ctx)
+      (c/set-fill-style! @ctx "rgba(255, 255, 0, .2)")
+      (c/fill-rect! @ctx (tile->coord path-tile) tile-size tile-size)
+      (c/restore! @ctx))))
+
+(defn draw-direction-indicator [{:keys [player player-direction]}]
+  (let [rotation (player-direction {:up 0
+                                    :right 90
+                                    :down 180
+                                    :left 270})]
+    (draw-texture-rotated :arrow player rotation)))
 
 (defn render [view-state]
   (when @ctx
@@ -149,14 +154,8 @@
     (draw-path @state)
     (draw-player (:player view-state))
     (draw-enemies (-> view-state :enemies keys))
-    (draw-highlight (:highlight @state)))
-    (draw-texture-rotated
-      :arrow
-      (:player view-state)
-      ((:player-direction view-state) {:up 0
-                                       :right 90
-                                       :down 180
-                                       :left 270})))
+    (draw-highlight (:highlight @state))
+    (draw-direction-indicator view-state)))
 
 ;; Input Handlers
 
@@ -170,10 +169,9 @@
 
 (defn handle-interact []
   (let [player-tile (coord->tile (:player @state))
-        interaction-tile (apply-delta player-tile (direction-map (:player-direction @state)))
-        interaction-fn (get-in @state [:enemies (tile->coord interaction-tile)] identity)]
-    (.log js/console player-tile (tile->coord interaction-tile) interaction-fn (:enemies @state))
-    (interaction-fn)))
+        interaction-tile (apply-delta player-tile (direction-map (:player-direction @state)))]
+    (when-let [interaction-fn (get-in @state [:enemies (tile->coord interaction-tile)])]
+      (interaction-fn))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
