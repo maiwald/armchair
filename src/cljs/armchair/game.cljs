@@ -1,12 +1,18 @@
 (ns armchair.game
-  (:require [clojure.core.async :refer [chan put! take! go go-loop <! >!]]
+  (:require [clojure.core.async :refer [chan sliding-buffer put! take! go go-loop <! >!]]
             [armchair.canvas :as c]
+            [armchair.config :refer [tile-size]]
+            [armchair.position :refer [apply-delta]]
             [armchair.pathfinding :as path]))
 
 ;; Definitions
 
-(def tile-size 32)
-(def tile-move-time 200) ; miliseconds
+(def time-factor 1)
+(def tile-move-time 150) ; milliseconds
+(def direction-map {:up [0 -1]
+                    :down [0 1]
+                    :left [-1 0]
+                    :right [1 0]})
 
 ;; Conversion Helpers
 
@@ -26,6 +32,7 @@
 (def initial-game-state
   {:highlight nil
    :player (tile->coord [1 13])
+   :player-direction :up
    :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
            [ 0 1 0 1 1 1 1 1 1 1 1 0 1 1 ]
            [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
@@ -58,7 +65,8 @@
 
 (def textures ["grass"
                "wall"
-               "player"])
+               "player"
+               "arrow"])
 
 (def texture-atlas (atom nil))
 
@@ -84,6 +92,10 @@
   (when @texture-atlas
     (c/draw-image! @ctx (@texture-atlas texture) coord)))
 
+(defn draw-texture-rotated [texture coord deg]
+  (when @texture-atlas
+    (c/draw-image-rotated! @ctx (@texture-atlas texture) coord deg)))
+
 (defn draw-level [level]
   (let [cols (count (first level))
         rows (count level)]
@@ -100,7 +112,7 @@
   (when highlight-coord
     (doto @ctx
       c/save!
-      (c/set-stroke-style! "rgba(255, 255, 0, .7)")
+      (c/set-stroke-style! "rgb(255, 255, 0)")
       (c/set-line-width! "2")
       (c/stroke-rect! highlight-coord tile-size tile-size)
       c/restore!)))
@@ -114,110 +126,128 @@
       (doto @ctx
         c/save!
         (c/set-fill-style! "rgba(255, 255, 0, .2)")
-        (c/set-line-width! "2")
         (c/fill-rect! (tile->coord path-tile) tile-size tile-size)
         c/restore!))))
 
-(defn render [state]
-  (js/requestAnimationFrame
-    #(do
-       (when @ctx
-         (c/clear! @ctx)
-         (draw-level (:level state))
-         (draw-player (:player state))
-         (draw-path state)
-         (draw-highlight (:highlight state))))))
-
-;; Animations
-
-(def animations (atom (list)))
-
-(defn abs [x] (.abs js/Math x))
-(defn round [x] (.round js/Math x))
-
-(defn move [from to duration]
-  {:start (.now js/performance)
-   :from from
-   :to to
-   :duration duration})
-
-(defn move-sequence [coords duration-per-tile]
-  (let [start (.now js/performance)
-        segments (partition-all 2 (interleave coords (rest coords)))]
-    (map-indexed (fn [idx [from to]]
-                   {:start (+ start (* idx duration-per-tile))
-                    :from from
-                    :to to
-                    :duration duration-per-tile})
-                 segments)))
-
-(defn start-animation-loop [channel]
-  (go-loop [_ (<! channel)]
-           (if-let [{start :start
-                     [fx fy] :from
-                     [tx ty] :to
-                     duration :duration} (first @animations)]
-             (let [passed (- (.now js/performance) start)
-                   pct (/ passed duration)
-                   dx (- tx fx)
-                   dy (- ty fy)]
-               (if (<= pct 1)
-                 (swap! state assoc :player [(+ fx (round (* pct dx)))
-                                             (+ fy (round (* pct dy)))])
-                 (do (swap! state assoc :player [tx ty])
-                     (swap! animations rest)))
-               (js/requestAnimationFrame #(put! channel true))))
-           (recur (<! channel))))
+(defn render [view-state]
+  (when @ctx
+    (c/clear! @ctx)
+    (draw-level (:level @state))
+    (draw-path @state)
+    (draw-player (:player view-state))
+    (draw-highlight (:highlight @state)))
+    (draw-texture-rotated
+      :arrow
+      (:player view-state)
+      ((:player-direction view-state) {:up 0
+                                       :right 90
+                                       :down 180
+                                       :left 270})))
 
 ;; Input Handlers
 
+(def move-q (atom #queue []))
+
+(defn handle-move [direction]
+  (swap! move-q conj direction))
+
 (defn handle-cursor-position [coord]
   (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
-
-(defn handle-animate [coord]
-  (let [path-tiles (path/a-star (:level @state)
-                                (coord->tile (:player @state))
-                                (coord->tile (normalize-to-tile coord)))]
-    (reset! animations (move-sequence (map tile->coord path-tiles) tile-move-time))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
            (let [handler (case cmd
                            :cursor-position handle-cursor-position
-                           :animate handle-animate
+                           :move handle-move
+                           ; :animate handle-animate
                            identity)]
              (handler payload)
              (recur (<! channel)))))
+
+;; Animations
+
+(defn round [x] (.round js/Math x))
+
+(defn animated-position [animation now]
+  (let [{start :start
+         [fx fy] :from
+         [tx ty] :to
+         duration :duration} animation
+        passed (- now start)
+        pct (/ passed duration)]
+    (if (<= pct 1)
+      (let [dx (- tx fx)
+            dy (- ty fy)]
+        [(+ fx (round (* pct dx)))
+         (+ fy (round (* pct dy)))])
+      [tx ty])))
+
+(defn animation-done? [{start :start duration :duration} now]
+  (< (+ start duration) now))
+
+(defn animate-move [destination-tile move-chan]
+  (let [anim-c (chan 1)
+        destination (tile->coord destination-tile)
+        animation {:start (* time-factor (.now js/performance))
+                   :from (:player @state)
+                   :to destination
+                   :duration tile-move-time}]
+    (go-loop [_ (<! anim-c)]
+             (js/requestAnimationFrame
+               (fn []
+                 (let [now (* time-factor (.now js/performance))]
+                   (if-not (animation-done? animation now)
+                     (do
+                       (render (update @state :player #(animated-position animation now)))
+                       (put! anim-c true))
+                     (do
+                       (swap! state assoc :player destination)
+                       (swap! move-q pop)
+                       (put! move-chan true))))))
+             (recur (<! anim-c)))
+    (put! anim-c true)))
+
+(defn start-animation-loop [channel]
+  (go-loop [_ (<! channel)]
+           (when-let [direction (first @move-q)]
+             (let [position-delta (direction-map direction)
+                   new-position (apply-delta (coord->tile (:player @state)) position-delta)]
+               (swap! state assoc :player-direction direction)
+               (if (path/walkable? (:level @state) new-position)
+                 (animate-move new-position channel)
+                 (when-not (empty? (swap! move-q pop)) (put! channel true)))))
+           (recur (<! channel))))
 
 ;; Game Loop
 
 (defn start-game [context]
   (reset! state initial-game-state)
-  (reset! animations nil)
+  (reset! move-q #queue [])
   (reset! ctx context)
   (let [input-chan (chan)
-        animation-chan (chan)]
+        animation-chan (chan (sliding-buffer 1))]
     (add-watch state
                :state-update
                (fn [_ _ old-state new-state]
                  (when (not= old-state new-state)
-                   (render new-state))))
-    (add-watch animations
+                   (js/requestAnimationFrame #(render new-state)))))
+    (add-watch move-q
                :animation-update
                (fn [_ _ old-state new-state]
                  (when (and (empty? old-state)
                             (some? new-state))
                    (put! animation-chan true))))
     (take! (get-texture-atlas-chan)
-           #(do (reset! texture-atlas %)
-                (start-input-loop input-chan)
-                (start-animation-loop animation-chan)
-                (render @state)))
+           (fn [loaded-atlas]
+             (reset! texture-atlas loaded-atlas)
+             (start-input-loop input-chan)
+             (start-animation-loop animation-chan)
+             (js/requestAnimationFrame #(render @state))))
     input-chan))
 
 (defn end-game []
   (remove-watch state :state-update)
-  (remove-watch animations :animation-update)
+  (remove-watch move-q :animation-update)
   (reset! state nil)
-  (reset! animations nil)
+  (reset! move-q nil)
   (reset! ctx nil))
