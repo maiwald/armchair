@@ -31,11 +31,13 @@
 
 (def initial-game-state
   {:highlight nil
-   :player (tile->coord [1 13])
-   :player-direction :up
-   :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
-           [ 0 1 0 1 1 1 1 1 1 1 1 0 1 1 ]
-           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
+   :player (tile->coord [0 12])
+   :player-direction :right
+   :enemies {(tile->coord [6 6]) #(js/alert "Wow, you interacted with guy 1!")
+             (tile->coord [5 12]) #(js/alert "Cool, you interacted with guy 2!") }
+   :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 1 0 ]
+           [ 0 1 0 1 1 1 1 1 1 1 1 1 1 0 ]
+           [ 0 1 1 1 0 0 0 0 0 0 1 1 0 0 ]
            [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
            [ 0 1 0 1 0 0 1 1 1 1 1 0 1 0 ]
            [ 0 0 0 1 1 1 1 0 0 1 0 0 1 0 ]
@@ -61,11 +63,18 @@
            ]
    })
 
+(defn ^boolean walkable? [tile]
+  (let [level (:level @state)
+        enemy-tiles (->> @state :enemies keys (map coord->tile) set)]
+    (and (= (get-in level tile) 1)
+         (not (contains? enemy-tiles tile)))))
+
 ;; Textures
 
 (def textures ["grass"
                "wall"
                "player"
+               "enemy"
                "arrow"])
 
 (def texture-atlas (atom nil))
@@ -108,6 +117,10 @@
 (defn draw-player [player]
   (draw-texture :player player))
 
+(defn draw-enemies [coords]
+  (doseq [coord coords]
+    (draw-texture :enemy coord)))
+
 (defn draw-highlight [highlight-coord]
   (when highlight-coord
     (doto @ctx
@@ -120,7 +133,7 @@
 (defn draw-path [{:keys [level player highlight]}]
   (if highlight
     (doseq [path-tile (path/a-star
-                        level
+                        walkable?
                         (coord->tile player)
                         (coord->tile highlight))]
       (doto @ctx
@@ -135,6 +148,7 @@
     (draw-level (:level @state))
     (draw-path @state)
     (draw-player (:player view-state))
+    (draw-enemies (-> view-state :enemies keys))
     (draw-highlight (:highlight @state)))
     (draw-texture-rotated
       :arrow
@@ -213,7 +227,7 @@
              (let [position-delta (direction-map direction)
                    new-position (apply-delta (coord->tile (:player @state)) position-delta)]
                (swap! state assoc :player-direction direction)
-               (if (path/walkable? (:level @state) new-position)
+               (if (walkable? new-position)
                  (animate-move new-position channel)
                  (when-not (empty? (swap! move-q pop)) (put! channel true)))))
            (recur (<! channel))))
