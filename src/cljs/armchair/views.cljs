@@ -222,6 +222,7 @@
                                            ("ArrowRight" "KeyD") (put! @game-input [:move :right])
                                            ("ArrowDown" "KeyS") (put! @game-input [:move :down])
                                            ("ArrowLeft" "KeyA") (put! @game-input [:move :left])
+                                           "Space" (put! @game-input [:interact])
                                            nil)]
                          (.preventDefault e)))]
     (r/create-class

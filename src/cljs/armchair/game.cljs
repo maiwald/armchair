@@ -168,12 +168,19 @@
 (defn handle-cursor-position [coord]
   (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
 
+(defn handle-interact []
+  (let [player-tile (coord->tile (:player @state))
+        interaction-tile (apply-delta player-tile (direction-map (:player-direction @state)))
+        interaction-fn (get-in @state [:enemies (tile->coord interaction-tile)] identity)]
+    (.log js/console player-tile (tile->coord interaction-tile) interaction-fn (:enemies @state))
+    (interaction-fn)))
+
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
            (let [handler (case cmd
                            :cursor-position handle-cursor-position
                            :move handle-move
-                           ; :animate handle-animate
+                           :interact handle-interact
                            identity)]
              (handler payload)
              (recur (<! channel)))))
