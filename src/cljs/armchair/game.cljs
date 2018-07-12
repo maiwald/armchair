@@ -33,8 +33,9 @@
   {:highlight nil
    :player (tile->coord [0 12])
    :player-direction :right
-   :enemies {(tile->coord [6 6]) #(js/alert "Wow, you interacted with guy 1!")
-             (tile->coord [5 12]) #(js/alert "Cool, you interacted with guy 2!") }
+   :enemies {(tile->coord [6 6]) "Wow, you interacted with guy 1!"
+             (tile->coord [5 12]) "Cool, you interacted with guy 2!"}
+   :talking-to nil
    :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 1 0 ]
            [ 0 1 0 1 1 1 1 1 1 1 1 1 1 0 ]
            [ 0 1 1 1 0 0 0 0 0 0 1 1 0 0 ]
@@ -68,6 +69,12 @@
         enemy-tiles (->> @state :enemies keys (map coord->tile) set)]
     (and (= (get-in level tile) 1)
          (not (contains? enemy-tiles tile)))))
+
+(defn interaction-tile []
+  (-> @state
+      :player
+      coord->tile
+      (apply-delta (direction-map (:player-direction @state)))))
 
 ;; Textures
 
@@ -147,6 +154,28 @@
                                     :left 270})]
     (draw-texture-rotated :arrow player rotation)))
 
+(defn draw-dialogue-box [{:keys [talking-to enemies]}]
+  (when (some? talking-to)
+    (let [w 600
+          h 360
+          x (/ (- (c/width @ctx) w) 2)
+          y (/ (- (c/height @ctx) h) 2)
+          text (get enemies talking-to)]
+      (c/save! @ctx)
+      (c/set-fill-style! @ctx "rgba(237, 224, 142, .8)")
+      (c/fill-rect! @ctx [x y] w h)
+      (c/set-stroke-style! @ctx "rgb(200, 200, 0)")
+      (c/stroke-rect! @ctx [x y] w h)
+
+      (c/set-fill-style! @ctx "rgb(0, 0, 0)")
+      (c/set-font! @ctx "40px serif")
+      (c/set-baseline! @ctx "top")
+      (c/draw-text! @ctx "Dialogue!" (apply-delta [x y] [20 20]))
+      (c/set-font! @ctx "18px serif")
+      (c/draw-textbox! @ctx text (apply-delta [x y] [20 70]) (- w 40) 230)
+
+      (c/restore! @ctx))))
+
 (defn render [view-state]
   (when @ctx
     (c/clear! @ctx)
@@ -155,23 +184,24 @@
     (draw-player (:player view-state))
     (draw-enemies (-> view-state :enemies keys))
     (draw-highlight (:highlight @state))
-    (draw-direction-indicator view-state)))
+    (draw-direction-indicator view-state)
+    (draw-dialogue-box @state)))
 
 ;; Input Handlers
 
 (def move-q (atom #queue []))
 
 (defn handle-move [direction]
-  (swap! move-q conj direction))
+  (when-not (some? (:talking-to @state))
+    (swap! move-q conj direction)))
 
 (defn handle-cursor-position [coord]
   (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
 
 (defn handle-interact []
-  (let [player-tile (coord->tile (:player @state))
-        interaction-tile (apply-delta player-tile (direction-map (:player-direction @state)))]
-    (when-let [interaction-fn (get-in @state [:enemies (tile->coord interaction-tile)])]
-      (interaction-fn))))
+  (let [interaction-coord (tile->coord (interaction-tile))]
+    (when (contains? (:enemies @state) interaction-coord)
+      (swap! state update :talking-to #(when (not= % interaction-coord) interaction-coord)))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
