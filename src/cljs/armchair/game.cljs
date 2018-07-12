@@ -36,6 +36,7 @@
    :enemies {(tile->coord [6 6]) "Wow, you interacted with guy 1!"
              (tile->coord [5 12]) "Cool, you interacted with guy 2!"}
    :talking-to nil
+   :selected-option nil
    :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 1 0 ]
            [ 0 1 0 1 1 1 1 1 1 1 1 1 1 0 ]
            [ 0 1 1 1 0 0 0 0 0 0 1 1 0 0 ]
@@ -154,13 +155,14 @@
                                     :left 270})]
     (draw-texture-rotated :arrow player rotation)))
 
-(defn draw-dialogue-box [{:keys [talking-to enemies]}]
+(defn draw-dialogue-box [{:keys [talking-to selected-option enemies]}]
   (when (some? talking-to)
     (let [w 600
           h 360
           x (/ (- (c/width @ctx) w) 2)
           y (/ (- (c/height @ctx) h) 2)
-          text (get enemies talking-to)]
+          text (get enemies talking-to)
+          options '("My name does not matter!" "I could ask you the same!" "We have met before. In the land far beyond.")]
       (c/save! @ctx)
       (c/set-fill-style! @ctx "rgba(237, 224, 142, .8)")
       (c/fill-rect! @ctx [x y] w h)
@@ -174,6 +176,23 @@
       (c/set-font! @ctx "18px serif")
       (c/draw-textbox! @ctx text (apply-delta [x y] [20 70]) (- w 40) 230)
 
+      (c/set-baseline! @ctx "middle")
+      (doseq [[idx option] (map-indexed vector options)]
+        (let [w (- w 40)
+              h 24
+              offset 6
+              coord (apply-delta [x y] [20 (+ 220 (* idx (+ offset h)))])]
+          (c/set-fill-style! @ctx "rgba(0, 0, 0, .2)")
+          (c/fill-rect! @ctx coord w h)
+
+          (if (= selected-option idx)
+            (c/set-stroke-style! @ctx "rgb(255, 0, 0)")
+            (c/set-stroke-style! @ctx "rgb(0, 0, 0)"))
+          (c/set-line-width! @ctx "1")
+          (c/stroke-rect! @ctx coord w h)
+
+          (c/set-fill-style! @ctx "rgb(0, 0, 0)")
+          (c/draw-text! @ctx option (apply-delta coord [2 (/ h 2)]))))
       (c/restore! @ctx))))
 
 (defn render [view-state]
@@ -192,16 +211,24 @@
 (def move-q (atom #queue []))
 
 (defn handle-move [direction]
-  (when-not (some? (:talking-to @state))
-    (swap! move-q conj direction)))
+  (if (nil? (:talking-to @state))
+    (swap! move-q conj direction)
+    (case direction
+      :up (swap! state update :selected-option #(mod (dec %) 3))
+      :down (swap! state update :selected-option #(mod (inc %) 3))
+      :else)))
 
 (defn handle-cursor-position [coord]
   (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
 
 (defn handle-interact []
-  (let [interaction-coord (tile->coord (interaction-tile))]
-    (when (contains? (:enemies @state) interaction-coord)
-      (swap! state update :talking-to #(when (not= % interaction-coord) interaction-coord)))))
+  (if (nil? (:talking-to @state))
+    (let [interaction-coord (tile->coord (interaction-tile))]
+      (when (contains? (:enemies @state) interaction-coord)
+        (swap! state merge {:talking-to interaction-coord
+                            :selected-option 0})))
+    (swap! state merge {:talking-to nil
+                        :selected-option nil})))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
