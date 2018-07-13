@@ -57,10 +57,14 @@
 (reg-sub
   :dragging?
   :<- [:db-dragging]
+  (fn [dragging _]
+    (some? dragging)))
+
+(reg-sub
+  :dragging-item?
+  :<- [:db-dragging]
   (fn [dragging [_ position-id]]
-    (if (some? position-id)
-      (= (:position-ids dragging) #{position-id})
-      (some? dragging))))
+    (= (:position-ids dragging) #{position-id})))
 
 (reg-sub
   :connector

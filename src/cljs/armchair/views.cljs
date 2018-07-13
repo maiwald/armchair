@@ -42,7 +42,7 @@
           (>evt [:start-dragging position-ids (e->graph-pointer %)]))))
 
 (defn graph-item [{:keys [position position-id]} component]
-  (let [dragging? (<sub [:dragging? position-id])]
+  (let [dragging? (<sub [:dragging-item? position-id])]
     [:div {:class ["graph__item"
                    (when dragging? "graph__item_is-dragging")]
            :on-mouse-down (start-dragging-handler #{position-id})
