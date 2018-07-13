@@ -12,10 +12,13 @@
 (def <sub (comp deref re-frame.core/subscribe))
 (def >evt re-frame.core/dispatch)
 
+(defn stop-e! [e]
+  (.preventDefault e)
+  (.stopPropagation e))
+
 (defn e-> [handler]
   (fn [e]
-    (.preventDefault e)
-    (.stopPropagation e)
+    (stop-e! e)
     (handler e)))
 
 (defn relative-pointer [e elem]
@@ -99,7 +102,7 @@
                    :width (str config/line-width "px")}}
      [:p text]
      [:div {:class "item-actions"
-            :on-mouse-down (e-> identity)}
+            :on-mouse-down stop-e!}
       [:div {:class "item-action"
              :on-click #(>evt [:delete-line id])}
        [icon "trash"]]
@@ -126,18 +129,20 @@
                                                    :on-change (update-handler :text)
                                                    :value (:text line)}]]}])))
 
-(defn dialogue-component []
-  (let [{:keys [lines connections]} (<sub [:dialogue])]
-    [:div {:class "full-page"}
-     [:div {:class "new-item-button"}
-      [slds/add-button "New" #(>evt [:create-line])]]
-     [graph {:kind "line"
-             :items lines
-             :connections connections
-             :connection-transform (fn [{:keys [start end]}]
-                                     {:start (apply-delta start [(- config/line-width 15) 15])
-                                      :end (apply-delta end [15 15])})
-             :item-component line-component}]]))
+(defn dialogue-component [dialogue-id]
+  (if dialogue-id
+    (let [{:keys [lines connections]} (<sub [:dialogue dialogue-id])]
+      [:div {:class "full-page"}
+       [:div {:class "new-item-button"}
+        [slds/add-button "New" #(>evt [:create-line dialogue-id])]]
+       [graph {:kind "line"
+               :items lines
+               :connections connections
+               :connection-transform (fn [{:keys [start end]}]
+                                       {:start (apply-delta start [(- config/line-width 15) 15])
+                                        :end (apply-delta end [15 15])})
+               :item-component line-component}]])
+    [:span "No dialogue selected!"]))
 
 (defn character-form-modal []
   (if-let [character-id (:character-id (<sub [:modal]))]
@@ -177,14 +182,21 @@
                                                :on-change (update-handler :display-name)
                                                :value (:display-name location)}]]}])))
 
-(defn location-component [{:keys [id display-name] :as location}]
+(defn location-component [{:keys [id display-name dialogues] :as location}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "location"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-locations id]))
            :style {:width (str config/line-width "px")}}
      [:p {:class "name"} display-name]
+     [:ul {:class "location__characters"}
+      (for [dialogue dialogues]
+        ^{:key (str "location-dialogue-" id " - " (:id dialogue))}
+        [:li [:a {:style {:background-color (:character-color dialogue)}
+                  :on-mouse-down stop-e!
+                  :on-click #(>evt [:show-page "Dialogue" (:id dialogue)])}
+              (:character-name dialogue)]])]
      [:div {:class "item-actions"
-            :on-mouse-down (e-> identity)}
+            :on-mouse-down stop-e!}
       [:div {:class "item-action"
              :on-click #(>evt [:delete-location id])}
        [icon "trash"]]
@@ -241,12 +253,12 @@
                                     :ref (fn [el] (reset! canvas-ref el))}]])})))
 
 (defn root []
-  (let [current-page (<sub [:current-page])
+  (let [{page-name :name page-payload :payload} (<sub [:current-page])
         pages (array-map
-                "Dialogue" [dialogue-component]
-                "Characters" [character-management]
+                "Game" [game-canvas]
                 "Locations" [location-management]
-                "Game" [game-canvas])
+                "Dialogue" [dialogue-component page-payload]
+                "Characters" [character-management])
         link-map (map
                    (fn [name] [name #(>evt [:show-page name])])
                    (keys pages))]
@@ -257,6 +269,6 @@
      [:a {:id "reset"
           :on-click #(>evt [:reset-db])} "reset"]
      [:div {:id "navigation"}
-      [slds/global-navigation link-map current-page]]
+      [slds/global-navigation link-map page-name]]
      [:div {:id "content"}
-      (get pages current-page [:div "Nothing"])]]))
+      (get pages page-name [:div "Nothing"])]]))

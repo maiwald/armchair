@@ -14,6 +14,7 @@
   (fn [db _]
     (merge db (select-keys db/default-db [:positions
                                           :characters
+                                          :dialogues
                                           :locations
                                           :location-connections
                                           :lines
@@ -26,10 +27,11 @@
     (+ 1 (reduce max 0 (keys items)))))
 
 (defn with-new-position [func]
-  (fn [db]
+  (fn [db ctx]
     (let [position-id (new-id db :positions)]
       (func (assoc-in db [:positions position-id] [20 20])
-            position-id))))
+            position-id
+            ctx))))
 
 (reg-event-db
   :create-character
@@ -93,11 +95,11 @@
 (reg-event-db
   :create-line
   (with-new-position
-    (fn [db position-id]
+    (fn [db position-id [_ dialogue-id]]
       (let [id (new-id db :lines)]
         (assoc-in db [:lines id] {:id id
                                   :character-id nil
-                                  :dialogue-id (:selected-dialogue-id db)
+                                  :dialogue-id dialogue-id
                                   :position-id position-id
                                   :text (str "Line #" id)})))))
 
@@ -137,8 +139,9 @@
 
 (reg-event-db
   :show-page
-  (fn [db [_ page]]
-    (assoc db :current-page page)))
+  (fn [db [_ page payload]]
+    (assoc db :current-page {:name page
+                             :payload payload})))
 
 ;; Mouse, Drag & Drop
 

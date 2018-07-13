@@ -2,23 +2,25 @@
 
 (def default-db
   {
-   :current-page "Game"
+   :current-page {:name "Game"
+                  :payload nil}
    :positions {
-               1 [0 200]
-               2 [229 198]
-               3 [259 91]
-               4 [450 214]
-               5 [695 178]
-               6 [699 239]
-               7 [939 90]
-               8 [965 183]
-               9 [1216 197]
-               10 [230 280]
-               11 [457 280]
-               12 [764 314]
-               13 [1012 284]
+               1 [100 200]
+               2 [329 198]
+               3 [359 91]
+               4 [550 214]
+               5 [795 178]
+               6 [799 239]
+               7 [1039 90]
+               8 [1065 183]
+               9 [1316 197]
+               10 [330 280]
+               11 [557 280]
+               12 [864 314]
+               13 [1112 284]
                16 [229 198]
                17 [259 91]
+               18 [307 151]
                }
    :locations {
                1 { :id 1 :position-id 16 :display-name "Park - Camp" }
@@ -30,9 +32,11 @@
    :characters {
                 1 { :id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)" }
                 2 { :id 2 :display-name "Player" :color "rgba(0, 0, 255, .6)" }
+                3 { :id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)" }
                 }
    :dialogues {
-               1 { :id 1 :display-name "First Dialogue" :location-id 1 }
+               1 { :id 1 :display-name "Hugo's Dialogue" :initial-character-id 1 :location-id 1 }
+               2 { :id 2 :display-name "Gustav's Dialogue" :initial-character-id 3 :location-id 1 }
                }
    :lines {
            1  {:id 1
@@ -100,6 +104,11 @@
                :dialogue-id 1
                :position-id 13
                :text "Trying to sound ominous or what?! Get outa here!"}
+           14 {:id 14
+               :character-id 3
+               :dialogue-id 2
+               :position-id 18
+               :text "Hi, my name is Gustav!"}
            }
    :line-connections #{
                        [1 2]
