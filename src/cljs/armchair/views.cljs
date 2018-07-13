@@ -112,21 +112,19 @@
        [icon "link"]]]]))
 
 (defn line-form-modal []
-  (let [{:keys [line-id]} (<sub [:modal])
-        update-handler (partial record-update-handler :line line-id)]
-    (if-let [line (get (<sub [:lines]) line-id)]
-      (let [{:keys [id text character-id color]} line
-            characters (<sub [:characters])]
-        [slds/modal {:title (str "Line #" id)
-                     :close-handler #(>evt [:close-modal])
-                     :content [slds/form
-                               [slds/input-select {:label "Character"
-                                                   :on-change (update-handler :character-id)
-                                                   :options (map (fn [[k c]] [k (:display-name c)]) characters)
-                                                   :value character-id}]
-                               [slds/input-textarea {:label "Text"
-                                                     :on-change (update-handler :text)
-                                                     :value text}]]}]))))
+  (if-let [line-id (:line-id (<sub [:modal]))]
+    (let [line (<sub [:line line-id])
+          update-handler (partial record-update-handler :line line-id)]
+      [slds/modal {:title (str "Line #" line-id)
+                   :close-handler #(>evt [:close-modal])
+                   :content [slds/form
+                             [slds/input-select {:label "Character"
+                                                 :on-change (update-handler :character-id)
+                                                 :options (<sub [:character-options])
+                                                 :value (:character-id line)}]
+                             [slds/input-textarea {:label "Text"
+                                                   :on-change (update-handler :text)
+                                                   :value (:text line)}]]}])))
 
 (defn dialogue-component []
   (let [{:keys [lines connections]} (<sub [:dialogue])]
@@ -142,22 +140,21 @@
              :item-component line-component}]]))
 
 (defn character-form-modal []
-  (let [{:keys [character-id]} (<sub [:modal])
-        update-handler (partial record-update-handler :character character-id)]
-    (if-let [character (get (<sub [:characters]) character-id)]
-      (let [{:keys [display-name color]} character]
-        [slds/modal {:title display-name
-                     :close-handler #(>evt [:close-modal])
-                     :content [slds/form
-                               [slds/input-text {:label "Name"
-                                                 :on-change (update-handler :display-name)
-                                                 :value display-name}]
-                               [slds/input-text {:label "Color"
-                                                 :on-change (update-handler :color)
-                                                 :value color}]]}]))))
+  (if-let [character-id (:character-id (<sub [:modal]))]
+    (let [character (<sub [:character character-id])
+          update-handler (partial record-update-handler :character character-id)]
+      [slds/modal {:title (:display-name character)
+                   :close-handler #(>evt [:close-modal])
+                   :content [slds/form
+                             [slds/input-text {:label "Name"
+                                               :on-change (update-handler :display-name)
+                                               :value (:display-name character)}]
+                             [slds/input-text {:label "Color"
+                                               :on-change (update-handler :color)
+                                               :value (:color character)}]]}])))
 
 (defn character-management []
-  (let [characters (<sub [:characters])]
+  (let [characters (<sub [:character-list])]
     [slds/resource-page "Characters"
      {:columns [:id :display-name :color :lines :actions]
       :collection (vals characters)
@@ -170,16 +167,15 @@
       :new-resource #(>evt [:create-character])}]))
 
 (defn location-form-modal []
-  (let [{:keys [location-id]} (<sub [:modal])
-        update-handler (partial record-update-handler :location location-id)]
-    (if-let [location (get (<sub [:locations]) location-id)]
-      (let [display-name (:display-name location)]
-        [slds/modal {:title display-name
-                     :close-handler #(>evt [:close-modal])
-                     :content [slds/form
-                               [slds/input-text {:label "Name"
-                                                 :on-change (update-handler :display-name)
-                                                 :value display-name}]]}]))))
+  (if-let [location-id (:location-id (<sub [:modal]))]
+    (let [location (<sub [:location location-id])
+          update-handler (partial record-update-handler :location location-id)]
+      [slds/modal {:title (:display-name location)
+                   :close-handler #(>evt [:close-modal])
+                   :content [slds/form
+                             [slds/input-text {:label "Name"
+                                               :on-change (update-handler :display-name)
+                                               :value (:display-name location)}]]}])))
 
 (defn location-component [{:keys [id display-name] :as location}]
   (let [connecting? (some? (<sub [:connector]))]

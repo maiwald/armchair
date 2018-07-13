@@ -11,7 +11,7 @@
 (reg-sub :db-lines #(:lines %))
 (reg-sub :db-line-connections #(:line-connections %))
 
-(reg-sub :locations #(:locations %))
+(reg-sub :db-locations #(:locations %))
 (reg-sub :db-location-connections #(:location-connections %))
 
 (reg-sub :db-dragging #(:dragging %))
@@ -26,15 +26,33 @@
   (into {} (for [[k v] m] [k (f v)])))
 
 (reg-sub
-  :characters
+  :character-list
   :<- [:db-characters]
   :<- [:db-lines]
-  (fn [[characters lines]]
+  (fn [[characters lines] _]
     (map-values
       (fn [character]
         (let [line-count (db/line-count-for-character lines (:id character))]
           (assoc character :lines line-count)))
       characters)))
+
+(reg-sub
+  :character
+  :<- [:db-characters]
+  (fn [characters [_ character-id]]
+    (characters character-id)))
+
+(reg-sub
+  :line
+  :<- [:db-lines]
+  (fn [lines [_ line-id]]
+    (lines line-id)))
+
+(reg-sub
+  :character-options
+  :<- [:db-characters]
+  (fn [characters _]
+    (map-values :display-name characters)))
 
 (reg-sub
   :dragging?
@@ -79,8 +97,14 @@
        :connections connections})))
 
 (reg-sub
+  :location
+  :<- [:db-locations]
+  (fn [locations [_ location-id]]
+    (locations location-id)))
+
+(reg-sub
   :location-map
-  :<- [:locations]
+  :<- [:db-locations]
   :<- [:db-location-connections]
   :<- [:dragged-positions]
   (fn [[locations connections positions]]
@@ -88,11 +112,3 @@
       {:locations (map-values #(assoc % :position (get positions (:position-id %)))
                               locations)
        :connections (map sort connections)})))
-
-(reg-sub
-  :lines
-  :<- [:db-lines]
-  :<- [:db-characters]
-  (fn [[lines characters]]
-    (map-values #(assoc % :character-color (get-in characters [(:character-id %) :color]))
-                lines)))
