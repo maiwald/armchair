@@ -3,7 +3,7 @@
             [reagent.core :as r]
             [armchair.game :refer [start-game end-game]]
             [armchair.slds :as slds]
-            [armchair.position :refer [apply-delta]]
+            [armchair.util :refer [translate-position]]
             [armchair.config :as config]
             [clojure.core.async :refer [put!]]))
 
@@ -139,8 +139,8 @@
                :items lines
                :connections connections
                :connection-transform (fn [{:keys [start end]}]
-                                       {:start (apply-delta start [(- config/line-width 15) 15])
-                                        :end (apply-delta end [15 15])})
+                                       {:start (translate-position start [(- config/line-width 15) 15])
+                                        :end (translate-position end [15 15])})
                :item-component line-component}]])
     [:span "No dialogue selected!"]))
 
@@ -217,8 +217,8 @@
              :items locations
              :connections connections
              :connection-transform (fn [{:keys [start end]}]
-                                     {:start (apply-delta start [(/ config/line-width 2) 15])
-                                      :end (apply-delta end [(/ config/line-width 2) 15])})
+                                     {:start (translate-position start [(/ config/line-width 2) 15])
+                                      :end (translate-position end [(/ config/line-width 2) 15])})
              :item-component location-component}]]))
 
 (defn game-canvas []

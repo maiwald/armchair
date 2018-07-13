@@ -2,7 +2,7 @@
   (:require [re-frame.core :refer [reg-event-db reg-event-fx]]
             [clojure.set :refer [difference]]
             [armchair.db :as db]
-            [armchair.position :refer [translate-positions position-delta]]))
+            [armchair.util :refer [translate-positions position-delta]]))
 
 (reg-event-db
   :initialize-db

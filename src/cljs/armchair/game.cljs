@@ -2,7 +2,7 @@
   (:require [clojure.core.async :refer [chan sliding-buffer put! take! go go-loop <! >!]]
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
-            [armchair.position :refer [apply-delta]]
+            [armchair.util :refer [translate-position]]
             [armchair.pathfinding :as path]))
 
 ;; Definitions
@@ -75,7 +75,7 @@
   (-> @state
       :player
       coord->tile
-      (apply-delta (direction-map (:player-direction @state)))))
+      (translate-position (direction-map (:player-direction @state)))))
 
 ;; Textures
 
@@ -172,16 +172,16 @@
       (c/set-fill-style! @ctx "rgb(0, 0, 0)")
       (c/set-font! @ctx "40px serif")
       (c/set-baseline! @ctx "top")
-      (c/draw-text! @ctx "Dialogue!" (apply-delta [x y] [20 20]))
+      (c/draw-text! @ctx "Dialogue!" (translate-position [x y] [20 20]))
       (c/set-font! @ctx "18px serif")
-      (c/draw-textbox! @ctx text (apply-delta [x y] [20 70]) (- w 40) 230)
+      (c/draw-textbox! @ctx text (translate-position [x y] [20 70]) (- w 40) 230)
 
       (c/set-baseline! @ctx "middle")
       (doseq [[idx option] (map-indexed vector options)]
         (let [w (- w 40)
               h 24
               offset 6
-              coord (apply-delta [x y] [20 (+ 220 (* idx (+ offset h)))])]
+              coord (translate-position [x y] [20 (+ 220 (* idx (+ offset h)))])]
           (c/set-fill-style! @ctx "rgba(0, 0, 0, .2)")
           (c/fill-rect! @ctx coord w h)
 
@@ -192,7 +192,7 @@
           (c/stroke-rect! @ctx coord w h)
 
           (c/set-fill-style! @ctx "rgb(0, 0, 0)")
-          (c/draw-text! @ctx option (apply-delta coord [2 (/ h 2)]))))
+          (c/draw-text! @ctx option (translate-position coord [2 (/ h 2)]))))
       (c/restore! @ctx))))
 
 (defn render [view-state]
@@ -287,7 +287,7 @@
   (go-loop [_ (<! channel)]
            (when-let [direction (first @move-q)]
              (let [position-delta (direction-map direction)
-                   new-position (apply-delta (coord->tile (:player @state)) position-delta)]
+                   new-position (translate-position (coord->tile (:player @state)) position-delta)]
                (swap! state assoc :player-direction direction)
                (if (walkable? new-position)
                  (animate-move new-position channel)

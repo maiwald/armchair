@@ -4,7 +4,7 @@
             [clojure.set :refer [difference subset?]]
             [armchair.db :as db]
             [armchair.config :as config]
-            [armchair.position :refer [position-delta apply-delta translate-positions]]))
+            [armchair.util :refer [map-values position-delta translate-position translate-positions]]))
 
 (reg-sub :db-characters #(:characters %))
 
@@ -23,9 +23,6 @@
 
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
-
-(defn map-values [f m]
-  (into {} (for [[k v] m] [k (f v)])))
 
 (reg-sub
   :character-list
