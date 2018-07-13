@@ -43,10 +43,9 @@
          (not (contains? enemy-tiles tile)))))
 
 (defn interaction-tile []
-  (-> @state
-      :player
-      coord->tile
-      (translate-position (direction-map (:player-direction @state)))))
+  (translate-position
+    (coord->tile (:player @state))
+    (direction-map (:player-direction @state))))
 
 ;; Textures
 
