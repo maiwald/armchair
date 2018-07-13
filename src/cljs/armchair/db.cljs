@@ -20,11 +20,44 @@
                13 [1112 284]
                16 [229 198]
                17 [259 91]
-               18 [307 151]
+               18 [107 151]
+               19 [357 151]
+               20 [607 151]
                }
    :locations {
-               1 { :id 1 :position-id 16 :display-name "Park - Camp" }
-               2 { :id 2 :position-id 17 :display-name "Park - Entrance" }
+               1 {:id 1
+                  :position-id 16
+                  :display-name "Park - Camp"
+                  :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 1 0 ]
+                          [ 0 1 0 1 1 1 1 1 1 1 1 1 1 0 ]
+                          [ 0 1 1 1 0 0 0 0 0 0 1 1 0 0 ]
+                          [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
+                          [ 0 1 0 1 0 0 1 1 1 1 1 0 1 0 ]
+                          [ 0 0 0 1 1 1 1 0 0 1 0 0 1 0 ]
+                          [ 0 0 1 1 0 0 1 0 0 1 0 1 1 0 ]
+                          [ 0 1 1 1 1 0 1 0 0 1 1 1 1 0 ]
+                          [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
+                          [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
+                          [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
+                          [ 0 0 0 0 1 0 1 0 0 1 0 0 0 0 ]
+                          [ 0 1 0 1 1 1 1 1 1 1 1 0 1 0 ]
+                          [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
+                          [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
+                          [ 0 1 0 1 0 0 1 1 1 1 1 0 1 0 ]
+                          [ 0 1 0 1 1 1 1 0 0 1 0 0 1 0 ]
+                          [ 0 1 1 1 0 0 1 0 0 1 0 1 1 0 ]
+                          [ 0 1 1 1 1 0 1 0 0 1 0 1 1 0 ]
+                          [ 0 0 0 0 0 0 1 0 0 1 0 1 1 0 ]
+                          [ 1 1 1 1 1 0 1 1 0 1 0 1 0 0 ]
+                          [ 0 1 1 1 1 0 1 1 0 1 1 1 0 0 ]
+                          [ 0 1 0 1 1 0 1 0 0 1 0 1 0 0 ]
+                          [ 0 1 0 1 1 1 1 1 1 1 0 1 1 0 ]
+                          [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]]
+                  :enemies {1 [6 6]
+                            3 [5 12]}}
+               2 {:id 2
+                  :position-id 17
+                  :display-name "Park - Entrance"}
                }
    :location-connections #{
                            #{1 2}
@@ -35,8 +68,8 @@
                 3 { :id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)" }
                 }
    :dialogues {
-               1 { :id 1 :display-name "Hugo's Dialogue" :initial-character-id 1 :location-id 1 }
-               2 { :id 2 :display-name "Gustav's Dialogue" :initial-character-id 3 :location-id 1 }
+               1 { :id 1 :display-name "Hugo's Dialogue" :initial-line-id 1 :location-id 1 }
+               2 { :id 2 :display-name "Gustav's Dialogue" :initial-line-id 14 :location-id 1 }
                }
    :lines {
            1  {:id 1
@@ -108,7 +141,17 @@
                :character-id 3
                :dialogue-id 2
                :position-id 18
-               :text "Hi, my name is Gustav!"}
+               :text "Yes?"}
+           15 {:id 15
+               :character-id 2
+               :dialogue-id 2
+               :position-id 19
+               :text "Who are you?"}
+           16 {:id 16
+               :character-id 3
+               :dialogue-id 2
+               :position-id 20
+               :text "I am Gustav!"}
            }
    :line-connections #{
                        [1 2]
@@ -126,6 +169,8 @@
                        [11 12]
                        [12 13]
                        [11 6]
+                       [14 15]
+                       [15 16]
                        }
   })
 

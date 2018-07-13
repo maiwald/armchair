@@ -221,8 +221,9 @@
                                       :end (translate-position end [(/ config/line-width 2) 15])})
              :item-component location-component}]]))
 
-(defn game-canvas []
-  (let [canvas-ref (atom nil)
+(defn game-canvas [game-data]
+  (let [game-data (<sub [:game-data])
+        canvas-ref (atom nil)
         game-input (atom nil)
         key-listener (fn [e]
                        (when-let [action (case (.-code e)
@@ -235,7 +236,7 @@
                          (.preventDefault e)))]
     (r/create-class
       {:component-did-mount (fn []
-                              (reset! game-input (start-game (.getContext @canvas-ref "2d")))
+                              (reset! game-input (start-game (.getContext @canvas-ref "2d") game-data))
                               (.addEventListener js/document "keydown" key-listener))
        :component-will-unmount (fn []
                                  (.removeEventListener js/document "keydown" key-listener)

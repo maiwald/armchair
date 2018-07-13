@@ -15,3 +15,12 @@
 (defn map-values [f m]
   (into {} (for [[k v] m] [k (f v)])))
 
+(defn where [property value coll]
+  (filter #(= (property %) value) coll))
+
+(defn filter-map [pred? coll]
+  (into {} (filter #(pred? (second %)) coll)))
+
+(defn where-map [property value coll]
+  (filter-map #(= (property %) value) coll))
+

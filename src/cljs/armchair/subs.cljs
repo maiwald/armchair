@@ -4,7 +4,7 @@
             [clojure.set :refer [difference subset?]]
             [armchair.db :as db]
             [armchair.config :as config]
-            [armchair.util :refer [map-values position-delta translate-position translate-positions]]))
+            [armchair.util :refer [where where-map map-values position-delta translate-position translate-positions]]))
 
 (reg-sub :db-characters #(:characters %))
 
@@ -92,7 +92,7 @@
   :<- [:db-characters]
   :<- [:dragged-positions]
   (fn [[lines connections characters positions] [_ dialogue-id]]
-    (let [dialogue-lines (into {} (filter #(= (:dialogue-id (second %)) dialogue-id) lines))
+    (let [dialogue-lines (where-map :dialogue-id dialogue-id lines)
           dialogue-connections connections
           position-map (map-values #(positions (:position-id %)) dialogue-lines)]
       {:lines (map-values #(assoc %
@@ -111,20 +111,40 @@
   :location-map
   :<- [:db-locations]
   :<- [:db-dialogues]
+  :<- [:db-lines]
   :<- [:db-characters]
   :<- [:db-location-connections]
   :<- [:dragged-positions]
-  (fn [[locations dialogues characters connections positions] _]
+  (fn [[locations dialogues lines characters connections positions] _]
     (let [position-map (map-values #(positions (:position-id %)) locations)]
       {:locations (map-values (fn [location]
                                 (assoc location
                                        :position (get positions (:position-id location))
                                        :dialogues (->> dialogues
                                                        vals
-                                                       (filter #(= (:id location) (:location-id %)))
-                                                       (map #(let [character (get characters (:initial-character-id %))]
+                                                       (where :location-id (:id location))
+                                                       (map #(let [line (get lines (:initial-line-id %))
+                                                                   character (get characters (:character-id line))]
                                                                (assoc %
                                                                       :character-name (:display-name character)
                                                                       :character-color (:color character)))))))
                               locations)
        :connections (map sort connections)})))
+
+(reg-sub
+  :game-data
+  :<- [:db-locations]
+  :<- [:db-dialogues]
+  :<- [:db-lines]
+  (fn [[locations dialogues lines] _]
+    (let [location (get locations 1)
+          location-dialogues (where-map :location-id 1 dialogues)]
+      {:level (:level location)
+       :enemies (:enemies location)
+       :dialogues (into {} (map
+                             (fn [[_ dialogue]]
+                               (let [line (get lines (:initial-line-id dialogue))]
+                                 [(:character-id line)
+                                  (:text line)]))
+                             location-dialogues))})))
+

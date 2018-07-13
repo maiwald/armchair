@@ -2,7 +2,7 @@
   (:require [clojure.core.async :refer [chan sliding-buffer put! take! go go-loop <! >!]]
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
-            [armchair.util :refer [translate-position]]
+            [armchair.util :refer [map-values translate-position]]
             [armchair.pathfinding :as path]))
 
 ;; Definitions
@@ -33,41 +33,12 @@
   {:highlight nil
    :player (tile->coord [0 12])
    :player-direction :right
-   :enemies {(tile->coord [6 6]) "Wow, you interacted with guy 1!"
-             (tile->coord [5 12]) "Cool, you interacted with guy 2!"}
-   :talking-to nil
-   :selected-option nil
-   :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 1 0 ]
-           [ 0 1 0 1 1 1 1 1 1 1 1 1 1 0 ]
-           [ 0 1 1 1 0 0 0 0 0 0 1 1 0 0 ]
-           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
-           [ 0 1 0 1 0 0 1 1 1 1 1 0 1 0 ]
-           [ 0 0 0 1 1 1 1 0 0 1 0 0 1 0 ]
-           [ 0 0 1 1 0 0 1 0 0 1 0 1 1 0 ]
-           [ 0 1 1 1 1 0 1 0 0 1 1 1 1 0 ]
-           [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
-           [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
-           [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
-           [ 0 0 0 0 1 0 1 0 0 1 0 0 0 0 ]
-           [ 0 1 0 1 1 1 1 1 1 1 1 0 1 0 ]
-           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
-           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
-           [ 0 1 0 1 0 0 1 1 1 1 1 0 1 0 ]
-           [ 0 1 0 1 1 1 1 0 0 1 0 0 1 0 ]
-           [ 0 1 1 1 0 0 1 0 0 1 0 1 1 0 ]
-           [ 0 1 1 1 1 0 1 0 0 1 0 1 1 0 ]
-           [ 0 0 0 0 0 0 1 0 0 1 0 1 1 0 ]
-           [ 1 1 1 1 1 0 1 1 0 1 0 1 0 0 ]
-           [ 0 1 1 1 1 0 1 1 0 1 1 1 0 0 ]
-           [ 0 1 0 1 1 0 1 0 0 1 0 1 0 0 ]
-           [ 0 1 0 1 1 1 1 1 1 1 0 1 1 0 ]
-           [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
-           ]
-   })
+   :interacting-with nil
+   :selected-option nil})
 
 (defn ^boolean walkable? [tile]
   (let [level (:level @state)
-        enemy-tiles (->> @state :enemies keys (map coord->tile) set)]
+        enemy-tiles (->> @state :enemies vals (map coord->tile) set)]
     (and (= (get-in level tile) 1)
          (not (contains? enemy-tiles tile)))))
 
@@ -155,13 +126,13 @@
                                     :left 270})]
     (draw-texture-rotated :arrow player rotation)))
 
-(defn draw-dialogue-box [{:keys [talking-to selected-option enemies]}]
-  (when (some? talking-to)
+(defn draw-dialogue-box [{:keys [interacting-with selected-option dialogues]}]
+  (when (some? interacting-with)
     (let [w 600
           h 360
           x (/ (- (c/width @ctx) w) 2)
           y (/ (- (c/height @ctx) h) 2)
-          text (get enemies talking-to)
+          text (get dialogues interacting-with)
           options '("My name does not matter!" "I could ask you the same!" "We have met before. In the land far beyond.")]
       (c/save! @ctx)
       (c/set-fill-style! @ctx "rgba(237, 224, 142, .8)")
@@ -201,7 +172,7 @@
     (draw-level (:level @state))
     (draw-path @state)
     (draw-player (:player view-state))
-    (draw-enemies (-> view-state :enemies keys))
+    (draw-enemies (-> view-state :enemies vals))
     (draw-highlight (:highlight @state))
     (draw-direction-indicator view-state)
     (draw-dialogue-box @state)))
@@ -211,7 +182,7 @@
 (def move-q (atom #queue []))
 
 (defn handle-move [direction]
-  (if (nil? (:talking-to @state))
+  (if (nil? (:interacting-with @state))
     (swap! move-q conj direction)
     (case direction
       :up (swap! state update :selected-option #(mod (dec %) 3))
@@ -222,12 +193,12 @@
   (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
 
 (defn handle-interact []
-  (if (nil? (:talking-to @state))
-    (let [interaction-coord (tile->coord (interaction-tile))]
-      (when (contains? (:enemies @state) interaction-coord)
-        (swap! state merge {:talking-to interaction-coord
+  (if (nil? (:interacting-with @state))
+    (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
+      (if-let [enemy-id (tile-to-enemy (interaction-tile))]
+        (swap! state merge {:interacting-with enemy-id
                             :selected-option 0})))
-    (swap! state merge {:talking-to nil
+    (swap! state merge {:interacting-with nil
                         :selected-option nil})))
 
 (defn start-input-loop [channel]
@@ -296,8 +267,9 @@
 
 ;; Game Loop
 
-(defn start-game [context]
-  (reset! state initial-game-state)
+(defn start-game [context data]
+  (reset! state (merge initial-game-state
+                       (update data :enemies #(map-values tile->coord %))))
   (reset! move-q #queue [])
   (reset! ctx context)
   (let [input-chan (chan)
