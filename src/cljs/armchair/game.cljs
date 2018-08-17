@@ -71,7 +71,6 @@
         response-id (->> (:connections dialogue)
                          (find-first (fn [[start end]] (= start (:id selected-option))))
                          second)]
-    (.log js/console dialogue options response-id selected-option)
     (get (:lines dialogue) response-id)))
 
 ;; Textures
