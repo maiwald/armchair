@@ -53,11 +53,15 @@
                           (when (= label current-page) " slds-is-active"))}
          [:a {:class "slds-context-bar__label-action" :on-click handler} label]])]]]])
 
-(defn color-cell [item column]
+(defn badge [value color]
   [:span {:class "slds-badge"
-          :style {:color "rgba(255, 255, 255, .8)"
-                  :background-color (get item column)}}
-   (get item column)])
+          :style {:color "rgba(255, 255, 255, 1)"
+                  :background-color color}}
+   value])
+
+(defn color-cell [item column]
+  (let [color (get item column)]
+    [badge color color]))
 
 (defn add-button [label click-handler]
   [:button {:class "slds-button slds-button_neutral"

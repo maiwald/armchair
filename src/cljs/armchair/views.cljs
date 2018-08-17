@@ -3,7 +3,7 @@
             [reagent.core :as r]
             [armchair.game :refer [start-game end-game]]
             [armchair.slds :as slds]
-            [armchair.position :refer [apply-delta]]
+            [armchair.util :refer [translate-position]]
             [armchair.config :as config]
             [clojure.core.async :refer [put!]]))
 
@@ -12,10 +12,13 @@
 (def <sub (comp deref re-frame.core/subscribe))
 (def >evt re-frame.core/dispatch)
 
+(defn stop-e! [e]
+  (.preventDefault e)
+  (.stopPropagation e))
+
 (defn e-> [handler]
   (fn [e]
-    (.preventDefault e)
-    (.stopPropagation e)
+    (stop-e! e)
     (handler e)))
 
 (defn relative-pointer [e elem]
@@ -42,7 +45,7 @@
           (>evt [:start-dragging position-ids (e->graph-pointer %)]))))
 
 (defn graph-item [{:keys [position position-id]} component]
-  (let [dragging? (<sub [:dragging? position-id])]
+  (let [dragging? (<sub [:dragging-item? position-id])]
     [:div {:class ["graph__item"
                    (when dragging? "graph__item_is-dragging")]
            :on-mouse-down (start-dragging-handler #{position-id})
@@ -99,7 +102,7 @@
                    :width (str config/line-width "px")}}
      [:p text]
      [:div {:class "item-actions"
-            :on-mouse-down (e-> identity)}
+            :on-mouse-down stop-e!}
       [:div {:class "item-action"
              :on-click #(>evt [:delete-line id])}
        [icon "trash"]]
@@ -112,52 +115,51 @@
        [icon "link"]]]]))
 
 (defn line-form-modal []
-  (let [{:keys [line-id]} (<sub [:modal])
-        update-handler (partial record-update-handler :line line-id)]
-    (if-let [line (get (<sub [:lines]) line-id)]
-      (let [{:keys [id text character-id color]} line
-            characters (<sub [:characters])]
-        [slds/modal {:title (str "Line #" id)
-                     :close-handler #(>evt [:close-modal])
-                     :content [slds/form
-                               [slds/input-select {:label "Character"
-                                                   :on-change (update-handler :character-id)
-                                                   :options (map (fn [[k c]] [k (:display-name c)]) characters)
-                                                   :value character-id}]
-                               [slds/input-textarea {:label "Text"
-                                                     :on-change (update-handler :text)
-                                                     :value text}]]}]))))
+  (if-let [line-id (:line-id (<sub [:modal]))]
+    (let [line (<sub [:line line-id])
+          update-handler (partial record-update-handler :line line-id)]
+      [slds/modal {:title (str "Line #" line-id)
+                   :close-handler #(>evt [:close-modal])
+                   :content [slds/form
+                             [slds/input-select {:label "Character"
+                                                 :on-change (update-handler :character-id)
+                                                 :options (<sub [:character-options])
+                                                 :value (:character-id line)}]
+                             [slds/input-textarea {:label "Text"
+                                                   :on-change (update-handler :text)
+                                                   :value (:text line)}]]}])))
 
-(defn dialogue-component []
-  (let [{:keys [lines connections]} (<sub [:dialogue])]
-    [:div {:class "full-page"}
-     [:div {:class "new-item-button"}
-      [slds/add-button "New" #(>evt [:create-line])]]
-     [graph {:kind "line"
-             :items lines
-             :connections connections
-             :connection-transform (fn [{:keys [start end]}]
-                                     {:start (apply-delta start [(- config/line-width 15) 15])
-                                      :end (apply-delta end [15 15])})
-             :item-component line-component}]]))
+(defn dialogue-component [dialogue-id]
+  (if dialogue-id
+    (let [{:keys [lines connections]} (<sub [:dialogue dialogue-id])]
+      [:div {:class "full-page"}
+       [:div {:class "new-item-button"}
+        [slds/add-button "New" #(>evt [:create-line dialogue-id])]]
+       [graph {:kind "line"
+               :items lines
+               :connections connections
+               :connection-transform (fn [{:keys [start end]}]
+                                       {:start (translate-position start [(- config/line-width 15) 15])
+                                        :end (translate-position end [15 15])})
+               :item-component line-component}]])
+    [:span "No dialogue selected!"]))
 
 (defn character-form-modal []
-  (let [{:keys [character-id]} (<sub [:modal])
-        update-handler (partial record-update-handler :character character-id)]
-    (if-let [character (get (<sub [:characters]) character-id)]
-      (let [{:keys [display-name color]} character]
-        [slds/modal {:title display-name
-                     :close-handler #(>evt [:close-modal])
-                     :content [slds/form
-                               [slds/input-text {:label "Name"
-                                                 :on-change (update-handler :display-name)
-                                                 :value display-name}]
-                               [slds/input-text {:label "Color"
-                                                 :on-change (update-handler :color)
-                                                 :value color}]]}]))))
+  (if-let [character-id (:character-id (<sub [:modal]))]
+    (let [character (<sub [:character character-id])
+          update-handler (partial record-update-handler :character character-id)]
+      [slds/modal {:title (:display-name character)
+                   :close-handler #(>evt [:close-modal])
+                   :content [slds/form
+                             [slds/input-text {:label "Name"
+                                               :on-change (update-handler :display-name)
+                                               :value (:display-name character)}]
+                             [slds/input-text {:label "Color"
+                                               :on-change (update-handler :color)
+                                               :value (:color character)}]]}])))
 
 (defn character-management []
-  (let [characters (<sub [:characters])]
+  (let [characters (<sub [:character-list])]
     [slds/resource-page "Characters"
      {:columns [:id :display-name :color :lines :actions]
       :collection (vals characters)
@@ -170,25 +172,31 @@
       :new-resource #(>evt [:create-character])}]))
 
 (defn location-form-modal []
-  (let [{:keys [location-id]} (<sub [:modal])
-        update-handler (partial record-update-handler :location location-id)]
-    (if-let [location (get (<sub [:locations]) location-id)]
-      (let [display-name (:display-name location)]
-        [slds/modal {:title display-name
-                     :close-handler #(>evt [:close-modal])
-                     :content [slds/form
-                               [slds/input-text {:label "Name"
-                                                 :on-change (update-handler :display-name)
-                                                 :value display-name}]]}]))))
+  (if-let [location-id (:location-id (<sub [:modal]))]
+    (let [location (<sub [:location location-id])
+          update-handler (partial record-update-handler :location location-id)]
+      [slds/modal {:title (:display-name location)
+                   :close-handler #(>evt [:close-modal])
+                   :content [slds/form
+                             [slds/input-text {:label "Name"
+                                               :on-change (update-handler :display-name)
+                                               :value (:display-name location)}]]}])))
 
-(defn location-component [{:keys [id display-name] :as location}]
+(defn location-component [{:keys [id display-name dialogues] :as location}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "location"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-locations id]))
            :style {:width (str config/line-width "px")}}
      [:p {:class "name"} display-name]
+     [:ul {:class "location__characters"}
+      (for [dialogue dialogues]
+        ^{:key (str "location-dialogue-" id " - " (:id dialogue))}
+        [:li [:a {:style {:background-color (:character-color dialogue)}
+                  :on-mouse-down stop-e!
+                  :on-click #(>evt [:show-page "Dialogue" (:id dialogue)])}
+              (:character-name dialogue)]])]
      [:div {:class "item-actions"
-            :on-mouse-down (e-> identity)}
+            :on-mouse-down stop-e!}
       [:div {:class "item-action"
              :on-click #(>evt [:delete-location id])}
        [icon "trash"]]
@@ -209,24 +217,26 @@
              :items locations
              :connections connections
              :connection-transform (fn [{:keys [start end]}]
-                                     {:start (apply-delta start [(/ config/line-width 2) 15])
-                                      :end (apply-delta end [(/ config/line-width 2) 15])})
+                                     {:start (translate-position start [(/ config/line-width 2) 15])
+                                      :end (translate-position end [(/ config/line-width 2) 15])})
              :item-component location-component}]]))
 
-(defn game-canvas []
-  (let [canvas-ref (atom nil)
+(defn game-canvas [game-data]
+  (let [game-data (<sub [:game-data])
+        canvas-ref (atom nil)
         game-input (atom nil)
         key-listener (fn [e]
                        (when-let [action (case (.-code e)
-                                           ("ArrowUp" "KeyW") (put! @game-input [:move :up])
-                                           ("ArrowRight" "KeyD") (put! @game-input [:move :right])
-                                           ("ArrowDown" "KeyS") (put! @game-input [:move :down])
-                                           ("ArrowLeft" "KeyA") (put! @game-input [:move :left])
+                                           ("ArrowUp" "KeyW" "KeyK") (put! @game-input [:move :up])
+                                           ("ArrowRight" "KeyD" "KeyL") (put! @game-input [:move :right])
+                                           ("ArrowDown" "KeyS" "KeyJ") (put! @game-input [:move :down])
+                                           ("ArrowLeft" "KeyA" "KeyH") (put! @game-input [:move :left])
+                                           "Space" (put! @game-input [:interact])
                                            nil)]
                          (.preventDefault e)))]
     (r/create-class
       {:component-did-mount (fn []
-                              (reset! game-input (start-game (.getContext @canvas-ref "2d")))
+                              (reset! game-input (start-game (.getContext @canvas-ref "2d") game-data))
                               (.addEventListener js/document "keydown" key-listener))
        :component-will-unmount (fn []
                                  (.removeEventListener js/document "keydown" key-listener)
@@ -244,12 +254,12 @@
                                     :ref (fn [el] (reset! canvas-ref el))}]])})))
 
 (defn root []
-  (let [current-page (<sub [:current-page])
+  (let [{page-name :name page-payload :payload} (<sub [:current-page])
         pages (array-map
-                "Dialogue" [dialogue-component]
-                "Characters" [character-management]
+                "Game" [game-canvas]
                 "Locations" [location-management]
-                "Game" [game-canvas])
+                "Dialogue" [dialogue-component page-payload]
+                "Characters" [character-management])
         link-map (map
                    (fn [name] [name #(>evt [:show-page name])])
                    (keys pages))]
@@ -260,6 +270,6 @@
      [:a {:id "reset"
           :on-click #(>evt [:reset-db])} "reset"]
      [:div {:id "navigation"}
-      [slds/global-navigation link-map current-page]]
+      [slds/global-navigation link-map page-name]]
      [:div {:id "content"}
-      (get pages current-page [:div "Nothing"])]]))
+      (get pages page-name [:div "Nothing"])]]))

@@ -2,7 +2,7 @@
   (:require [clojure.core.async :refer [chan sliding-buffer put! take! go go-loop <! >!]]
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
-            [armchair.position :refer [apply-delta]]
+            [armchair.util :refer [find-first map-values translate-position]]
             [armchair.pathfinding :as path]))
 
 ;; Definitions
@@ -31,41 +31,55 @@
 
 (def initial-game-state
   {:highlight nil
-   :player (tile->coord [1 13])
-   :player-direction :up
-   :level [[ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
-           [ 0 1 0 1 1 1 1 1 1 1 1 0 1 1 ]
-           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
-           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
-           [ 0 1 0 1 0 0 1 1 1 1 1 0 1 0 ]
-           [ 0 0 0 1 1 1 1 0 0 1 0 0 1 0 ]
-           [ 0 0 1 1 0 0 1 0 0 1 0 1 1 0 ]
-           [ 0 1 1 1 1 0 1 0 0 1 1 1 1 0 ]
-           [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
-           [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
-           [ 0 1 0 1 1 0 1 1 1 1 0 0 1 0 ]
-           [ 0 0 0 0 1 0 1 0 0 1 0 0 0 0 ]
-           [ 0 1 0 1 1 1 1 1 1 1 1 0 1 0 ]
-           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
-           [ 0 1 1 1 0 0 0 0 0 0 1 1 1 0 ]
-           [ 0 1 0 1 0 0 1 1 1 1 1 0 1 0 ]
-           [ 0 1 0 1 1 1 1 0 0 1 0 0 1 0 ]
-           [ 0 1 1 1 0 0 1 0 0 1 0 1 1 0 ]
-           [ 0 1 1 1 1 0 1 0 0 1 0 1 1 0 ]
-           [ 0 0 0 0 0 0 1 0 0 1 0 1 1 0 ]
-           [ 1 1 1 1 1 0 1 1 0 1 0 1 0 0 ]
-           [ 0 1 1 1 1 0 1 1 0 1 1 1 0 0 ]
-           [ 0 1 0 1 1 0 1 0 0 1 0 1 0 0 ]
-           [ 0 1 0 1 1 1 1 1 1 1 0 1 1 0 ]
-           [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
-           ]
-   })
+   :player (tile->coord [0 12])
+   :player-direction :right
+   :interacting-with nil
+   :interacting-line-id nil
+   :selected-option-index nil})
+
+(defn ^boolean walkable? [tile]
+  (let [level (:level @state)
+        enemy-tiles (->> @state :enemies vals (map coord->tile) set)]
+    (and (= (get-in level tile) 1)
+         (not (contains? enemy-tiles tile)))))
+
+(defn interaction-tile [state]
+  (translate-position
+    (coord->tile (:player state))
+    (direction-map (:player-direction state))))
+
+(defn ^boolean interacting? [state]
+  (some? (:interacting-with state)))
+
+(defn interacting-line [state]
+  (get-in state [:dialogues
+                 (:interacting-with state)
+                 :lines
+                 (:interacting-line-id state)]))
+
+(defn interacting-options [state]
+  (let [dialogue (get-in state [:dialogues (:interacting-with state)])
+        option-ids (->> (:connections dialogue)
+                        (filter (fn [[start end]] (= start (:interacting-line-id state))))
+                        (map second))]
+    (vals (select-keys (:lines dialogue) option-ids))))
+
+(defn interacting-response [state]
+  (let [dialogue (get-in state [:dialogues (:interacting-with state)])
+        options (interacting-options state)
+        selected-option (get (vec options) (:selected-option-index state))
+        response-id (->> (:connections dialogue)
+                         (find-first (fn [[start end]] (= start (:id selected-option))))
+                         second)]
+    (.log js/console dialogue options response-id selected-option)
+    (get (:lines dialogue) response-id)))
 
 ;; Textures
 
 (def textures ["grass"
                "wall"
                "player"
+               "enemy"
                "arrow"])
 
 (def texture-atlas (atom nil))
@@ -108,58 +122,127 @@
 (defn draw-player [player]
   (draw-texture :player player))
 
+(defn draw-enemies [coords]
+  (doseq [coord coords]
+    (draw-texture :enemy coord)))
+
 (defn draw-highlight [highlight-coord]
   (when highlight-coord
-    (doto @ctx
-      c/save!
-      (c/set-stroke-style! "rgb(255, 255, 0)")
-      (c/set-line-width! "2")
-      (c/stroke-rect! highlight-coord tile-size tile-size)
-      c/restore!)))
+    (c/save! @ctx)
+    (c/set-stroke-style! @ctx "rgb(255, 255, 0)")
+    (c/set-line-width! @ctx "2")
+    (c/stroke-rect! @ctx highlight-coord tile-size tile-size)
+    (c/restore! @ctx)))
 
 (defn draw-path [{:keys [level player highlight]}]
   (if highlight
     (doseq [path-tile (path/a-star
-                        level
+                        walkable?
                         (coord->tile player)
                         (coord->tile highlight))]
-      (doto @ctx
-        c/save!
-        (c/set-fill-style! "rgba(255, 255, 0, .2)")
-        (c/fill-rect! (tile->coord path-tile) tile-size tile-size)
-        c/restore!))))
+      (c/save! @ctx)
+      (c/set-fill-style! @ctx "rgba(255, 255, 0, .2)")
+      (c/fill-rect! @ctx (tile->coord path-tile) tile-size tile-size)
+      (c/restore! @ctx))))
+
+(defn draw-direction-indicator [{:keys [player player-direction]}]
+  (let [rotation (player-direction {:up 0
+                                    :right 90
+                                    :down 180
+                                    :left 270})]
+    (draw-texture-rotated :arrow player rotation)))
+
+(defn draw-dialogue-box [text options selected-option]
+  (let [w 600
+        h 360
+        x (/ (- (c/width @ctx) w) 2)
+        y (/ (- (c/height @ctx) h) 2)]
+    (c/save! @ctx)
+    (c/set-fill-style! @ctx "rgba(237, 224, 142, .8)")
+    (c/fill-rect! @ctx [x y] w h)
+    (c/set-stroke-style! @ctx "rgb(200, 200, 0)")
+    (c/stroke-rect! @ctx [x y] w h)
+
+    (c/set-fill-style! @ctx "rgb(0, 0, 0)")
+    (c/set-font! @ctx "40px serif")
+    (c/set-baseline! @ctx "top")
+    (c/draw-text! @ctx "Dialogue!" (translate-position [x y] [20 20]))
+    (c/set-font! @ctx "18px serif")
+    (c/draw-textbox! @ctx text (translate-position [x y] [20 70]) (- w 40) 230)
+
+    (c/set-baseline! @ctx "middle")
+    (doseq [[idx option] (map-indexed vector options)]
+      (let [w (- w 40)
+            h 24
+            offset 6
+            coord (translate-position [x y] [20 (+ 220 (* idx (+ offset h)))])]
+        (c/set-fill-style! @ctx "rgba(0, 0, 0, .2)")
+        (c/fill-rect! @ctx coord w h)
+
+        (if (= selected-option idx)
+          (c/set-stroke-style! @ctx "rgb(255, 0, 0)")
+          (c/set-stroke-style! @ctx "rgb(0, 0, 0)"))
+        (c/set-line-width! @ctx "1")
+        (c/stroke-rect! @ctx coord w h)
+
+        (c/set-fill-style! @ctx "rgb(0, 0, 0)")
+        (c/draw-text! @ctx option (translate-position coord [2 (/ h 2)]))))
+    (c/restore! @ctx)))
 
 (defn render [view-state]
   (when @ctx
     (c/clear! @ctx)
     (draw-level (:level @state))
-    (draw-path @state)
+    (when-not (interacting? @state)
+      (draw-path @state))
     (draw-player (:player view-state))
-    (draw-highlight (:highlight @state)))
-    (draw-texture-rotated
-      :arrow
-      (:player view-state)
-      ((:player-direction view-state) {:up 0
-                                       :right 90
-                                       :down 180
-                                       :left 270})))
+    (draw-enemies (-> view-state :enemies vals))
+    (when-not (interacting? @state)
+      (draw-highlight (:highlight @state)))
+    (draw-direction-indicator view-state)
+    (when (interacting? @state)
+      (draw-dialogue-box
+        (:text (interacting-line @state))
+        (map :text (interacting-options @state))
+        (:selected-option-index @state)))))
 
 ;; Input Handlers
 
 (def move-q (atom #queue []))
 
 (defn handle-move [direction]
-  (swap! move-q conj direction))
+  (if (interacting? @state)
+    (let [option-count (count (interacting-options @state))]
+      (case direction
+        :up (swap! state update :selected-option-index #(mod (dec %) option-count))
+        :down (swap! state update :selected-option-index #(mod (inc %) option-count))
+        :else))
+    (swap! move-q conj direction)))
 
 (defn handle-cursor-position [coord]
   (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
+
+(defn handle-interact []
+  (if (interacting? @state)
+    (if-let [options (seq (interacting-options @state))]
+      (swap! state merge {:interacting-line-id (:id (interacting-response @state))
+                          :selected-option-index 0})
+      (swap! state merge {:interacting-with nil
+                          :interacting-line-id nil
+                          :selected-option-index nil}))
+    (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
+      (if-let [enemy-id (tile-to-enemy (interaction-tile @state))]
+        (let [dialogue (get-in @state [:dialogues enemy-id])]
+          (swap! state merge {:interacting-with enemy-id
+                              :interacting-line-id (:initial-line-id dialogue)
+                              :selected-option-index 0}))))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
            (let [handler (case cmd
                            :cursor-position handle-cursor-position
                            :move handle-move
-                           ; :animate handle-animate
+                           :interact handle-interact
                            identity)]
              (handler payload)
              (recur (<! channel)))))
@@ -211,17 +294,18 @@
   (go-loop [_ (<! channel)]
            (when-let [direction (first @move-q)]
              (let [position-delta (direction-map direction)
-                   new-position (apply-delta (coord->tile (:player @state)) position-delta)]
+                   new-position (translate-position (coord->tile (:player @state)) position-delta)]
                (swap! state assoc :player-direction direction)
-               (if (path/walkable? (:level @state) new-position)
+               (if (walkable? new-position)
                  (animate-move new-position channel)
                  (when-not (empty? (swap! move-q pop)) (put! channel true)))))
            (recur (<! channel))))
 
 ;; Game Loop
 
-(defn start-game [context]
-  (reset! state initial-game-state)
+(defn start-game [context data]
+  (reset! state (merge initial-game-state
+                       (update data :enemies #(map-values tile->coord %))))
   (reset! move-q #queue [])
   (reset! ctx context)
   (let [input-chan (chan)
