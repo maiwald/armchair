@@ -42,10 +42,13 @@
     (and (= (get-in level tile) 1)
          (not (contains? enemy-tiles tile)))))
 
-(defn interaction-tile []
+(defn interaction-tile [state]
   (translate-position
-    (coord->tile (:player @state))
-    (direction-map (:player-direction @state))))
+    (coord->tile (:player state))
+    (direction-map (:player-direction state))))
+
+(defn ^boolean interacting? [state]
+  (some? (:interacting-with state)))
 
 ;; Textures
 
@@ -126,79 +129,78 @@
     (draw-texture-rotated :arrow player rotation)))
 
 (defn draw-dialogue-box [{:keys [interacting-with selected-option dialogues]}]
-  (when (some? interacting-with)
-    (let [w 600
-          h 360
-          x (/ (- (c/width @ctx) w) 2)
-          y (/ (- (c/height @ctx) h) 2)
-          text (get dialogues interacting-with)
-          options '("My name does not matter!" "I could ask you the same!" "We have met before. In the land far beyond.")]
-      (c/save! @ctx)
-      (c/set-fill-style! @ctx "rgba(237, 224, 142, .8)")
-      (c/fill-rect! @ctx [x y] w h)
-      (c/set-stroke-style! @ctx "rgb(200, 200, 0)")
-      (c/stroke-rect! @ctx [x y] w h)
+  (let [w 600
+        h 360
+        x (/ (- (c/width @ctx) w) 2)
+        y (/ (- (c/height @ctx) h) 2)
+        text (get dialogues interacting-with)
+        options '("My name does not matter!" "I could ask you the same!" "We have met before. In the land far beyond.")]
+    (c/save! @ctx)
+    (c/set-fill-style! @ctx "rgba(237, 224, 142, .8)")
+    (c/fill-rect! @ctx [x y] w h)
+    (c/set-stroke-style! @ctx "rgb(200, 200, 0)")
+    (c/stroke-rect! @ctx [x y] w h)
 
-      (c/set-fill-style! @ctx "rgb(0, 0, 0)")
-      (c/set-font! @ctx "40px serif")
-      (c/set-baseline! @ctx "top")
-      (c/draw-text! @ctx "Dialogue!" (translate-position [x y] [20 20]))
-      (c/set-font! @ctx "18px serif")
-      (c/draw-textbox! @ctx text (translate-position [x y] [20 70]) (- w 40) 230)
+    (c/set-fill-style! @ctx "rgb(0, 0, 0)")
+    (c/set-font! @ctx "40px serif")
+    (c/set-baseline! @ctx "top")
+    (c/draw-text! @ctx "Dialogue!" (translate-position [x y] [20 20]))
+    (c/set-font! @ctx "18px serif")
+    (c/draw-textbox! @ctx text (translate-position [x y] [20 70]) (- w 40) 230)
 
-      (c/set-baseline! @ctx "middle")
-      (doseq [[idx option] (map-indexed vector options)]
-        (let [w (- w 40)
-              h 24
-              offset 6
-              coord (translate-position [x y] [20 (+ 220 (* idx (+ offset h)))])]
-          (c/set-fill-style! @ctx "rgba(0, 0, 0, .2)")
-          (c/fill-rect! @ctx coord w h)
+    (c/set-baseline! @ctx "middle")
+    (doseq [[idx option] (map-indexed vector options)]
+      (let [w (- w 40)
+            h 24
+            offset 6
+            coord (translate-position [x y] [20 (+ 220 (* idx (+ offset h)))])]
+        (c/set-fill-style! @ctx "rgba(0, 0, 0, .2)")
+        (c/fill-rect! @ctx coord w h)
 
-          (if (= selected-option idx)
-            (c/set-stroke-style! @ctx "rgb(255, 0, 0)")
-            (c/set-stroke-style! @ctx "rgb(0, 0, 0)"))
-          (c/set-line-width! @ctx "1")
-          (c/stroke-rect! @ctx coord w h)
+        (if (= selected-option idx)
+          (c/set-stroke-style! @ctx "rgb(255, 0, 0)")
+          (c/set-stroke-style! @ctx "rgb(0, 0, 0)"))
+        (c/set-line-width! @ctx "1")
+        (c/stroke-rect! @ctx coord w h)
 
-          (c/set-fill-style! @ctx "rgb(0, 0, 0)")
-          (c/draw-text! @ctx option (translate-position coord [2 (/ h 2)]))))
-      (c/restore! @ctx))))
+        (c/set-fill-style! @ctx "rgb(0, 0, 0)")
+        (c/draw-text! @ctx option (translate-position coord [2 (/ h 2)]))))
+    (c/restore! @ctx)))
 
 (defn render [view-state]
   (when @ctx
     (c/clear! @ctx)
     (draw-level (:level @state))
-    (draw-path @state)
+    (when-not (interacting? @state) (draw-path @state))
     (draw-player (:player view-state))
     (draw-enemies (-> view-state :enemies vals))
-    (draw-highlight (:highlight @state))
+    (when-not (interacting? @state) (draw-highlight (:highlight @state)))
     (draw-direction-indicator view-state)
-    (draw-dialogue-box @state)))
+    (when (interacting? @state) (draw-dialogue-box @state))))
 
 ;; Input Handlers
 
 (def move-q (atom #queue []))
 
 (defn handle-move [direction]
-  (if (nil? (:interacting-with @state))
-    (swap! move-q conj direction)
+  (if (interacting? @state)
     (case direction
       :up (swap! state update :selected-option #(mod (dec %) 3))
       :down (swap! state update :selected-option #(mod (inc %) 3))
-      :else)))
+      :else)
+    (swap! move-q conj direction)))
 
 (defn handle-cursor-position [coord]
   (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
 
 (defn handle-interact []
-  (if (nil? (:interacting-with @state))
-    (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
-      (if-let [enemy-id (tile-to-enemy (interaction-tile))]
-        (swap! state merge {:interacting-with enemy-id
-                            :selected-option 0})))
+  (if (interacting? @state)
     (swap! state merge {:interacting-with nil
-                        :selected-option nil})))
+                        :selected-option nil})
+    (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
+      (if-let [enemy-id (tile-to-enemy (interaction-tile @state))]
+          (swap! state merge {:interacting-with enemy-id
+                              :selected-option 0}))))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
