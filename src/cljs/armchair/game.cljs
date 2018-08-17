@@ -34,6 +34,7 @@
    :player (tile->coord [0 12])
    :player-direction :right
    :interacting-with nil
+   :interacting-line nil
    :selected-option nil})
 
 (defn ^boolean walkable? [tile]
@@ -128,12 +129,12 @@
                                     :left 270})]
     (draw-texture-rotated :arrow player rotation)))
 
-(defn draw-dialogue-box [{:keys [interacting-with selected-option dialogues]}]
+(defn draw-dialogue-box [{:keys [interacting-with interacting-line selected-option dialogues]}]
   (let [w 600
         h 360
         x (/ (- (c/width @ctx) w) 2)
         y (/ (- (c/height @ctx) h) 2)
-        text (get dialogues interacting-with)
+        text (get-in dialogues [interacting-with :lines interacting-line :text])
         options '("My name does not matter!" "I could ask you the same!" "We have met before. In the land far beyond.")]
     (c/save! @ctx)
     (c/set-fill-style! @ctx "rgba(237, 224, 142, .8)")
@@ -199,7 +200,14 @@
                         :selected-option nil})
     (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
       (if-let [enemy-id (tile-to-enemy (interaction-tile @state))]
+        (let [dialogue (get-in @state [:dialogues enemy-id])
+              interacting-line (get-in @state [:dialogues
+                                               enemy-id
+                                               :lines
+                                               (:initial-line-id dialogue)
+                                               :id])]
           (swap! state merge {:interacting-with enemy-id
+                              :interacting-line interacting-line
                               :selected-option 0}))))))
 
 (defn start-input-loop [channel]

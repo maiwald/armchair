@@ -135,15 +135,21 @@
   :<- [:db-locations]
   :<- [:db-dialogues]
   :<- [:db-lines]
-  (fn [[locations dialogues lines] _]
+  :<- [:db-line-connections]
+  (fn [[locations dialogues lines connections] _]
     (let [location (get locations 1)
-          location-dialogues (where-map :location-id 1 dialogues)]
+          location-dialogues (->> dialogues vals (where :location-id 1))]
       {:level (:level location)
        :enemies (:enemies location)
-       :dialogues (into {} (map
-                             (fn [[_ dialogue]]
-                               (let [line (get lines (:initial-line-id dialogue))]
-                                 [(:character-id line)
-                                  (:text line)]))
-                             location-dialogues))})))
+       :dialogues (into {} (map (fn [{:keys [id initial-line-id]}]
+                                  (let [initial-line (get lines initial-line-id)
+                                        dialogue-lines (where-map :dialogue-id id lines)]
+                                    [(:character-id initial-line)
+                                     {:initial-line-id initial-line-id
+                                      :lines dialogue-lines
+                                      :connections (filter (fn [[start end]]
+                                                            (and (contains? dialogue-lines start)
+                                                                 (contains? dialogue-lines end)))
+                                                          connections)}]))
+                                location-dialogues))})))
 
