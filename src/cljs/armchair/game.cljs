@@ -34,7 +34,7 @@
    :player (tile->coord [0 12])
    :player-direction :right
    :interacting-with nil
-   :interacting-line nil
+   :interacting-line-id nil
    :selected-option nil})
 
 (defn ^boolean walkable? [tile]
@@ -50,6 +50,20 @@
 
 (defn ^boolean interacting? [state]
   (some? (:interacting-with state)))
+
+(defn interacting-line [state]
+  (get-in state [:dialogues
+                 (:interacting-with state)
+                 :lines
+                 (:interacting-line-id state)
+                 :text]))
+
+(defn interacting-options [state]
+  (let [dialogue (get-in state [:dialogues (:interacting-with state)])
+        option-ids (->> (:connections dialogue)
+                        (filter (fn [[start end]] (= start (:interacting-line-id state))))
+                        (map second))]
+    (map :text (vals (select-keys (:lines dialogue) option-ids)))))
 
 ;; Textures
 
@@ -129,13 +143,11 @@
                                     :left 270})]
     (draw-texture-rotated :arrow player rotation)))
 
-(defn draw-dialogue-box [{:keys [interacting-with interacting-line selected-option dialogues]}]
+(defn draw-dialogue-box [text options selected-option]
   (let [w 600
         h 360
         x (/ (- (c/width @ctx) w) 2)
-        y (/ (- (c/height @ctx) h) 2)
-        text (get-in dialogues [interacting-with :lines interacting-line :text])
-        options '("My name does not matter!" "I could ask you the same!" "We have met before. In the land far beyond.")]
+        y (/ (- (c/height @ctx) h) 2)]
     (c/save! @ctx)
     (c/set-fill-style! @ctx "rgba(237, 224, 142, .8)")
     (c/fill-rect! @ctx [x y] w h)
@@ -172,12 +184,18 @@
   (when @ctx
     (c/clear! @ctx)
     (draw-level (:level @state))
-    (when-not (interacting? @state) (draw-path @state))
+    (when-not (interacting? @state)
+      (draw-path @state))
     (draw-player (:player view-state))
     (draw-enemies (-> view-state :enemies vals))
-    (when-not (interacting? @state) (draw-highlight (:highlight @state)))
+    (when-not (interacting? @state)
+      (draw-highlight (:highlight @state)))
     (draw-direction-indicator view-state)
-    (when (interacting? @state) (draw-dialogue-box @state))))
+    (when (interacting? @state)
+      (draw-dialogue-box
+        (interacting-line @state)
+        (interacting-options @state)
+        (:selected-option @state)))))
 
 ;; Input Handlers
 
@@ -185,10 +203,11 @@
 
 (defn handle-move [direction]
   (if (interacting? @state)
-    (case direction
-      :up (swap! state update :selected-option #(mod (dec %) 3))
-      :down (swap! state update :selected-option #(mod (inc %) 3))
-      :else)
+    (let [option-count (count (interacting-options @state))]
+      (case direction
+        :up (swap! state update :selected-option #(mod (dec %) option-count))
+        :down (swap! state update :selected-option #(mod (inc %) option-count))
+        :else))
     (swap! move-q conj direction)))
 
 (defn handle-cursor-position [coord]
@@ -200,14 +219,9 @@
                         :selected-option nil})
     (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
       (if-let [enemy-id (tile-to-enemy (interaction-tile @state))]
-        (let [dialogue (get-in @state [:dialogues enemy-id])
-              interacting-line (get-in @state [:dialogues
-                                               enemy-id
-                                               :lines
-                                               (:initial-line-id dialogue)
-                                               :id])]
+        (let [dialogue (get-in @state [:dialogues enemy-id])]
           (swap! state merge {:interacting-with enemy-id
-                              :interacting-line interacting-line
+                              :interacting-line-id (:initial-line-id dialogue)
                               :selected-option 0}))))))
 
 (defn start-input-loop [channel]
