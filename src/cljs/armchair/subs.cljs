@@ -93,13 +93,13 @@
   :<- [:dragged-positions]
   (fn [[lines connections characters positions] [_ dialogue-id]]
     (let [dialogue-lines (where-map :dialogue-id dialogue-id lines)
-          dialogue-connections connections
-          position-map (map-values #(positions (:position-id %)) dialogue-lines)]
+          dialogue-connections (filter (fn [[start end]] (and (contains? dialogue-lines start)
+                                                              (contains? dialogue-lines end))) connections)]
       {:lines (map-values #(assoc %
                                   :position (get positions (:position-id %))
                                   :character-color (get-in characters [(:character-id %) :color]))
                           dialogue-lines)
-       :connections connections})))
+       :connections dialogue-connections})))
 
 (reg-sub
   :location
@@ -116,20 +116,19 @@
   :<- [:db-location-connections]
   :<- [:dragged-positions]
   (fn [[locations dialogues lines characters connections positions] _]
-    (let [position-map (map-values #(positions (:position-id %)) locations)]
-      {:locations (map-values (fn [location]
-                                (assoc location
-                                       :position (get positions (:position-id location))
-                                       :dialogues (->> dialogues
-                                                       vals
-                                                       (where :location-id (:id location))
-                                                       (map #(let [line (get lines (:initial-line-id %))
-                                                                   character (get characters (:character-id line))]
-                                                               (assoc %
-                                                                      :character-name (:display-name character)
-                                                                      :character-color (:color character)))))))
-                              locations)
-       :connections (map sort connections)})))
+    {:locations (map-values (fn [location]
+                              (assoc location
+                                     :position (get positions (:position-id location))
+                                     :dialogues (->> dialogues
+                                                     vals
+                                                     (where :location-id (:id location))
+                                                     (map #(let [line (get lines (:initial-line-id %))
+                                                                 character (get characters (:character-id line))]
+                                                             (assoc %
+                                                                    :character-name (:display-name character)
+                                                                    :character-color (:color character)))))))
+                            locations)
+     :connections (map sort connections)}))
 
 (reg-sub
   :game-data
