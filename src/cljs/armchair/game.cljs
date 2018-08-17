@@ -2,7 +2,7 @@
   (:require [clojure.core.async :refer [chan sliding-buffer put! take! go go-loop <! >!]]
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
-            [armchair.util :refer [map-values translate-position]]
+            [armchair.util :refer [find-first map-values translate-position]]
             [armchair.pathfinding :as path]))
 
 ;; Definitions
@@ -35,7 +35,7 @@
    :player-direction :right
    :interacting-with nil
    :interacting-line-id nil
-   :selected-option nil})
+   :selected-option-index nil})
 
 (defn ^boolean walkable? [tile]
   (let [level (:level @state)
@@ -55,15 +55,24 @@
   (get-in state [:dialogues
                  (:interacting-with state)
                  :lines
-                 (:interacting-line-id state)
-                 :text]))
+                 (:interacting-line-id state)]))
 
 (defn interacting-options [state]
   (let [dialogue (get-in state [:dialogues (:interacting-with state)])
         option-ids (->> (:connections dialogue)
                         (filter (fn [[start end]] (= start (:interacting-line-id state))))
                         (map second))]
-    (map :text (vals (select-keys (:lines dialogue) option-ids)))))
+    (vals (select-keys (:lines dialogue) option-ids))))
+
+(defn interacting-response [state]
+  (let [dialogue (get-in state [:dialogues (:interacting-with state)])
+        options (interacting-options state)
+        selected-option (get (vec options) (:selected-option-index state))
+        response-id (->> (:connections dialogue)
+                         (find-first (fn [[start end]] (= start (:id selected-option))))
+                         second)]
+    (.log js/console dialogue options response-id selected-option)
+    (get (:lines dialogue) response-id)))
 
 ;; Textures
 
@@ -193,9 +202,9 @@
     (draw-direction-indicator view-state)
     (when (interacting? @state)
       (draw-dialogue-box
-        (interacting-line @state)
-        (interacting-options @state)
-        (:selected-option @state)))))
+        (:text (interacting-line @state))
+        (map :text (interacting-options @state))
+        (:selected-option-index @state)))))
 
 ;; Input Handlers
 
@@ -205,8 +214,8 @@
   (if (interacting? @state)
     (let [option-count (count (interacting-options @state))]
       (case direction
-        :up (swap! state update :selected-option #(mod (dec %) option-count))
-        :down (swap! state update :selected-option #(mod (inc %) option-count))
+        :up (swap! state update :selected-option-index #(mod (dec %) option-count))
+        :down (swap! state update :selected-option-index #(mod (inc %) option-count))
         :else))
     (swap! move-q conj direction)))
 
@@ -215,14 +224,18 @@
 
 (defn handle-interact []
   (if (interacting? @state)
-    (swap! state merge {:interacting-with nil
-                        :selected-option nil})
+    (if-let [options (seq (interacting-options @state))]
+      (swap! state merge {:interacting-line-id (:id (interacting-response @state))
+                          :selected-option-index 0})
+      (swap! state merge {:interacting-with nil
+                          :interacting-line-id nil
+                          :selected-option-index nil}))
     (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
       (if-let [enemy-id (tile-to-enemy (interaction-tile @state))]
         (let [dialogue (get-in @state [:dialogues enemy-id])]
           (swap! state merge {:interacting-with enemy-id
                               :interacting-line-id (:initial-line-id dialogue)
-                              :selected-option 0}))))))
+                              :selected-option-index 0}))))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]

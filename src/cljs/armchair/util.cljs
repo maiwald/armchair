@@ -24,3 +24,5 @@
 (defn where-map [property value coll]
   (filter-map #(= (property %) value) coll))
 
+(defn find-first [pred? coll]
+  (reduce #(when (pred? %2) (reduced %2)) nil coll))
