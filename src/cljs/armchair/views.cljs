@@ -227,10 +227,10 @@
         game-input (atom nil)
         key-listener (fn [e]
                        (when-let [action (case (.-code e)
-                                           ("ArrowUp" "KeyW") (put! @game-input [:move :up])
-                                           ("ArrowRight" "KeyD") (put! @game-input [:move :right])
-                                           ("ArrowDown" "KeyS") (put! @game-input [:move :down])
-                                           ("ArrowLeft" "KeyA") (put! @game-input [:move :left])
+                                           ("ArrowUp" "KeyW" "KeyK") (put! @game-input [:move :up])
+                                           ("ArrowRight" "KeyD" "KeyL") (put! @game-input [:move :right])
+                                           ("ArrowDown" "KeyS" "KeyJ") (put! @game-input [:move :down])
+                                           ("ArrowLeft" "KeyA" "KeyH") (put! @game-input [:move :left])
                                            "Space" (put! @game-input [:interact])
                                            nil)]
                          (.preventDefault e)))]
