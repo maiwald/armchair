@@ -8,3 +8,5 @@ out
 .nrepl-port
 .cljs_rhino_repl
 .sass-cache
+.cljs_nashorn_repl/
+nashorn_code_cache

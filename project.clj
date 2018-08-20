@@ -1,7 +1,7 @@
 (defproject armchair "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.9.0"]
-                 [org.clojure/clojurescript "1.9.946"]
-                 [reagent "0.8.0"]
+                 [org.clojure/clojurescript "1.10.339"]
+                 [reagent "0.8.1"]
                  [re-frame "0.10.5"]
                  [tailrecursion/cljs-priority-map "1.2.1"]]
 
@@ -19,9 +19,10 @@
   {:dev
    {:dependencies [[binaryage/devtools "0.9.10"]
                    [figwheel-sidecar "0.5.16"]
-                   [cider/piggieback "0.3.3"]
-                   [day8.re-frame/re-frame-10x "0.2.1"]]
-    :plugins      [[lein-figwheel "0.5.16"]]
+                   [cider/piggieback "0.3.8"]
+                   [day8.re-frame/re-frame-10x "0.3.3-react16"]]
+    :plugins      [[lein-figwheel "0.5.16"]
+                   [lein-ancient "0.6.15"]]
     :source-paths ["src/cljs" "dev"]
     :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
     }}
