@@ -32,10 +32,7 @@
 (def initial-game-state
   {:highlight nil
    :player (tile->coord [0 12])
-   :player-direction :right
-   :interacting-with nil
-   :interacting-line-id nil
-   :selected-option-index nil})
+   :player-direction :right})
 
 (defn ^boolean walkable? [tile]
   (let [level (:level @state)
@@ -49,25 +46,25 @@
     (direction-map (:player-direction state))))
 
 (defn ^boolean interacting? [state]
-  (some? (:interacting-with state)))
+  (contains? state :interaction))
 
 (defn interacting-line [state]
-  (get-in state [:dialogues
-                 (:interacting-with state)
-                 :lines
-                 (:interacting-line-id state)]))
+  (let [{:keys [character-id line-id]} (:interaction state)]
+    (get-in state [:dialogues character-id :lines line-id])))
 
-(defn interacting-options [state]
-  (let [dialogue (get-in state [:dialogues (:interacting-with state)])
+(defn interaction-options [state]
+  (let [{:keys [character-id line-id]} (:interaction state)
+        dialogue (get-in state [:dialogues character-id])
         option-ids (->> (:connections dialogue)
-                        (filter (fn [[start end]] (= start (:interacting-line-id state))))
+                        (filter (fn [[start end]] (= start line-id)))
                         (map second))]
     (vals (select-keys (:lines dialogue) option-ids))))
 
-(defn interacting-response [state]
-  (let [dialogue (get-in state [:dialogues (:interacting-with state)])
-        options (interacting-options state)
-        selected-option (get (vec options) (:selected-option-index state))
+(defn interaction-response [state]
+  (let [{:keys [character-id selected-option-index]} (:interaction state)
+        dialogue (get-in state [:dialogues character-id])
+        options (interaction-options state)
+        selected-option (get (vec options) selected-option-index)
         response-id (->> (:connections dialogue)
                          (find-first (fn [[start end]] (= start (:id selected-option))))
                          second)]
@@ -202,8 +199,8 @@
     (when (interacting? @state)
       (draw-dialogue-box
         (:text (interacting-line @state))
-        (map :text (interacting-options @state))
-        (:selected-option-index @state)))))
+        (map :text (interaction-options @state))
+        (get-in @state [:interaction :selected-option-index])))))
 
 ;; Input Handlers
 
@@ -211,10 +208,10 @@
 
 (defn handle-move [direction]
   (if (interacting? @state)
-    (let [option-count (count (interacting-options @state))]
+    (let [option-count (count (interaction-options @state))]
       (case direction
-        :up (swap! state update :selected-option-index #(mod (dec %) option-count))
-        :down (swap! state update :selected-option-index #(mod (inc %) option-count))
+        :up (swap! state update-in [:interaction :selected-option-index] #(mod (dec %) option-count))
+        :down (swap! state update-in [:interaction :selected-option-index] #(mod (inc %) option-count))
         :else))
     (swap! move-q conj direction)))
 
@@ -223,18 +220,16 @@
 
 (defn handle-interact []
   (if (interacting? @state)
-    (if-let [options (seq (interacting-options @state))]
-      (swap! state merge {:interacting-line-id (:id (interacting-response @state))
-                          :selected-option-index 0})
-      (swap! state merge {:interacting-with nil
-                          :interacting-line-id nil
-                          :selected-option-index nil}))
+    (if-let [options (seq (interaction-options @state))]
+      (swap! state update :interaction merge {:line-id (:id (interaction-response @state))
+                                              :selected-option-index 0})
+      (swap! state dissoc :interaction))
     (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
       (if-let [enemy-id (tile-to-enemy (interaction-tile @state))]
         (let [dialogue (get-in @state [:dialogues enemy-id])]
-          (swap! state merge {:interacting-with enemy-id
-                              :interacting-line-id (:initial-line-id dialogue)
-                              :selected-option-index 0}))))))
+          (swap! state assoc :interaction {:character-id enemy-id
+                                           :line-id (:initial-line-id dialogue)
+                                           :selected-option-index 0}))))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
