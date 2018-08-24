@@ -1,4 +1,69 @@
-(ns armchair.db)
+(ns armchair.db
+  (:require [clojure.spec.alpha :as s]
+            [clojure.string :as string]
+            [clojure.set :refer [subset?]]))
+
+(s/def ::position (s/tuple integer? integer?))
+
+(s/def ::id pos-int?)
+(s/def ::character-id ::id)
+(s/def ::dialogue-id ::id)
+(s/def ::line-id ::id)
+(s/def ::initial-line-id ::line-id)
+(s/def ::location-id ::id)
+(s/def ::position-id ::id)
+
+(s/def ::entity-map (s/every (fn [[k v]] (= k (:id v)))))
+
+(s/def ::directed-connection (s/tuple ::id ::id))
+(s/def ::undirected-connection (s/coll-of ::id :kind set? :count 2))
+
+(s/def ::text #(not (string/blank? %)))
+(s/def ::display-name ::text)
+(s/def ::color ::text)
+
+(s/def ::pointer ::position)
+
+(s/def ::location (s/keys :req-un [::id ::position-id ::display-name]))
+(s/def ::locations (s/and (s/map-of ::location-id ::location)
+                          ::entity-map))
+(s/def ::location-connections (s/coll-of ::undirected-connection :kind set?))
+
+(s/def ::character (s/keys :req-un [::id ::display-name ::color]))
+(s/def ::characters (s/and (s/map-of ::character-id ::character)
+                           ::entity-map))
+
+(s/def ::line (s/keys :req-un [::id ::character-id ::text ::dialogue-id ::position-id]))
+(s/def ::lines (s/and (s/map-of ::line-id ::line)
+                      ::entity-map))
+
+(s/def ::dialogue (s/keys :req-un [::id ::initial-line-id ::location-id ::display-name]))
+(s/def ::dialogues (s/and (s/map-of ::dialogue-id ::dialogue)
+                          ::entity-map))
+
+(s/def ::line-connections (s/coll-of ::directed-connection :kind set?))
+
+(s/def ::position-ids (s/coll-of ::position-id))
+(s/def ::start-position ::position)
+(s/def ::connecting (s/keys :req-un [::start-position (or ::location-id ::line-id)]))
+(s/def ::dragging (s/keys :req-un [::start-position ::position-ids]))
+
+(defn connection-validation [entity-path connection-path]
+  (fn [state] (subset? (reduce into #{} (connection-path state))
+                       (-> state entity-path keys set))))
+
+(s/def ::line-connection-validation (connection-validation :lines :line-connections))
+(s/def ::location-connection-validation (connection-validation :locations :location-connections))
+
+(s/def ::state (s/and (s/keys :req-un [::characters
+                                       ::dialogues
+                                       ::line-connections
+                                       ::lines
+                                       ::locations
+                                       ::location-connections]
+                              :opt-un [::connecting ::dragging ::pointer])
+                      ::line-connection-validation
+                      ::location-connection-validation))
 
 (def default-db
   {

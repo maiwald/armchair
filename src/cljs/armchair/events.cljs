@@ -1,16 +1,24 @@
 (ns armchair.events
-  (:require [re-frame.core :refer [reg-event-db reg-event-fx]]
+  (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
             [clojure.set :refer [difference]]
+            [clojure.spec.alpha :as s]
             [armchair.db :as db]
             [armchair.util :refer [translate-positions position-delta]]))
 
+(def spec-interceptor (after (fn [db]
+                               (when-not (s/valid? :armchair.db/state db)
+                                 (let [explain (s/explain-data :armchair.db/state db)]
+                                   (.log js/console (:cljs.spec.alpha/problems explain)))))))
+
 (reg-event-db
   :initialize-db
+  [spec-interceptor]
   (fn [_ _]
     db/default-db))
 
 (reg-event-db
   :reset-db
+  [spec-interceptor]
   (fn [db _]
     (merge db (select-keys db/default-db [:positions
                                           :characters
@@ -35,6 +43,7 @@
 
 (reg-event-db
   :create-character
+  [spec-interceptor]
   (fn [db]
     (let [id (new-id db :characters)
           new-character {:id id :color "black" :display-name (str "Character #" id)}]
@@ -42,6 +51,7 @@
 
 (reg-event-db
   :delete-character
+  [spec-interceptor]
   (fn [db [_ id]]
     (if (zero? (db/line-count-for-character (:lines db) id))
       (update db :characters dissoc id)
@@ -49,11 +59,13 @@
 
 (reg-event-db
   :update-character
+  [spec-interceptor]
   (fn [db [_ id field value]]
     (assoc-in db [:characters id field] value)))
 
 (reg-event-db
   :open-character-modal
+  [spec-interceptor]
   (fn [db [_ id]]
     (assert (not (contains? db :modal))
             "Attempting to open a modal while modal is open!")
@@ -61,6 +73,7 @@
 
 (reg-event-db
   :create-location
+  [spec-interceptor]
   (with-new-position
     (fn [db position-id]
       (let [id (new-id db :locations)]
@@ -70,6 +83,7 @@
 
 (reg-event-db
   :delete-location
+  [spec-interceptor]
   (fn [db [_ id]]
     (let [location-connections (filter #(contains? % id)
                                        (:location-connections db))]
@@ -82,11 +96,13 @@
 
 (reg-event-db
   :update-location
+  [spec-interceptor]
   (fn [db [_ id field value]]
     (assoc-in db [:locations id field] value)))
 
 (reg-event-db
   :open-location-modal
+  [spec-interceptor]
   (fn [db [_ id]]
     (assert (not (contains? db :modal))
             "Attempting to open a modal while modal is open!")
@@ -94,6 +110,7 @@
 
 (reg-event-db
   :create-line
+  [spec-interceptor]
   (with-new-position
     (fn [db position-id [_ dialogue-id]]
       (let [id (new-id db :lines)]
@@ -101,10 +118,11 @@
                                   :character-id nil
                                   :dialogue-id dialogue-id
                                   :position-id position-id
-                                  :text (str "Line #" id)})))))
+                                  :text nil})))))
 
 (reg-event-db
   :update-line
+  [spec-interceptor]
   (fn [db [_ id field value]]
     (let [newValue (case field
                      :character-id (int value)
@@ -113,6 +131,7 @@
 
 (reg-event-db
   :delete-line
+  [spec-interceptor]
   (fn [db [_ id]]
     (let [line-connections (filter #(contains? (set %) id)
                                    (:line-connections db))]
@@ -125,6 +144,7 @@
 
 (reg-event-db
   :open-line-modal
+  [spec-interceptor]
   (fn [db [_ id]]
     (assert (not (contains? db :modal))
             "Attempting to open a modal while modal is open!")
@@ -134,26 +154,31 @@
 
 (reg-event-db
   :close-modal
+  [spec-interceptor]
   (fn [db [_ modal-fn | args]]
     (dissoc db :modal)))
 
 (reg-event-db
   :show-page
+  [spec-interceptor]
   (fn [db [_ page payload]]
-    (assoc db :current-page {:name page
-                             :payload payload})))
+    (if payload
+      (assoc db :current-page {:name page :payload payload})
+      (assoc db :current-page {:name page}))))
 
 ;; Mouse, Drag & Drop
 
 (reg-event-db
   :move-pointer
+  [spec-interceptor]
   (fn [db [_ position]]
     (assoc db :pointer position)))
 
 (reg-event-db
   :start-connecting-lines
+  [spec-interceptor]
   (fn [db [_ line-id position]]
-    (assert (nil? (:connecting db))
+    (assert (not (contains? db :connecting))
             "Attempting to start connecting lines while already in progress!")
     (assoc db
            :connecting {:start-position position
@@ -162,6 +187,7 @@
 
 (reg-event-db
   :end-connecting-lines
+  [spec-interceptor]
   (fn [db [_ end-id]]
     (assert (some? (:connecting db))
             "Attempting to end connecting while not in progress!")
@@ -173,8 +199,9 @@
 
 (reg-event-db
   :start-connecting-locations
+  [spec-interceptor]
   (fn [db [_ location-id position]]
-    (assert (nil? (:connecting db))
+    (assert (not (contains? db :connecting))
             "Attempting to start connecting locations while already in progress!")
     (assoc db
            :connecting {:start-position position
@@ -183,6 +210,7 @@
 
 (reg-event-db
   :end-connecting-locations
+  [spec-interceptor]
   (fn [db [_ end-id]]
     (assert (some? (:connecting db))
             "Attempting to end connecting while not in progress!")
@@ -195,12 +223,14 @@
 
 (reg-event-db
   :abort-connecting
+  [spec-interceptor]
   (fn [db _] (dissoc db :connecting)))
 
 (reg-event-db
   :start-dragging
+  [spec-interceptor]
   (fn [db [_ position-ids position]]
-    (assert (nil? (:dragging db))
+    (assert (not (contains? db :dragging))
             "Attempting to start drag while already in progress!")
     (assoc db
            :dragging {:position-ids position-ids
@@ -209,6 +239,7 @@
 
 (reg-event-db
   :end-dragging
+  [spec-interceptor]
   (fn [{:keys [dragging pointer] :as db} _]
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
