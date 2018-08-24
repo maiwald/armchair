@@ -1,5 +1,6 @@
 (ns armchair.game
   (:require [clojure.core.async :refer [chan sliding-buffer put! take! go go-loop <! >!]]
+            [clojure.spec.alpha :as s]
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
             [armchair.util :refer [find-first map-values translate-position]]
@@ -13,6 +14,32 @@
                     :down [0 1]
                     :left [-1 0]
                     :right [1 0]})
+
+(s/def ::position (s/tuple number? number?))
+(s/def ::direction #{:up :down :left :right})
+
+(s/def ::character-id int?)
+(s/def ::line-id int?)
+(s/def ::selected-option-index int?)
+
+(s/def ::interaction (s/keys :req-un [::character-id
+                                      ::line-id
+                                      ::selected-option-index]))
+
+(s/def ::player ::position)
+(s/def ::player-direction ::direction)
+
+(s/def ::uniform-level (fn [level] (apply = (map count level))))
+(s/def ::level (s/and (s/coll-of vector? :kind vector?)
+                      ::uniform-level))
+(s/def ::enemies (s/map-of int? ::position))
+(s/def ::highlight ::position)
+
+(s/def ::all-enemies-have-dialogue (fn [{:keys [enemies dialogues]}]
+                                     (= (keys enemies) (keys dialogues))))
+(s/def ::state (s/and (s/keys :req-un [::player ::player-direction ::level ::enemies]
+                              :opt-un [::highlight ::interaction])
+                      ::all-enemies-have-dialogue))
 
 ;; Conversion Helpers
 
@@ -30,8 +57,7 @@
 (def state (atom nil))
 
 (def initial-game-state
-  {:highlight nil
-   :player (tile->coord [0 12])
+  {:player (tile->coord [0 12])
    :player-direction :right})
 
 (defn ^boolean walkable? [tile]
@@ -123,12 +149,11 @@
     (draw-texture :enemy coord)))
 
 (defn draw-highlight [highlight-coord]
-  (when highlight-coord
-    (c/save! @ctx)
-    (c/set-stroke-style! @ctx "rgb(255, 255, 0)")
-    (c/set-line-width! @ctx "2")
-    (c/stroke-rect! @ctx highlight-coord tile-size tile-size)
-    (c/restore! @ctx)))
+  (c/save! @ctx)
+  (c/set-stroke-style! @ctx "rgb(255, 255, 0)")
+  (c/set-line-width! @ctx "2")
+  (c/stroke-rect! @ctx highlight-coord tile-size tile-size)
+  (c/restore! @ctx))
 
 (defn draw-path [{:keys [level player highlight]}]
   (if highlight
@@ -193,7 +218,8 @@
       (draw-path @state))
     (draw-player (:player view-state))
     (draw-enemies (-> view-state :enemies vals))
-    (when-not (interacting? @state)
+    (when (and (not (interacting? @state))
+               (contains? @state :highlight))
       (draw-highlight (:highlight @state)))
     (draw-direction-indicator view-state)
     (when (interacting? @state)
@@ -216,7 +242,9 @@
     (swap! move-q conj direction)))
 
 (defn handle-cursor-position [coord]
-  (swap! state assoc :highlight (when coord (normalize-to-tile coord))))
+  (if coord
+    (swap! state assoc :highlight (normalize-to-tile coord))
+    (swap! state dissoc :highlight)))
 
 (defn handle-interact []
   (if (interacting? @state)
@@ -307,6 +335,8 @@
     (add-watch state
                :state-update
                (fn [_ _ old-state new-state]
+                 (when-not (s/valid? ::state new-state)
+                   (.log js/console (s/explain ::state new-state)))
                  (when (not= old-state new-state)
                    (js/requestAnimationFrame #(render new-state)))))
     (add-watch move-q
