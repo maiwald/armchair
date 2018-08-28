@@ -3,9 +3,28 @@
             [clojure.string :as string]
             [clojure.set :refer [subset?]]))
 
-(s/def ::position (s/tuple integer? integer?))
+;; Types
 
 (s/def ::id pos-int?)
+(s/def ::text #(not (string/blank? %)))
+(s/def ::position (s/tuple integer? integer?))
+(s/def ::entity-map (s/every (fn [[k v]] (= k (:id v)))))
+(s/def ::directed-connection (s/tuple ::id ::id))
+(s/def ::undirected-connection (s/coll-of ::id :kind set? :count 2))
+
+;; UI State
+
+(s/def ::pointer ::position)
+(s/def ::position-ids (s/coll-of ::position-id))
+(s/def ::start-position ::position)
+(s/def ::connecting (s/keys :req-un [::start-position (or ::location-id ::line-id)]))
+(s/def ::dragging (s/keys :req-un [::start-position ::position-ids]))
+(s/def ::name ::text)
+(s/def ::payload some?)
+(s/def ::current-page (s/keys :req-un [::name] :opt-un [::payload]))
+
+;; Data
+
 (s/def ::character-id ::id)
 (s/def ::dialogue-id ::id)
 (s/def ::line-id ::id)
@@ -13,16 +32,8 @@
 (s/def ::location-id ::id)
 (s/def ::position-id ::id)
 
-(s/def ::entity-map (s/every (fn [[k v]] (= k (:id v)))))
-
-(s/def ::directed-connection (s/tuple ::id ::id))
-(s/def ::undirected-connection (s/coll-of ::id :kind set? :count 2))
-
-(s/def ::text #(not (string/blank? %)))
 (s/def ::display-name ::text)
 (s/def ::color ::text)
-
-(s/def ::pointer ::position)
 
 (s/def ::location (s/keys :req-un [::id ::position-id ::display-name]))
 (s/def ::locations (s/and (s/map-of ::location-id ::location)
@@ -43,10 +54,6 @@
 
 (s/def ::line-connections (s/coll-of ::directed-connection :kind set?))
 
-(s/def ::position-ids (s/coll-of ::position-id))
-(s/def ::start-position ::position)
-(s/def ::connecting (s/keys :req-un [::start-position (or ::location-id ::line-id)]))
-(s/def ::dragging (s/keys :req-un [::start-position ::position-ids]))
 
 (defn connection-validation [entity-path connection-path]
   (fn [state] (subset? (reduce into #{} (connection-path state))
@@ -55,7 +62,8 @@
 (s/def ::line-connection-validation (connection-validation :lines :line-connections))
 (s/def ::location-connection-validation (connection-validation :locations :location-connections))
 
-(s/def ::state (s/and (s/keys :req-un [::characters
+(s/def ::state (s/and (s/keys :req-un [::current-page
+                                       ::characters
                                        ::dialogues
                                        ::line-connections
                                        ::lines
@@ -67,8 +75,7 @@
 
 (def default-db
   {
-   :current-page {:name "Game"
-                  :payload nil}
+   :current-page {:name "Game"}
    :positions {
                1 [100 200]
                2 [329 198]
@@ -238,6 +245,10 @@
                        [15 16]
                        }
   })
+
+(when-not (s/valid? ::state default-db)
+  (.log js/console "Default DB state explain:")
+  (s/explain ::state default-db))
 
 (defn line-count-for-character [lines character-id]
   (let [filter-fn #(= (:character-id %) character-id)]
