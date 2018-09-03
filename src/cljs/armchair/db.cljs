@@ -9,7 +9,6 @@
 (s/def ::text #(not (string/blank? %)))
 (s/def ::position (s/tuple integer? integer?))
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:id v)))))
-(s/def ::directed-connection (s/tuple ::id ::id))
 (s/def ::undirected-connection (s/coll-of ::id :kind set? :count 2))
 
 ;; UI State
@@ -36,41 +35,48 @@
 (s/def ::color ::text)
 
 (s/def ::location (s/keys :req-un [::id ::position-id ::display-name]))
-(s/def ::locations (s/and (s/map-of ::location-id ::location)
-                          ::entity-map))
+(s/def ::locations (s/and ::entity-map
+                          (s/map-of ::location-id ::location)))
 (s/def ::location-connections (s/coll-of ::undirected-connection :kind set?))
 
 (s/def ::character (s/keys :req-un [::id ::display-name ::color]))
-(s/def ::characters (s/and (s/map-of ::character-id ::character)
-                           ::entity-map))
+(s/def ::characters (s/and ::entity-map
+                           (s/map-of ::character-id ::character)))
 
-(s/def ::line (s/keys :req-un [::id ::character-id ::text ::dialogue-id ::position-id]))
-(s/def ::lines (s/and (s/map-of ::line-id ::line)
-                      ::entity-map))
+(s/def ::next-line-id (s/or :line-id ::line-id
+                            :end #(= :end)))
+(s/def ::line (s/keys :req-un [::text ::next-line-id]))
+
+(s/def ::character-line (s/and ::line
+                               (s/keys :req-un [::character-id])))
+
+(s/def ::options (s/coll-of ::line :kind vector?))
+(s/def ::response (s/keys :req-un [::options]))
+
+(s/def ::line-or-response (s/and (s/keys :req-un [::id ::dialogue-id ::position-id])
+                                 (s/or :line ::line
+                                       :response ::response)))
+
+(s/def ::lines (s/and ::entity-map
+                      (s/map-of ::line-id ::line-or-response)))
 
 (s/def ::dialogue (s/keys :req-un [::id ::initial-line-id ::location-id ::display-name]))
-(s/def ::dialogues (s/and (s/map-of ::dialogue-id ::dialogue)
-                          ::entity-map))
-
-(s/def ::line-connections (s/coll-of ::directed-connection :kind set?))
-
+(s/def ::dialogues (s/and ::entity-map
+                          (s/map-of ::dialogue-id ::dialogue)))
 
 (defn connection-validation [entity-path connection-path]
   (fn [state] (subset? (reduce into #{} (connection-path state))
                        (-> state entity-path keys set))))
 
-(s/def ::line-connection-validation (connection-validation :lines :line-connections))
 (s/def ::location-connection-validation (connection-validation :locations :location-connections))
 
 (s/def ::state (s/and (s/keys :req-un [::current-page
                                        ::characters
                                        ::dialogues
-                                       ::line-connections
                                        ::lines
                                        ::locations
                                        ::location-connections]
                               :opt-un [::connecting ::dragging ::pointer])
-                      ::line-connection-validation
                       ::location-connection-validation))
 
 (def default-db
@@ -129,7 +135,6 @@
                   :display-name "Park - Entrance"}}
    :location-connections #{#{1 2}}
    :characters {1 {:id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)"}
-                2 {:id 2 :display-name "Player" :color "rgba(0, 0, 255, .6)"}
                 3 {:id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)"}}
    :dialogues {1 {:id 1 :display-name "Hugo's Dialogue" :initial-line-id 1 :location-id 1}
                2 {:id 2 :display-name "Gustav's Dialogue" :initial-line-id 14 :location-id 1}}
@@ -137,101 +142,55 @@
                :character-id 1
                :dialogue-id 1
                :position-id 1
-               :text "Hey, who are you?"}
+               :text "Hey, who are you?"
+               :next-line-id 2}
            2  {:id 2
-               :character-id 2
                :dialogue-id 1
                :position-id 2
-               :text "I could ask you the same."}
-           3  {:id 3
-               :character-id 2
-               :dialogue-id 1
-               :position-id 3
-               :text "My name does not matter."}
-           4  {:id 4
-               :character-id 1
-               :dialogue-id 1
-               :position-id 4
-               :text "I am Hugo. And you...?"}
-           5  {:id 5
-               :character-id 2
-               :dialogue-id 1
-               :position-id 5
-               :text "I am Hugo as well."}
-           6  {:id 6
-               :character-id 2
-               :dialogue-id 1
-               :position-id 6
-               :text "None of your business!"}
-           7  {:id 7
-               :character-id 1
-               :dialogue-id 1
-               :position-id 7
-               :text "Fine, be a jerk."}
-           8  {:id 8
-               :character-id 1
-               :dialogue-id 1
-               :position-id 8
-               :text "Nice to meet you!"}
-           9  {:id 9
-               :character-id 1
-               :dialogue-id 1
-               :position-id 9
-               :text "Ok, bye!"}
-           10 {:id 10
-               :character-id 2
-               :dialogue-id 1
-               :position-id 10
-               :text "Hello Hugo!"}
-           11 {:id 11
-               :character-id 1
-               :dialogue-id 1
-               :position-id 11
-               :text "How do you know my name?"}
-           12 {:id 12
-               :character-id 2
-               :dialogue-id 1
-               :position-id 12
-               :text "We have met before. In the land far beyond."}
-           13 {:id 13
-               :character-id 1
-               :dialogue-id 1
-               :position-id 13
-               :text "Trying to sound ominous or what?! Get outa here!"}
+               :options [{:text "I could ask you the same." :next-line-id 3}
+                         {:text "My name does not matter." :next-line-id 4}]}
+           3 {:id 3
+              :dialogue-id 1
+              :character-id 1
+              :position-id 3
+              :text "I am Hugo. And you?"
+              :next-line-id 5}
+           4 {:id 4
+              :dialogue-id 1
+              :character-id 1
+              :position-id 4
+              :text "Fine, be a jerk."
+              :next-line-id :end}
+           5 {:id 5
+              :dialogue-id 1
+              :character-id 1
+              :position-id 5
+              :text "What a strange coincidence! I am Hugo as well."
+              :next-line-id 6}
+           6 {:id 6
+              :dialogue-id 1
+              :character-id 1
+              :position-id 6
+              :text "Anyway, ...bye!"
+              :next-line-id :end}
            14 {:id 14
                :character-id 3
                :dialogue-id 2
                :position-id 18
-               :text "Yes?"}
+               :text "Yes?"
+               :next-line-id 15}
            15 {:id 15
-               :character-id 2
                :dialogue-id 2
                :position-id 19
-               :text "Who are you?"}
+               :options [{:text "Who are you?" :next-line-id 16}]}
            16 {:id 16
                :character-id 3
                :dialogue-id 2
                :position-id 20
-               :text "I am Gustav!"}
+               :text "I am Gustav!"
+               :next-line-id :end}
            }
-   :line-connections #{[1 2]
-                       [1 3]
-                       [1 10]
-                       [2 4]
-                       [3 7]
-                       [4 5]
-                       [4 6]
-                       [5 8]
-                       [6 7]
-                       [7 9]
-                       [8 9]
-                       [10 11]
-                       [11 6]
-                       [11 12]
-                       [12 13]
-                       [14 15]
-                       [15 16]}
-  })
+})
 
 (when-not (s/valid? ::state default-db)
   (.log js/console "Default DB state explain:")

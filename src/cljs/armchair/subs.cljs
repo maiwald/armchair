@@ -2,6 +2,7 @@
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [clojure.set :refer [difference subset?]]
+            [clojure.spec.alpha :as s]
             [armchair.db :as db]
             [armchair.config :as config]
             [armchair.util :refer [where where-map map-values position-delta translate-position translate-positions]]))
@@ -93,13 +94,21 @@
   :<- [:dragged-positions]
   (fn [[lines connections characters positions] [_ dialogue-id]]
     (let [dialogue-lines (where-map :dialogue-id dialogue-id lines)
-          dialogue-connections (filter (fn [[start end]] (and (contains? dialogue-lines start)
-                                                              (contains? dialogue-lines end))) connections)]
+          lines-by-type (group-by #(first (s/conform :armchair.db/line-or-response %)) (vals dialogue-lines))]
       {:lines (map-values #(assoc %
                                   :position (get positions (:position-id %))
                                   :character-color (get-in characters [(:character-id %) :color]))
                           dialogue-lines)
-       :connections dialogue-connections})))
+       :line-connections (->> (:line lines-by-type)
+                              (filter #(not= (:next-line-id %) :end))
+                              (map #(vector (:id %) (:next-line-id %))))
+       :response-connections (reduce
+                               (fn [acc {:keys [id options]}]
+                                 (apply conj acc (->> options
+                                                      (filter #(not= (:next-line-id %) :end))
+                                                      (map-indexed #(vector id %1 (:next-line-id %2))))))
+                               (list)
+                               (:response lines-by-type))})))
 
 (reg-sub
   :location

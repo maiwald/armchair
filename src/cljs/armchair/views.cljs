@@ -1,5 +1,6 @@
 (ns armchair.views
   (:require [re-frame.core :as re-frame]
+            [clojure.spec.alpha :as s]
             [reagent.core :as r]
             [armchair.game :refer [start-game end-game]]
             [armchair.slds :as slds]
@@ -54,7 +55,7 @@
                    :top (second position)}}
      component]))
 
-(defn graph-connection [{:keys [kind start end]}]
+(defn graph-connection [{:keys [key-prop kind start end]}]
   [:line {:class ["graph__connection"
                   (when (= kind :connector) "graph__connection_is-connector")]
           :x1 (first start)
@@ -89,18 +90,50 @@
      (for [[id item] items]
        ^{:key (str kind id)} [graph-item item [item-component item]])]))
 
+;; Drag & Drop
+
+(defn drag-item [{:keys [position position-id]} component]
+  (let [dragging? (<sub [:dragging-item? position-id])]
+    [:div {:class ["graph__item"
+                   (when dragging? "graph__item_is-dragging")]
+           :on-mouse-down (start-dragging-handler #{position-id})
+           :on-mouse-up (e-> #(when dragging? (>evt [:end-dragging])))
+           :style {:left (first position)
+                   :top (second position)}}
+     component]))
+
+(defn drag-canvas [{:keys [items kind item-component]} & connection-children]
+  (let [position-ids (->> items vals (map :position-id) set)
+        connector (<sub [:connector])
+        connecting? (some? connector)
+        dragging? (<sub [:dragging?])]
+    [:div {:class ["graph"
+                   (when dragging? "graph_is-dragging")
+                   (when connecting? "graph_is-connecting")]
+           :on-mouse-down (start-dragging-handler position-ids)
+           :on-mouse-move (e-> #(when (or dragging? connecting?)
+                                  (>evt [:move-pointer (e->graph-pointer %)])))
+           :on-mouse-up (e-> #(cond
+                                connecting? (>evt [:abort-connecting])
+                                dragging? (>evt [:end-dragging])))}
+     (into [:div] connection-children)
+     (for [[id item] items]
+       ^{:key (str kind id)} [drag-item item [item-component item]])]))
+
 ;; Components
 
 (defn icon [glyph]
   [:i {:class (str "fas fa-" glyph)}])
 
-(defn line-component [{:keys [id text character-color] :as line}]
+(defn line-component [{:keys [id text character-color options]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:border-color character-color
                    :width (str config/line-width "px")}}
-     [:p text]
+     (if options
+       (into [:div] (map (fn [o] [:p (:text o)]) options))
+       [:p text])
      [:div {:class "item-actions"
             :on-mouse-down stop-e!}
       [:div {:class "item-action"
@@ -129,19 +162,39 @@
                                                    :on-change (update-handler :text)
                                                    :value (:text line)}]]}])))
 
+(defn line-connection [start-position end-position]
+  [graph-connection {:start (translate-position start-position [(- config/line-width 15) 15])
+                     :end (translate-position end-position [15 15])}])
+
+(defn response-connection [start-position index end-position]
+  [graph-connection {:start (translate-position start-position [(- config/line-width 15)
+                                                                (+ 15 (* index config/response-option-height))])
+                     :end (translate-position end-position [15 15])}])
+
 (defn dialogue-component [dialogue-id]
   (if dialogue-id
-    (let [{:keys [lines connections]} (<sub [:dialogue dialogue-id])]
+    (let [{:keys [lines line-connections response-connections]} (<sub [:dialogue dialogue-id])]
       [:div {:class "full-page"}
        [:div {:class "new-item-button"}
         [slds/add-button "New" #(>evt [:create-line dialogue-id])]]
-       [graph {:kind "line"
-               :items lines
-               :connections connections
-               :connection-transform (fn [{:keys [start end]}]
-                                       {:start (translate-position start [(- config/line-width 15) 15])
-                                        :end (translate-position end [15 15])})
-               :item-component line-component}]])
+       [drag-canvas {:kind "line"
+                     :items lines
+                     :item-component line-component}
+        [:svg {:class "graph__connection-container" :version "1.1"
+               :baseProfile "full"
+               :xmlns "http://www.w3.org/2000/svg"}
+         (for [[start end] line-connections]
+           ^{:key (str "line-connection:" start "->" end)}
+           [line-connection
+            (get-in lines [start :position])
+            (get-in lines [end :position])])
+         (for [[start index end] response-connections]
+           ^{:key (str "response-connection:" start ":" index "->" end)}
+           [response-connection
+            (get-in lines [start :position])
+            index
+            (get-in lines [end :position])])]
+        ]])
     [:span "No dialogue selected!"]))
 
 (defn character-form-modal []
