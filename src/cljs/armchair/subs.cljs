@@ -100,12 +100,12 @@
                                   :character-color (get-in characters [(:character-id %) :color]))
                           dialogue-lines)
        :line-connections (->> (:line lines-by-type)
-                              (filter #(not= (:next-line-id %) :end))
+                              (filter #(s/valid? :armchair.db/line-id (:next-line-id %)))
                               (map #(vector (:id %) (:next-line-id %))))
        :response-connections (reduce
                                (fn [acc {:keys [id options]}]
                                  (apply conj acc (->> options
-                                                      (filter #(not= (:next-line-id %) :end))
+                                                      (filter #(s/valid? :armchair.db/line-id (:next-line-id %)))
                                                       (map-indexed #(vector id %1 (:next-line-id %2))))))
                                (list)
                                (:response lines-by-type))})))
