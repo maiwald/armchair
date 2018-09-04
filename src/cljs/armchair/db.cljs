@@ -15,8 +15,14 @@
 
 (s/def ::pointer ::position)
 (s/def ::position-ids (s/coll-of ::position-id))
+
 (s/def ::start-position ::position)
-(s/def ::connecting (s/keys :req-un [::start-position (or ::location-id ::line-id)]))
+(s/def ::connecting-lines (s/keys :req-un [::start-position ::line-id]
+                                  :opt-un [::index]))
+(s/def ::connecting-locations (s/keys :req-un [::start-position ::location-id]))
+(s/def ::connecting (s/or :lines ::connecting-lines
+                          :locations ::connecting-locations))
+
 (s/def ::dragging (s/keys :req-un [::start-position ::position-ids]))
 (s/def ::name ::text)
 (s/def ::payload some?)
