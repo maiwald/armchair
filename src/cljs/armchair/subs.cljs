@@ -93,22 +93,24 @@
   :<- [:db-characters]
   :<- [:dragged-positions]
   (fn [[lines connections characters positions] [_ dialogue-id]]
-    (let [dialogue-lines (where-map :dialogue-id dialogue-id lines)
-          lines-by-type (group-by #(first (s/conform :armchair.db/line-or-response %)) (vals dialogue-lines))]
-      {:lines (map-values #(assoc %
-                                  :position (get positions (:position-id %))
-                                  :character-color (get-in characters [(:character-id %) :color]))
-                          dialogue-lines)
-       :line-connections (->> (:line lines-by-type)
-                              (filter #(s/valid? :armchair.db/line-id (:next-line-id %)))
-                              (map #(vector (:id %) (:next-line-id %))))
-       :response-connections (reduce
-                               (fn [acc {:keys [id options]}]
-                                 (apply conj acc (->> options
-                                                      (filter #(s/valid? :armchair.db/line-id (:next-line-id %)))
-                                                      (map-indexed #(vector id %1 (:next-line-id %2))))))
-                               (list)
-                               (:response lines-by-type))})))
+    (let [dialogue-lines (->> lines
+                              (where-map :dialogue-id dialogue-id)
+                              (map-values #(assoc %
+                                                  :kind (first (s/conform :armchair.db/npc-or-player-line %))
+                                                  :position (get positions (:position-id %))
+                                                  :character-color (get-in characters [(:character-id %) :color]))))
+          lines-by-kind (group-by :kind (vals dialogue-lines))]
+      {:lines dialogue-lines
+       :npc-connections (->> (:npc lines-by-kind)
+                             (filter #(s/valid? :armchair.db/line-id (:next-line-id %)))
+                             (map #(vector (:id %) (:next-line-id %))))
+       :player-connections (reduce
+                             (fn [acc {:keys [id options]}]
+                               (apply conj acc (->> options
+                                                    (filter #(s/valid? :armchair.db/line-id (:next-line-id %)))
+                                                    (map-indexed #(vector id %1 (:next-line-id %2))))))
+                             (list)
+                             (:player lines-by-kind))})))
 
 (reg-sub
   :location

@@ -43,22 +43,20 @@
 (s/def ::characters (s/and ::entity-map
                            (s/map-of ::character-id ::character)))
 
-(s/def ::next-line-id (s/or :line-id ::line-id
-                            :end #(= :end)))
+(s/def ::next-line-id (s/or :line-id ::line-id :end #(= :end)))
 (s/def ::line (s/keys :req-un [::text ::next-line-id]))
 
-(s/def ::character-line (s/and ::line
-                               (s/keys :req-un [::character-id])))
+(s/def ::npc-line (s/and ::line
+                         (s/keys :req-un [::character-id])))
 
 (s/def ::options (s/coll-of ::line :kind vector?))
-(s/def ::response (s/keys :req-un [::options]))
+(s/def ::player-line (s/keys :req-un [::options]))
 
-(s/def ::line-or-response (s/and (s/keys :req-un [::id ::dialogue-id ::position-id])
-                                 (s/or :line ::line
-                                       :response ::response)))
+(s/def ::npc-or-player-line (s/and (s/keys :req-un [::id ::dialogue-id ::position-id])
+                                   (s/or :npc ::npc-line :player ::player-line)))
 
 (s/def ::lines (s/and ::entity-map
-                      (s/map-of ::line-id ::line-or-response)))
+                      (s/map-of ::line-id ::npc-or-player-line)))
 
 (s/def ::dialogue (s/keys :req-un [::id ::initial-line-id ::location-id ::display-name]))
 (s/def ::dialogues (s/and ::entity-map
@@ -154,7 +152,7 @@
               :character-id 1
               :position-id 3
               :text "I am Hugo. And you?"
-              :next-line-id 5}
+              :next-line-id 7}
            4 {:id 4
               :dialogue-id 1
               :character-id 1
@@ -173,6 +171,11 @@
               :position-id 6
               :text "Anyway, ...bye!"
               :next-line-id :end}
+           7 {:id 7
+              :dialogue-id 1
+              :position-id 7
+              :options [{:text "I am Hugo as well!" :next-line-id 5}
+                        {:text "That's none of your business!" :next-line-id 4}]}
            14 {:id 14
                :character-id 3
                :dialogue-id 2

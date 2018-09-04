@@ -104,8 +104,7 @@
 
 (defn drag-canvas [{:keys [items kind item-component]} & connection-children]
   (let [position-ids (->> items vals (map :position-id) set)
-        connector (<sub [:connector])
-        connecting? (some? connector)
+        connecting? (some? (<sub [:connector]))
         dragging? (<sub [:dragging?])]
     [:div {:class ["graph"
                    (when dragging? "graph_is-dragging")
@@ -125,27 +124,43 @@
 (defn icon [glyph]
   [:i {:class (str "fas fa-" glyph)}])
 
-(defn line-component [{:keys [id text character-color options]}]
+(defn npc-line-component [{:keys [id text character-color]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:border-color character-color
                    :width (str config/line-width "px")}}
-     (if options
-       (into [:div] (map (fn [o] [:p (:text o)]) options))
-       [:p text])
-     [:div {:class "item-actions"
-            :on-mouse-down stop-e!}
-      [:div {:class "item-action"
-             :on-click #(>evt [:delete-line id])}
+     [:p text]
+     [:div {:class "item-actions" :on-mouse-down stop-e!}
+      [:div {:class "item-action" :on-click #(>evt [:delete-line id])}
        [icon "trash"]]
-      [:div {:class "item-action"
-             :on-click #(>evt [:open-line-modal id])}
+      [:div {:class "item-action" :on-click #(>evt [:open-line-modal id])}
        [icon "edit"]]
       [:div {:class "item-action item-action_connect"
              :on-mouse-down (e-> #(when (left-button? %)
                                     (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
        [icon "link"]]]]))
+
+(defn player-line-component [{:keys [id options]}]
+  (let [connecting? (some? (<sub [:connector]))]
+    [:div {:class "line"
+           :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
+           :style {:width (str config/line-width "px")}}
+     (into [:div] (map (fn [o] [:p (:text o)]) options))
+     [:div {:class "item-actions" :on-mouse-down stop-e!}
+      [:div {:class "item-action" :on-click #(>evt [:delete-line id])}
+       [icon "trash"]]
+      [:div {:class "item-action" :on-click #(>evt [:open-line-modal id])}
+       [icon "edit"]]
+      [:div {:class "item-action item-action_connect"
+             :on-mouse-down (e-> #(when (left-button? %)
+                                    (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
+       [icon "link"]]]]))
+
+(defn line-component [line]
+  (case (:kind line)
+    :npc [npc-line-component line]
+    :player [player-line-component line]))
 
 (defn line-form-modal []
   (if-let [line-id (:line-id (<sub [:modal]))]
@@ -162,18 +177,19 @@
                                                    :on-change (update-handler :text)
                                                    :value (:text line)}]]}])))
 
-(defn line-connection [start-position end-position]
+(defn npc-connection [start-position end-position]
   [graph-connection {:start (translate-position start-position [(- config/line-width 15) 15])
                      :end (translate-position end-position [15 15])}])
 
-(defn response-connection [start-position index end-position]
+(defn player-connection [start-position index end-position]
   [graph-connection {:start (translate-position start-position [(- config/line-width 15)
                                                                 (+ 15 (* index config/response-option-height))])
                      :end (translate-position end-position [15 15])}])
 
 (defn dialogue-component [dialogue-id]
   (if dialogue-id
-    (let [{:keys [lines line-connections response-connections]} (<sub [:dialogue dialogue-id])]
+    (let [{:keys [lines npc-connections player-connections]} (<sub [:dialogue dialogue-id])
+          get-pos #(get-in lines [% :position])]
       [:div {:class "full-page"}
        [:div {:class "new-item-button"}
         [slds/add-button "New" #(>evt [:create-line dialogue-id])]]
@@ -183,19 +199,13 @@
         [:svg {:class "graph__connection-container" :version "1.1"
                :baseProfile "full"
                :xmlns "http://www.w3.org/2000/svg"}
-         (for [[start end] line-connections]
+         (for [[start end] npc-connections]
            ^{:key (str "line-connection:" start "->" end)}
-           [line-connection
-            (get-in lines [start :position])
-            (get-in lines [end :position])])
-         (for [[start index end] response-connections]
+           [npc-connection (get-pos start) (get-pos end)])
+         (for [[start index end] player-connections]
            ^{:key (str "response-connection:" start ":" index "->" end)}
-           [response-connection
-            (get-in lines [start :position])
-            index
-            (get-in lines [end :position])])]
-        ]])
-    [:span "No dialogue selected!"]))
+           [player-connection (get-pos start) index (get-pos end)])]]])
+       [:span "No dialogue selected!"]))
 
 (defn character-form-modal []
   (if-let [character-id (:character-id (<sub [:modal]))]
