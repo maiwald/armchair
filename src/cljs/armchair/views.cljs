@@ -139,7 +139,7 @@
       [:div {:class "item-action item-action_connect"
              :on-mouse-down (e-> #(when (left-button? %)
                                     (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
-       [icon "link"]]]]))
+       [icon "project-diagram"]]]]))
 
 (defn player-line-component [{:keys [id options]}]
   (let [connecting? (some? (<sub [:connector]))]
@@ -151,11 +151,7 @@
       [:div {:class "item-action" :on-click #(>evt [:delete-line id])}
        [icon "trash"]]
       [:div {:class "item-action" :on-click #(>evt [:open-line-modal id])}
-       [icon "edit"]]
-      [:div {:class "item-action item-action_connect"
-             :on-mouse-down (e-> #(when (left-button? %)
-                                    (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
-       [icon "link"]]]]))
+       [icon "edit"]]]]))
 
 (defn line-component [line]
   (case (:kind line)
@@ -192,13 +188,16 @@
           get-pos #(get-in lines [% :position])]
       [:div {:class "full-page"}
        [:div {:class "new-item-button"}
-        [slds/add-button "New" #(>evt [:create-line dialogue-id])]]
+        [slds/add-button "New Player Line" #(>evt [:create-player-line dialogue-id])]
+        [slds/add-button "New NPC Line" #(>evt [:create-npc-line dialogue-id])]]
        [drag-canvas {:kind "line"
                      :items lines
                      :item-component line-component}
         [:svg {:class "graph__connection-container" :version "1.1"
                :baseProfile "full"
                :xmlns "http://www.w3.org/2000/svg"}
+         (when-let [connector (<sub [:connector])]
+           [graph-connection connector])
          (for [[start end] npc-connections]
            ^{:key (str "line-connection:" start "->" end)}
            [npc-connection (get-pos start) (get-pos end)])

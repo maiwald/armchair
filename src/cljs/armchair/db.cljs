@@ -49,14 +49,17 @@
 (s/def ::characters (s/and ::entity-map
                            (s/map-of ::character-id ::character)))
 
+;; Dialogue & Lines
+
 (s/def ::next-line-id (s/or :line-id ::line-id :end #(= :end)))
 (s/def ::line (s/keys :req-un [::text ::next-line-id]))
 
-(s/def ::npc-line (s/and ::line
-                         (s/keys :req-un [::character-id])))
-
 (s/def ::options (s/coll-of ::line :kind vector?))
-(s/def ::player-line (s/keys :req-un [::options]))
+(s/def ::player-line (s/and #(= (:kind %) :player)
+                            (s/keys :req-un [::options])))
+(s/def ::npc-line (s/and ::line
+                         (s/keys :req-un [::character-id])
+                         #(= (:kind %) :npc)))
 
 (s/def ::npc-or-player-line (s/and (s/keys :req-un [::id ::dialogue-id ::position-id])
                                    (s/or :npc ::npc-line :player ::player-line)))
@@ -136,30 +139,35 @@
                 3 {:id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)"}}
    :dialogues {1 {:id 1 :display-name "Hugo's Dialogue" :initial-line-id 1 :location-id 1}
                2 {:id 2 :display-name "Gustav's Dialogue" :initial-line-id 14 :location-id 1}}
-   :lines {1  {:id 1
-               :character-id 1
-               :dialogue-id 1
-               :position-id 1
-               :text "Hey, who are you?"
-               :next-line-id 2}
-           2  {:id 2
-               :dialogue-id 1
-               :position-id 2
-               :options [{:text "I could ask you the same." :next-line-id 3}
-                         {:text "My name does not matter." :next-line-id 4}]}
+   :lines {1 {:id 1
+              :kind :npc
+              :character-id 1
+              :dialogue-id 1
+              :position-id 1
+              :text "Hey, who are you?"
+              :next-line-id 2}
+           2 {:id 2
+              :dialogue-id 1
+              :position-id 2
+              :kind :player
+              :options [{:text "I could ask you the same." :next-line-id 3}
+                        {:text "My name does not matter." :next-line-id 4}]}
            3 {:id 3
+              :kind :npc
               :dialogue-id 1
               :character-id 1
               :position-id 3
               :text "I am Hugo. And you?"
               :next-line-id 7}
            4 {:id 4
+              :kind :npc
               :dialogue-id 1
               :character-id 1
               :position-id 4
               :text "Fine, be a jerk."
               :next-line-id :end}
            5 {:id 5
+              :kind :npc
               :dialogue-id 1
               :character-id 1
               :position-id 5
@@ -167,6 +175,7 @@
               :next-line-id 6}
            6 {:id 6
               :dialogue-id 1
+              :kind :npc
               :character-id 1
               :position-id 6
               :text "Anyway, ...bye!"
@@ -174,19 +183,23 @@
            7 {:id 7
               :dialogue-id 1
               :position-id 7
+              :kind :player
               :options [{:text "I am Hugo as well!" :next-line-id 5}
                         {:text "That's none of your business!" :next-line-id 4}]}
            14 {:id 14
                :character-id 3
+               :kind :npc
                :dialogue-id 2
                :position-id 18
                :text "Yes?"
                :next-line-id 15}
            15 {:id 15
                :dialogue-id 2
+               :kind :player
                :position-id 19
                :options [{:text "Who are you?" :next-line-id 16}]}
            16 {:id 16
+               :kind :npc
                :character-id 3
                :dialogue-id 2
                :position-id 20

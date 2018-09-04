@@ -3,7 +3,7 @@
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
             [armchair.db :as db]
-            [armchair.util :refer [translate-positions position-delta]]))
+            [armchair.util :refer [map-values translate-positions position-delta]]))
 
 (def spec-interceptor (after (fn [db]
                                (when-not (s/valid? :armchair.db/state db)
@@ -25,8 +25,7 @@
                                           :dialogues
                                           :locations
                                           :location-connections
-                                          :lines
-                                          :line-connections]))))
+                                          :lines]))))
 
 ;; Resources
 
@@ -108,16 +107,30 @@
     (assoc db :modal {:location-id id})))
 
 (reg-event-db
-  :create-line
+  :create-npc-line
   [spec-interceptor]
   (with-new-position
     (fn [db position-id [_ dialogue-id]]
       (let [id (new-id db :lines)]
         (assoc-in db [:lines id] {:id id
+                                  :kind :npc
                                   :character-id nil
                                   :dialogue-id dialogue-id
                                   :position-id position-id
-                                  :text nil})))))
+                                  :text nil
+                                  :next-line-id nil})))))
+
+(reg-event-db
+  :create-player-line
+  [spec-interceptor]
+  (with-new-position
+    (fn [db position-id [_ dialogue-id]]
+      (let [id (new-id db :lines)]
+        (assoc-in db [:lines id] {:id id
+                                  :kind :player
+                                  :dialogue-id dialogue-id
+                                  :position-id position-id
+                                  :options []})))))
 
 (reg-event-db
   :update-line
@@ -132,14 +145,15 @@
   :delete-line
   [spec-interceptor]
   (fn [db [_ id]]
-    (let [line-connections (filter #(contains? (set %) id)
-                                   (:line-connections db))]
-      (if (or (empty? line-connections)
-              ^boolean (.confirm js/window (str "Really delete Line #" id "?")))
-        (-> db
-            (update :lines dissoc id)
-            (update :line-connections difference line-connections))
-        db))))
+    (letfn [(clear-line [line]
+              (update line :next-line-id #(if (= id %) nil %)))
+            (clear-options [line]
+              (update line :options #(map clear-line %)))]
+      (update db :lines #(map-values (fn [line]
+                                       (case (:kind line)
+                                         :npc (clear-line line)
+                                         :player (clear-options line)))
+                                     (dissoc % id))))))
 
 (reg-event-db
   :open-line-modal
@@ -188,13 +202,11 @@
   :end-connecting-lines
   [spec-interceptor]
   (fn [db [_ end-id]]
-    (assert (some? (:connecting db))
-            "Attempting to end connecting while not in progress!")
-    (let [start-id (get-in db [:connecting :line-id])
-          new-db (dissoc db :connecting :pointer)]
-      (if-not (= start-id end-id)
-        (update new-db :line-connections conj [start-id end-id])
-        new-db))))
+    (assert (s/valid? :armchair.db/connecting-lines (:connecting db))
+            "Attempting to end connecting with missing or invalid state!")
+    (let [start-id (get-in db [:connecting :line-id])]
+      (cond-> (dissoc db :connecting :pointer)
+        (not= start-id end-id) (assoc-in [:lines start-id :next-line-id] end-id)))))
 
 (reg-event-db
   :start-connecting-locations

@@ -96,7 +96,6 @@
     (let [dialogue-lines (->> lines
                               (where-map :dialogue-id dialogue-id)
                               (map-values #(assoc %
-                                                  :kind (first (s/conform :armchair.db/npc-or-player-line %))
                                                   :position (get positions (:position-id %))
                                                   :character-color (get-in characters [(:character-id %) :color]))))
           lines-by-kind (group-by :kind (vals dialogue-lines))]
@@ -107,8 +106,8 @@
        :player-connections (reduce
                              (fn [acc {:keys [id options]}]
                                (apply conj acc (->> options
-                                                    (filter #(s/valid? :armchair.db/line-id (:next-line-id %)))
-                                                    (map-indexed #(vector id %1 (:next-line-id %2))))))
+                                                    (map-indexed #(vector id %1 (:next-line-id %2)))
+                                                    (filter #(s/valid? :armchair.db/line-id (nth % 2))))))
                              (list)
                              (:player lines-by-kind))})))
 
