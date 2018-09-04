@@ -190,12 +190,13 @@
 (reg-event-db
   :start-connecting-lines
   [spec-interceptor]
-  (fn [db [_ line-id position]]
+  (fn [db [_ line-id position index]]
     (assert (not (contains? db :connecting))
             "Attempting to start connecting lines while already in progress!")
     (assoc db
-           :connecting {:start-position position
-                        :line-id line-id}
+           :connecting (cond-> {:start-position position
+                                :line-id line-id}
+                         (some? index) (assoc :index index))
            :pointer position)))
 
 (reg-event-db
@@ -204,9 +205,12 @@
   (fn [db [_ end-id]]
     (assert (s/valid? :armchair.db/connecting-lines (:connecting db))
             "Attempting to end connecting with missing or invalid state!")
-    (let [start-id (get-in db [:connecting :line-id])]
+    (let [start-id (get-in db [:connecting :line-id])
+          id-path (if-let [index (get-in db [:connecting :index])]
+                    [:lines start-id :options index :next-line-id]
+                    [:lines start-id :next-line-id])]
       (cond-> (dissoc db :connecting :pointer)
-        (not= start-id end-id) (assoc-in [:lines start-id :next-line-id] end-id)))))
+        (not= start-id end-id) (assoc-in id-path end-id)))))
 
 (reg-event-db
   :start-connecting-locations

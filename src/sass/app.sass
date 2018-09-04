@@ -65,28 +65,28 @@ $gray: #888
 .line, .location
   $outer-margin: 7px
 
+  .graph_is-connecting &:hover
+    box-shadow: 0px 0px 20px 5px rgba(255, 255, 0, .6)
+
   display: flex
   flex-direction: column
   align-items: left
   box-sizing: border-box
   min-height: 30px
   border: 1px solid $gray
-  border-radius: 15px
+  border-radius: 5px
   background: white
 
-  p, .name
+  .npc-line, .name
     flex-grow: 1
     font-family: "Helvetica"
     font-size: .9rem
-    margin: $outer-margin
+    padding: 7px
     cursor: default
     user-select: none
     -webkit-user-select: none
 
-  .item-actions, .graph_is-connecting &:hover .item-actions
-    display: none
-
-  &:hover .item-actions
+  .item-actions
     display: flex
     position: absolute
     right: 0
@@ -98,6 +98,9 @@ $gray: #888
     align-items: flex-end
     margin: $outer-margin $outer-margin 0 0
 
+    .item-action &:last-child
+      margin-right: 0
+
   .item-action
     display: flex
     justify-content: flex-start
@@ -106,17 +109,51 @@ $gray: #888
     width: 16px
     margin-right: 4px
 
-    &:last-child
-      margin-right: 0
-
     &:hover
       color: $gray
       cursor: pointer
 
-    &_connect
+    &_connect:hover
       cursor: -moz-grab
       cursor: -webkit-grab
       cursor: grab
+
+.line
+  &__options
+    display: flex
+    flex-direction: column
+    width: 100%
+
+  &__option
+    display: flex
+    flex-direction: row
+    align-items: flex-start
+    border-bottom: 1px solid lighten($gray, 30%)
+
+    &:last-child
+      border-bottom: none
+
+    p
+      flex-grow: 1
+      height: 100%
+      box-sizing: border-box
+      overflow: hidden
+      font-family: "Helvetica"
+      font-size: .9rem
+      cursor: default
+      user-select: none
+      padding: 7px
+      padding-right: 17px
+      -webkit-user-select: none
+
+      &:hover
+        padding-right: 2px
+        overflow-y: auto
+
+    .item-action
+      align-self: center
+      margin-right: 7px
+
 
 .location
   &__characters

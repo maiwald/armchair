@@ -184,7 +184,7 @@
               :dialogue-id 1
               :position-id 7
               :kind :player
-              :options [{:text "I am Hugo as well!" :next-line-id 5}
+              :options [{:text "I am Hugo as well! But for the sake of testing I keep talking way beyond what could possible fit into this box." :next-line-id 5}
                         {:text "That's none of your business!" :next-line-id 4}]}
            14 {:id 14
                :character-id 3

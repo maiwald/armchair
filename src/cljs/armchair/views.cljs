@@ -129,8 +129,9 @@
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:border-color character-color
-                   :width (str config/line-width "px")}}
-     [:p text]
+                   :width (str config/line-width "px")
+                   :height (str config/line-height "px")}}
+     [:p {:class "npc-line"} text]
      [:div {:class "item-actions" :on-mouse-down stop-e!}
       [:div {:class "item-action" :on-click #(>evt [:delete-line id])}
        [icon "trash"]]
@@ -146,7 +147,17 @@
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:width (str config/line-width "px")}}
-     (into [:div] (map (fn [o] [:p (:text o)]) options))
+     [:ul {:class "line__options"}
+      (map-indexed (fn [index option]
+                     ^{:key (str "line-option" id ":" index)}
+                     [:li {:class "line__option"
+                           :style {:height (str config/line-height "px")}}
+                      [:p (:text option)]
+                      [:div {:class "item-action item-action_connect"
+                             :on-mouse-down (e-> #(when (left-button? %)
+                                                    (>evt [:start-connecting-lines id (e->graph-pointer %) index])))}
+                       [icon "project-diagram"]]])
+                   options)]
      [:div {:class "item-actions" :on-mouse-down stop-e!}
       [:div {:class "item-action" :on-click #(>evt [:delete-line id])}
        [icon "trash"]]
@@ -157,6 +168,16 @@
   (case (:kind line)
     :npc [npc-line-component line]
     :player [player-line-component line]))
+
+(defn npc-connection [start-position end-position]
+  [graph-connection {:start (translate-position start-position [(- config/line-width 15) (/ config/line-height 2)])
+                     :end (translate-position end-position [15 (/ config/line-height 2)])}])
+
+(defn player-connection [start-position index end-position]
+  [graph-connection {:start (translate-position start-position [(- config/line-width 15)
+                                                                (+ (/ config/line-height 2)
+                                                                   (* index config/line-height))])
+                     :end (translate-position end-position [15 (/ config/line-height 2)])}])
 
 (defn line-form-modal []
   (if-let [line-id (:line-id (<sub [:modal]))]
@@ -172,15 +193,6 @@
                              [slds/input-textarea {:label "Text"
                                                    :on-change (update-handler :text)
                                                    :value (:text line)}]]}])))
-
-(defn npc-connection [start-position end-position]
-  [graph-connection {:start (translate-position start-position [(- config/line-width 15) 15])
-                     :end (translate-position end-position [15 15])}])
-
-(defn player-connection [start-position index end-position]
-  [graph-connection {:start (translate-position start-position [(- config/line-width 15)
-                                                                (+ 15 (* index config/response-option-height))])
-                     :end (translate-position end-position [15 15])}])
 
 (defn dialogue-component [dialogue-id]
   (if dialogue-id
@@ -248,7 +260,8 @@
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "location"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-locations id]))
-           :style {:width (str config/line-width "px")}}
+           :style {:width (str config/line-width "px")
+                   :height (str config/line-height "px")}}
      [:p {:class "name"} display-name]
      [:ul {:class "location__characters"}
       (for [dialogue dialogues]
