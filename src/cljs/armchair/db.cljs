@@ -87,15 +87,14 @@
                       ::location-connection-validation))
 
 (def default-db
-  {
-   :current-page {:name "Game"}
-   :positions {1 [162 341]
-               2 [394 340]
-               3 [619 272]
-               4 [1111 383]
-               5 [1118 266]
-               6 [1381 264]
-               7 [851 271]
+  {:current-page {:name "Game"}
+   :positions {1 [65 221]
+               2 [335 218]
+               3 [624 185]
+               4 [1212 365]
+               5 [1193 175]
+               6 [1493 171]
+               7 [916 174]
                16 [229 198]
                17 [259 91]
                18 [107 151]
