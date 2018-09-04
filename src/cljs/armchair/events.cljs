@@ -53,9 +53,9 @@
   :delete-character
   [spec-interceptor]
   (fn [db [_ id]]
-    (if (zero? (db/line-count-for-character (:lines db) id))
-      (update db :characters dissoc id)
-      db)))
+    (cond-> db
+      (zero? (db/line-count-for-character (:lines db) id))
+      (update :characters dissoc id))))
 
 (reg-event-db
   :update-character
@@ -87,12 +87,11 @@
   (fn [db [_ id]]
     (let [location-connections (filter #(contains? % id)
                                        (:location-connections db))]
-      (if (or (empty? location-connections)
-              ^boolean (.confirm js/window (str "Really delete location #" id "?")))
-        (-> db
-            (update :locations dissoc id)
-            (update :location-connections difference location-connections))
-        db))))
+      (cond-> db
+        (or (empty? location-connections)
+            ^boolean (.confirm js/window (str "Really delete location #" id "?")))
+        (-> (update :locations dissoc id)
+            (update :location-connections difference location-connections))))))
 
 (reg-event-db
   :update-location

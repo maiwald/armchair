@@ -70,9 +70,9 @@
         connector (<sub [:connector])
         connecting? (some? connector)
         dragging? (<sub [:dragging?])]
-    [:div {:class ["graph"
-                   (when dragging? "graph_is-dragging")
-                   (when connecting? "graph_is-connecting")]
+    [:div {:class (cond-> ["graph"]
+                    dragging? (conj "graph_is-dragging")
+                    connecting? (conj "graph_is-connecting"))
            :on-mouse-down (start-dragging-handler position-ids)
            :on-mouse-move (e-> #(when (or dragging? connecting?)
                                   (>evt [:move-pointer (e->graph-pointer %)])))
@@ -106,9 +106,9 @@
   (let [position-ids (->> items vals (map :position-id) set)
         connecting? (some? (<sub [:connector]))
         dragging? (<sub [:dragging?])]
-    [:div {:class ["graph"
-                   (when dragging? "graph_is-dragging")
-                   (when connecting? "graph_is-connecting")]
+    [:div {:class (cond-> ["graph"]
+                    dragging? (conj "graph_is-dragging")
+                    connecting? (conj "graph_is-connecting"))
            :on-mouse-down (start-dragging-handler position-ids)
            :on-mouse-move (e-> #(when (or dragging? connecting?)
                                   (>evt [:move-pointer (e->graph-pointer %)])))
