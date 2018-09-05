@@ -148,7 +148,7 @@
     (letfn [(clear-line [line]
               (update line :next-line-id #(if (= id %) nil %)))
             (clear-options [line]
-              (update line :options #(map clear-line %)))]
+              (update line :options #(mapv clear-line %)))]
       (update db :lines #(map-values (fn [line]
                                        (case (:kind line)
                                          :npc (clear-line line)
