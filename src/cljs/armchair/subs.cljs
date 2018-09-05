@@ -97,7 +97,8 @@
                               (where-map :dialogue-id dialogue-id)
                               (map-values #(assoc %
                                                   :position (get positions (:position-id %))
-                                                  :character-color (get-in characters [(:character-id %) :color]))))
+                                                  :character-color (get-in characters [(:character-id %) :color])
+                                                  :character-name (get-in characters [(:character-id %) :display-name]))))
           lines-by-kind (group-by :kind (vals dialogue-lines))]
       {:lines dialogue-lines
        :npc-connections (->> (:npc lines-by-kind)

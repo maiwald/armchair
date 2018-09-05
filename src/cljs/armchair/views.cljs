@@ -124,13 +124,21 @@
 (defn icon [glyph]
   [:i {:class (str "fas fa-" glyph)}])
 
-(defn npc-line-component [{:keys [id text character-color]}]
+(defn npc-line-component [{:keys [id text character-name character-color]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:border-color character-color
                    :width (str config/line-width "px")
                    }}
+     [:div {:class "line__meta"}
+      [:p {:class "id"} (str "#" id)]
+      [:p {:class "name"} character-name]
+      [:ul {:class "item-actions" :on-mouse-down stop-e!}
+       [:li {:class "item-action" :on-click #(>evt [:delete-line id])}
+        [icon "trash"]]
+       [:li {:class "item-action" :on-click #(>evt [:open-line-modal id])}
+        [icon "edit"]]]]
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}
       [:p text]
@@ -138,17 +146,21 @@
              :on-mouse-down (e-> #(when (left-button? %)
                                     (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
        [icon "project-diagram"]]]
-     [:div {:class "item-actions" :on-mouse-down stop-e!}
-      [:div {:class "item-action" :on-click #(>evt [:delete-line id])}
-       [icon "trash"]]
-      [:div {:class "item-action" :on-click #(>evt [:open-line-modal id])}
-       [icon "edit"]]]]))
+     ]))
 
 (defn player-line-component [{:keys [id options]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:width (str config/line-width "px")}}
+     [:div {:class "line__meta"}
+      [:p {:class "id"} (str "#" id)]
+      [:p {:class "name"} "Player"]
+      [:ul {:class "item-actions" :on-mouse-down stop-e!}
+       [:li {:class "item-action" :on-click #(>evt [:delete-line id])}
+        [icon "trash"]]
+       [:li {:class "item-action" :on-click #(>evt [:open-line-modal id])}
+        [icon "edit"]]]]
      [:ul {:class "line__options"}
       (map-indexed (fn [index option]
                      ^{:key (str "line-option" id ":" index)}
@@ -160,11 +172,7 @@
                                                     (>evt [:start-connecting-lines id (e->graph-pointer %) index])))}
                        [icon "project-diagram"]]])
                    options)]
-     [:div {:class "item-actions" :on-mouse-down stop-e!}
-      [:div {:class "item-action" :on-click #(>evt [:delete-line id])}
-       [icon "trash"]]
-      [:div {:class "item-action" :on-click #(>evt [:open-line-modal id])}
-       [icon "edit"]]]]))
+     ]))
 
 (defn line-component [line]
   (case (:kind line)
@@ -172,14 +180,15 @@
     :player [player-line-component line]))
 
 (defn npc-connection [start-position end-position]
-  [graph-connection {:start (translate-position start-position [(- config/line-width 15) (/ config/line-height 2)])
-                     :end (translate-position end-position [15 (/ config/line-height 2)])}])
+  [graph-connection {:start (translate-position start-position [(- config/line-width 15) (+ 33 (/ config/line-height 2))])
+                     :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
 
 (defn player-connection [start-position index end-position]
   [graph-connection {:start (translate-position start-position [(- config/line-width 15)
-                                                                (+ (/ config/line-height 2)
+                                                                (+ 33
+                                                                   (/ config/line-height 2)
                                                                    (* index config/line-height))])
-                     :end (translate-position end-position [15 (/ config/line-height 2)])}])
+                     :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
 
 (defn line-form-modal []
   (if-let [line-id (:line-id (<sub [:modal]))]
@@ -218,7 +227,7 @@
          (for [[start index end] player-connections]
            ^{:key (str "response-connection:" start ":" index "->" end)}
            [player-connection (get-pos start) index (get-pos end)])]]])
-       [:span "No dialogue selected!"]))
+    [:span "No dialogue selected!"]))
 
 (defn character-form-modal []
   (if-let [character-id (:character-id (<sub [:modal]))]
@@ -262,9 +271,22 @@
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "location"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-locations id]))
-           :style {:width (str config/line-width "px")
-                   :height (str config/line-height "px")}}
-     [:p {:class "name"} display-name]
+           :style {:width (str config/line-width "px")}}
+     [:div {:class "location__meta"}
+      [:p {:class "id"} (str "#" id)]
+      [:p {:class "name"} display-name]
+      [:li {:class "item-actions"
+            :on-mouse-down stop-e!}
+       [:ul {:class "item-action"
+             :on-click #(>evt [:delete-location id])}
+        [icon "trash"]]
+       [:div {:class "item-action"
+              :on-click #(>evt [:open-location-modal id])}
+        [icon "edit"]]
+       [:div {:class "item-action item-action_connect"
+              :on-mouse-down (e-> #(when (left-button? %)
+                                     (>evt [:start-connecting-locations id (e->graph-pointer %)])))}
+        [icon "link"]]]]
      [:ul {:class "location__characters"}
       (for [dialogue dialogues]
         ^{:key (str "location-dialogue-" id " - " (:id dialogue))}
@@ -272,18 +294,7 @@
                   :on-mouse-down stop-e!
                   :on-click #(>evt [:show-page "Dialogue" (:id dialogue)])}
               (:character-name dialogue)]])]
-     [:div {:class "item-actions"
-            :on-mouse-down stop-e!}
-      [:div {:class "item-action"
-             :on-click #(>evt [:delete-location id])}
-       [icon "trash"]]
-      [:div {:class "item-action"
-             :on-click #(>evt [:open-location-modal id])}
-       [icon "edit"]]
-      [:div {:class "item-action item-action_connect"
-             :on-mouse-down (e-> #(when (left-button? %)
-                                    (>evt [:start-connecting-locations id (e->graph-pointer %)])))}
-       [icon "link"]]]]))
+     ]))
 
 (defn location-management []
   (let [{:keys [locations connections]} (<sub [:location-map])]
