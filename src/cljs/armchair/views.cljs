@@ -130,17 +130,19 @@
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:border-color character-color
                    :width (str config/line-width "px")
-                   :height (str config/line-height "px")}}
-     [:p {:class "npc-line"} text]
+                   }}
+     [:div {:class "line__text"
+            :style {:height (str config/line-height "px")}}
+      [:p text]
+      [:div {:class "item-action item-action_connect"
+             :on-mouse-down (e-> #(when (left-button? %)
+                                    (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
+       [icon "project-diagram"]]]
      [:div {:class "item-actions" :on-mouse-down stop-e!}
       [:div {:class "item-action" :on-click #(>evt [:delete-line id])}
        [icon "trash"]]
       [:div {:class "item-action" :on-click #(>evt [:open-line-modal id])}
-       [icon "edit"]]
-      [:div {:class "item-action item-action_connect"
-             :on-mouse-down (e-> #(when (left-button? %)
-                                    (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
-       [icon "project-diagram"]]]]))
+       [icon "edit"]]]]))
 
 (defn player-line-component [{:keys [id options]}]
   (let [connecting? (some? (<sub [:connector]))]
@@ -150,7 +152,7 @@
      [:ul {:class "line__options"}
       (map-indexed (fn [index option]
                      ^{:key (str "line-option" id ":" index)}
-                     [:li {:class "line__option"
+                     [:li {:class "line__text"
                            :style {:height (str config/line-height "px")}}
                       [:p (:text option)]
                       [:div {:class "item-action item-action_connect"

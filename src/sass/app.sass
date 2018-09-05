@@ -42,6 +42,10 @@ $gray: #888
       & > *
         box-shadow: 2px 2px 10px 0px rgba(0, 0, 0, .2)
 
+  &_is-connecting &__item:hover
+    box-shadow: 0px 0px 20px 5px rgba(255, 255, 0, .6)
+
+
   &__connection-container
     +fill-container
     z-index: 1
@@ -65,9 +69,6 @@ $gray: #888
 .line, .location
   $outer-margin: 7px
 
-  .graph_is-connecting &:hover
-    box-shadow: 0px 0px 20px 5px rgba(255, 255, 0, .6)
-
   display: flex
   flex-direction: column
   align-items: left
@@ -77,7 +78,7 @@ $gray: #888
   border-radius: 5px
   background: white
 
-  .npc-line, .name
+  .name
     flex-grow: 1
     font-family: "Helvetica"
     font-size: .9rem
@@ -124,7 +125,7 @@ $gray: #888
     flex-direction: column
     width: 100%
 
-  &__option
+  &__text
     display: flex
     flex-direction: row
     align-items: flex-start
@@ -135,20 +136,14 @@ $gray: #888
 
     p
       flex-grow: 1
-      height: 100%
-      box-sizing: border-box
-      overflow: hidden
+      overflow-y: auto
       font-family: "Helvetica"
       font-size: .9rem
       cursor: default
       user-select: none
-      padding: 7px
-      padding-right: 17px
+      margin: 7px
+      height: calc(100% - 14px)
       -webkit-user-select: none
-
-      &:hover
-        padding-right: 2px
-        overflow-y: auto
 
     .item-action
       align-self: center
