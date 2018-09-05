@@ -39,58 +39,19 @@
     (fn [event]
       (>evt [record-event id field (-> event .-target .-value)]))))
 
-;; Graph (drag & drop)
+;; Drag & Drop
 
 (defn start-dragging-handler [position-ids]
   (e-> #(when (left-button? %)
           (>evt [:start-dragging position-ids (e->graph-pointer %)]))))
 
-(defn graph-item [{:keys [position position-id]} component]
-  (let [dragging? (<sub [:dragging-item? position-id])]
-    [:div {:class ["graph__item"
-                   (when dragging? "graph__item_is-dragging")]
-           :on-mouse-down (start-dragging-handler #{position-id})
-           :on-mouse-up (e-> #(when dragging? (>evt [:end-dragging])))
-           :style {:left (first position)
-                   :top (second position)}}
-     component]))
-
-(defn graph-connection [{:keys [key-prop kind start end]}]
+(defn connection [{:keys [key-prop kind start end]}]
   [:line {:class ["graph__connection"
                   (when (= kind :connector) "graph__connection_is-connector")]
           :x1 (first start)
           :y1 (second start)
           :x2 (first end)
           :y2 (second end)}])
-
-(defn graph [{:keys [items kind item-component connections connection-transform]
-              :or {connections '()
-                   connection-transform identity}}]
-  (let [position-ids (->> items vals (map :position-id) set)
-        connector (<sub [:connector])
-        connecting? (some? connector)
-        dragging? (<sub [:dragging?])]
-    [:div {:class (cond-> ["graph"]
-                    dragging? (conj "graph_is-dragging")
-                    connecting? (conj "graph_is-connecting"))
-           :on-mouse-down (start-dragging-handler position-ids)
-           :on-mouse-move (e-> #(when (or dragging? connecting?)
-                                  (>evt [:move-pointer (e->graph-pointer %)])))
-           :on-mouse-up (e-> #(cond
-                                connecting? (>evt [:abort-connecting])
-                                dragging? (>evt [:end-dragging])))}
-     [:svg {:class "graph__connection-container" :version "1.1"
-            :baseProfile "full"
-            :xmlns "http://www.w3.org/2000/svg"}
-      (for [[start end] connections]
-        ^{:key (str kind ":" start "->" end)}
-        [graph-connection (connection-transform {:start (get-in items [start :position])
-                                                 :end (get-in items [end :position])})])
-      (when connecting? [graph-connection connector])]
-     (for [[id item] items]
-       ^{:key (str kind id)} [graph-item item [item-component item]])]))
-
-;; Drag & Drop
 
 (defn drag-item [{:keys [position position-id]} component]
   (let [dragging? (<sub [:dragging-item? position-id])]
@@ -180,15 +141,15 @@
     :player [player-line-component line]))
 
 (defn npc-connection [start-position end-position]
-  [graph-connection {:start (translate-position start-position [(- config/line-width 15) (+ 33 (/ config/line-height 2))])
-                     :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
+  [connection {:start (translate-position start-position [(- config/line-width 15) (+ 33 (/ config/line-height 2))])
+               :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
 
 (defn player-connection [start-position index end-position]
-  [graph-connection {:start (translate-position start-position [(- config/line-width 15)
-                                                                (+ 33
-                                                                   (/ config/line-height 2)
-                                                                   (* index config/line-height))])
-                     :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
+  [connection {:start (translate-position start-position [(- config/line-width 15)
+                                                          (+ 33
+                                                             (/ config/line-height 2)
+                                                             (* index config/line-height))])
+               :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
 
 (defn line-form-modal []
   (if-let [line-id (:line-id (<sub [:modal]))]
@@ -220,7 +181,7 @@
                :baseProfile "full"
                :xmlns "http://www.w3.org/2000/svg"}
          (when-let [connector (<sub [:connector])]
-           [graph-connection connector])
+           [connection connector])
          (for [[start end] npc-connections]
            ^{:key (str "line-connection:" start "->" end)}
            [npc-connection (get-pos start) (get-pos end)])
@@ -293,21 +254,31 @@
         [:li [:a {:style {:background-color (:character-color dialogue)}
                   :on-mouse-down stop-e!
                   :on-click #(>evt [:show-page "Dialogue" (:id dialogue)])}
-              (:character-name dialogue)]])]
-     ]))
+              (:character-name dialogue)]])]]))
+
+
+(defn location-connection [start end]
+  [connection {:start (translate-position start [(/ config/line-width 2) 15])
+               :end (translate-position end [(/ config/line-width 2) 15])}])
 
 (defn location-management []
-  (let [{:keys [locations connections]} (<sub [:location-map])]
+  (let [{:keys [locations connections]} (<sub [:location-map])
+        get-pos #(get-in locations [% :position])]
     [:div {:class "full-page"}
      [:div {:class "new-item-button"}
       [slds/add-button "New" #(>evt [:create-location])]]
-     [graph {:kind "location"
-             :items locations
-             :connections connections
-             :connection-transform (fn [{:keys [start end]}]
-                                     {:start (translate-position start [(/ config/line-width 2) 15])
-                                      :end (translate-position end [(/ config/line-width 2) 15])})
-             :item-component location-component}]]))
+     [drag-canvas {:kind "location"
+                   :items locations
+                   :item-component location-component}
+      [:svg {:class "graph__connection-container" :version "1.1"
+             :baseProfile "full"
+             :xmlns "http://www.w3.org/2000/svg"}
+       (when-let [connector (<sub [:connector])]
+         [connection connector])
+       (for [[start end] connections]
+         ^{:key (str "location-connection" start "->" end)}
+         [location-connection (get-pos start) (get-pos end)])
+       ]]]))
 
 (defn game-canvas [game-data]
   (let [game-data (<sub [:game-data])
