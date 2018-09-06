@@ -42,6 +42,10 @@ $gray: #888
       & > *
         box-shadow: 2px 2px 10px 0px rgba(0, 0, 0, .2)
 
+  &_is-connecting &__item:hover
+    box-shadow: 0px 0px 20px 5px rgba(255, 255, 0, .6)
+
+
   &__connection-container
     +fill-container
     z-index: 1
@@ -51,6 +55,41 @@ $gray: #888
 
     &_is-connector
       stroke-dasharray: 3, 3
+
+.actions
+  display: flex
+  flex-direction: row
+
+  .action
+    margin: 0
+    margin-right: 4px
+
+    &:last-child
+      margin: 0
+
+  &_vertial
+    flex-direction: column
+
+    .action
+      margin: 0
+      margin-bottom: 4px
+
+
+.action
+  display: flex
+  justify-content: flex-start
+  align-items: flex-start
+  width: 16px
+  color: lighten($gray, 30%)
+
+  &:hover
+    color: $gray
+    cursor: pointer
+
+  &_connect:hover
+    cursor: -moz-grab
+    cursor: -webkit-grab
+    cursor: grab
 
 .full-page
   +fill-container
@@ -71,52 +110,61 @@ $gray: #888
   box-sizing: border-box
   min-height: 30px
   border: 1px solid $gray
-  border-radius: 15px
+  border-radius: 5px
   background: white
 
-  p, .name
-    flex-grow: 1
-    font-family: "Helvetica"
-    font-size: .9rem
-    margin: $outer-margin
-    cursor: default
-    user-select: none
-    -webkit-user-select: none
-
-  .item-actions, .graph_is-connecting &:hover .item-actions
-    display: none
-
-  &:hover .item-actions
+  &__meta
     display: flex
-    position: absolute
-    right: 0
-    top: -12px
-    background: rgba(255, 255, 255, .8)
-    box-shadow: 0px 0px 10px 3px rgba(255, 255, 255, .8)
-    padding-left: 4px
-    padding-right: 0
-    align-items: flex-end
-    margin: $outer-margin $outer-margin 0 0
+    flex-direction: row
+    align-items: center
+    color: lighten($gray, 20%)
+    border-bottom: 1px solid lighten($gray, 30%)
+    border-top-left-radius: 5px
+    border-top-right-radius: 5px
+    background-color: #f5f5f5
+    padding: 7px
 
-  .item-action
+    .id
+      font-family: "Helvetica"
+      font-size: .7rem
+      padding-right: 4px
+
+    .name
+      flex-grow: 1
+      font-family: "Helvetica"
+      color: black
+      font-size: .8rem
+
+.line
+  &__options
     display: flex
-    justify-content: flex-start
+    flex-direction: column
+    width: 100%
+
+  &__text
+    display: flex
+    flex-direction: row
     align-items: flex-start
-    color: lighten($gray, 30%)
-    width: 16px
-    margin-right: 4px
+    border-bottom: 1px solid lighten($gray, 30%)
 
     &:last-child
-      margin-right: 0
+      border-bottom: none
 
-    &:hover
-      color: $gray
-      cursor: pointer
+    p
+      flex-grow: 1
+      overflow-y: auto
+      font-family: "Helvetica"
+      font-size: .9rem
+      cursor: default
+      user-select: none
+      margin: 7px
+      height: calc(100% - 14px)
+      -webkit-user-select: none
 
-    &_connect
-      cursor: -moz-grab
-      cursor: -webkit-grab
-      cursor: grab
+    .action
+      align-self: center
+      margin-right: 7px
+
 
 .location
   &__characters
@@ -124,7 +172,6 @@ $gray: #888
     display: flex
     flex-direction: row
     margin: 7px
-    margin-top: 0
 
     li
       justify-content: flex-start
@@ -137,6 +184,22 @@ $gray: #888
         color: white
         height: 20px
         border-radius: 10px
+
+.player-line-form
+  &__response
+    display: flex
+    flex-direction: row
+
+    .text
+      flex-grow: 1
+
+    .actions
+      align-self: flex-start
+      margin-top: 20px
+      margin-left: 7px
+
+  .add
+    align-self: flex-end
 
 #game-container
   display: flex

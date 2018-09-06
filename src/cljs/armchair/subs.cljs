@@ -2,6 +2,7 @@
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [clojure.set :refer [difference subset?]]
+            [clojure.spec.alpha :as s]
             [armchair.db :as db]
             [armchair.config :as config]
             [armchair.util :refer [where where-map map-values position-delta translate-position translate-positions]]))
@@ -9,7 +10,6 @@
 (reg-sub :db-characters #(:characters %))
 
 (reg-sub :db-lines #(:lines %))
-(reg-sub :db-line-connections #(:line-connections %))
 
 (reg-sub :db-locations #(:locations %))
 (reg-sub :db-location-connections #(:location-connections %))
@@ -88,18 +88,27 @@
 (reg-sub
   :dialogue
   :<- [:db-lines]
-  :<- [:db-line-connections]
   :<- [:db-characters]
   :<- [:dragged-positions]
-  (fn [[lines connections characters positions] [_ dialogue-id]]
-    (let [dialogue-lines (where-map :dialogue-id dialogue-id lines)
-          dialogue-connections (filter (fn [[start end]] (and (contains? dialogue-lines start)
-                                                              (contains? dialogue-lines end))) connections)]
-      {:lines (map-values #(assoc %
-                                  :position (get positions (:position-id %))
-                                  :character-color (get-in characters [(:character-id %) :color]))
-                          dialogue-lines)
-       :connections dialogue-connections})))
+  (fn [[lines characters positions] [_ dialogue-id]]
+    (let [dialogue-lines (->> lines
+                              (where-map :dialogue-id dialogue-id)
+                              (map-values #(assoc %
+                                                  :position (get positions (:position-id %))
+                                                  :character-color (get-in characters [(:character-id %) :color])
+                                                  :character-name (get-in characters [(:character-id %) :display-name]))))
+          lines-by-kind (group-by :kind (vals dialogue-lines))]
+      {:lines dialogue-lines
+       :npc-connections (->> (:npc lines-by-kind)
+                             (filter #(s/valid? :armchair.db/line-id (:next-line-id %)))
+                             (map #(vector (:id %) (:next-line-id %))))
+       :player-connections (reduce
+                             (fn [acc {:keys [id options]}]
+                               (apply conj acc (->> options
+                                                    (map-indexed #(vector id %1 (:next-line-id %2)))
+                                                    (filter #(s/valid? :armchair.db/line-id (nth % 2))))))
+                             (list)
+                             (:player lines-by-kind))})))
 
 (reg-sub
   :location
@@ -135,8 +144,7 @@
   :<- [:db-locations]
   :<- [:db-dialogues]
   :<- [:db-lines]
-  :<- [:db-line-connections]
-  (fn [[locations dialogues lines connections] _]
+  (fn [[locations dialogues lines] _]
     (let [location (get locations 1)
           location-dialogues (->> dialogues vals (where :location-id 1))]
       {:level (:level location)
@@ -146,10 +154,6 @@
                                         dialogue-lines (where-map :dialogue-id id lines)]
                                     [(:character-id initial-line)
                                      {:initial-line-id initial-line-id
-                                      :lines dialogue-lines
-                                      :connections (filter (fn [[start end]]
-                                                            (and (contains? dialogue-lines start)
-                                                                 (contains? dialogue-lines end)))
-                                                          connections)}]))
+                                      :lines dialogue-lines}]))
                                 location-dialogues))})))
 
