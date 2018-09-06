@@ -93,8 +93,7 @@
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:border-color character-color
-                   :width (str config/line-width "px")
-                   }}
+                   :width (str config/line-width "px")}}
      [:div {:class "line__meta"}
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} character-name]
@@ -111,8 +110,7 @@
       [:div {:class "action action_connect"
              :on-mouse-down (e-> #(when (left-button? %)
                                     (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
-       [icon "project-diagram"]]]
-     ]))
+       [icon "project-diagram"]]]]))
 
 (defn player-line-component [{:keys [id initial-line? options]}]
   (let [connecting? (some? (<sub [:connector]))]
@@ -313,8 +311,7 @@
          [connection connector])
        (for [[start end] connections]
          ^{:key (str "location-connection" start "->" end)}
-         [location-connection (get-pos start) (get-pos end)])
-       ]]]))
+         [location-connection (get-pos start) (get-pos end)])]]]))
 
 (defn game-canvas [game-data]
   (let [game-data (<sub [:game-data])
