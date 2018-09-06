@@ -100,7 +100,8 @@
       [:p {:class "name"} character-name]
       [:ul {:class "actions" :on-mouse-down stop-e!}
        (when-not initial-line?
-         [:li {:class "action" :on-click #(>evt [:delete-line id])}
+         [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
+                                            (>evt [:delete-line id]))}
           [icon "trash"]])
        [:li {:class "action" :on-click #(>evt [:open-npc-line-modal id])}
         [icon "edit"]]]]
@@ -123,7 +124,8 @@
       [:p {:class "name"} "Player"]
       [:ul {:class "actions" :on-mouse-down stop-e!}
        (when-not initial-line?
-         [:li {:class "action" :on-click #(>evt [:delete-line id])}
+         [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
+                                            (>evt [:delete-line id]))}
           [icon "trash"]])
        [:li {:class "action" :on-click #(>evt [:open-player-line-modal id])}
         [icon "edit"]]]]
@@ -210,7 +212,8 @@
                                                           :on-change #(>evt [:update-option line-id index (e->val %)])
                                                           :value (:text option)}]]
                                    [:ul {:class "actions actions_vertial"}
-                                    [:li {:class "action" :on-click #(>evt [:delete-option line-id index])}
+                                    [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
+                                                                       (>evt [:delete-option line-id index]))}
                                      [icon "trash"]]
                                     (when-not (= index 0)
                                       [:li {:class "action" :on-click #(>evt [:move-option line-id index :up])}
@@ -244,7 +247,8 @@
                    :actions (fn [{:keys [id lines]} _]
                               [:div {:class "slds-text-align_right"}
                                (when (zero? lines)
-                                 [slds/symbol-button "trash-alt" {:on-click #(>evt [:delete-character id])}])
+                                 [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this character?")
+                                                                               (>evt [:delete-character id]))}])
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}
       :new-resource #(>evt [:create-character])}]))
 
@@ -270,7 +274,8 @@
       [:ul {:class "actions"
             :on-mouse-down stop-e!}
        [:li {:class "action"
-             :on-click #(>evt [:delete-location id])}
+             :on-click #(when (js/confirm "Are you sure you want to delete this location?")
+                          (>evt [:delete-location id]))}
         [icon "trash"]]
        [:li {:class "action"
               :on-click #(>evt [:open-location-modal id])}

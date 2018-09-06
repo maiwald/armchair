@@ -87,8 +87,7 @@
     (let [location-connections (filter #(contains? % id)
                                        (:location-connections db))]
       (cond-> db
-        (or (empty? location-connections)
-            ^boolean (.confirm js/window (str "Really delete location #" id "?")))
+        (empty? location-connections)
         (-> (update :locations dissoc id)
             (update :location-connections difference location-connections))))))
 
