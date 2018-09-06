@@ -80,21 +80,22 @@
 
 (defn interaction-options [state]
   (let [{:keys [character-id line-id]} (:interaction state)
-        dialogue (get-in state [:dialogues character-id])
-        option-ids (->> (:connections dialogue)
-                        (filter (fn [[start end]] (= start line-id)))
-                        (map second))]
-    (vals (select-keys (:lines dialogue) option-ids))))
+        next-line-id (get-in state [:dialogues character-id :lines line-id :next-line-id])]
+    (if (= :end next-line-id)
+      (list {:text "Yeah..., whatever. Farewell."})
+      (let [next-line (get-in state [:dialogues character-id :lines next-line-id])]
+        (case (:kind next-line)
+          :player (:options next-line)
+          :npc (list {:text "Continue..."}))))))
 
-(defn interaction-response [state]
-  (let [{:keys [character-id selected-option-index]} (:interaction state)
-        dialogue (get-in state [:dialogues character-id])
-        options (interaction-options state)
-        selected-option (get (vec options) selected-option-index)
-        response-id (->> (:connections dialogue)
-                         (find-first (fn [[start end]] (= start (:id selected-option))))
-                         second)]
-    (get (:lines dialogue) response-id)))
+(defn next-interaction [state]
+  (let [{:keys [character-id line-id selected-option-index]} (:interaction state)
+        next-line-id (get-in state [:dialogues character-id :lines line-id :next-line-id])]
+    (if-let [next-line (get-in state [:dialogues character-id :lines next-line-id])]
+      (case (:kind next-line)
+        :player (get-in next-line [:options selected-option-index :next-line-id])
+        :npc next-line-id)
+      next-line-id)))
 
 ;; Textures
 
@@ -248,10 +249,12 @@
 
 (defn handle-interact []
   (if (interacting? @state)
-    (if-let [options (seq (interaction-options @state))]
-      (swap! state update :interaction merge {:line-id (:id (interaction-response @state))
-                                              :selected-option-index 0})
-      (swap! state dissoc :interaction))
+    (let [next-interaction (next-interaction @state)]
+      (if (or (nil? next-interaction)
+              (= :end next-interaction))
+        (swap! state dissoc :interaction)
+        (swap! state update :interaction merge {:line-id next-interaction
+                                                :selected-option-index 0})))
     (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
       (if-let [enemy-id (tile-to-enemy (interaction-tile @state))]
         (let [dialogue (get-in @state [:dialogues enemy-id])]
