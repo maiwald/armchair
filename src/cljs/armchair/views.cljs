@@ -22,6 +22,9 @@
     (stop-e! e)
     (handler e)))
 
+(defn e->val [e]
+  (-> e .-target .-value))
+
 (defn relative-pointer [e elem]
   (let [rect (.getBoundingClientRect elem)]
     [(- (.-clientX e) (.-left rect))
@@ -98,7 +101,7 @@
       [:ul {:class "item-actions" :on-mouse-down stop-e!}
        [:li {:class "item-action" :on-click #(>evt [:delete-line id])}
         [icon "trash"]]
-       [:li {:class "item-action" :on-click #(>evt [:open-line-modal id])}
+       [:li {:class "item-action" :on-click #(>evt [:open-npc-line-modal id])}
         [icon "edit"]]]]
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}
@@ -120,7 +123,7 @@
       [:ul {:class "item-actions" :on-mouse-down stop-e!}
        [:li {:class "item-action" :on-click #(>evt [:delete-line id])}
         [icon "trash"]]
-       [:li {:class "item-action" :on-click #(>evt [:open-line-modal id])}
+       [:li {:class "item-action" :on-click #(>evt [:open-player-line-modal id])}
         [icon "edit"]]]]
      [:ul {:class "line__options"}
       (map-indexed (fn [index option]
@@ -150,21 +153,6 @@
                                                              (* index config/line-height))])
                :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
 
-(defn line-form-modal []
-  (if-let [line-id (:line-id (<sub [:modal]))]
-    (let [line (<sub [:line line-id])
-          update-handler (partial record-update-handler :line line-id)]
-      [slds/modal {:title (str "Line #" line-id)
-                   :close-handler #(>evt [:close-modal])
-                   :content [slds/form
-                             [slds/input-select {:label "Character"
-                                                 :on-change (update-handler :character-id)
-                                                 :options (<sub [:character-options])
-                                                 :value (:character-id line)}]
-                             [slds/input-textarea {:label "Text"
-                                                   :on-change (update-handler :text)
-                                                   :value (:text line)}]]}])))
-
 (defn dialogue-component [dialogue-id]
   (if dialogue-id
     (let [{:keys [lines npc-connections player-connections]} (<sub [:dialogue dialogue-id])
@@ -188,6 +176,48 @@
            ^{:key (str "response-connection:" start ":" index "->" end)}
            [player-connection (get-pos start) index (get-pos end)])]]])
     [:span "No dialogue selected!"]))
+
+(defn npc-line-form-modal []
+  (if-let [line-id (:npc-line-id (<sub [:modal]))]
+    (let [line (<sub [:line line-id])
+          update-handler (fn [field] #(>evt [:update-line line-id field (e->val %)]))]
+      [slds/modal {:title (str "Line #" line-id)
+                   :close-handler #(>evt [:close-modal])
+                   :content [slds/form
+                             [slds/input-select {:label "Character"
+                                                 :on-change (update-handler :character-id)
+                                                 :options (<sub [:character-options])
+                                                 :value (:character-id line)}]
+                             [slds/input-textarea {:label "Text"
+                                                   :on-change (update-handler :text)
+                                                   :value (:text line)}]]}])))
+
+(defn player-line-form-modal []
+  (if-let [line-id (:player-line-id (<sub [:modal]))]
+    (let [line (<sub [:line line-id])]
+      [slds/modal {:title (str "Line #" line-id)
+                   :close-handler #(>evt [:close-modal])
+                   :content [:div {:class "player-line-form"}
+                             [slds/form
+                              (map-indexed
+                                (fn [index option]
+                                  [:div {:key index
+                                         :class "player-line-form__response"}
+                                   [:div {:class "text"}
+                                    [slds/input-textarea {:label (str "Response " (inc index))
+                                                          :on-change #(>evt [:update-option line-id index (e->val %)])
+                                                          :value (:text option)}]]
+                                   [:ul {:class "actions"}
+                                    [:li {:class "action" :on-click #(>evt [:delete-option line-id index])} [icon "trash"]]
+                                    (when-not (= index 0)
+                                      [:li {:class "action" :on-click #(>evt [:move-option line-id index :up])}
+                                       [icon "arrow-up"]])
+                                    (when-not (= index (dec (count (:options line))))
+                                      [:li {:class "action" :on-click #(>evt [:move-option line-id index :down])}
+                                       [icon "arrow-down"]])]])
+                                (:options line))]
+                             [:div {:on-click #(>evt [:add-option line-id])}
+                              [icon "plus"]]]}])))
 
 (defn character-form-modal []
   (if-let [character-id (:character-id (<sub [:modal]))]
@@ -322,7 +352,8 @@
                    (fn [name] [name #(>evt [:show-page name])])
                    (keys pages))]
     [:div {:id "page"}
-     [line-form-modal]
+     [npc-line-form-modal]
+     [player-line-form-modal]
      [character-form-modal]
      [location-form-modal]
      [:a {:id "reset"

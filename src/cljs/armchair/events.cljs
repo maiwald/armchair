@@ -142,6 +142,39 @@
       (assoc-in db [:lines id field] newValue))))
 
 (reg-event-db
+  :move-option
+  [spec-interceptor]
+  (fn [db [_ line-id s-index direction]]
+    (let [t-index (case direction
+                    :up (dec s-index)
+                    :down (inc s-index))
+          swap-option (fn [options]
+                        (replace {(get options s-index) (get options t-index)
+                                  (get options t-index) (get options s-index)}
+                                 options))]
+      (update-in db [:lines line-id :options] swap-option))))
+
+(reg-event-db
+  :add-option
+  [spec-interceptor]
+  (fn [db [_ line-id]]
+    (update-in db [:lines line-id :options] conj {:text ""
+                                                  :next-line-id nil})))
+
+(reg-event-db
+  :update-option
+  [spec-interceptor]
+  (fn [db [_ line-id index text]]
+    (assoc-in db [:lines line-id :options index :text] text)))
+
+(reg-event-db
+  :delete-option
+  [spec-interceptor]
+  (fn [db [_ line-id index]]
+    (update-in db [:lines line-id :options] (fn [v] (vec (concat (take index v)
+                                                                 (drop (inc index) v)))))))
+
+(reg-event-db
   :delete-line
   [spec-interceptor]
   (fn [db [_ id]]
@@ -156,12 +189,20 @@
                                      (dissoc % id))))))
 
 (reg-event-db
-  :open-line-modal
+  :open-npc-line-modal
   [spec-interceptor]
   (fn [db [_ id]]
     (assert (not (contains? db :modal))
             "Attempting to open a modal while modal is open!")
-    (assoc db :modal {:line-id id})))
+    (assoc db :modal {:npc-line-id id})))
+
+(reg-event-db
+  :open-player-line-modal
+  [spec-interceptor]
+  (fn [db [_ id]]
+    (assert (not (contains? db :modal))
+            "Attempting to open a modal while modal is open!")
+    (assoc db :modal {:player-line-id id})))
 
 ;; Page
 

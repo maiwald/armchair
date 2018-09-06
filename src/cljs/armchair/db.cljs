@@ -51,15 +51,15 @@
 
 ;; Dialogue & Lines
 
-(s/def ::next-line-id (s/or :line-id ::line-id :end #(= :end)))
+(s/def ::next-line-id (s/or :line-id ::line-id :end #(= :end %)))
 (s/def ::line (s/keys :req-un [::text ::next-line-id]))
 
-(s/def ::options (s/coll-of ::line :kind vector?))
-(s/def ::player-line (s/and #(= (:kind %) :player)
-                            (s/keys :req-un [::options])))
 (s/def ::npc-line (s/and ::line
                          (s/keys :req-un [::character-id])
                          #(= (:kind %) :npc)))
+(s/def ::options (s/coll-of ::line :kind vector?))
+(s/def ::player-line (s/and #(= (:kind %) :player)
+                            (s/keys :req-un [::options])))
 
 (s/def ::npc-or-player-line (s/and (s/keys :req-un [::id ::dialogue-id ::position-id])
                                    (s/or :npc ::npc-line :player ::player-line)))
