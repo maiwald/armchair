@@ -56,6 +56,41 @@ $gray: #888
     &_is-connector
       stroke-dasharray: 3, 3
 
+.actions
+  display: flex
+  flex-direction: row
+
+  .action
+    margin: 0
+    margin-right: 4px
+
+    &:last-child
+      margin: 0
+
+  &_vertial
+    flex-direction: column
+
+    .action
+      margin: 0
+      margin-bottom: 4px
+
+
+.action
+  display: flex
+  justify-content: flex-start
+  align-items: flex-start
+  width: 16px
+  color: lighten($gray, 30%)
+
+  &:hover
+    color: $gray
+    cursor: pointer
+
+  &_connect:hover
+    cursor: -moz-grab
+    cursor: -webkit-grab
+    cursor: grab
+
 .full-page
   +fill-container
   background-color: white
@@ -100,30 +135,6 @@ $gray: #888
       color: black
       font-size: .8rem
 
-    .item-actions
-      display: flex
-      align-items: flex-end
-
-      .item-action &:last-child
-        margin-right: 0
-
-  .item-action
-    display: flex
-    justify-content: flex-start
-    align-items: flex-start
-    width: 16px
-    margin-right: 4px
-    color: lighten($gray, 30%)
-
-    &:hover
-      color: $gray
-      cursor: pointer
-
-    &_connect:hover
-      cursor: -moz-grab
-      cursor: -webkit-grab
-      cursor: grab
-
 .line
   &__options
     display: flex
@@ -150,7 +161,7 @@ $gray: #888
       height: calc(100% - 14px)
       -webkit-user-select: none
 
-    .item-action
+    .action
       align-self: center
       margin-right: 7px
 
@@ -183,9 +194,12 @@ $gray: #888
       flex-grow: 1
 
     .actions
-      align-self: center
-      display: flex
-      flex-direction: column
+      align-self: flex-start
+      margin-top: 20px
+      margin-left: 7px
+
+  .add
+    align-self: flex-end
 
 #game-container
   display: flex

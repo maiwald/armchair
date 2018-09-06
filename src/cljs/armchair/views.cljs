@@ -98,15 +98,15 @@
      [:div {:class "line__meta"}
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} character-name]
-      [:ul {:class "item-actions" :on-mouse-down stop-e!}
-       [:li {:class "item-action" :on-click #(>evt [:delete-line id])}
+      [:ul {:class "actions" :on-mouse-down stop-e!}
+       [:li {:class "action" :on-click #(>evt [:delete-line id])}
         [icon "trash"]]
-       [:li {:class "item-action" :on-click #(>evt [:open-npc-line-modal id])}
+       [:li {:class "action" :on-click #(>evt [:open-npc-line-modal id])}
         [icon "edit"]]]]
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}
       [:p text]
-      [:div {:class "item-action item-action_connect"
+      [:div {:class "action action_connect"
              :on-mouse-down (e-> #(when (left-button? %)
                                     (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
        [icon "project-diagram"]]]
@@ -120,10 +120,10 @@
      [:div {:class "line__meta"}
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} "Player"]
-      [:ul {:class "item-actions" :on-mouse-down stop-e!}
-       [:li {:class "item-action" :on-click #(>evt [:delete-line id])}
+      [:ul {:class "actions" :on-mouse-down stop-e!}
+       [:li {:class "action" :on-click #(>evt [:delete-line id])}
         [icon "trash"]]
-       [:li {:class "item-action" :on-click #(>evt [:open-player-line-modal id])}
+       [:li {:class "action" :on-click #(>evt [:open-player-line-modal id])}
         [icon "edit"]]]]
      [:ul {:class "line__options"}
       (map-indexed (fn [index option]
@@ -131,7 +131,7 @@
                            :class "line__text"
                            :style {:height (str config/line-height "px")}}
                       [:p (:text option)]
-                      [:div {:class "item-action item-action_connect"
+                      [:div {:class "action action_connect"
                              :on-mouse-down (e-> #(when (left-button? %)
                                                     (>evt [:start-connecting-lines id (e->graph-pointer %) index])))}
                        [icon "project-diagram"]]])
@@ -207,8 +207,9 @@
                                     [slds/input-textarea {:label (str "Response " (inc index))
                                                           :on-change #(>evt [:update-option line-id index (e->val %)])
                                                           :value (:text option)}]]
-                                   [:ul {:class "actions"}
-                                    [:li {:class "action" :on-click #(>evt [:delete-option line-id index])} [icon "trash"]]
+                                   [:ul {:class "actions actions_vertial"}
+                                    [:li {:class "action" :on-click #(>evt [:delete-option line-id index])}
+                                     [icon "trash"]]
                                     (when-not (= index 0)
                                       [:li {:class "action" :on-click #(>evt [:move-option line-id index :up])}
                                        [icon "arrow-up"]])
@@ -216,8 +217,7 @@
                                       [:li {:class "action" :on-click #(>evt [:move-option line-id index :down])}
                                        [icon "arrow-down"]])]])
                                 (:options line))]
-                             [:div {:on-click #(>evt [:add-option line-id])}
-                              [icon "plus"]]]}])))
+                             [slds/add-button "New Option" #(>evt [:add-option line-id])]]}])))
 
 (defn character-form-modal []
   (if-let [character-id (:character-id (<sub [:modal]))]
@@ -265,15 +265,15 @@
      [:div {:class "location__meta"}
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} display-name]
-      [:ul {:class "item-actions"
+      [:ul {:class "actions"
             :on-mouse-down stop-e!}
-       [:li {:class "item-action"
+       [:li {:class "action"
              :on-click #(>evt [:delete-location id])}
         [icon "trash"]]
-       [:li {:class "item-action"
+       [:li {:class "action"
               :on-click #(>evt [:open-location-modal id])}
         [icon "edit"]]
-       [:li {:class "item-action item-action_connect"
+       [:li {:class "action action_connect"
               :on-mouse-down (e-> #(when (left-button? %)
                                      (>evt [:start-connecting-locations id (e->graph-pointer %)])))}
         [icon "link"]]]]
