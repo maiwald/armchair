@@ -71,20 +71,37 @@
 (s/def ::dialogues (s/and ::entity-map
                           (s/map-of ::dialogue-id ::dialogue)))
 
-(defn connection-validation [entity-path connection-path]
-  (fn [state] (subset? (reduce into #{} (connection-path state))
-                       (-> state entity-path keys set))))
+;; Invariants
 
-(s/def ::location-connection-validation (connection-validation :locations :location-connections))
+(s/def ::location-connection-validation
+  (fn [state] (subset? (reduce into #{} (:location-connections state))
+                       (-> state :locations keys set))))
 
-(s/def ::state (s/and (s/keys :req-un [::current-page
+(s/def ::dialogue-must-start-with-npc-line
+  (fn [{:keys [dialogues lines]}]
+    (every? #(= :npc (:kind %))
+            (select-keys lines (map :initial-line-id dialogues)))))
+
+(s/def ::player-options-must-point-to-npc-line
+  (fn [{lines :lines}]
+    (let [next-line-ids (->> lines
+                             vals
+                             (filter #(= :player (:kind %)))
+                             (map :options)
+                             flatten
+                             (map :next-line-id))]
+      (every? #(= :npc (:kind %)) (vals (select-keys lines next-line-ids))))))
+
+(s/def ::state (s/and ::dialogue-must-start-with-npc-line
+                      ::player-options-must-point-to-npc-line
+                      ::location-connection-validation
+                      (s/keys :req-un [::current-page
                                        ::characters
                                        ::dialogues
                                        ::lines
                                        ::locations
                                        ::location-connections]
-                              :opt-un [::connecting ::dragging ::pointer])
-                      ::location-connection-validation))
+                              :opt-un [::connecting ::dragging ::pointer])))
 
 (def default-db
   {:current-page {:name "Game"}
