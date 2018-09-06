@@ -1,8 +1,7 @@
 (ns armchair.slds)
 
 (defn form [& children]
-  [:div {:class "slds-form slds-form_stacked"}
-   (map-indexed #(with-meta %2 {:key %1}) children)])
+  (into [:div {:class "slds-form slds-form_stacked"}] children))
 
 (defn form-title [title]
   [:div {:class "slds-text-heading_small"} title])

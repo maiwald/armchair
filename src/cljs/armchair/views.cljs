@@ -124,16 +124,15 @@
         [icon "edit"]]]]
      [:ul {:class "line__options"}
       (map-indexed (fn [index option]
-                     ^{:key (str "line-option" id ":" index)}
-                     [:li {:class "line__text"
+                     [:li {:key (str "line-option" id ":" index)
+                           :class "line__text"
                            :style {:height (str config/line-height "px")}}
                       [:p (:text option)]
                       [:div {:class "item-action item-action_connect"
                              :on-mouse-down (e-> #(when (left-button? %)
                                                     (>evt [:start-connecting-lines id (e->graph-pointer %) index])))}
                        [icon "project-diagram"]]])
-                   options)]
-     ]))
+                   options)]]))
 
 (defn line-component [line]
   (case (:kind line)
@@ -236,25 +235,25 @@
      [:div {:class "location__meta"}
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} display-name]
-      [:li {:class "item-actions"
+      [:ul {:class "item-actions"
             :on-mouse-down stop-e!}
-       [:ul {:class "item-action"
+       [:li {:class "item-action"
              :on-click #(>evt [:delete-location id])}
         [icon "trash"]]
-       [:div {:class "item-action"
+       [:li {:class "item-action"
               :on-click #(>evt [:open-location-modal id])}
         [icon "edit"]]
-       [:div {:class "item-action item-action_connect"
+       [:li {:class "item-action item-action_connect"
               :on-mouse-down (e-> #(when (left-button? %)
                                      (>evt [:start-connecting-locations id (e->graph-pointer %)])))}
         [icon "link"]]]]
      [:ul {:class "location__characters"}
       (for [dialogue dialogues]
-        ^{:key (str "location-dialogue-" id " - " (:id dialogue))}
-        [:li [:a {:style {:background-color (:character-color dialogue)}
-                  :on-mouse-down stop-e!
-                  :on-click #(>evt [:show-page "Dialogue" (:id dialogue)])}
-              (:character-name dialogue)]])]]))
+        [:li {:key (str "location-dialogue-" id " - " (:id dialogue))}
+         [:a {:style {:background-color (:character-color dialogue)}
+              :on-mouse-down stop-e!
+              :on-click #(>evt [:show-page "Dialogue" (:id dialogue)])}
+          (:character-name dialogue)]])]]))
 
 
 (defn location-connection [start end]
