@@ -88,12 +88,15 @@
 (reg-sub
   :dialogue
   :<- [:db-lines]
+  :<- [:db-dialogues]
   :<- [:db-characters]
   :<- [:dragged-positions]
-  (fn [[lines characters positions] [_ dialogue-id]]
-    (let [dialogue-lines (->> lines
+  (fn [[lines dialogues characters positions] [_ dialogue-id]]
+    (let [dialogue (get dialogues dialogue-id)
+          dialogue-lines (->> lines
                               (where-map :dialogue-id dialogue-id)
                               (map-values #(assoc %
+                                                  :initial-line? (= (:initial-line-id dialogue) (:id %))
                                                   :position (get positions (:position-id %))
                                                   :character-color (get-in characters [(:character-id %) :color])
                                                   :character-name (get-in characters [(:character-id %) :display-name]))))

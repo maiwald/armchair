@@ -178,6 +178,8 @@
   :delete-line
   [spec-interceptor]
   (fn [db [_ id]]
+    (assert (not (contains? (->> db :dialogues vals (map :initial-line-id) set) id))
+            "Initial lines cannot be deleted!")
     (letfn [(clear-line [line]
               (update line :next-line-id #(if (= id %) nil %)))
             (clear-options [line]

@@ -88,7 +88,7 @@
 (defn icon [glyph]
   [:i {:class (str "fas fa-" glyph)}])
 
-(defn npc-line-component [{:keys [id text character-name character-color]}]
+(defn npc-line-component [{:keys [id initial-line? text character-name character-color]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
@@ -99,8 +99,9 @@
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} character-name]
       [:ul {:class "actions" :on-mouse-down stop-e!}
-       [:li {:class "action" :on-click #(>evt [:delete-line id])}
-        [icon "trash"]]
+       (when-not initial-line?
+         [:li {:class "action" :on-click #(>evt [:delete-line id])}
+          [icon "trash"]])
        [:li {:class "action" :on-click #(>evt [:open-npc-line-modal id])}
         [icon "edit"]]]]
      [:div {:class "line__text"
@@ -112,7 +113,7 @@
        [icon "project-diagram"]]]
      ]))
 
-(defn player-line-component [{:keys [id options]}]
+(defn player-line-component [{:keys [id initial-line? options]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
@@ -121,8 +122,9 @@
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} "Player"]
       [:ul {:class "actions" :on-mouse-down stop-e!}
-       [:li {:class "action" :on-click #(>evt [:delete-line id])}
-        [icon "trash"]]
+       (when-not initial-line?
+         [:li {:class "action" :on-click #(>evt [:delete-line id])}
+          [icon "trash"]])
        [:li {:class "action" :on-click #(>evt [:open-player-line-modal id])}
         [icon "edit"]]]]
      [:ul {:class "line__options"}
