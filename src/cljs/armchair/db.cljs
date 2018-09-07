@@ -1,7 +1,8 @@
 (ns armchair.db
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as string]
-            [clojure.set :refer [subset?]]))
+            [clojure.set :refer [subset?]]
+            [armchair.util :refer [where-map]]))
 
 ;; Types
 
@@ -82,18 +83,14 @@
     (every? #(= :npc (:kind %))
             (select-keys lines (map :initial-line-id dialogues)))))
 
-(s/def ::player-options-must-point-to-npc-line
+(s/def ::player-options-must-not-point-to-player-line
   (fn [{lines :lines}]
-    (let [next-line-ids (->> lines
-                             vals
-                             (filter #(= :player (:kind %)))
-                             (map :options)
-                             flatten
-                             (map :next-line-id))]
-      (every? #(= :npc (:kind %)) (vals (select-keys lines next-line-ids))))))
+    (let [player-lines (->> lines (where-map :kind :player))
+          option-target-ids (->> player-lines vals (map :options) flatten (map :next-line-id))]
+      (not-any? #(contains? player-lines %) option-target-ids))))
 
 (s/def ::state (s/and ::dialogue-must-start-with-npc-line
-                      ::player-options-must-point-to-npc-line
+                      ::player-options-must-not-point-to-player-line
                       ::location-connection-validation
                       (s/keys :req-un [::current-page
                                        ::characters
