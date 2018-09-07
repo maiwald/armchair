@@ -85,8 +85,9 @@
 
 ;; Components
 
-(defn icon [glyph]
-  [:i {:class (str "fas fa-" glyph)}])
+(defn icon [glyph title]
+  [:i {:class (str "fas fa-" glyph)
+       :title title}])
 
 (defn npc-line-component [{:keys [id initial-line? text character-name character-color]}]
   (let [connecting? (some? (<sub [:connector]))]
@@ -101,16 +102,16 @@
        (when-not initial-line?
          [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
                                             (>evt [:delete-line id]))}
-          [icon "trash"]])
+          [icon "trash" "Delete"]])
        [:li {:class "action" :on-click #(>evt [:open-npc-line-modal id])}
-        [icon "edit"]]]]
+        [icon "edit" "Edit"]]]]
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}
       [:p text]
       [:div {:class "action action_connect"
              :on-mouse-down (e-> #(when (left-button? %)
                                     (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
-       [icon "project-diagram"]]]]))
+       [icon "project-diagram" "Connect"]]]]))
 
 (defn player-line-component [{:keys [id initial-line? options]}]
   (let [connecting? (some? (<sub [:connector]))]
@@ -124,9 +125,9 @@
        (when-not initial-line?
          [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
                                             (>evt [:delete-line id]))}
-          [icon "trash"]])
+          [icon "trash" "Delete"]])
        [:li {:class "action" :on-click #(>evt [:open-player-line-modal id])}
-        [icon "edit"]]]]
+        [icon "edit" "Edit"]]]]
      [:ul {:class "line__options"}
       (map-indexed (fn [index option]
                      [:li {:key (str "line-option" id ":" index)
@@ -136,7 +137,7 @@
                       [:div {:class "action action_connect"
                              :on-mouse-down (e-> #(when (left-button? %)
                                                     (>evt [:start-connecting-lines id (e->graph-pointer %) index])))}
-                       [icon "project-diagram"]]])
+                       [icon "project-diagram" "Connect"]]])
                    options)]]))
 
 (defn line-component [line]
@@ -212,13 +213,13 @@
                                    [:ul {:class "actions actions_vertial"}
                                     [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
                                                                        (>evt [:delete-option line-id index]))}
-                                     [icon "trash"]]
+                                     [icon "trash" "Delete"]]
                                     (when-not (= index 0)
                                       [:li {:class "action" :on-click #(>evt [:move-option line-id index :up])}
-                                       [icon "arrow-up"]])
+                                       [icon "arrow-up" "Move up"]])
                                     (when-not (= index (dec (count (:options line))))
                                       [:li {:class "action" :on-click #(>evt [:move-option line-id index :down])}
-                                       [icon "arrow-down"]])]])
+                                       [icon "arrow-down" "Move down"]])]])
                                 (:options line))]
                              [slds/add-button "New Option" #(>evt [:add-option line-id])]]}])))
 
@@ -274,14 +275,14 @@
        [:li {:class "action"
              :on-click #(when (js/confirm "Are you sure you want to delete this location?")
                           (>evt [:delete-location id]))}
-        [icon "trash"]]
+        [icon "trash" "Delete"]]
        [:li {:class "action"
               :on-click #(>evt [:open-location-modal id])}
-        [icon "edit"]]
+        [icon "edit" "Edit"]]
        [:li {:class "action action_connect"
               :on-mouse-down (e-> #(when (left-button? %)
                                      (>evt [:start-connecting-locations id (e->graph-pointer %)])))}
-        [icon "link"]]]]
+        [icon "project-diagram" "Connect"]]]]
      [:ul {:class "location__characters"}
       (for [dialogue dialogues]
         [:li {:key (str "location-dialogue-" id " - " (:id dialogue))}
