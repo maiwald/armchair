@@ -23,7 +23,10 @@
     (handler e)))
 
 (defn e->val [e]
-  (-> e .-target .-value))
+  (let [target (.-target e)]
+    (case (.-type target)
+      "checkbox" (.-checked target)
+      (.-value target))))
 
 (defn relative-pointer [e elem]
   (let [rect (.getBoundingClientRect elem)]
@@ -291,15 +294,27 @@
   (let [line (<sub [:line line-id])
         update-handler (fn [field] #(>evt [:update-line line-id field (e->val %)]))]
     [slds/modal {:title (str "Line #" line-id)
-                 :close-handler #(>evt [:close-modal])}
-     [slds/form
-      [slds/input-select {:label "Character"
-                          :on-change (update-handler :character-id)
-                          :options (<sub [:character-options])
-                          :value (:character-id line)}]
-      [slds/input-textarea {:label "Text"
-                            :on-change (update-handler :text)
-                            :value (:text line)}]]]))
+                 :close-handler #(>evt [:close-modal])
+                 :width :medium}
+     [:div {:class "npc-line-form"}
+      [:div {:class "npc-line-form__content"}
+       [slds/form
+        [slds/input-select {:label "Character"
+                            :on-change (update-handler :character-id)
+                            :options (<sub [:character-options])
+                            :value (:character-id line)}]
+        [slds/input-textarea {:label "Text"
+                              :on-change (update-handler :text)
+                              :value (:text line)}]]]
+      [:div {:class "npc-line-form__infos"}
+       [:ul
+        (for [[info-id info] (<sub [:info-list])]
+          [:li {:key (str "info" info-id)}
+           [slds/checkbox {:label (:description info)
+                           :checked (contains? (:info-ids line) info-id)
+                           :on-change #(if (e->val %)
+                                         (>evt [:set-info line-id info-id])
+                                         (>evt [:unset-info line-id info-id]))}]])]]]]))
 
 (defn player-line-form-modal [line-id]
   (let [line (<sub [:line line-id])]

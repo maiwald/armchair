@@ -40,6 +40,19 @@
                   :on-change on-change
                   :value value}]]]))
 
+(defn checkbox [{:keys [label on-change checked]}]
+  (let [id (gensym "checkbox")]
+    [:div {:class "slds-form-element"}
+     [:div {:class "slds-form-element__control"}
+      [:div {:class "slds-checkbox"}
+       [:input {:id id
+                :checked checked
+                :type "checkbox"
+                :on-change on-change}]
+       [:label {:class "slds-checkbox__label" :for id}
+        [:span {:class "slds-checkbox_faux"}]
+        [:span {:class "slds-form-element__label"} label]]]]]))
+
 (defn global-navigation [links current-page]
   [:div {:class "slds-context-bar"}
    [:div {:class "slds-context-bar__primary"}
@@ -104,9 +117,10 @@
     [data-table
      (assoc content-options :table-id title)]]])
 
-(defn modal [{:keys [title close-handler]} & children]
+(defn modal [{:keys [title close-handler width]} & children]
   [:div
-   [:section {:class "slds-modal slds-fade-in-open"}
+   [:section {:class (cond-> ["slds-modal" "slds-fade-in-open"]
+                       (= width :medium) (conj "slds-modal_medium"))}
     [:div {:class "slds-modal__container"}
      [:header {:class "slds-modal__header"}
       [:button {:class "slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"

@@ -178,6 +178,19 @@
   (fn [db [_ line-id index]]
     (update-in db [:lines line-id :options] (fn [v] (vec (concat (take index v)
                                                                  (drop (inc index) v)))))))
+
+(reg-event-db
+  :set-info
+  [spec-interceptor]
+  (fn [db [_ line-id info-id]]
+    (update-in db [:lines line-id :info-ids] #(conj (set %) info-id))))
+
+(reg-event-db
+  :unset-info
+  [spec-interceptor]
+  (fn [db [_ line-id info-id]]
+    (update-in db [:lines line-id :info-ids] disj info-id)))
+
 ;; Info CRUD
 
 (reg-event-db

@@ -60,8 +60,10 @@
 (s/def ::next-line-id (s/or :line-id (s/nilable ::line-id)))
 (s/def ::line (s/keys :req-un [::text ::next-line-id]))
 
+(s/def ::info-ids (s/coll-of ::info-id :kind set?))
 (s/def ::npc-line (s/and ::line
-                         (s/keys :req-un [::character-id])
+                         (s/keys :req-un [::character-id]
+                                 :opt-un [::info-ids])
                          #(= (:kind %) :npc)))
 (s/def ::options (s/coll-of ::line :kind vector?))
 (s/def ::player-line (s/and #(= (:kind %) :player)
