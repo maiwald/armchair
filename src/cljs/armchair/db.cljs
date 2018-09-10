@@ -57,7 +57,7 @@
 
 ;; Dialogue & Lines
 
-(s/def ::next-line-id (s/or :line-id ::line-id :end #(= :end %)))
+(s/def ::next-line-id (s/or :line-id (s/nilable ::line-id)))
 (s/def ::line (s/keys :req-un [::text ::next-line-id]))
 
 (s/def ::npc-line (s/and ::line
@@ -186,13 +186,13 @@
               :character-id 1
               :position-id 4
               :text "Fine, be a jerk."
-              :next-line-id :end}
+              :next-line-id nil}
            5 {:id 5
               :kind :npc
               :dialogue-id 1
               :character-id 1
               :position-id 5
-              :text "What a strange coincidence! I am Hugo as well."
+              :text "What a strange coincidence! Two Hugos. Who would have thought."
               :next-line-id 6}
            6 {:id 6
               :dialogue-id 1
@@ -200,12 +200,12 @@
               :character-id 1
               :position-id 6
               :text "Anyway, ...bye!"
-              :next-line-id :end}
+              :next-line-id nil}
            7 {:id 7
               :dialogue-id 1
               :position-id 7
               :kind :player
-              :options [{:text "I am Hugo as well! But for the sake of testing I keep talking way beyond what could possible fit into this box." :next-line-id 5}
+              :options [{:text "I am also Hugo! But for the sake of testing I keep talking way beyond what could possible fit into this box." :next-line-id 5}
                         {:text "That's none of your business!" :next-line-id 4}]}
            14 {:id 14
                :character-id 3
@@ -225,9 +225,7 @@
                :dialogue-id 2
                :position-id 20
                :text "I am Gustav!"
-               :next-line-id :end}
-           }
-})
+               :next-line-id nil}}})
 
 (when-not (s/valid? ::state default-db)
   (.log js/console "Default DB state explain:")

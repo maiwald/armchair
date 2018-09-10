@@ -43,7 +43,7 @@
   (e-> #(when (left-button? %)
           (>evt [:start-dragging position-ids (e->graph-pointer %)]))))
 
-(defn connection [{:keys [key-prop kind start end]}]
+(defn connection [{:keys [kind start end]}]
   [:line {:class ["graph__connection"
                   (when (= kind :connector) "graph__connection_is-connector")]
           :x1 (first start)
@@ -377,7 +377,7 @@
                 "Locations" [location-management]
                 "Dialogue" [dialogue-component page-payload]
                 "Characters" [character-management]
-                'Infos [info-management])
+                "Infos" [info-management])
         link-map (map
                    (fn [name] [name #(>evt [:show-page name])])
                    (keys pages))]

@@ -81,7 +81,7 @@
 (defn interaction-options [state]
   (let [{:keys [character-id line-id]} (:interaction state)
         next-line-id (get-in state [:dialogues character-id :lines line-id :next-line-id])]
-    (if (= :end next-line-id)
+    (if (nil? next-line-id)
       (list {:text "Yeah..., whatever. Farewell."})
       (let [next-line (get-in state [:dialogues character-id :lines next-line-id])]
         (case (:kind next-line)
@@ -250,8 +250,7 @@
 (defn handle-interact []
   (if (interacting? @state)
     (let [next-interaction (next-interaction @state)]
-      (if (or (nil? next-interaction)
-              (= :end next-interaction))
+      (if (nil? next-interaction)
         (swap! state dissoc :interaction)
         (swap! state update :interaction merge {:line-id next-interaction
                                                 :selected-option-index 0})))
