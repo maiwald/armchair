@@ -1,7 +1,8 @@
 (ns armchair.slds)
 
 (defn form [& children]
-  (into [:div {:class "slds-form slds-form_stacked"}] children))
+  (into [:div {:class "slds-form slds-form_stacked"}]
+        children))
 
 (defn form-title [title]
   [:div {:class "slds-text-heading_small"} title])
@@ -83,14 +84,14 @@
               :scope "col"
               :title column}
          column])]]
-      [:tbody
-       (for [item collection]
-         [:tr {:key (str table-id (:id item))}
-          (for [column columns]
-            [:td {:key (str table-id (:id item) column)}
-             (if-let [cell-view (get cell-views column)]
-               [cell-view item column]
-               (get item column))])])]]])
+    [:tbody
+     (for [item collection]
+       [:tr {:key (str table-id (:id item))}
+        (for [column columns]
+          [:td {:key (str table-id (:id item) column)}
+           (if-let [cell-view (get cell-views column)]
+             [cell-view item column]
+             (get item column))])])]]])
 
 (defn resource-page [title content-options]
   [:div {:class "slds-page-header slds-m-around_medium"}
@@ -103,7 +104,7 @@
     [data-table
      (assoc content-options :table-id title)]]])
 
-(defn modal [{:keys [title close-handler content]}]
+(defn modal [{:keys [title close-handler]} & children]
   [:div
    [:section {:class "slds-modal slds-fade-in-open"}
     [:div {:class "slds-modal__container"}
@@ -114,8 +115,8 @@
        [:svg {:class "slds-button__icon slds-button__icon_large"}
         [:use {:xlinkHref "/assets/icons/utility-sprite/svg/symbols.svg#close", :xmlnsXlink "http://www.w3.org/1999/xlink"}]]]
       [:h2 {:class "slds-text-heading_medium slds-hyphenate"} title]]
-     [:div {:class "slds-modal__content slds-p-around_medium"}
-      content]
+     (into [:div {:class "slds-modal__content slds-p-around_medium"}]
+           children)
      [:footer {:class "slds-modal__footer"}
       [:button {:class "slds-button slds-button_brand"
                 :on-click close-handler} "Ok"]]]]

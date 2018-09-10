@@ -201,45 +201,36 @@
 
 ;; Modal
 
+(defn open-modal [modal-key]
+  (fn [db [_ payload]]
+    (assert (not (contains? db :modal))
+            "Attempting to open a modal while modal is open!")
+    (assoc db :modal {modal-key payload})))
+
 (reg-event-db
   :open-location-modal
   [spec-interceptor]
-  (fn [db [_ id]]
-    (assert (not (contains? db :modal))
-            "Attempting to open a modal while modal is open!")
-    (assoc db :modal {:location-id id})))
+  (open-modal :location-id))
 
 (reg-event-db
   :open-character-modal
   [spec-interceptor]
-  (fn [db [_ id]]
-    (assert (not (contains? db :modal))
-            "Attempting to open a modal while modal is open!")
-    (assoc db :modal {:character-id id})))
+  (open-modal :character-id))
 
 (reg-event-db
   :open-info-modal
   [spec-interceptor]
-  (fn [db [_ id]]
-    (assert (not (contains? db :modal))
-            "Attempting to open a modal while modal is open!")
-    (assoc db :modal {:info-id id})))
+  (open-modal :info-id))
 
 (reg-event-db
   :open-npc-line-modal
   [spec-interceptor]
-  (fn [db [_ id]]
-    (assert (not (contains? db :modal))
-            "Attempting to open a modal while modal is open!")
-    (assoc db :modal {:npc-line-id id})))
+  (open-modal :npc-line-id))
 
 (reg-event-db
   :open-player-line-modal
   [spec-interceptor]
-  (fn [db [_ id]]
-    (assert (not (contains? db :modal))
-            "Attempting to open a modal while modal is open!")
-    (assoc db :modal {:player-line-id id})))
+  (open-modal :player-line-id))
 
 ;; Page
 
