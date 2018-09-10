@@ -37,11 +37,6 @@
 
 (def left-button? #(zero? (.-button %)))
 
-(defn record-update-handler [record-type id field]
-  (let [record-event (keyword (str "update-" (name record-type)))]
-    (fn [event]
-      (>evt [record-event id field (-> event .-target .-value)]))))
-
 ;; Drag & Drop
 
 (defn start-dragging-handler [position-ids]
@@ -226,7 +221,7 @@
 (defn character-form-modal []
   (if-let [character-id (:character-id (<sub [:modal]))]
     (let [character (<sub [:character character-id])
-          update-handler (partial record-update-handler :character character-id)]
+          update-handler (fn [field] #(>evt [:update-character character-id field (e->val %)]))]
       [slds/modal {:title (:display-name character)
                    :close-handler #(>evt [:close-modal])
                    :content [slds/form
@@ -254,12 +249,12 @@
 (defn location-form-modal []
   (if-let [location-id (:location-id (<sub [:modal]))]
     (let [location (<sub [:location location-id])
-          update-handler (partial record-update-handler :location location-id)]
+          update-display-name #(>evt [:update-location location-id :display-name (e->val %)])]
       [slds/modal {:title (:display-name location)
                    :close-handler #(>evt [:close-modal])
                    :content [slds/form
                              [slds/input-text {:label "Name"
-                                               :on-change (update-handler :display-name)
+                                               :on-change update-display-name
                                                :value (:display-name location)}]]}])))
 
 (defn location-component [{:keys [id display-name dialogues] :as location}]
