@@ -3,7 +3,7 @@
             [clojure.spec.alpha :as s]
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
-            [armchair.util :refer [find-first map-values translate-position]]
+            [armchair.util :refer [map-values translate-position]]
             [armchair.pathfinding :as path]))
 
 ;; Definitions
