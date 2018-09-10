@@ -8,12 +8,10 @@
             [armchair.util :refer [where where-map map-values position-delta translate-position translate-positions]]))
 
 (reg-sub :db-characters #(:characters %))
-
 (reg-sub :db-lines #(:lines %))
-
+(reg-sub :db-infos #(:infos %))
 (reg-sub :db-locations #(:locations %))
 (reg-sub :db-location-connections #(:location-connections %))
-
 (reg-sub :db-dialogues #(:dialogues %))
 
 (reg-sub :db-dragging #(:dragging %))
@@ -36,10 +34,21 @@
       characters)))
 
 (reg-sub
+  :info-list
+  :<- [:db-infos]
+  (fn [infos] infos))
+
+(reg-sub
   :character
   :<- [:db-characters]
   (fn [characters [_ character-id]]
     (characters character-id)))
+
+(reg-sub
+  :info
+  :<- [:db-infos]
+  (fn [infos [_ info-id]]
+    (infos info-id)))
 
 (reg-sub
   :line

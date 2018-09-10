@@ -37,6 +37,7 @@
 (s/def ::initial-line-id ::line-id)
 (s/def ::location-id ::id)
 (s/def ::position-id ::id)
+(s/def ::info-id ::id)
 
 (s/def ::display-name ::text)
 (s/def ::color ::text)
@@ -49,6 +50,10 @@
 (s/def ::character (s/keys :req-un [::id ::display-name ::color]))
 (s/def ::characters (s/and ::entity-map
                            (s/map-of ::character-id ::character)))
+
+(s/def ::info (s/keys :req-un [::id ::description]))
+(s/def ::infos (s/and ::entity-map
+                      (s/map-of ::info-id ::info)))
 
 ;; Dialogue & Lines
 
@@ -96,6 +101,7 @@
                                        ::characters
                                        ::dialogues
                                        ::lines
+                                       ::infos
                                        ::locations
                                        ::location-connections]
                               :opt-un [::connecting ::dragging ::pointer])))
@@ -152,6 +158,8 @@
                 3 {:id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)"}}
    :dialogues {1 {:id 1 :display-name "Hugo's Dialogue" :initial-line-id 1 :location-id 1}
                2 {:id 2 :display-name "Gustav's Dialogue" :initial-line-id 14 :location-id 1}}
+   :infos {1 {:id 1 :description "A secret Fact"}
+           2 {:id 2 :description "Another secret Fact"}}
    :lines {1 {:id 1
               :kind :npc
               :character-id 1

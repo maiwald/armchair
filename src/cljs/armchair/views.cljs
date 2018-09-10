@@ -246,6 +246,29 @@
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}
       :new-resource #(>evt [:create-character])}]))
 
+(defn info-form-modal []
+  (if-let [info-id (:info-id (<sub [:modal]))]
+    (let [info (<sub [:info info-id])
+          update-description #(>evt [:update-info info-id (e->val %)])]
+      [slds/modal {:title (:description info)
+                   :close-handler #(>evt [:close-modal])
+                   :content [slds/form
+                             [slds/input-text {:label "Description"
+                                               :on-change update-description
+                                               :value (:description info)}]]}])))
+
+(defn info-management []
+  (let [infos (<sub [:info-list])]
+    [slds/resource-page "Infos"
+     {:columns [:id :description :actions]
+      :collection (vals infos)
+      :cell-views {:actions (fn [{id :id}]
+                              [:div {:class "slds-text-align_right"}
+                               [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this info?")
+                                                                             (>evt [:delete-info id]))}]
+                               [slds/symbol-button "edit" {:on-click #(>evt [:open-info-modal id])}]])}
+      :new-resource #(>evt [:create-info])}]))
+
 (defn location-form-modal []
   (if-let [location-id (:location-id (<sub [:modal]))]
     (let [location (<sub [:location location-id])
@@ -347,7 +370,8 @@
                 "Game" [game-canvas]
                 "Locations" [location-management]
                 "Dialogue" [dialogue-component page-payload]
-                "Characters" [character-management])
+                "Characters" [character-management]
+                'Infos [info-management])
         link-map (map
                    (fn [name] [name #(>evt [:show-page name])])
                    (keys pages))]
@@ -356,6 +380,7 @@
      [player-line-form-modal]
      [character-form-modal]
      [location-form-modal]
+     [info-form-modal]
      [:a {:id "reset"
           :on-click #(>evt [:reset-db])} "reset"]
      [:div {:id "navigation"}
