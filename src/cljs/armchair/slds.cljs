@@ -68,7 +68,7 @@
 
 (defn badge [value color]
   [:span {:class "slds-badge"
-          :style {:color "rgba(255, 255, 255, 1)"
+          :style {:color "#fff"
                   :background-color color}}
    value])
 

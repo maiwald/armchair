@@ -87,15 +87,20 @@
   [:i {:class (str "fas fa-" glyph)
        :title title}])
 
-(defn npc-line-component [{:keys [id initial-line? text character-name character-color]}]
+(defn npc-line-component [{:keys [id info-ids initial-line? text character-name character-color]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:border-color character-color
                    :width (str config/line-width "px")}}
-     [:div {:class "line__meta"}
+     [:header {:class "line__header"}
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} character-name]
+      [:ul {:class "states"}
+       (when initial-line?
+         [:li {:class "state"} [icon "play-circle" "This is the initial line of this dialogue"]])
+       (when-not (empty? info-ids)
+         [:li {:class "state"} [icon "info-circle" "This line contains infos."]])]
       [:ul {:class "actions" :on-mouse-down stop-e!}
        (when-not initial-line?
          [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
@@ -116,7 +121,7 @@
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:width (str config/line-width "px")}}
-     [:div {:class "line__meta"}
+     [:div {:class "line__header"}
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} "Player"]
       [:ul {:class "actions" :on-mouse-down stop-e!}
@@ -209,7 +214,7 @@
     [:div {:class "location"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-locations id]))
            :style {:width (str config/line-width "px")}}
-     [:div {:class "location__meta"}
+     [:div {:class "location__header"}
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} display-name]
       [:ul {:class "actions"
