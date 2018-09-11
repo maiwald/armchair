@@ -113,18 +113,20 @@
 
 (def default-db
   {:current-page {:name "Game"}
-   :positions {1 [65 221]
-               2 [335 218]
-               3 [624 185]
-               4 [1212 365]
-               5 [1193 175]
-               6 [1493 171]
-               7 [916 174]
-               16 [229 198]
-               17 [259 91]
+   :positions {1 [50 94]
+               2 [335 85]
+               3 [609 58]
+               4 [1205 226]
+               5 [1178 48]
+               6 [1478 44]
+               7 [901 47]
+               16 [225 222]
+               17 [258 102]
                18 [107 151]
                19 [407 151]
-               20 [707 151]}
+               20 [707 151]
+               21 [885 389]
+               22 [1196 387]}
    :locations {1 {:id 1
                   :position-id 16
                   :display-name "Park - Camp"
@@ -163,8 +165,7 @@
                 3 {:id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)"}}
    :dialogues {1 {:id 1 :display-name "Hugo's Dialogue" :initial-line-id 1 :location-id 1}
                2 {:id 2 :display-name "Gustav's Dialogue" :initial-line-id 14 :location-id 1}}
-   :infos {1 {:id 1 :description "A secret Fact"}
-           2 {:id 2 :description "Another secret Fact"}}
+   :infos {1 {:id 1 :description "Hugo's Name is Hugo"}}
    :lines {1 {:id 1
               :kind :npc
               :character-id 1
@@ -177,14 +178,18 @@
               :position-id 2
               :kind :player
               :options [{:text "I could ask you the same." :next-line-id 3}
-                        {:text "My name does not matter." :next-line-id 4}]}
+                        {:text "My name does not matter." :next-line-id 4}
+                        {:text "Silence! Hugo, you must come with me at once! The fate of the world is at stake."
+                         :next-line-id 17
+                         :required-info-ids #{1}}]}
            3 {:id 3
               :kind :npc
               :dialogue-id 1
               :character-id 1
               :position-id 3
               :text "I am Hugo. And you?"
-              :next-line-id 7}
+              :next-line-id 7
+              :info-ids #{1}}
            4 {:id 4
               :kind :npc
               :dialogue-id 1
@@ -230,6 +235,20 @@
                :dialogue-id 2
                :position-id 20
                :text "I am Gustav!"
+               :next-line-id nil}
+           17 {:id 17
+               :kind :npc
+               :character-id 1
+               :dialogue-id 1
+               :position-id 21
+               :text "Whaaaaaaaaaaat!?"
+               :next-line-id 18}
+           18 {:id 18
+               :kind :npc
+               :character-id 1
+               :dialogue-id 1
+               :position-id 22
+               :text "How do you know my name!?"
                :next-line-id nil}}})
 
 (when-not (s/valid? ::state default-db)
