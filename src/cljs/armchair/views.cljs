@@ -303,23 +303,19 @@
   (let [line (<sub [:line line-id])
         update-handler (fn [field] #(>evt [:update-line line-id field (e->val %)]))]
     [slds/modal {:title (str "Line #" line-id)
-                 :close-handler #(>evt [:close-modal])
-                 :width :medium}
-     [:div {:class "npc-line-form"}
-      [:div {:class "npc-line-form__content"}
-       [slds/form
-        [slds/input-select {:label "Character"
-                            :on-change (update-handler :character-id)
-                            :options (<sub [:character-options])
-                            :value (:character-id line)}]
-        [slds/input-textarea {:label "Text"
-                              :on-change (update-handler :text)
-                              :value (:text line)}]]]
-      [:div {:class "npc-line-form__infos"}
-       [slds/multi-select {:label "Infos"
-                           :options (clj->js (<sub [:info-options]))
-                           :values (:info-ids line)
-                           :on-change #(>evt [:set-infos line-id %])}]]]]))
+                 :close-handler #(>evt [:close-modal])}
+     [slds/form
+      [slds/input-select {:label "Character"
+                          :on-change (update-handler :character-id)
+                          :options (<sub [:character-options])
+                          :value (:character-id line)}]
+      [slds/input-textarea {:label "Text"
+                            :on-change (update-handler :text)
+                            :value (:text line)}]
+      [slds/multi-select {:label "Infos"
+                          :options (clj->js (<sub [:info-options]))
+                          :values (:info-ids line)
+                          :on-change #(>evt [:set-infos line-id %])}]]]))
 
 (defn player-line-form-modal [line-id]
   (let [line (<sub [:line line-id])
