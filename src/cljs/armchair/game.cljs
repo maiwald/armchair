@@ -18,12 +18,10 @@
 (s/def ::position (s/tuple number? number?))
 (s/def ::direction #{:up :down :left :right})
 
-(s/def ::character-id int?)
-(s/def ::line-id int?)
+(s/def ::line-id pos-int?)
 (s/def ::selected-option-index int?)
 
-(s/def ::interaction (s/keys :req-un [::character-id
-                                      ::line-id
+(s/def ::interaction (s/keys :req-un [::line-id
                                       ::selected-option-index]))
 
 (s/def ::player (s/keys :req-un [::position ::direction]))
@@ -74,23 +72,22 @@
   (contains? state :interaction))
 
 (defn interacting-line [state]
-  (let [{:keys [character-id line-id]} (:interaction state)]
-    (get-in state [:dialogues character-id :lines line-id])))
+  (get-in state [:lines (get-in state [:interaction :line-id])]))
 
 (defn interaction-options [state]
-  (let [{:keys [character-id line-id]} (:interaction state)
-        next-line-id (get-in state [:dialogues character-id :lines line-id :next-line-id])]
+  (let [{:keys [line-id]} (:interaction state)
+        next-line-id (get-in state [:lines line-id :next-line-id])]
     (if (nil? next-line-id)
       (list {:text "Yeah..., whatever. Farewell."})
-      (let [next-line (get-in state [:dialogues character-id :lines next-line-id])]
+      (let [next-line (get-in state [:lines next-line-id])]
         (case (:kind next-line)
           :player (:options next-line)
           :npc (list {:text "Continue..."}))))))
 
 (defn next-interaction [state]
-  (let [{:keys [character-id line-id selected-option-index]} (:interaction state)
-        next-line-id (get-in state [:dialogues character-id :lines line-id :next-line-id])]
-    (if-let [next-line (get-in state [:dialogues character-id :lines next-line-id])]
+  (let [{:keys [line-id selected-option-index]} (:interaction state)
+        next-line-id (get-in state [:lines line-id :next-line-id])]
+    (if-let [next-line (get-in state [:lines next-line-id])]
       (case (:kind next-line)
         :player (get-in next-line [:options selected-option-index :next-line-id])
         :npc next-line-id)
@@ -252,10 +249,8 @@
                                                 :selected-option-index 0})))
     (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
       (if-let [enemy-id (tile-to-enemy (interaction-tile @state))]
-        (let [dialogue (get-in @state [:dialogues enemy-id])]
-          (swap! state assoc :interaction {:character-id enemy-id
-                                           :line-id (:initial-line-id dialogue)
-                                           :selected-option-index 0}))))))
+        (swap! state assoc :interaction {:line-id (get-in @state [:dialogues enemy-id])
+                                         :selected-option-index 0})))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
@@ -333,9 +328,9 @@
     (add-watch state
                :state-update
                (fn [_ _ old-state new-state]
-                 (when-not (s/valid? ::state new-state)
-                   (.log js/console (s/explain ::state new-state)))
                  (when (not= old-state new-state)
+                   (when-not (s/valid? ::state new-state)
+                     (.log js/console (s/explain ::state new-state)))
                    (js/requestAnimationFrame #(render new-state)))))
     (add-watch move-q
                :animation-update

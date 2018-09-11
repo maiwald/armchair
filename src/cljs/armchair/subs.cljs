@@ -1,11 +1,10 @@
 (ns armchair.subs
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
-            [clojure.set :refer [difference subset?]]
             [clojure.spec.alpha :as s]
             [armchair.db :as db]
             [armchair.config :as config]
-            [armchair.util :refer [where where-map map-values position-delta translate-position translate-positions]]))
+            [armchair.util :refer [where filter-map where-map map-values position-delta translate-position translate-positions]]))
 
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
@@ -166,14 +165,11 @@
   :<- [:db-lines]
   (fn [[locations dialogues lines] _]
     (let [location (get locations 1)
-          location-dialogues (->> dialogues vals (where :location-id 1))]
+          location-dialogues (where-map :location-id 1 dialogues)]
       {:level (:level location)
        :enemies (:enemies location)
+       :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
        :dialogues (into {} (map (fn [{:keys [id initial-line-id]}]
-                                  (let [initial-line (get lines initial-line-id)
-                                        dialogue-lines (where-map :dialogue-id id lines)]
-                                    [(:character-id initial-line)
-                                     {:initial-line-id initial-line-id
-                                      :lines dialogue-lines}]))
-                                location-dialogues))})))
-
+                                  [(:character-id (get lines initial-line-id))
+                                   initial-line-id])
+                                (vals location-dialogues)))})))
