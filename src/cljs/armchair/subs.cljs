@@ -163,11 +163,13 @@
   :<- [:db-locations]
   :<- [:db-dialogues]
   :<- [:db-lines]
-  (fn [[locations dialogues lines] _]
+  :<- [:db-infos]
+  (fn [[locations dialogues lines infos] _]
     (let [location (get locations 1)
           location-dialogues (where-map :location-id 1 dialogues)]
       {:level (:level location)
        :enemies (:enemies location)
+       :infos infos
        :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
        :dialogues (into {} (map (fn [{:keys [id initial-line-id]}]
                                   [(:character-id (get lines initial-line-id))

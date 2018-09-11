@@ -1,6 +1,7 @@
 (ns armchair.game
   (:require [clojure.core.async :refer [chan sliding-buffer put! take! go go-loop <! >!]]
             [clojure.spec.alpha :as s]
+            [clojure.set :refer [subset? union]]
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
             [armchair.util :refer [map-values translate-position]]
@@ -24,7 +25,8 @@
 (s/def ::interaction (s/keys :req-un [::line-id
                                       ::selected-option-index]))
 
-(s/def ::player (s/keys :req-un [::position ::direction]))
+(s/def ::infos (s/coll-of pos-int? :kind set?))
+(s/def ::player (s/keys :req-un [::position ::direction ::infos]))
 
 (s/def ::uniform-level (fn [level] (apply = (map count level))))
 (s/def ::level (s/and (s/coll-of vector? :kind vector?)
@@ -55,7 +57,8 @@
 
 (def initial-game-state
   {:player {:position (tile->coord [0 12])
-            :direction :right}})
+            :direction :right
+            :infos #{}}})
 
 (defn ^boolean walkable? [tile]
   (let [level (:level @state)
@@ -76,12 +79,13 @@
 
 (defn interaction-options [state]
   (let [{:keys [line-id]} (:interaction state)
-        next-line-id (get-in state [:lines line-id :next-line-id])]
+        next-line-id (get-in state [:lines line-id :next-line-id])
+        player-infos (get-in state [:player :infos])]
     (if (nil? next-line-id)
       (list {:text "Yeah..., whatever. Farewell."})
       (let [next-line (get-in state [:lines next-line-id])]
         (case (:kind next-line)
-          :player (:options next-line)
+          :player (filter #(subset? (:required-info-ids %) player-infos) (:options next-line))
           :npc (list {:text "Continue..."}))))))
 
 (defn next-interaction [state]
@@ -245,8 +249,10 @@
     (let [next-interaction (next-interaction @state)]
       (if (nil? next-interaction)
         (swap! state dissoc :interaction)
-        (swap! state update :interaction merge {:line-id next-interaction
-                                                :selected-option-index 0})))
+        (swap! state #(let [info-ids (get-in % [:lines (get-in % [:interaction :line-id]) :info-ids])]
+                        (cond-> (merge % {:interaction {:line-id next-interaction
+                                                        :selected-option-index 0}})
+                          (not (empty? info-ids)) (update-in [:player :infos] union info-ids))))))
     (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
       (if-let [enemy-id (tile-to-enemy (interaction-tile @state))]
         (swap! state assoc :interaction {:line-id (get-in @state [:dialogues enemy-id])
