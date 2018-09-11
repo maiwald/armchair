@@ -187,6 +187,14 @@
             "Infos can only be set on NPC lines!")
     (assoc-in db [:lines line-id :info-ids] (set info-ids))))
 
+(reg-event-db
+  :set-required-info
+  [spec-interceptor]
+  (fn [db [_ line-id index info-ids]]
+    (assert (= :player (get-in db [:lines line-id :kind]))
+            "Required infos can only be set on player options!")
+    (assoc-in db [:lines line-id :options index :required-info-ids] (set info-ids))))
+
 ;; Info CRUD
 
 (reg-event-db

@@ -65,6 +65,9 @@
                          (s/keys :req-un [::character-id]
                                  :opt-un [::info-ids])
                          #(= (:kind %) :npc)))
+(s/def ::required-info-ids ::info-ids)
+(s/def ::option (s/and ::line
+                       (s/keys :opt-un [::required-info-ids])))
 (s/def ::options (s/coll-of ::line :kind vector?))
 (s/def ::player-line (s/and #(= (:kind %) :player)
                             (s/keys :req-un [::options])))

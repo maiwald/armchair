@@ -136,7 +136,11 @@
                      [:li {:key (str "line-option" id ":" index)
                            :class "line__text"
                            :style {:height (str config/line-height "px")}}
-                      [:p (:text option)]
+                      [:p
+                       (when-not (empty? (:required-info-ids option))
+                         [:span {:class "state"}
+                          [icon "lock" "This option requires information."]])
+                       (:text option)]
                       [:div {:class "action action_connect"
                              :on-mouse-down (e-> #(when (left-button? %)
                                                     (>evt [:start-connecting-lines id (e->graph-pointer %) index])))}
@@ -318,19 +322,24 @@
                            :on-change #(>evt [:set-infos line-id %])}]]]]))
 
 (defn player-line-form-modal [line-id]
-  (let [line (<sub [:line line-id])]
+  (let [line (<sub [:line line-id])
+        info-options (<sub [:info-options])]
     [slds/modal {:title (str "Line #" line-id)
                  :close-handler #(>evt [:close-modal])}
      [:div {:class "player-line-form"}
       [slds/form
        (map-indexed
          (fn [index option]
-           [:div {:key index
+           [:div {:key (str "option:" line-id ":" index)
                   :class "player-line-form__response"}
             [:div {:class "text"}
              [slds/input-textarea {:label (str "Response " (inc index))
                                    :on-change #(>evt [:update-option line-id index (e->val %)])
-                                   :value (:text option)}]]
+                                   :value (:text option)}]
+             [slds/multi-select {:label "Required Infos"
+                                 :options info-options
+                                 :values (:required-info-ids option)
+                                 :on-change #(>evt [:set-required-info line-id index %])}]]
             [:ul {:class "actions actions_vertial"}
              [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
                                                 (>evt [:delete-option line-id index]))}
