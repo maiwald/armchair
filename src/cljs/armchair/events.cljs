@@ -40,6 +40,8 @@
             position-id
             ctx))))
 
+;; Character CRUD
+
 (reg-event-db
   :create-character
   [spec-interceptor]
@@ -63,14 +65,6 @@
     (assoc-in db [:characters id field] value)))
 
 (reg-event-db
-  :open-character-modal
-  [spec-interceptor]
-  (fn [db [_ id]]
-    (assert (not (contains? db :modal))
-            "Attempting to open a modal while modal is open!")
-    (assoc db :modal {:character-id id})))
-
-(reg-event-db
   :create-location
   [spec-interceptor]
   (with-new-position
@@ -79,6 +73,8 @@
         (assoc-in db [:locations id] {:id id
                                       :display-name (str "location #" id)
                                       :position-id position-id})))))
+
+;; Location CRUD
 
 (reg-event-db
   :delete-location
@@ -97,13 +93,7 @@
   (fn [db [_ id field value]]
     (assoc-in db [:locations id field] value)))
 
-(reg-event-db
-  :open-location-modal
-  [spec-interceptor]
-  (fn [db [_ id]]
-    (assert (not (contains? db :modal))
-            "Attempting to open a modal while modal is open!")
-    (assoc db :modal {:location-id id})))
+;; Line CRUD
 
 (reg-event-db
   :create-npc-line
@@ -141,6 +131,22 @@
       (assoc-in db [:lines id field] newValue))))
 
 (reg-event-db
+  :delete-line
+  [spec-interceptor]
+  (fn [db [_ id]]
+    (assert (not (contains? (->> db :dialogues vals (map :initial-line-id) set) id))
+            "Initial lines cannot be deleted!")
+    (letfn [(clear-line [line]
+              (update line :next-line-id #(if (= id %) nil %)))
+            (clear-options [line]
+              (update line :options #(mapv clear-line %)))]
+      (update db :lines #(map-values (fn [line]
+                                       (case (:kind line)
+                                         :npc (clear-line line)
+                                         :player (clear-options line)))
+                                     (dissoc % id))))))
+
+(reg-event-db
   :move-option
   [spec-interceptor]
   (fn [db [_ line-id s-index direction]]
@@ -174,36 +180,74 @@
                                                                  (drop (inc index) v)))))))
 
 (reg-event-db
-  :delete-line
+  :set-infos
+  [spec-interceptor]
+  (fn [db [_ line-id info-ids]]
+    (assert (= :npc (get-in db [:lines line-id :kind]))
+            "Infos can only be set on NPC lines!")
+    (assoc-in db [:lines line-id :info-ids] (set info-ids))))
+
+(reg-event-db
+  :set-required-info
+  [spec-interceptor]
+  (fn [db [_ line-id index info-ids]]
+    (assert (= :player (get-in db [:lines line-id :kind]))
+            "Required infos can only be set on player options!")
+    (assoc-in db [:lines line-id :options index :required-info-ids] (set info-ids))))
+
+;; Info CRUD
+
+(reg-event-db
+  :create-info
+  [spec-interceptor]
+  (fn [db]
+    (let [id (new-id db :infos)]
+      (update db :infos assoc id {:id id :text ""}))))
+
+(reg-event-db
+  :delete-info
   [spec-interceptor]
   (fn [db [_ id]]
-    (assert (not (contains? (->> db :dialogues vals (map :initial-line-id) set) id))
-            "Initial lines cannot be deleted!")
-    (letfn [(clear-line [line]
-              (update line :next-line-id #(if (= id %) nil %)))
-            (clear-options [line]
-              (update line :options #(mapv clear-line %)))]
-      (update db :lines #(map-values (fn [line]
-                                       (case (:kind line)
-                                         :npc (clear-line line)
-                                         :player (clear-options line)))
-                                     (dissoc % id))))))
+    (update db :infos dissoc id)))
+
+(reg-event-db
+  :update-info
+  [spec-interceptor]
+  (fn [db [_ id text]]
+    (assoc-in db [:infos id :description] text)))
+
+;; Modal
+
+(defn open-modal [modal-key]
+  (fn [db [_ payload]]
+    (assert (not (contains? db :modal))
+            "Attempting to open a modal while modal is open!")
+    (assoc db :modal {modal-key payload})))
+
+(reg-event-db
+  :open-location-modal
+  [spec-interceptor]
+  (open-modal :location-id))
+
+(reg-event-db
+  :open-character-modal
+  [spec-interceptor]
+  (open-modal :character-id))
+
+(reg-event-db
+  :open-info-modal
+  [spec-interceptor]
+  (open-modal :info-id))
 
 (reg-event-db
   :open-npc-line-modal
   [spec-interceptor]
-  (fn [db [_ id]]
-    (assert (not (contains? db :modal))
-            "Attempting to open a modal while modal is open!")
-    (assoc db :modal {:npc-line-id id})))
+  (open-modal :npc-line-id))
 
 (reg-event-db
   :open-player-line-modal
   [spec-interceptor]
-  (fn [db [_ id]]
-    (assert (not (contains? db :modal))
-            "Attempting to open a modal while modal is open!")
-    (assoc db :modal {:player-line-id id})))
+  (open-modal :player-line-id))
 
 ;; Page
 

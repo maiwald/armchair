@@ -1,7 +1,9 @@
-(ns armchair.slds)
+(ns armchair.slds
+  (:require [cljsjs.react-select]))
 
 (defn form [& children]
-  (into [:div {:class "slds-form slds-form_stacked"}] children))
+  (into [:div {:class "slds-form slds-form_stacked"}]
+        children))
 
 (defn form-title [title]
   [:div {:class "slds-text-heading_small"} title])
@@ -39,6 +41,20 @@
                   :on-change on-change
                   :value value}]]]))
 
+(defn multi-select [{:keys [label on-change values options]}]
+  (let [id (gensym "input-select")]
+    [:div {:class "slds-form-element"}
+     [:label {:class "slds-form-element__label" :for id} label]
+     [:div {:class "slds-form-element__control"}
+      [:> js/Select {:id id
+                     :options options
+                     :multi true
+                     :complete true
+                     :onChange #(on-change (map :value (js->clj % :keywordize-keys true)))
+                     :matchProp "label"
+                     :ignoreCase true
+                     :value values}]]]))
+
 (defn global-navigation [links current-page]
   [:div {:class "slds-context-bar"}
    [:div {:class "slds-context-bar__primary"}
@@ -54,7 +70,7 @@
 
 (defn badge [value color]
   [:span {:class "slds-badge"
-          :style {:color "rgba(255, 255, 255, 1)"
+          :style {:color "#fff"
                   :background-color color}}
    value])
 
@@ -83,14 +99,14 @@
               :scope "col"
               :title column}
          column])]]
-      [:tbody
-       (for [item collection]
-         [:tr {:key (str table-id (:id item))}
-          (for [column columns]
-            [:td {:key (str table-id (:id item) column)}
-             (if-let [cell-view (get cell-views column)]
-               [cell-view item column]
-               (get item column))])])]]])
+    [:tbody
+     (for [item collection]
+       [:tr {:key (str table-id (:id item))}
+        (for [column columns]
+          [:td {:key (str table-id (:id item) column)}
+           (if-let [cell-view (get cell-views column)]
+             [cell-view item column]
+             (get item column))])])]]])
 
 (defn resource-page [title content-options]
   [:div {:class "slds-page-header slds-m-around_medium"}
@@ -103,9 +119,10 @@
     [data-table
      (assoc content-options :table-id title)]]])
 
-(defn modal [{:keys [title close-handler content]}]
+(defn modal [{:keys [title close-handler width]} & children]
   [:div
-   [:section {:class "slds-modal slds-fade-in-open"}
+   [:section {:class (cond-> ["slds-modal" "slds-fade-in-open"]
+                       (= width :medium) (conj "slds-modal_medium"))}
     [:div {:class "slds-modal__container"}
      [:header {:class "slds-modal__header"}
       [:button {:class "slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
@@ -114,8 +131,8 @@
        [:svg {:class "slds-button__icon slds-button__icon_large"}
         [:use {:xlinkHref "/assets/icons/utility-sprite/svg/symbols.svg#close", :xmlnsXlink "http://www.w3.org/1999/xlink"}]]]
       [:h2 {:class "slds-text-heading_medium slds-hyphenate"} title]]
-     [:div {:class "slds-modal__content slds-p-around_medium"}
-      content]
+     (into [:div {:class "slds-modal__content slds-p-around_medium"}]
+           children)
      [:footer {:class "slds-modal__footer"}
       [:button {:class "slds-button slds-button_brand"
                 :on-click close-handler} "Ok"]]]]

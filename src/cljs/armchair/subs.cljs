@@ -1,19 +1,16 @@
 (ns armchair.subs
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
-            [clojure.set :refer [difference subset?]]
             [clojure.spec.alpha :as s]
             [armchair.db :as db]
             [armchair.config :as config]
-            [armchair.util :refer [where where-map map-values position-delta translate-position translate-positions]]))
+            [armchair.util :refer [where filter-map where-map map-values position-delta translate-position translate-positions]]))
 
 (reg-sub :db-characters #(:characters %))
-
 (reg-sub :db-lines #(:lines %))
-
+(reg-sub :db-infos #(:infos %))
 (reg-sub :db-locations #(:locations %))
 (reg-sub :db-location-connections #(:location-connections %))
-
 (reg-sub :db-dialogues #(:dialogues %))
 
 (reg-sub :db-dragging #(:dragging %))
@@ -36,22 +33,41 @@
       characters)))
 
 (reg-sub
-  :character
-  :<- [:db-characters]
-  (fn [characters [_ character-id]]
-    (characters character-id)))
-
-(reg-sub
   :line
   :<- [:db-lines]
   (fn [lines [_ line-id]]
     (lines line-id)))
 
 (reg-sub
+  :info-list
+  :<- [:db-infos]
+  (fn [infos] infos))
+
+(reg-sub
+  :info-options
+  :<- [:db-infos]
+  (fn [infos]
+    (map (fn [info] {:label (:description info)
+                     :value (:id info)})
+         (vals infos))))
+
+(reg-sub
+  :info
+  :<- [:db-infos]
+  (fn [infos [_ info-id]]
+    (infos info-id)))
+
+(reg-sub
   :character-options
   :<- [:db-characters]
   (fn [characters _]
     (map-values :display-name characters)))
+
+(reg-sub
+  :character
+  :<- [:db-characters]
+  (fn [characters [_ character-id]]
+    (characters character-id)))
 
 (reg-sub
   :dragging?
@@ -147,16 +163,15 @@
   :<- [:db-locations]
   :<- [:db-dialogues]
   :<- [:db-lines]
-  (fn [[locations dialogues lines] _]
+  :<- [:db-infos]
+  (fn [[locations dialogues lines infos] _]
     (let [location (get locations 1)
-          location-dialogues (->> dialogues vals (where :location-id 1))]
+          location-dialogues (where-map :location-id 1 dialogues)]
       {:level (:level location)
        :enemies (:enemies location)
+       :infos infos
+       :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
        :dialogues (into {} (map (fn [{:keys [id initial-line-id]}]
-                                  (let [initial-line (get lines initial-line-id)
-                                        dialogue-lines (where-map :dialogue-id id lines)]
-                                    [(:character-id initial-line)
-                                     {:initial-line-id initial-line-id
-                                      :lines dialogue-lines}]))
-                                location-dialogues))})))
-
+                                  [(:character-id (get lines initial-line-id))
+                                   initial-line-id])
+                                (vals location-dialogues)))})))

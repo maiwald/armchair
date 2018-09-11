@@ -23,7 +23,10 @@
     (handler e)))
 
 (defn e->val [e]
-  (-> e .-target .-value))
+  (let [target (.-target e)]
+    (case (.-type target)
+      "checkbox" (.-checked target)
+      (.-value target))))
 
 (defn relative-pointer [e elem]
   (let [rect (.getBoundingClientRect elem)]
@@ -43,7 +46,7 @@
   (e-> #(when (left-button? %)
           (>evt [:start-dragging position-ids (e->graph-pointer %)]))))
 
-(defn connection [{:keys [key-prop kind start end]}]
+(defn connection [{:keys [kind start end]}]
   [:line {:class ["graph__connection"
                   (when (= kind :connector) "graph__connection_is-connector")]
           :x1 (first start)
@@ -84,15 +87,20 @@
   [:i {:class (str "fas fa-" glyph)
        :title title}])
 
-(defn npc-line-component [{:keys [id initial-line? text character-name character-color]}]
+(defn npc-line-component [{:keys [id info-ids initial-line? text character-name character-color]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:border-color character-color
                    :width (str config/line-width "px")}}
-     [:div {:class "line__meta"}
+     [:header {:class "line__header"}
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} character-name]
+      [:ul {:class "states"}
+       (when initial-line?
+         [:li {:class "state"} [icon "play-circle" "This is the initial line of this dialogue"]])
+       (when-not (empty? info-ids)
+         [:li {:class "state"} [icon "info-circle" "This line contains infos."]])]
       [:ul {:class "actions" :on-mouse-down stop-e!}
        (when-not initial-line?
          [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
@@ -113,7 +121,7 @@
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:width (str config/line-width "px")}}
-     [:div {:class "line__meta"}
+     [:div {:class "line__header"}
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} "Player"]
       [:ul {:class "actions" :on-mouse-down stop-e!}
@@ -128,7 +136,11 @@
                      [:li {:key (str "line-option" id ":" index)
                            :class "line__text"
                            :style {:height (str config/line-height "px")}}
-                      [:p (:text option)]
+                      [:p
+                       (when-not (empty? (:required-info-ids option))
+                         [:span {:class "state"}
+                          [icon "lock" "This option requires information."]])
+                       (:text option)]
                       [:div {:class "action action_connect"
                              :on-mouse-down (e-> #(when (left-button? %)
                                                     (>evt [:start-connecting-lines id (e->graph-pointer %) index])))}
@@ -175,63 +187,6 @@
            [player-connection (get-pos start) index (get-pos end)])]]])
     [:span "No dialogue selected!"]))
 
-(defn npc-line-form-modal []
-  (if-let [line-id (:npc-line-id (<sub [:modal]))]
-    (let [line (<sub [:line line-id])
-          update-handler (fn [field] #(>evt [:update-line line-id field (e->val %)]))]
-      [slds/modal {:title (str "Line #" line-id)
-                   :close-handler #(>evt [:close-modal])
-                   :content [slds/form
-                             [slds/input-select {:label "Character"
-                                                 :on-change (update-handler :character-id)
-                                                 :options (<sub [:character-options])
-                                                 :value (:character-id line)}]
-                             [slds/input-textarea {:label "Text"
-                                                   :on-change (update-handler :text)
-                                                   :value (:text line)}]]}])))
-
-(defn player-line-form-modal []
-  (if-let [line-id (:player-line-id (<sub [:modal]))]
-    (let [line (<sub [:line line-id])]
-      [slds/modal {:title (str "Line #" line-id)
-                   :close-handler #(>evt [:close-modal])
-                   :content [:div {:class "player-line-form"}
-                             [slds/form
-                              (map-indexed
-                                (fn [index option]
-                                  [:div {:key index
-                                         :class "player-line-form__response"}
-                                   [:div {:class "text"}
-                                    [slds/input-textarea {:label (str "Response " (inc index))
-                                                          :on-change #(>evt [:update-option line-id index (e->val %)])
-                                                          :value (:text option)}]]
-                                   [:ul {:class "actions actions_vertial"}
-                                    [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
-                                                                       (>evt [:delete-option line-id index]))}
-                                     [icon "trash" "Delete"]]
-                                    (when-not (= index 0)
-                                      [:li {:class "action" :on-click #(>evt [:move-option line-id index :up])}
-                                       [icon "arrow-up" "Move up"]])
-                                    (when-not (= index (dec (count (:options line))))
-                                      [:li {:class "action" :on-click #(>evt [:move-option line-id index :down])}
-                                       [icon "arrow-down" "Move down"]])]])
-                                (:options line))]
-                             [slds/add-button "New Option" #(>evt [:add-option line-id])]]}])))
-
-(defn character-form-modal []
-  (if-let [character-id (:character-id (<sub [:modal]))]
-    (let [character (<sub [:character character-id])
-          update-handler (fn [field] #(>evt [:update-character character-id field (e->val %)]))]
-      [slds/modal {:title (:display-name character)
-                   :close-handler #(>evt [:close-modal])
-                   :content [slds/form
-                             [slds/input-text {:label "Name"
-                                               :on-change (update-handler :display-name)
-                                               :value (:display-name character)}]
-                             [slds/input-text {:label "Color"
-                                               :on-change (update-handler :color)
-                                               :value (:color character)}]]}])))
-
 (defn character-management []
   (let [characters (<sub [:character-list])]
     [slds/resource-page "Characters"
@@ -246,23 +201,24 @@
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}
       :new-resource #(>evt [:create-character])}]))
 
-(defn location-form-modal []
-  (if-let [location-id (:location-id (<sub [:modal]))]
-    (let [location (<sub [:location location-id])
-          update-display-name #(>evt [:update-location location-id :display-name (e->val %)])]
-      [slds/modal {:title (:display-name location)
-                   :close-handler #(>evt [:close-modal])
-                   :content [slds/form
-                             [slds/input-text {:label "Name"
-                                               :on-change update-display-name
-                                               :value (:display-name location)}]]}])))
+(defn info-management []
+  (let [infos (<sub [:info-list])]
+    [slds/resource-page "Infos"
+     {:columns [:id :description :actions]
+      :collection (vals infos)
+      :cell-views {:actions (fn [{id :id}]
+                              [:div {:class "slds-text-align_right"}
+                               [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this info?")
+                                                                             (>evt [:delete-info id]))}]
+                               [slds/symbol-button "edit" {:on-click #(>evt [:open-info-modal id])}]])}
+      :new-resource #(>evt [:create-info])}]))
 
 (defn location-component [{:keys [id display-name dialogues] :as location}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "location"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-locations id]))
            :style {:width (str config/line-width "px")}}
-     [:div {:class "location__meta"}
+     [:div {:class "location__header"}
       [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} display-name]
       [:ul {:class "actions"
@@ -272,11 +228,11 @@
                           (>evt [:delete-location id]))}
         [icon "trash" "Delete"]]
        [:li {:class "action"
-              :on-click #(>evt [:open-location-modal id])}
+             :on-click #(>evt [:open-location-modal id])}
         [icon "edit" "Edit"]]
        [:li {:class "action action_connect"
-              :on-mouse-down (e-> #(when (left-button? %)
-                                     (>evt [:start-connecting-locations id (e->graph-pointer %)])))}
+             :on-mouse-down (e-> #(when (left-button? %)
+                                    (>evt [:start-connecting-locations id (e->graph-pointer %)])))}
         [icon "project-diagram" "Connect"]]]]
      [:ul {:class "location__characters"}
       (for [dialogue dialogues]
@@ -341,21 +297,117 @@
                                     :width 800
                                     :ref (fn [el] (reset! canvas-ref el))}]])})))
 
+;; Modals
+
+(defn npc-line-form-modal [line-id]
+  (let [line (<sub [:line line-id])
+        update-handler (fn [field] #(>evt [:update-line line-id field (e->val %)]))]
+    [slds/modal {:title (str "Line #" line-id)
+                 :close-handler #(>evt [:close-modal])
+                 :width :medium}
+     [:div {:class "npc-line-form"}
+      [:div {:class "npc-line-form__content"}
+       [slds/form
+        [slds/input-select {:label "Character"
+                            :on-change (update-handler :character-id)
+                            :options (<sub [:character-options])
+                            :value (:character-id line)}]
+        [slds/input-textarea {:label "Text"
+                              :on-change (update-handler :text)
+                              :value (:text line)}]]]
+      [:div {:class "npc-line-form__infos"}
+       [slds/multi-select {:label "Infos"
+                           :options (clj->js (<sub [:info-options]))
+                           :values (:info-ids line)
+                           :on-change #(>evt [:set-infos line-id %])}]]]]))
+
+(defn player-line-form-modal [line-id]
+  (let [line (<sub [:line line-id])
+        info-options (<sub [:info-options])]
+    [slds/modal {:title (str "Line #" line-id)
+                 :close-handler #(>evt [:close-modal])}
+     [:div {:class "player-line-form"}
+      [slds/form
+       (map-indexed
+         (fn [index option]
+           [:div {:key (str "option:" line-id ":" index)
+                  :class "player-line-form__response"}
+            [:div {:class "text"}
+             [slds/input-textarea {:label (str "Response " (inc index))
+                                   :on-change #(>evt [:update-option line-id index (e->val %)])
+                                   :value (:text option)}]
+             [slds/multi-select {:label "Required Infos"
+                                 :options info-options
+                                 :values (:required-info-ids option)
+                                 :on-change #(>evt [:set-required-info line-id index %])}]]
+            [:ul {:class "actions actions_vertial"}
+             [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
+                                                (>evt [:delete-option line-id index]))}
+              [icon "trash" "Delete"]]
+             (when-not (= index 0)
+               [:li {:class "action" :on-click #(>evt [:move-option line-id index :up])}
+                [icon "arrow-up" "Move up"]])
+             (when-not (= index (dec (count (:options line))))
+               [:li {:class "action" :on-click #(>evt [:move-option line-id index :down])}
+                [icon "arrow-down" "Move down"]])]])
+         (:options line))]
+      [slds/add-button "New Option" #(>evt [:add-option line-id])]]]))
+
+(defn character-form-modal [character-id]
+  (let [character (<sub [:character character-id])
+        update-handler (fn [field] #(>evt [:update-character character-id field (e->val %)]))]
+    [slds/modal {:title (:display-name character)
+                 :close-handler #(>evt [:close-modal])}
+     [slds/form
+      [slds/input-text {:label "Name"
+                        :on-change (update-handler :display-name)
+                        :value (:display-name character)}]
+      [slds/input-text {:label "Color"
+                        :on-change (update-handler :color)
+                        :value (:color character)}]]]))
+
+(defn location-form-modal [location-id]
+  (let [location (<sub [:location location-id])
+        update-display-name #(>evt [:update-location location-id :display-name (e->val %)])]
+    [slds/modal {:title (:display-name location)
+                 :close-handler #(>evt [:close-modal])}
+     [slds/form
+      [slds/input-text {:label "Name"
+                        :on-change update-display-name
+                        :value (:display-name location)}]]]))
+
+(defn info-form-modal [info-id]
+  (let [info (<sub [:info info-id])
+        update-description #(>evt [:update-info info-id (e->val %)])]
+    [slds/modal {:title (:description info)
+                 :close-handler #(>evt [:close-modal])}
+     [slds/form
+      [slds/input-text {:label "Description"
+                        :on-change update-description
+                        :value (:description info)}]]]))
+
+(defn modal []
+  (if-let [modal (<sub [:modal])]
+    (condp #(contains? %2 %1) modal
+      :npc-line-id    [npc-line-form-modal (:npc-line-id modal)]
+      :player-line-id [player-line-form-modal (:player-line-id modal)]
+      :character-id   [character-form-modal (:character-id modal)]
+      :location-id    [location-form-modal (:location-id modal)]
+      :info-id        [info-form-modal (:info-id modal)])))
+
 (defn root []
   (let [{page-name :name page-payload :payload} (<sub [:current-page])
         pages (array-map
                 "Game" [game-canvas]
                 "Locations" [location-management]
                 "Dialogue" [dialogue-component page-payload]
-                "Characters" [character-management])
+                "Characters" [character-management]
+                "Infos" [info-management])
         link-map (map
                    (fn [name] [name #(>evt [:show-page name])])
                    (keys pages))]
     [:div {:id "page"}
-     [npc-line-form-modal]
-     [player-line-form-modal]
-     [character-form-modal]
-     [location-form-modal]
+     [modal]
      [:a {:id "reset"
           :on-click #(>evt [:reset-db])} "reset"]
      [:div {:id "navigation"}

@@ -37,6 +37,7 @@
 (s/def ::initial-line-id ::line-id)
 (s/def ::location-id ::id)
 (s/def ::position-id ::id)
+(s/def ::info-id ::id)
 
 (s/def ::display-name ::text)
 (s/def ::color ::text)
@@ -50,14 +51,23 @@
 (s/def ::characters (s/and ::entity-map
                            (s/map-of ::character-id ::character)))
 
+(s/def ::info (s/keys :req-un [::id ::description]))
+(s/def ::infos (s/and ::entity-map
+                      (s/map-of ::info-id ::info)))
+
 ;; Dialogue & Lines
 
-(s/def ::next-line-id (s/or :line-id ::line-id :end #(= :end %)))
+(s/def ::next-line-id (s/or :line-id (s/nilable ::line-id)))
 (s/def ::line (s/keys :req-un [::text ::next-line-id]))
 
+(s/def ::info-ids (s/coll-of ::info-id :kind set?))
 (s/def ::npc-line (s/and ::line
-                         (s/keys :req-un [::character-id])
+                         (s/keys :req-un [::character-id]
+                                 :opt-un [::info-ids])
                          #(= (:kind %) :npc)))
+(s/def ::required-info-ids ::info-ids)
+(s/def ::option (s/and ::line
+                       (s/keys :opt-un [::required-info-ids])))
 (s/def ::options (s/coll-of ::line :kind vector?))
 (s/def ::player-line (s/and #(= (:kind %) :player)
                             (s/keys :req-un [::options])))
@@ -96,24 +106,27 @@
                                        ::characters
                                        ::dialogues
                                        ::lines
+                                       ::infos
                                        ::locations
                                        ::location-connections]
                               :opt-un [::connecting ::dragging ::pointer])))
 
 (def default-db
   {:current-page {:name "Game"}
-   :positions {1 [65 221]
-               2 [335 218]
-               3 [624 185]
-               4 [1212 365]
-               5 [1193 175]
-               6 [1493 171]
-               7 [916 174]
-               16 [229 198]
-               17 [259 91]
+   :positions {1 [50 94]
+               2 [335 85]
+               3 [609 58]
+               4 [1205 226]
+               5 [1178 48]
+               6 [1478 44]
+               7 [901 47]
+               16 [225 222]
+               17 [258 102]
                18 [107 151]
                19 [407 151]
-               20 [707 151]}
+               20 [707 151]
+               21 [885 389]
+               22 [1196 387]}
    :locations {1 {:id 1
                   :position-id 16
                   :display-name "Park - Camp"
@@ -152,6 +165,7 @@
                 3 {:id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)"}}
    :dialogues {1 {:id 1 :display-name "Hugo's Dialogue" :initial-line-id 1 :location-id 1}
                2 {:id 2 :display-name "Gustav's Dialogue" :initial-line-id 14 :location-id 1}}
+   :infos {1 {:id 1 :description "Hugo's Name is Hugo"}}
    :lines {1 {:id 1
               :kind :npc
               :character-id 1
@@ -164,27 +178,31 @@
               :position-id 2
               :kind :player
               :options [{:text "I could ask you the same." :next-line-id 3}
-                        {:text "My name does not matter." :next-line-id 4}]}
+                        {:text "My name does not matter." :next-line-id 4}
+                        {:text "Silence! Hugo, you must come with me at once! The fate of the world is at stake."
+                         :next-line-id 17
+                         :required-info-ids #{1}}]}
            3 {:id 3
               :kind :npc
               :dialogue-id 1
               :character-id 1
               :position-id 3
               :text "I am Hugo. And you?"
-              :next-line-id 7}
+              :next-line-id 7
+              :info-ids #{1}}
            4 {:id 4
               :kind :npc
               :dialogue-id 1
               :character-id 1
               :position-id 4
               :text "Fine, be a jerk."
-              :next-line-id :end}
+              :next-line-id nil}
            5 {:id 5
               :kind :npc
               :dialogue-id 1
               :character-id 1
               :position-id 5
-              :text "What a strange coincidence! I am Hugo as well."
+              :text "What a strange coincidence! Two Hugos. Who would have thought."
               :next-line-id 6}
            6 {:id 6
               :dialogue-id 1
@@ -192,12 +210,12 @@
               :character-id 1
               :position-id 6
               :text "Anyway, ...bye!"
-              :next-line-id :end}
+              :next-line-id nil}
            7 {:id 7
               :dialogue-id 1
               :position-id 7
               :kind :player
-              :options [{:text "I am Hugo as well! But for the sake of testing I keep talking way beyond what could possible fit into this box." :next-line-id 5}
+              :options [{:text "I am also Hugo! But for the sake of testing I keep talking way beyond what could possible fit into this box." :next-line-id 5}
                         {:text "That's none of your business!" :next-line-id 4}]}
            14 {:id 14
                :character-id 3
@@ -217,9 +235,21 @@
                :dialogue-id 2
                :position-id 20
                :text "I am Gustav!"
-               :next-line-id :end}
-           }
-})
+               :next-line-id nil}
+           17 {:id 17
+               :kind :npc
+               :character-id 1
+               :dialogue-id 1
+               :position-id 21
+               :text "Whaaaaaaaaaaat!?"
+               :next-line-id 18}
+           18 {:id 18
+               :kind :npc
+               :character-id 1
+               :dialogue-id 1
+               :position-id 22
+               :text "How do you know my name!?"
+               :next-line-id nil}}})
 
 (when-not (s/valid? ::state default-db)
   (.log js/console "Default DB state explain:")
