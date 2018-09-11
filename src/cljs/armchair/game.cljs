@@ -26,8 +26,7 @@
                                       ::line-id
                                       ::selected-option-index]))
 
-(s/def ::player ::position)
-(s/def ::player-direction ::direction)
+(s/def ::player (s/keys :req-un [::position ::direction]))
 
 (s/def ::uniform-level (fn [level] (apply = (map count level))))
 (s/def ::level (s/and (s/coll-of vector? :kind vector?)
@@ -37,7 +36,7 @@
 
 (s/def ::all-enemies-have-dialogue (fn [{:keys [enemies dialogues]}]
                                      (= (keys enemies) (keys dialogues))))
-(s/def ::state (s/and (s/keys :req-un [::player ::player-direction ::level ::enemies]
+(s/def ::state (s/and (s/keys :req-un [::player ::level ::enemies]
                               :opt-un [::highlight ::interaction])
                       ::all-enemies-have-dialogue))
 
@@ -57,8 +56,8 @@
 (def state (atom nil))
 
 (def initial-game-state
-  {:player (tile->coord [0 12])
-   :player-direction :right})
+  {:player {:position (tile->coord [0 12])
+            :direction :right}})
 
 (defn ^boolean walkable? [tile]
   (let [level (:level @state)
@@ -66,10 +65,10 @@
     (and (= (get-in level tile) 1)
          (not (contains? enemy-tiles tile)))))
 
-(defn interaction-tile [state]
+(defn interaction-tile [{{:keys [position direction]} :player}]
   (translate-position
-    (coord->tile (:player state))
-    (direction-map (:player-direction state))))
+    (coord->tile position)
+    (direction-map direction)))
 
 (defn ^boolean interacting? [state]
   (contains? state :interaction))
@@ -156,23 +155,20 @@
   (c/stroke-rect! @ctx highlight-coord tile-size tile-size)
   (c/restore! @ctx))
 
-(defn draw-path [{:keys [level player highlight]}]
+(defn draw-path [{:keys [level highlight] {:keys [position]} :player}]
   (if highlight
     (doseq [path-tile (path/a-star
                         walkable?
-                        (coord->tile player)
+                        (coord->tile position)
                         (coord->tile highlight))]
       (c/save! @ctx)
       (c/set-fill-style! @ctx "rgba(255, 255, 0, .2)")
       (c/fill-rect! @ctx (tile->coord path-tile) tile-size tile-size)
       (c/restore! @ctx))))
 
-(defn draw-direction-indicator [{:keys [player player-direction]}]
-  (let [rotation (player-direction {:up 0
-                                    :right 90
-                                    :down 180
-                                    :left 270})]
-    (draw-texture-rotated :arrow player rotation)))
+(defn draw-direction-indicator [{{:keys [position direction]} :player}]
+  (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
+    (draw-texture-rotated :arrow position rotation)))
 
 (defn draw-dialogue-box [text options selected-option]
   (let [w 600
@@ -217,7 +213,7 @@
     (draw-level (:level @state))
     (when-not (interacting? @state)
       (draw-path @state))
-    (draw-player (:player view-state))
+    (draw-player (get-in view-state [:player :position]))
     (draw-enemies (-> view-state :enemies vals))
     (when (and (not (interacting? @state))
                (contains? @state :highlight))
@@ -296,7 +292,7 @@
   (let [anim-c (chan 1)
         destination (tile->coord destination-tile)
         animation {:start (* time-factor (.now js/performance))
-                   :from (:player @state)
+                   :from (get-in @state [:player :position])
                    :to destination
                    :duration tile-move-time}]
     (go-loop [_ (<! anim-c)]
@@ -305,10 +301,10 @@
                  (let [now (* time-factor (.now js/performance))]
                    (if-not (animation-done? animation now)
                      (do
-                       (render (update @state :player #(animated-position animation now)))
+                       (render (update-in @state [:player :position] #(animated-position animation now)))
                        (put! anim-c true))
                      (do
-                       (swap! state assoc :player destination)
+                       (swap! state assoc-in [:player :position] destination)
                        (swap! move-q pop)
                        (put! move-chan true))))))
              (recur (<! anim-c)))
@@ -318,8 +314,8 @@
   (go-loop [_ (<! channel)]
            (when-let [direction (first @move-q)]
              (let [position-delta (direction-map direction)
-                   new-position (translate-position (coord->tile (:player @state)) position-delta)]
-               (swap! state assoc :player-direction direction)
+                   new-position (translate-position (coord->tile (get-in @state [:player :position])) position-delta)]
+               (swap! state assoc-in [:player :direction] direction)
                (if (walkable? new-position)
                  (animate-move new-position channel)
                  (when-not (empty? (swap! move-q pop)) (put! channel true)))))
