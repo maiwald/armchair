@@ -1,4 +1,5 @@
-(ns armchair.slds)
+(ns armchair.slds
+  (:require [cljsjs.react-select]))
 
 (defn form [& children]
   (into [:div {:class "slds-form slds-form_stacked"}]
@@ -40,18 +41,19 @@
                   :on-change on-change
                   :value value}]]]))
 
-(defn checkbox [{:keys [label on-change checked]}]
-  (let [id (gensym "checkbox")]
+(defn multi-select [{:keys [label on-change values options]}]
+  (let [id (gensym "input-select")]
     [:div {:class "slds-form-element"}
+     [:label {:class "slds-form-element__label" :for id} label]
      [:div {:class "slds-form-element__control"}
-      [:div {:class "slds-checkbox"}
-       [:input {:id id
-                :checked checked
-                :type "checkbox"
-                :on-change on-change}]
-       [:label {:class "slds-checkbox__label" :for id}
-        [:span {:class "slds-checkbox_faux"}]
-        [:span {:class "slds-form-element__label"} label]]]]]))
+      [:> js/Select {:id id
+                     :options options
+                     :multi true
+                     :complete true
+                     :onChange #(on-change (map :value (js->clj % :keywordize-keys true)))
+                     :matchProp "label"
+                     :ignoreCase true
+                     :value values}]]]))
 
 (defn global-navigation [links current-page]
   [:div {:class "slds-context-bar"}

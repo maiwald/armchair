@@ -312,14 +312,10 @@
                               :on-change (update-handler :text)
                               :value (:text line)}]]]
       [:div {:class "npc-line-form__infos"}
-       [:ul
-        (for [[info-id info] (<sub [:info-list])]
-          [:li {:key (str "info" info-id)}
-           [slds/checkbox {:label (:description info)
-                           :checked (contains? (:info-ids line) info-id)
-                           :on-change #(if (e->val %)
-                                         (>evt [:set-info line-id info-id])
-                                         (>evt [:unset-info line-id info-id]))}]])]]]]))
+       [slds/multi-select {:label "Infos"
+                           :options (clj->js (<sub [:info-options]))
+                           :values (:info-ids line)
+                           :on-change #(>evt [:set-infos line-id %])}]]]]))
 
 (defn player-line-form-modal [line-id]
   (let [line (<sub [:line line-id])]

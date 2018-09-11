@@ -34,15 +34,23 @@
       characters)))
 
 (reg-sub
+  :line
+  :<- [:db-lines]
+  (fn [lines [_ line-id]]
+    (lines line-id)))
+
+(reg-sub
   :info-list
   :<- [:db-infos]
   (fn [infos] infos))
 
 (reg-sub
-  :character
-  :<- [:db-characters]
-  (fn [characters [_ character-id]]
-    (characters character-id)))
+  :info-options
+  :<- [:db-infos]
+  (fn [infos]
+    (map (fn [info] {:label (:description info)
+                     :value (:id info)})
+         (vals infos))))
 
 (reg-sub
   :info
@@ -51,16 +59,16 @@
     (infos info-id)))
 
 (reg-sub
-  :line
-  :<- [:db-lines]
-  (fn [lines [_ line-id]]
-    (lines line-id)))
-
-(reg-sub
   :character-options
   :<- [:db-characters]
   (fn [characters _]
     (map-values :display-name characters)))
+
+(reg-sub
+  :character
+  :<- [:db-characters]
+  (fn [characters [_ character-id]]
+    (characters character-id)))
 
 (reg-sub
   :dragging?

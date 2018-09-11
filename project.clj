@@ -3,7 +3,8 @@
                  [org.clojure/clojurescript "1.10.339"]
                  [reagent "0.8.1"]
                  [re-frame "0.10.5"]
-                 [tailrecursion/cljs-priority-map "1.2.1"]]
+                 [tailrecursion/cljs-priority-map "1.2.1"]
+                 [cljsjs/react-select "1.2.1-1"]]
 
   :plugins [[lein-cljsbuild "1.1.5"]]
 

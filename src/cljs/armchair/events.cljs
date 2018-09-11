@@ -180,16 +180,12 @@
                                                                  (drop (inc index) v)))))))
 
 (reg-event-db
-  :set-info
+  :set-infos
   [spec-interceptor]
-  (fn [db [_ line-id info-id]]
-    (update-in db [:lines line-id :info-ids] #(conj (set %) info-id))))
-
-(reg-event-db
-  :unset-info
-  [spec-interceptor]
-  (fn [db [_ line-id info-id]]
-    (update-in db [:lines line-id :info-ids] disj info-id)))
+  (fn [db [_ line-id info-ids]]
+    (assert (= :npc (get-in db [:lines line-id :kind]))
+            "Infos can only be set on NPC lines!")
+    (assoc-in db [:lines line-id :info-ids] (set info-ids))))
 
 ;; Info CRUD
 
