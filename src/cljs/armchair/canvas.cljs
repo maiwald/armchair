@@ -8,7 +8,7 @@
 (defn width [ctx] (.-width (.-canvas ctx)))
 
 (defn draw-image! [ctx image [x y]]
-  (.drawImage ctx image x y))
+  (.drawImage ctx image 0 0 tile-size tile-size x y tile-size tile-size))
 
 (defn draw-image-rotated! [ctx image [x y] deg]
   (let [offset (/ tile-size 2)]

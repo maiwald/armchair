@@ -20,10 +20,10 @@
 (s/def ::direction #{:up :down :left :right})
 
 (s/def ::line-id pos-int?)
-(s/def ::selected-option-index int?)
+(s/def ::selected-option int?)
 
 (s/def ::interaction (s/keys :req-un [::line-id
-                                      ::selected-option-index]))
+                                      ::selected-option]))
 
 (s/def ::infos (s/coll-of pos-int? :kind set?))
 (s/def ::player (s/keys :req-un [::position ::direction ::infos]))
@@ -31,11 +31,11 @@
 (s/def ::uniform-level (fn [level] (apply = (map count level))))
 (s/def ::level (s/and (s/coll-of vector? :kind vector?)
                       ::uniform-level))
-(s/def ::enemies (s/map-of int? ::position))
+(s/def ::enemies (s/map-of ::position pos-int?))
 (s/def ::highlight ::position)
 
 (s/def ::all-enemies-have-dialogue (fn [{:keys [enemies dialogues]}]
-                                     (= (keys enemies) (keys dialogues))))
+                                     (= (vals enemies) (keys dialogues))))
 (s/def ::state (s/and (s/keys :req-un [::player ::level ::enemies]
                               :opt-un [::highlight ::interaction])
                       ::all-enemies-have-dialogue))
@@ -61,39 +61,42 @@
             :infos #{}}})
 
 (defn ^boolean walkable? [tile]
-  (let [level (:level @state)
-        enemy-tiles (->> @state :enemies vals (map coord->tile) set)]
+  (let [{:keys [level enemies]} @state]
     (and (= (get-in level tile) 1)
-         (not (contains? enemy-tiles tile)))))
+         (not (contains? enemies tile)))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
   (translate-position
     (coord->tile position)
     (direction-map direction)))
 
+(defn dialogue-data [{{:keys [line-id selected-option]} :interaction
+                      {player-infos :infos} :player
+                      lines :lines}]
+  (if-let [line (lines line-id)]
+    {:text (:text line)
+     :options (if (nil? (:next-line-id line))
+                (list "Yeah..., whatever. Farewell.")
+                (let [next-line (lines (:next-line-id line))]
+                  (case (:kind next-line)
+                    :npc (list "Continue...")
+                    :player (->> (:options next-line)
+                                 (filter #(subset? (:required-info-ids %) player-infos))
+                                 (map :text)))))
+     :selected-option selected-option}))
+
 (defn ^boolean interacting? [state]
   (contains? state :interaction))
 
-(defn interacting-line [state]
-  (get-in state [:lines (get-in state [:interaction :line-id])]))
+(defn interaction-option-count [state]
+  (count (:options (dialogue-data state))))
 
-(defn interaction-options [state]
-  (let [{:keys [line-id]} (:interaction state)
-        next-line-id (get-in state [:lines line-id :next-line-id])
-        player-infos (get-in state [:player :infos])]
-    (if (nil? next-line-id)
-      (list {:text "Yeah..., whatever. Farewell."})
-      (let [next-line (get-in state [:lines next-line-id])]
-        (case (:kind next-line)
-          :player (filter #(subset? (:required-info-ids %) player-infos) (:options next-line))
-          :npc (list {:text "Continue..."}))))))
-
-(defn next-interaction [state]
-  (let [{:keys [line-id selected-option-index]} (:interaction state)
-        next-line-id (get-in state [:lines line-id :next-line-id])]
-    (if-let [next-line (get-in state [:lines next-line-id])]
+(defn next-interaction [{{:keys [line-id selected-option]} :interaction
+                         lines :lines}]
+  (let [next-line-id (get-in lines [line-id :next-line-id])]
+    (if-let [next-line (lines next-line-id)]
       (case (:kind next-line)
-        :player (get-in next-line [:options selected-option-index :next-line-id])
+        :player (get-in next-line [:options selected-option :next-line-id])
         :npc next-line-id)
       next-line-id)))
 
@@ -171,7 +174,7 @@
   (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
     (draw-texture-rotated :arrow position rotation)))
 
-(defn draw-dialogue-box [text options selected-option]
+(defn draw-dialogue-box [{:keys [text options selected-option]}]
   (let [w 600
         h 360
         x (/ (- (c/width @ctx) w) 2)
@@ -215,16 +218,13 @@
     (when-not (interacting? @state)
       (draw-path @state))
     (draw-player (get-in view-state [:player :position]))
-    (draw-enemies (-> view-state :enemies vals))
+    (draw-enemies (->> view-state :enemies keys (map tile->coord)))
     (when (and (not (interacting? @state))
                (contains? @state :highlight))
       (draw-highlight (:highlight @state)))
     (draw-direction-indicator view-state)
     (when (interacting? @state)
-      (draw-dialogue-box
-        (:text (interacting-line @state))
-        (map :text (interaction-options @state))
-        (get-in @state [:interaction :selected-option-index])))))
+      (draw-dialogue-box (dialogue-data @state)))))
 
 ;; Input Handlers
 
@@ -232,10 +232,10 @@
 
 (defn handle-move [direction]
   (if (interacting? @state)
-    (let [option-count (count (interaction-options @state))]
+    (let [option-count (interaction-option-count @state)]
       (case direction
-        :up (swap! state update-in [:interaction :selected-option-index] #(mod (dec %) option-count))
-        :down (swap! state update-in [:interaction :selected-option-index] #(mod (inc %) option-count))
+        :up (swap! state update-in [:interaction :selected-option] #(mod (dec %) option-count))
+        :down (swap! state update-in [:interaction :selected-option] #(mod (inc %) option-count))
         :else))
     (swap! move-q conj direction)))
 
@@ -251,12 +251,11 @@
         (swap! state dissoc :interaction)
         (swap! state #(let [info-ids (get-in % [:lines (get-in % [:interaction :line-id]) :info-ids])]
                         (cond-> (merge % {:interaction {:line-id next-interaction
-                                                        :selected-option-index 0}})
+                                                        :selected-option 0}})
                           (not (empty? info-ids)) (update-in [:player :infos] union info-ids))))))
-    (let [tile-to-enemy (into {} (map (fn [[k v]] [(coord->tile v) k]) (:enemies @state)))]
-      (if-let [enemy-id (tile-to-enemy (interaction-tile @state))]
-        (swap! state assoc :interaction {:line-id (get-in @state [:dialogues enemy-id])
-                                         :selected-option-index 0})))))
+    (if-let [enemy-id ((:enemies @state) (interaction-tile @state))]
+      (swap! state assoc :interaction {:line-id (get-in @state [:dialogues enemy-id])
+                                       :selected-option 0}))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
@@ -325,8 +324,7 @@
 ;; Game Loop
 
 (defn start-game [context data]
-  (reset! state (merge initial-game-state
-                       (update data :enemies #(map-values tile->coord %))))
+  (reset! state (merge initial-game-state data))
   (reset! move-q #queue [])
   (reset! ctx context)
   (let [input-chan (chan)
