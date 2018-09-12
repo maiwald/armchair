@@ -271,37 +271,30 @@
 
 (defn round [x] (.round js/Math x))
 
-(defn animated-position [animation now]
-  (let [{start :start
-         [fx fy] :from
-         [tx ty] :to
-         duration :duration} animation
-        passed (- now start)
-        pct (/ passed duration)]
+(defn animated-position [start duration [fx fy] [tx ty] now]
+  (let [passed (- now start)
+        pct (/ passed duration)
+        transform (fn [f t] (+ f (round (* pct (- t f)))))]
     (if (<= pct 1)
-      (let [dx (- tx fx)
-            dy (- ty fy)]
-        [(+ fx (round (* pct dx)))
-         (+ fy (round (* pct dy)))])
+      [(transform fx tx) (transform fy ty)]
       [tx ty])))
 
-(defn animation-done? [{start :start duration :duration} now]
+(defn animation-done? [start duration now]
   (< (+ start duration) now))
 
 (defn animate-move [destination-tile move-chan]
   (let [anim-c (chan 1)
         destination (tile->coord destination-tile)
-        animation {:start (* time-factor (.now js/performance))
-                   :from (get-in @state [:player :position])
-                   :to destination
-                   :duration tile-move-time}]
+        start (* time-factor (.now js/performance))
+        from (get-in @state [:player :position])
+        duration tile-move-time]
     (go-loop [_ (<! anim-c)]
              (js/requestAnimationFrame
                (fn []
                  (let [now (* time-factor (.now js/performance))]
-                   (if-not (animation-done? animation now)
+                   (if-not (animation-done? start duration now)
                      (do
-                       (render (update-in @state [:player :position] #(animated-position animation now)))
+                       (render (update-in @state [:player :position] #(animated-position start duration from destination now)))
                        (put! anim-c true))
                      (do
                        (swap! state assoc-in [:player :position] destination)
