@@ -230,12 +230,13 @@ $gray: #888
   .add
     align-self: flex-end
 
-#game-container
+#game
   display: flex
-  height: 100%
   justify-content: center
   align-items: center
+  padding: 40px
 
-  #game-canvas
-    margin: 40px
-    border: 1px solid black
+  .canvas-container
+    & > canvas
+      position: absolute
+

@@ -267,7 +267,8 @@
 
 (defn game-canvas [game-data]
   (let [game-data (<sub [:game-data])
-        canvas-ref (atom nil)
+        level-canvas (atom nil)
+        entity-canvas (atom nil)
         game-input (atom nil)
         key-listener (fn [e]
                        (when-let [action (case (.-code e)
@@ -280,22 +281,29 @@
                          (.preventDefault e)))]
     (r/create-class
       {:component-did-mount (fn []
-                              (reset! game-input (start-game (.getContext @canvas-ref "2d") game-data))
+                              (reset! game-input (start-game
+                                                   (.getContext @level-canvas "2d")
+                                                   (.getContext @entity-canvas "2d")
+                                                   game-data))
                               (.addEventListener js/document "keydown" key-listener))
        :component-will-unmount (fn []
                                  (.removeEventListener js/document "keydown" key-listener)
                                  (end-game))
        :reagent-render (fn []
-                         [:div {:id "game-container"}
-                          [:canvas {:id "game-canvas"
-                                    :on-mouse-move #(let [c (relative-pointer % @canvas-ref)]
-                                                      (put! @game-input [:cursor-position c]))
-                                    :on-mouse-out #(put! @game-input [:cursor-position nil])
-                                    :on-click #(let [c (relative-pointer % @canvas-ref)]
-                                                 (put! @game-input [:animate c]))
-                                    :height 450
-                                    :width 800
-                                    :ref (fn [el] (reset! canvas-ref el))}]])})))
+                         [:div {:id "game"}
+                          [:div {:class "canvas-container"
+                                 :style {:width (str 800 "px")}}
+                           [:canvas {:height 450
+                                     :width 800
+                                     :ref (fn [el] (reset! level-canvas el))}]
+                           [:canvas {:on-mouse-move #(let [c (relative-pointer % @entity-canvas)]
+                                                       (put! @game-input [:cursor-position c]))
+                                     :on-mouse-out #(put! @game-input [:cursor-position nil])
+                                     :on-click #(let [c (relative-pointer % @entity-canvas)]
+                                                  (put! @game-input [:animate c]))
+                                     :height 450
+                                     :width 800
+                                     :ref (fn [el] (reset! entity-canvas el))}]]])})))
 
 ;; Modals
 

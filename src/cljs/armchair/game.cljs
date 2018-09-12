@@ -128,103 +128,103 @@
 
 (def ctx (atom nil))
 
-(defn draw-texture [texture coord]
+(defn draw-texture [ctx texture coord]
   (when @texture-atlas
-    (c/draw-image! @ctx (@texture-atlas texture) coord)))
+    (c/draw-image! ctx (@texture-atlas texture) coord)))
 
-(defn draw-texture-rotated [texture coord deg]
+(defn draw-texture-rotated [ctx texture coord deg]
   (when @texture-atlas
-    (c/draw-image-rotated! @ctx (@texture-atlas texture) coord deg)))
+    (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
 
-(defn draw-level [level]
+(defn draw-level [ctx level]
   (let [cols (count (first level))
         rows (count level)]
     (doseq [x (range 0 rows)
             y (range 0 cols)
             :let [value (get-in level [x y])]]
-      (draw-texture ({0 :wall 1 :grass} value)
+      (draw-texture ctx
+                    ({0 :wall 1 :grass} value)
                     (tile->coord [x y])))))
 
-(defn draw-player [player]
-  (draw-texture :player player))
+(defn draw-player [ctx player]
+  (draw-texture ctx :player player))
 
-(defn draw-enemies [coords]
+(defn draw-enemies [ctx coords]
   (doseq [coord coords]
-    (draw-texture :enemy coord)))
+    (draw-texture ctx :enemy coord)))
 
-(defn draw-highlight [highlight-coord]
-  (c/save! @ctx)
-  (c/set-stroke-style! @ctx "rgb(255, 255, 0)")
-  (c/set-line-width! @ctx "2")
-  (c/stroke-rect! @ctx highlight-coord tile-size tile-size)
-  (c/restore! @ctx))
+(defn draw-highlight [ctx highlight-coord]
+  (c/save! ctx)
+  (c/set-stroke-style! ctx "rgb(255, 255, 0)")
+  (c/set-line-width! ctx "2")
+  (c/stroke-rect! ctx highlight-coord tile-size tile-size)
+  (c/restore! ctx))
 
-(defn draw-path [{:keys [level highlight] {:keys [position]} :player}]
+(defn draw-path [ctx {:keys [level highlight] {:keys [position]} :player}]
   (if highlight
     (doseq [path-tile (path/a-star
                         walkable?
                         (coord->tile position)
                         (coord->tile highlight))]
-      (c/save! @ctx)
-      (c/set-fill-style! @ctx "rgba(255, 255, 0, .2)")
-      (c/fill-rect! @ctx (tile->coord path-tile) tile-size tile-size)
-      (c/restore! @ctx))))
+      (c/save! ctx)
+      (c/set-fill-style! ctx "rgba(255, 255, 0, .2)")
+      (c/fill-rect! ctx (tile->coord path-tile) tile-size tile-size)
+      (c/restore! ctx))))
 
-(defn draw-direction-indicator [{{:keys [position direction]} :player}]
+(defn draw-direction-indicator [ctx {{:keys [position direction]} :player}]
   (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
-    (draw-texture-rotated :arrow position rotation)))
+    (draw-texture-rotated ctx :arrow position rotation)))
 
-(defn draw-dialogue-box [{:keys [text options selected-option]}]
+(defn draw-dialogue-box [ctx {:keys [text options selected-option]}]
   (let [w 600
         h 360
-        x (/ (- (c/width @ctx) w) 2)
-        y (/ (- (c/height @ctx) h) 2)]
-    (c/save! @ctx)
-    (c/set-fill-style! @ctx "rgba(237, 224, 142, .8)")
-    (c/fill-rect! @ctx [x y] w h)
-    (c/set-stroke-style! @ctx "rgb(200, 200, 0)")
-    (c/stroke-rect! @ctx [x y] w h)
+        x (/ (- (c/width ctx) w) 2)
+        y (/ (- (c/height ctx) h) 2)]
+    (c/save! ctx)
+    (c/set-fill-style! ctx "rgba(237, 224, 142, .8)")
+    (c/fill-rect! ctx [x y] w h)
+    (c/set-stroke-style! ctx "rgb(200, 200, 0)")
+    (c/stroke-rect! ctx [x y] w h)
 
-    (c/set-fill-style! @ctx "rgb(0, 0, 0)")
-    (c/set-font! @ctx "40px serif")
-    (c/set-baseline! @ctx "top")
-    (c/draw-text! @ctx "Dialogue!" (translate-position [x y] [20 20]))
-    (c/set-font! @ctx "18px serif")
-    (c/draw-textbox! @ctx text (translate-position [x y] [20 70]) (- w 40) 230)
+    (c/set-fill-style! ctx "rgb(0, 0, 0)")
+    (c/set-font! ctx "40px serif")
+    (c/set-baseline! ctx "top")
+    (c/draw-text! ctx "Dialogue!" (translate-position [x y] [20 20]))
+    (c/set-font! ctx "18px serif")
+    (c/draw-textbox! ctx text (translate-position [x y] [20 70]) (- w 40) 230)
 
-    (c/set-baseline! @ctx "middle")
+    (c/set-baseline! ctx "middle")
     (doseq [[idx option] (map-indexed vector options)]
       (let [w (- w 40)
             h 24
             offset 6
             coord (translate-position [x y] [20 (+ 220 (* idx (+ offset h)))])]
-        (c/set-fill-style! @ctx "rgba(0, 0, 0, .2)")
-        (c/fill-rect! @ctx coord w h)
+        (c/set-fill-style! ctx "rgba(0, 0, 0, .2)")
+        (c/fill-rect! ctx coord w h)
 
         (if (= selected-option idx)
-          (c/set-stroke-style! @ctx "rgb(255, 0, 0)")
-          (c/set-stroke-style! @ctx "rgb(0, 0, 0)"))
-        (c/set-line-width! @ctx "1")
-        (c/stroke-rect! @ctx coord w h)
+          (c/set-stroke-style! ctx "rgb(255, 0, 0)")
+          (c/set-stroke-style! ctx "rgb(0, 0, 0)"))
+        (c/set-line-width! ctx "1")
+        (c/stroke-rect! ctx coord w h)
 
-        (c/set-fill-style! @ctx "rgb(0, 0, 0)")
-        (c/draw-text! @ctx option (translate-position coord [2 (/ h 2)]))))
-    (c/restore! @ctx)))
+        (c/set-fill-style! ctx "rgb(0, 0, 0)")
+        (c/draw-text! ctx option (translate-position coord [2 (/ h 2)]))))
+    (c/restore! ctx)))
 
 (defn render [view-state]
   (when @ctx
     (c/clear! @ctx)
-    (draw-level (:level @state))
     (when-not (interacting? @state)
-      (draw-path @state))
-    (draw-player (get-in view-state [:player :position]))
-    (draw-enemies (->> view-state :enemies keys (map tile->coord)))
+      (draw-path @ctx @state))
+    (draw-player @ctx (get-in view-state [:player :position]))
+    (draw-enemies @ctx (->> view-state :enemies keys (map tile->coord)))
     (when (and (not (interacting? @state))
                (contains? @state :highlight))
-      (draw-highlight (:highlight @state)))
-    (draw-direction-indicator view-state)
+      (draw-highlight @ctx (:highlight @state)))
+    (draw-direction-indicator @ctx view-state)
     (when (interacting? @state)
-      (draw-dialogue-box (dialogue-data @state)))))
+      (draw-dialogue-box @ctx (dialogue-data @state)))))
 
 ;; Input Handlers
 
@@ -323,10 +323,10 @@
 
 ;; Game Loop
 
-(defn start-game [context data]
+(defn start-game [level-context entity-context data]
   (reset! state (merge initial-game-state data))
   (reset! move-q #queue [])
-  (reset! ctx context)
+  (reset! ctx entity-context)
   (let [input-chan (chan)
         animation-chan (chan (sliding-buffer 1))]
     (add-watch state
@@ -345,6 +345,10 @@
     (take! (get-texture-atlas-chan)
            (fn [loaded-atlas]
              (reset! texture-atlas loaded-atlas)
+
+             (c/clear! level-context)
+             (draw-level level-context (:level @state))
+
              (start-input-loop input-chan)
              (start-animation-loop animation-chan)
              (js/requestAnimationFrame #(render @state))))
