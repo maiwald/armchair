@@ -3,12 +3,13 @@
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
             [armchair.db :as db]
+            [armchair.routes :refer [routes]]
             [armchair.util :refer [map-values translate-positions position-delta]]))
 
 (def spec-interceptor (after (fn [db]
                                (when-not (s/valid? :armchair.db/state db)
                                  (let [explain (s/explain-data :armchair.db/state db)]
-                                   (.log js/console (:cljs.spec.alpha/problems explain)))))))
+                                   (js/console.log (:cljs.spec.alpha/problems explain)))))))
 
 (reg-event-db
   :initialize-db
@@ -260,10 +261,8 @@
 (reg-event-db
   :show-page
   [spec-interceptor]
-  (fn [db [_ page payload]]
-    (if payload
-      (assoc db :current-page {:name page :payload payload})
-      (assoc db :current-page {:name page}))))
+  (fn [db [_ path]]
+    (assoc db :current-page path)))
 
 ;; Mouse, Drag & Drop
 

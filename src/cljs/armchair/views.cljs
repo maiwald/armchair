@@ -6,6 +6,8 @@
             [armchair.slds :as slds]
             [armchair.util :refer [translate-position]]
             [armchair.config :as config]
+            [armchair.routes :refer [routes]]
+            [bidi.bidi :refer [match-route path-for]]
             [clojure.core.async :refer [put!]]))
 
 ;; Helpers
@@ -39,6 +41,16 @@
                           (aget 0))))
 
 (def left-button? #(zero? (.-button %)))
+
+;; Navigation / History
+
+(set! (.-onpopstate js/window)
+      (fn [e] (>evt [:show-page (subs js/location.hash 1)])))
+
+(defn >navigate [& args]
+  (let [url (apply path-for (into [routes] args))]
+    (js/history.pushState #js{} "" (str "#" url))
+    (>evt [:show-page url])))
 
 ;; Drag & Drop
 
@@ -239,9 +251,8 @@
         [:li {:key (str "location-dialogue-" id " - " (:id dialogue))}
          [:a {:style {:background-color (:character-color dialogue)}
               :on-mouse-down stop-e!
-              :on-click #(>evt [:show-page "Dialogue" (:id dialogue)])}
+              :on-click #(>navigate :dialogue :id (:id dialogue))}
           (:character-name dialogue)]])]]))
-
 
 (defn location-connection [start end]
   [connection {:start (translate-position start [(/ config/line-width 2) 15])
@@ -399,22 +410,28 @@
       :location-id    [location-form-modal (:location-id modal)]
       :info-id        [info-form-modal (:info-id modal)])))
 
+(def route-components
+  {:game (fn [params] [game-canvas])
+   :locations (fn [params] [location-management])
+   :dialogue (fn [{id :id}] [dialogue-component (int id)])
+   :characters (fn [params] [character-management])
+   :infos (fn [params] [info-management])})
+
 (defn root []
-  (let [{page-name :name page-payload :payload} (<sub [:current-page])
-        pages (array-map
-                "Game" [game-canvas]
-                "Locations" [location-management]
-                "Dialogue" [dialogue-component page-payload]
-                "Characters" [character-management]
-                "Infos" [info-management])
-        link-map (map
-                   (fn [name] [name #(>evt [:show-page name])])
-                   (keys pages))]
+  (let [{page-name :handler
+         page-params :route-params} (match-route routes (<sub [:current-page]))]
     [:div {:id "page"}
      [modal]
      [:a {:id "reset"
           :on-click #(>evt [:reset-db])} "reset"]
      [:div {:id "navigation"}
-      [slds/global-navigation link-map page-name]]
+      [slds/global-navigation {:links (array-map :game "Game"
+                                                 :locations "Locations"
+                                                 :characters "Characters"
+                                                 :infos "Infos")
+                               :current-page page-name
+                               :click-handler #(>navigate %)}]]
      [:div {:id "content"}
-      (get pages page-name [:div "Nothing"])]]))
+      (if-let [page-component (route-components page-name)]
+        [page-component page-params]
+        [:div "Nothing"])]]))

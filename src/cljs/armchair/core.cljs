@@ -3,9 +3,9 @@
             [re-frame.core :as re-frame]
             [armchair.events]
             [armchair.subs]
+            [armchair.routes :refer [root]]
             [armchair.views :as views]
             [armchair.config :as config]))
-
 
 (defn dev-setup []
   (when config/debug?
@@ -19,5 +19,8 @@
 
 (defn ^:export init []
   (re-frame/dispatch-sync [:initialize-db])
+  (when (empty? js/location.hash)
+    (js/history.replaceState #js{} "" root))
+  (re-frame/dispatch-sync [:show-page (subs js/location.hash 1)])
   (dev-setup)
   (mount-root))

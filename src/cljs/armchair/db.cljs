@@ -25,9 +25,7 @@
                           :locations ::connecting-locations))
 
 (s/def ::dragging (s/keys :req-un [::start-position ::position-ids]))
-(s/def ::name ::text)
-(s/def ::payload some?)
-(s/def ::current-page (s/keys :req-un [::name] :opt-un [::payload]))
+(s/def ::current-page (s/nilable string?))
 
 ;; Data
 
@@ -112,7 +110,7 @@
                               :opt-un [::connecting ::dragging ::pointer])))
 
 (def default-db
-  {:current-page {:name "Game"}
+  {:current-page nil
    :positions {1 [50 94]
                2 [335 85]
                3 [609 58]
@@ -252,7 +250,7 @@
                :next-line-id nil}}})
 
 (when-not (s/valid? ::state default-db)
-  (.log js/console "Default DB state explain:")
+  (js/console.log "Default DB state explain:")
   (s/explain ::state default-db))
 
 (defn line-count-for-character [lines character-id]

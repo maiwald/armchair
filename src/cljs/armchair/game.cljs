@@ -327,7 +327,7 @@
                (fn [_ _ old-state new-state]
                  (when (not= old-state new-state)
                    (when-not (s/valid? ::state new-state)
-                     (.log js/console (s/explain ::state new-state)))
+                     (js/console.log (s/explain ::state new-state)))
                    (js/requestAnimationFrame #(render new-state)))))
     (add-watch move-q
                :animation-update
