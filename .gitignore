@@ -4,6 +4,7 @@
 /resources/public/js/compiled
 /resources/public/css/compiled
 out
+.rebel_readline_history
 .lein-repl-history
 .nrepl-port
 .cljs_rhino_repl

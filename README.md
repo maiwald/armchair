@@ -7,18 +7,11 @@ game I am working on that an off-the-shelf editor was not an option. :)
 
 ## Development Mode
 
-Start your repl 
-```
-lein repl
-```
+Start the dev server using 
 
-and then start everything in there. 
-
-```clojure
-(start)
+```bash
+lein figwheel dev
 ```
-
-I don't remember why I don't just use `lein figwheel dev` anymore...
 
 Also start a sass watcher
 
