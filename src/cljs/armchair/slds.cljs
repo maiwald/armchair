@@ -42,6 +42,26 @@
                   :on-change on-change
                   :value value}]]]))
 
+(defn checkbox-select [{:keys [label options values on-change]}]
+  (let [id (gensym "checkbox-select")]
+    [:fieldset {:class "slds-form-element"}
+     [:legend {:class ["slds-form-element__legend"
+                       "slds-form-element__label"]}
+      label]
+     [:div {:class "slds-form-element__control"}
+      (for [[option option-label] options]
+        [:span {:key (str id ":" option)
+                :class "slds-checkbox"}
+         [:input {:id (str id ":" option)
+                  :value option
+                  :name id
+                  :checked (contains? values option)
+                  :on-change #(on-change option)
+                  :type "checkbox"}]
+         [:label {:class "slds-checkbox__label" :for (str id ":" option)}
+          [:span {:class "slds-checkbox_faux"}]
+          [:span {:class "slds-form-element__label"} option-label]]])]]))
+
 (defn multi-select [{:keys [label on-change values options]}]
   (let [id (gensym "multi-select")]
     [:div {:class "slds-form-element"}

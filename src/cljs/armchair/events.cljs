@@ -226,11 +226,6 @@
     (assoc db :modal {modal-key payload})))
 
 (reg-event-db
-  :open-location-modal
-  [spec-interceptor]
-  (open-modal :location-id))
-
-(reg-event-db
   :open-character-modal
   [spec-interceptor]
   (open-modal :character-id))

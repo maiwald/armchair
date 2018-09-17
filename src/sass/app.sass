@@ -20,8 +20,12 @@ $gray: #888
   flex-direction: column
 
   #content
+    display: flex
     position: relative
     flex-grow: 1
+
+    & > *
+      flex-grow: 1
 
 .graph
   +fill-container
@@ -230,10 +234,40 @@ $gray: #888
   .add
     align-self: flex-end
 
+.location-editor
+  display: flex
+  position: relative
+  flex-grow: 1
+
+  &__sidebar
+    width: 300px
+    padding: 10px
+    background: rgba(230, 230, 230, .8)
+
+  &__content
+    display: flex
+    justify-content: center
+    flex-grow: 1
+
+  .level
+    display: flex
+    flex-direction: column
+    flex-wrap: wrap
+    margin: 20px
+
+    &__cell
+      overflow: visible
+      box-sizing: content-box
+      z-index: 1
+
+      &:hover
+        margin: -2px
+        border: 2px solid yellow
+        z-index: 2
+
 #game
   display: flex
   justify-content: center
-  align-items: center
   padding: 40px
 
   .canvas-container

@@ -239,7 +239,7 @@
                           (>evt [:delete-location id]))}
         [icon "trash" "Delete"]]
        [:li {:class "action"
-             :on-click #(>evt [:open-location-modal id])}
+             :on-click #(>navigate :location-edit :id id)}
         [icon "edit" "Edit"]]
        [:li {:class "action action_connect"
              :on-mouse-down (e-> #(when (left-button? %)
@@ -274,6 +274,39 @@
        (for [[start end] connections]
          ^{:key (str "location-connection" start "->" end)}
          [location-connection (get-pos start) (get-pos end)])]]]))
+
+(defn location-editor [location-id]
+  (let [{:keys [display-name level]} (<sub [:location location-id])
+        update-display-name #(>evt [:update-location location-id :display-name (e->val %)])]
+    [:div {:class "location-editor"}
+     [:div {:class "location-editor__sidebar"}
+      [slds/form
+       [slds/input-text {:label "Name"
+                         :on-change update-display-name
+                         :value display-name}]
+       [slds/checkbox-select {:label "Layers"
+                              :options [[:background "Background"]
+                                        [:collision "Collision"]
+                                        [:npcs "NPCs"]
+                                        [:triggers "Triggers"]]
+                              :values #{:background :npcs}
+                              :on-change #(js/console.log "selected" %)}]]]
+     [:div {:class "location-editor__content"}
+      (let [level-width (count level)
+            level-height (count (first level))]
+        [:div {:class "level"
+               :style {:width (str (* config/tile-size level-width) "px")
+                       :height (str (* config/tile-size level-height) "px")}}
+         (for [x (range level-width)
+               y (range level-height)]
+           (let [texture-name (case (get-in level [x y])
+                                0 "wall"
+                                1 "grass")]
+             [:div {:key (str "location" location-id ":" x ":" y)
+                    :class "level__cell"
+                    :style {:width (str config/tile-size "px")
+                            :height (str config/tile-size "px")
+                            :background-image (str "url(/images/" texture-name ".png)")}}]))])]]))
 
 (defn game-canvas [game-data]
   (let [game-data (<sub [:game-data])
@@ -380,16 +413,6 @@
                         :on-change (update-handler :color)
                         :value (:color character)}]]]))
 
-(defn location-form-modal [location-id]
-  (let [location (<sub [:location location-id])
-        update-display-name #(>evt [:update-location location-id :display-name (e->val %)])]
-    [slds/modal {:title (:display-name location)
-                 :close-handler #(>evt [:close-modal])}
-     [slds/form
-      [slds/input-text {:label "Name"
-                        :on-change update-display-name
-                        :value (:display-name location)}]]]))
-
 (defn info-form-modal [info-id]
   (let [info (<sub [:info info-id])
         update-description #(>evt [:update-info info-id (e->val %)])]
@@ -406,7 +429,6 @@
       :npc-line-id    [npc-line-form-modal (:npc-line-id modal)]
       :player-line-id [player-line-form-modal (:player-line-id modal)]
       :character-id   [character-form-modal (:character-id modal)]
-      :location-id    [location-form-modal (:location-id modal)]
       :info-id        [info-form-modal (:info-id modal)])))
 
 (defn root []
@@ -425,9 +447,10 @@
                                :click-handler #(>navigate %)}]]
      [:div {:id "content"}
       (case page-name
-        :game       [game-canvas]
-        :locations  [location-management]
-        :dialogue   [dialogue-component (int (:id page-params))]
-        :characters [character-management]
-        :infos      [info-management]
+        :game          [game-canvas]
+        :locations     [location-management]
+        :location-edit [location-editor (int (:id page-params))]
+        :dialogue      [dialogue-component (int (:id page-params))]
+        :characters    [character-management]
+        :infos         [info-management]
         [:div "Page not found"])]]))
