@@ -2,7 +2,7 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/clojurescript "1.10.339"]
                  [reagent "0.8.1"]
-                 [re-frame "0.10.5"]
+                 [re-frame "0.10.6"]
                  [tailrecursion/cljs-priority-map "1.2.1"]
                  [cljsjs/react-select "1.2.1-1"]
                  [bidi "2.1.4"]]
@@ -21,7 +21,7 @@
   {:dev
    {:dependencies [[binaryage/devtools "0.9.10"]
                    [figwheel-sidecar "0.5.16"]
-                   [cider/piggieback "0.3.8"]
+                   [cider/piggieback "0.3.9"]
                    [day8.re-frame/re-frame-10x "0.3.3-react16"]]
     :plugins      [[lein-figwheel "0.5.16"]
                    [lein-ancient "0.6.15"]]
