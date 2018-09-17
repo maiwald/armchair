@@ -410,13 +410,6 @@
       :location-id    [location-form-modal (:location-id modal)]
       :info-id        [info-form-modal (:info-id modal)])))
 
-(def route-components
-  {:game (fn [params] [game-canvas])
-   :locations (fn [params] [location-management])
-   :dialogue (fn [{id :id}] [dialogue-component (int id)])
-   :characters (fn [params] [character-management])
-   :infos (fn [params] [info-management])})
-
 (defn root []
   (let [{page-name :handler
          page-params :route-params} (match-route routes (<sub [:current-page]))]
@@ -432,6 +425,10 @@
                                :current-page page-name
                                :click-handler #(>navigate %)}]]
      [:div {:id "content"}
-      (if-let [page-component (route-components page-name)]
-        [page-component page-params]
-        [:div "Nothing"])]]))
+      (case page-name
+        :game       [game-canvas]
+        :locations  [location-management]
+        :dialogue   [dialogue-component (int (:id page-params))]
+        :characters [character-management]
+        :infos      [info-management]
+        [:div "Page not found"])]]))
