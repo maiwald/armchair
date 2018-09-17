@@ -29,7 +29,8 @@
                  :on-change on-change
                  :value (or value "nil")}
         [:option {:key (str id "nil") :value "nil" :disabled "disabled"}]
-        (for [[k v] options] [:option {:key (str id k) :value k} v])]]]]))
+        (for [[option option-label] options]
+          [:option {:key (str id ":" option) :value option} label])]]]]))
 
 (defn input-textarea [{:keys [label on-change value]}]
   (let [id (gensym "input-textarea")]
@@ -42,7 +43,7 @@
                   :value value}]]]))
 
 (defn multi-select [{:keys [label on-change values options]}]
-  (let [id (gensym "input-select")]
+  (let [id (gensym "multi-select")]
     [:div {:class "slds-form-element"}
      [:label {:class "slds-form-element__label" :for id} label]
      [:div {:class "slds-form-element__control"}

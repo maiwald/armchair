@@ -176,9 +176,8 @@
                :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
 
 (defn dialogue-component [dialogue-id]
-  (if dialogue-id
-    (let [{:keys [lines npc-connections player-connections]} (<sub [:dialogue dialogue-id])
-          get-pos #(get-in lines [% :position])]
+  (if-let [{:keys [lines npc-connections player-connections]} (<sub [:dialogue dialogue-id])]
+    (letfn [(get-pos [line-id] get-pos (get-in lines [line-id :position]))]
       [:div {:class "full-page"}
        [:div {:class "new-item-button"}
         [slds/add-button "New Player Line" #(>evt [:create-player-line dialogue-id])]

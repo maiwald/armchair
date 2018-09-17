@@ -143,7 +143,9 @@
             y (range 0 cols)
             :let [value (get-in level [x y])]]
       (draw-texture ctx
-                    ({0 :wall 1 :grass} value)
+                    (case value
+                      0 :wall
+                      1 :grass)
                     (tile->coord [x y])))))
 
 (defn draw-player [ctx player]
