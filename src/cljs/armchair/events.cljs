@@ -325,12 +325,10 @@
   :start-dragging
   [spec-interceptor]
   (fn [db [_ position-ids position]]
-    (assert (not (contains? db :dragging))
-            "Attempting to start drag while already in progress!")
-    (assoc db
-           :dragging {:position-ids position-ids
-                      :start-position position}
-           :pointer position)))
+    (cond-> db
+      (not (contains? db :dragging)) (assoc :dragging {:position-ids position-ids
+                                                       :start-position position}
+                                            :pointer position))))
 
 (reg-event-db
   :end-dragging
