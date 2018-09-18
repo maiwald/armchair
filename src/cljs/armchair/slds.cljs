@@ -18,6 +18,12 @@
                :on-change on-change
                :value value}]]]))
 
+(defn label [label & children]
+  [:div {:class "slds-form-element"}
+   [:label {:class "slds-form-element__label"} label]
+   (into [:div {:class "slds-form-element__control"}]
+         children)])
+
 (defn input-select [{:keys [label on-change value options]}]
   (let [id (gensym "input-select")]
     [:div {:class "slds-form-element"}
@@ -61,6 +67,27 @@
          [:label {:class "slds-checkbox__label" :for (str id ":" option)}
           [:span {:class "slds-checkbox_faux"}]
           [:span {:class "slds-form-element__label"} option-label]]])]]))
+
+(defn radio-button-group [{:keys [label options active on-change]}]
+  (let [id (gensym "radio-button-group")]
+    [:fieldset {:class "slds-form-element"}
+     [:legend {:class ["slds-form-element__legend"
+                       "slds-form-element__label"]}
+      label]
+     [:div {:class "slds-form-element__control"}
+      [:div {:class "slds-radio_button-group"}
+       (for [[option option-label] options]
+         [:span {:key (str id option-label)
+                 :class "slds-button slds-radio_button"}
+          [:input {:type "radio"
+                   :name id
+                   :id (str id option-label)
+                   :checked (= active option)
+                   :on-change #(on-change option)}]
+          [:label {:class "slds-radio_button__label"
+                   :for (str id option-label)}
+           [:span {:class "slds-radio_faux"}
+            option-label]]])]]]))
 
 (defn multi-select [{:keys [label on-change values options]}]
   (let [id (gensym "multi-select")]

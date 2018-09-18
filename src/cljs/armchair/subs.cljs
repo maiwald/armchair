@@ -159,6 +159,16 @@
      :connections (map sort connections)}))
 
 (reg-sub
+  :painting?
+  (fn [db]
+    (get-in db [:location-editor :painting?])))
+
+(reg-sub
+  :active-texture
+  (fn [db]
+    (get-in db [:location-editor :texture])))
+
+(reg-sub
   :game-data
   :<- [:db-locations]
   :<- [:db-dialogues]

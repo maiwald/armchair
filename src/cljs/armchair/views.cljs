@@ -7,6 +7,7 @@
             [armchair.util :refer [translate-position]]
             [armchair.config :as config]
             [armchair.routes :refer [routes]]
+            [armchair.textures :refer [background-textures texture-path]]
             [bidi.bidi :refer [match-route path-for]]
             [clojure.core.async :refer [put!]]))
 
@@ -17,12 +18,11 @@
 
 (defn stop-e! [e]
   (.preventDefault e)
-  (.stopPropagation e))
+  (.stopPropagation e)
+  e)
 
 (defn e-> [handler]
-  (fn [e]
-    (stop-e! e)
-    (handler e)))
+  (comp handler stop-e!))
 
 (defn e->val [e]
   (let [target (.-target e)]
@@ -290,10 +290,25 @@
                                         [:npcs "NPCs"]
                                         [:triggers "Triggers"]]
                               :values #{:background :npcs}
-                              :on-change #(js/console.log "selected" %)}]]]
+                              :on-change #(js/console.log "selected" %)}]
+       [slds/radio-button-group {:label "Tools"
+                                 :options [[:select "Select"]
+                                           [:paint "Paint" #(js/console.log "paint")]]
+                                 :active :paint
+                                 :on-change #(js/console.log "tools:" %)}]
+       [slds/label "Background Textures"
+        (let [active-texture (<sub [:active-texture])]
+          [:ul {:class "texture-list"}
+           (for [texture background-textures]
+             [:li {:key (str "texture-select:" texture)
+                   :class ["texture-list__item"
+                           (when (= texture active-texture) "texture-list__item-active")]}
+              [:a {:on-click #(>evt [:set-active-texture texture])}
+               [:img {:src (texture-path texture)}]]])])]]]
      [:div {:class "location-editor__content"}
       (let [level-width (count level)
-            level-height (count (first level))]
+            level-height (count (first level))
+            painting? ^boolean (<sub [:painting?])]
         [:div {:class "level"
                :style {:width (str (* config/tile-size level-width) "px")
                        :height (str (* config/tile-size level-height) "px")}}
@@ -304,9 +319,12 @@
                                 1 "grass")]
              [:div {:key (str "location" location-id ":" x ":" y)
                     :class "level__cell"
+                    :on-mouse-down (e-> #(>evt [:start-painting location-id x y]))
+                    :on-mouse-enter (e-> #(when painting? (>evt [:paint location-id x y])))
+                    :on-mouse-up (e-> #(>evt [:stop-painting]))
                     :style {:width (str config/tile-size "px")
-                            :height (str config/tile-size "px")
-                            :background-image (str "url(/images/" texture-name ".png)")}}]))])]]))
+                            :height (str config/tile-size "px")}}
+              [:img {:src (texture-path texture-name)}]]))])]]))
 
 (defn game-canvas [game-data]
   (let [game-data (<sub [:game-data])

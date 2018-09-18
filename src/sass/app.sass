@@ -253,9 +253,10 @@ $gray: #888
     display: flex
     flex-direction: column
     flex-wrap: wrap
-    margin: 20px
+    margin: 40px
 
     &__cell
+      position: relative
       overflow: visible
       box-sizing: content-box
       z-index: 1
@@ -265,6 +266,27 @@ $gray: #888
         border: 2px solid yellow
         z-index: 2
 
+      > *
+        position: absolute
+        top: 0
+        left: 0
+        pointer-events: none
+
+.texture-list
+  display: flex
+  justify-content: flex-start
+
+  &__item
+    border: 1px solid grey
+    margin: 0 5px 5px 0
+
+    &-active
+      border: 2px solid yellow
+      margin: -1px 4px 4px -1px
+
+    a
+      display: block
+
 #game
   display: flex
   justify-content: center
@@ -273,4 +295,3 @@ $gray: #888
   .canvas-container
     & > canvas
       position: absolute
-

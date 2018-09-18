@@ -217,6 +217,41 @@
   (fn [db [_ id text]]
     (assoc-in db [:infos id :description] text)))
 
+;; Location Editor
+
+(reg-event-db
+  :set-active-texture
+  [spec-interceptor]
+  (fn [db [_ texture]]
+    (assoc-in db [:location-editor :texture] texture)))
+
+(reg-event-db
+  :start-painting
+  [spec-interceptor]
+  (fn [db [_ location-id x y]]
+    (let [texture (get-in db [:location-editor :texture])
+          texture-code (case texture :grass 1 :wall 0)]
+      (-> db
+          (assoc-in [:location-editor :painting?] true)
+          (assoc-in [:locations location-id :level x y] texture-code)))))
+
+(reg-event-db
+  :paint
+  [spec-interceptor]
+  (fn [db [_ location-id x y]]
+    (assert (get-in db [:location-editor :painting?])
+            "Attempting to paint when painting not started!")
+    (let [texture (get-in db [:location-editor :texture])
+          texture-code (case texture :grass 1 :wall 0)]
+      (let [texture-code (case texture :grass 1 :wall 0)]
+        (assoc-in db [:locations location-id :level x y] texture-code)))))
+
+(reg-event-db
+  :stop-painting
+  [spec-interceptor]
+  (fn [db _]
+    (assoc-in db [:location-editor :painting?] false)))
+
 ;; Modal
 
 (defn open-modal [modal-key]

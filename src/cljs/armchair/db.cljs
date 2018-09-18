@@ -2,6 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.set :refer [subset?]]
+            [armchair.textures :refer [textures]]
             [armchair.util :refer [where-map]]))
 
 ;; Types
@@ -26,6 +27,12 @@
 
 (s/def ::dragging (s/keys :req-un [::start-position ::position-ids]))
 (s/def ::current-page (s/nilable string?))
+
+;; Location Editor
+
+(s/def ::texture #(contains? (set textures) %))
+(s/def ::painting? boolean?)
+(s/def ::location-editor (s/keys :req-un [::texture ::painting?]))
 
 ;; Data
 
@@ -107,7 +114,10 @@
                                        ::infos
                                        ::locations
                                        ::location-connections]
-                              :opt-un [::connecting ::dragging ::pointer])))
+                              :opt-un [::connecting
+                                       ::dragging
+                                       ::pointer
+                                       ::location-editor])))
 
 (def default-db
   {:current-page nil

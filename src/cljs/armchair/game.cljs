@@ -1,9 +1,10 @@
 (ns armchair.game
-  (:require [clojure.core.async :refer [chan sliding-buffer put! take! go go-loop <! >!]]
+  (:require [clojure.core.async :refer [chan sliding-buffer put! go-loop <!]]
             [clojure.spec.alpha :as s]
             [clojure.set :refer [subset? union]]
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
+            [armchair.textures :refer [load-textures]]
             [armchair.util :refer [map-values translate-position]]
             [armchair.pathfinding :as path]))
 
@@ -100,33 +101,10 @@
         :npc next-line-id)
       next-line-id)))
 
-;; Textures
-
-(def textures ["grass"
-               "wall"
-               "player"
-               "enemy"
-               "arrow"])
-
-(def texture-atlas (atom nil))
-
-(defn get-texture-atlas-chan []
-  (let [atlas (atom {})
-        loaded (chan)]
-    (run! (fn [texture-name]
-            (let [image (js/Image.)]
-              (set! (.-onload image) #(put! loaded [texture-name image]))
-              (set! (.-src image) (str "/images/" texture-name ".png"))))
-          textures)
-    (go
-      (while (not= (count @atlas) (count textures))
-        (let [[texture-name texture-image] (<! loaded)]
-          (swap! atlas assoc (keyword texture-name) texture-image)))
-      @atlas)))
-
 ;; Rendering
 
 (def ctx (atom nil))
+(def texture-atlas (atom nil))
 
 (defn draw-texture [ctx texture coord]
   (when @texture-atlas
@@ -337,16 +315,15 @@
                  (when (and (empty? old-state)
                             (some? new-state))
                    (put! animation-chan true))))
-    (take! (get-texture-atlas-chan)
-           (fn [loaded-atlas]
-             (reset! texture-atlas loaded-atlas)
+    (load-textures (fn [loaded-atlas]
+                     (reset! texture-atlas loaded-atlas)
 
-             (c/clear! level-context)
-             (draw-level level-context (:level @state))
+                     (c/clear! level-context)
+                     (draw-level level-context (:level @state))
 
-             (start-input-loop input-chan)
-             (start-animation-loop animation-chan)
-             (js/requestAnimationFrame #(render @state))))
+                     (start-input-loop input-chan)
+                     (start-animation-loop animation-chan)
+                     (js/requestAnimationFrame #(render @state))))
     input-chan))
 
 (defn end-game []
