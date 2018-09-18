@@ -341,30 +341,36 @@
                                            nil)]
                          (.preventDefault e)))]
     (r/create-class
-      {:component-did-mount (fn []
-                              (reset! game-input (start-game
-                                                   (.getContext @level-canvas "2d")
-                                                   (.getContext @entity-canvas "2d")
-                                                   game-data))
-                              (.addEventListener js/document "keydown" key-listener))
-       :component-will-unmount (fn []
-                                 (.removeEventListener js/document "keydown" key-listener)
-                                 (end-game))
-       :reagent-render (fn []
-                         [:div {:id "game"}
-                          [:div {:class "canvas-container"
-                                 :style {:width (str 800 "px")}}
-                           [:canvas {:height 450
-                                     :width 800
-                                     :ref (fn [el] (reset! level-canvas el))}]
-                           [:canvas {:on-mouse-move #(let [c (relative-pointer % @entity-canvas)]
-                                                       (put! @game-input [:cursor-position c]))
-                                     :on-mouse-out #(put! @game-input [:cursor-position nil])
-                                     :on-click #(let [c (relative-pointer % @entity-canvas)]
-                                                  (put! @game-input [:animate c]))
-                                     :height 450
-                                     :width 800
-                                     :ref (fn [el] (reset! entity-canvas el))}]]])})))
+      {:display-name "game-canvas"
+       :component-did-mount
+       (fn []
+         (reset! game-input (start-game
+                              (.getContext @level-canvas "2d")
+                              (.getContext @entity-canvas "2d")
+                              game-data))
+         (.addEventListener js/document "keydown" key-listener))
+
+       :component-will-unmount
+       (fn []
+         (.removeEventListener js/document "keydown" key-listener)
+         (end-game))
+
+       :reagent-render
+       (fn []
+         [:div {:id "game"}
+          [:div {:class "canvas-container"
+                 :style {:width (str 800 "px")}}
+           [:canvas {:height 450
+                     :width 800
+                     :ref (fn [el] (reset! level-canvas el))}]
+           [:canvas {:on-mouse-move #(let [c (relative-pointer % @entity-canvas)]
+                                       (put! @game-input [:cursor-position c]))
+                     :on-mouse-out #(put! @game-input [:cursor-position nil])
+                     :on-click #(let [c (relative-pointer % @entity-canvas)]
+                                  (put! @game-input [:animate c]))
+                     :height 450
+                     :width 800
+                     :ref (fn [el] (reset! entity-canvas el))}]]])})))
 
 ;; Modals
 
