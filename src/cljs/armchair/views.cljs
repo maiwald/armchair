@@ -16,6 +16,13 @@
 (def <sub (comp deref re-frame.core/subscribe))
 (def >evt re-frame.core/dispatch)
 
+(defn once [f]
+  (let [called (atom false)]
+    (fn [& args]
+      (when-not @called
+        (reset! called true)
+        (apply f args)))))
+
 (defn stop-e! [e]
   (.preventDefault e)
   (.stopPropagation e)
@@ -349,7 +356,7 @@
                       (case tool
                         :select
                         (when-let [entity (:entity dnd-payload)]
-                          {:on-drag-over (e-> #(>evt [:set-highlight x y]))
+                          {:on-drag-over (e-> (once #(>evt [:set-highlight x y])))
                            :on-drop #(>evt [:move-entity id entity [x y]])})
                         :paint
                         {:on-mouse-down (e-> #(>evt [:start-painting id x y]))
