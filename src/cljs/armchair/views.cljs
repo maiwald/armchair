@@ -320,8 +320,8 @@
              [:div {:key (str "location" location-id ":" x ":" y)
                     :class "level__cell"
                     :on-mouse-down (e-> #(>evt [:start-painting location-id x y]))
-                    :on-mouse-enter (e-> #(when painting? (>evt [:paint location-id x y])))
-                    :on-mouse-up (e-> #(>evt [:stop-painting]))
+                    :on-mouse-over (e-> #(when painting? (>evt [:paint location-id x y])))
+                    :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))
                     :style {:width (str config/tile-size "px")
                             :height (str config/tile-size "px")}}
               [:img {:src (texture-path texture-name)}]]))])]]))

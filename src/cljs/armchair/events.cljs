@@ -239,12 +239,11 @@
   :paint
   [spec-interceptor]
   (fn [db [_ location-id x y]]
-    (assert (get-in db [:location-editor :painting?])
-            "Attempting to paint when painting not started!")
-    (let [texture (get-in db [:location-editor :texture])
-          texture-code (case texture :grass 1 :wall 0)]
-      (let [texture-code (case texture :grass 1 :wall 0)]
-        (assoc-in db [:locations location-id :level x y] texture-code)))))
+    (let [{:keys [painting? texture]} (:location-editor db)]
+      (if painting?
+        (let [texture-code (case texture :grass 1 :wall 0)]
+          (assoc-in db [:locations location-id :level x y] texture-code))
+        db))))
 
 (reg-event-db
   :stop-painting
