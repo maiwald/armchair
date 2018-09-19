@@ -55,15 +55,16 @@
                        "slds-form-element__label"]}
       label]
      [:div {:class "slds-form-element__control"}
-      (for [[option option-label] options]
+      (for [[option option-label & attrs] options]
         [:span {:key (str id ":" option)
                 :class "slds-checkbox"}
-         [:input {:id (str id ":" option)
-                  :value option
-                  :name id
-                  :checked (contains? values option)
-                  :on-change #(on-change option)
-                  :type "checkbox"}]
+         [:input (merge {:id (str id ":" option)
+                         :value option
+                         :name id
+                         :checked (contains? values option)
+                         :on-change #(on-change option)
+                         :type "checkbox"}
+                        (into {} (map #(vector % %) attrs)))]
          [:label {:class "slds-checkbox__label" :for (str id ":" option)}
           [:span {:class "slds-checkbox_faux"}]
           [:span {:class "slds-form-element__label"} option-label]]])]]))
@@ -76,14 +77,15 @@
       label]
      [:div {:class "slds-form-element__control"}
       [:div {:class "slds-radio_button-group"}
-       (for [[option option-label] options]
+       (for [[option option-label & attrs] options]
          [:span {:key (str id option-label)
                  :class "slds-button slds-radio_button"}
-          [:input {:type "radio"
-                   :name id
-                   :id (str id option-label)
-                   :checked (= active option)
-                   :on-change #(on-change option)}]
+          [:input (merge {:type "radio"
+                          :name id
+                          :id (str id option-label)
+                          :checked (= active option)
+                          :on-change #(on-change option)}
+                         (into {} (map #(vector % %) attrs)))]
           [:label {:class "slds-radio_button__label"
                    :for (str id option-label)}
            [:span {:class "slds-radio_faux"}

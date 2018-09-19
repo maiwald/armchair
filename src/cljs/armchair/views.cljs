@@ -275,56 +275,63 @@
          ^{:key (str "location-connection" start "->" end)}
          [location-connection (get-pos start) (get-pos end)])]]]))
 
+(defn location-editor-sidebar [location-id display-name]
+  (letfn [(update-display-name [e]
+            (>evt [:update-location location-id :display-name (e->val e)]))]
+    [slds/form
+     [slds/input-text {:label "Name"
+                       :on-change update-display-name
+                       :value display-name}]
+     [slds/checkbox-select {:label "Layers"
+                            :options [[:background "Background" :disabled]
+                                      [:collision "Collision"]
+                                      [:npcs "NPCs"]
+                                      [:triggers "Triggers"]]
+                            :values #{:background :npcs}
+                            :on-change #(js/console.log "selected" %)}]
+     [slds/radio-button-group {:label "Tools"
+                               :options [[:select "Select" :disabled]
+                                         [:paint "Paint" #(js/console.log "paint")]]
+                               :active :paint
+                               :on-change #(js/console.log "tools:" %)}]
+     [slds/label "Background Textures"
+      (let [active-texture (<sub [:active-texture])]
+        [:ul {:class "texture-list"}
+         (for [texture background-textures]
+           [:li {:key (str "texture-select:" texture)
+                 :class ["texture-list__item"
+                         (when (= texture active-texture) "texture-list__item-active")]}
+            [:a {:on-click #(>evt [:set-active-texture texture])}
+             [:img {:src (texture-path texture)}]]])])]]))
+
+(defn location-editor-content [location-id level]
+  (let [level-width (count level)
+        level-height (count (first level))
+        painting? ^boolean (<sub [:painting?])]
+    [:div {:class "level"
+           :style {:width (str (* config/tile-size level-width) "px")
+                   :height (str (* config/tile-size level-height) "px")}}
+     (for [x (range level-width)
+           y (range level-height)]
+       (let [texture-name (case (get-in level [x y])
+                            0 "wall"
+                            1 "grass")]
+         [:div {:key (str "location" location-id ":" x ":" y)
+                :class "level__cell"
+                :on-mouse-down (e-> #(>evt [:start-painting location-id x y]))
+                :on-mouse-over (e-> #(when painting? (>evt [:paint location-id x y])))
+                :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))
+                :style {:width (str config/tile-size "px")
+                        :height (str config/tile-size "px")}}
+          [:img {:src (texture-path texture-name)}]]))]))
+
 (defn location-editor [location-id]
-  (let [{:keys [display-name level]} (<sub [:location location-id])
-        update-display-name #(>evt [:update-location location-id :display-name (e->val %)])]
+  (let [{:keys [display-name level]} (<sub [:location location-id])]
     [:div {:class "location-editor"}
      [:div {:class "location-editor__sidebar"}
-      [slds/form
-       [slds/input-text {:label "Name"
-                         :on-change update-display-name
-                         :value display-name}]
-       [slds/checkbox-select {:label "Layers"
-                              :options [[:background "Background"]
-                                        [:collision "Collision"]
-                                        [:npcs "NPCs"]
-                                        [:triggers "Triggers"]]
-                              :values #{:background :npcs}
-                              :on-change #(js/console.log "selected" %)}]
-       [slds/radio-button-group {:label "Tools"
-                                 :options [[:select "Select"]
-                                           [:paint "Paint" #(js/console.log "paint")]]
-                                 :active :paint
-                                 :on-change #(js/console.log "tools:" %)}]
-       [slds/label "Background Textures"
-        (let [active-texture (<sub [:active-texture])]
-          [:ul {:class "texture-list"}
-           (for [texture background-textures]
-             [:li {:key (str "texture-select:" texture)
-                   :class ["texture-list__item"
-                           (when (= texture active-texture) "texture-list__item-active")]}
-              [:a {:on-click #(>evt [:set-active-texture texture])}
-               [:img {:src (texture-path texture)}]]])])]]]
+      [location-editor-sidebar location-id display-name]]
      [:div {:class "location-editor__content"}
-      (let [level-width (count level)
-            level-height (count (first level))
-            painting? ^boolean (<sub [:painting?])]
-        [:div {:class "level"
-               :style {:width (str (* config/tile-size level-width) "px")
-                       :height (str (* config/tile-size level-height) "px")}}
-         (for [x (range level-width)
-               y (range level-height)]
-           (let [texture-name (case (get-in level [x y])
-                                0 "wall"
-                                1 "grass")]
-             [:div {:key (str "location" location-id ":" x ":" y)
-                    :class "level__cell"
-                    :on-mouse-down (e-> #(>evt [:start-painting location-id x y]))
-                    :on-mouse-over (e-> #(when painting? (>evt [:paint location-id x y])))
-                    :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))
-                    :style {:width (str config/tile-size "px")
-                            :height (str config/tile-size "px")}}
-              [:img {:src (texture-path texture-name)}]]))])]]))
+      [location-editor-content location-id level]]]))
 
 (defn game-canvas [game-data]
   (let [game-data (<sub [:game-data])

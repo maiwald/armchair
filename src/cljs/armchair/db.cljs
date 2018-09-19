@@ -30,9 +30,10 @@
 
 ;; Location Editor
 
-(s/def ::texture #(contains? (set textures) %))
 (s/def ::painting? boolean?)
-(s/def ::location-editor (s/keys :req-un [::texture ::painting?]))
+(s/def ::texture #(contains? (set textures) %))
+(s/def ::location-editor (s/keys :req-un [::painting?
+                                          ::texture]))
 
 ;; Data
 
@@ -112,12 +113,12 @@
                                        ::dialogues
                                        ::lines
                                        ::infos
+                                       ::location-editor
                                        ::locations
                                        ::location-connections]
                               :opt-un [::connecting
                                        ::dragging
-                                       ::pointer
-                                       ::location-editor])))
+                                       ::pointer])))
 
 (def default-db
   {:current-page nil
@@ -135,6 +136,8 @@
                20 [707 151]
                21 [885 389]
                22 [1196 387]}
+   :location-editor {:painting? false
+                     :texture (first textures)}
    :locations {1 {:id 1
                   :position-id 16
                   :display-name "Park - Camp"
