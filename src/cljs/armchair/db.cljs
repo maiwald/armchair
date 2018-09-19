@@ -12,6 +12,7 @@
 (s/def ::position (s/tuple integer? integer?))
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:id v)))))
 (s/def ::undirected-connection (s/coll-of ::id :kind set? :count 2))
+(s/def ::texture #(contains? (set textures) %))
 
 ;; UI State
 
@@ -31,9 +32,13 @@
 ;; Location Editor
 
 (s/def ::painting? boolean?)
-(s/def ::texture #(contains? (set textures) %))
-(s/def ::location-editor (s/keys :req-un [::painting?
-                                          ::texture]))
+(s/def ::tool #{:select :paint})
+(s/def ::highlight ::position)
+(s/def ::active-texture ::texture)
+(s/def ::location-editor (s/keys :req-un [::tool
+                                          ::painting?
+                                          ::active-texture]
+                                 :opt-un [::highlight]))
 
 ;; Data
 
@@ -53,7 +58,7 @@
                           (s/map-of ::location-id ::location)))
 (s/def ::location-connections (s/coll-of ::undirected-connection :kind set?))
 
-(s/def ::character (s/keys :req-un [::id ::display-name ::color]))
+(s/def ::character (s/keys :req-un [::id ::display-name ::color ::texture]))
 (s/def ::characters (s/and ::entity-map
                            (s/map-of ::character-id ::character)))
 
@@ -136,8 +141,9 @@
                20 [707 151]
                21 [885 389]
                22 [1196 387]}
-   :location-editor {:painting? false
-                     :texture (first textures)}
+   :location-editor {:tool :select
+                     :painting? false
+                     :active-texture (first textures)}
    :locations {1 {:id 1
                   :position-id 16
                   :display-name "Park - Camp"
@@ -172,8 +178,8 @@
                   :position-id 17
                   :display-name "Park - Entrance"}}
    :location-connections #{#{1 2}}
-   :characters {1 {:id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)"}
-                3 {:id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)"}}
+   :characters {1 {:id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)" :texture :enemy}
+                3 {:id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)" :texture :enemy}}
    :dialogues {1 {:id 1 :display-name "Hugo's Dialogue" :initial-line-id 1 :location-id 1}
                2 {:id 2 :display-name "Gustav's Dialogue" :initial-line-id 14 :location-id 1}}
    :infos {1 {:id 1 :description "Hugo's Name is Hugo"}}

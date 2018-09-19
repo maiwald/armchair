@@ -4,7 +4,7 @@
             [clojure.spec.alpha :as s]
             [armchair.db :as db]
             [armchair.routes :refer [routes]]
-            [armchair.util :refer [map-values translate-positions position-delta]]))
+            [armchair.util :refer [filter-map map-values translate-positions position-delta]]))
 
 (def spec-interceptor (after (fn [db]
                                (when-not (s/valid? :armchair.db/state db)
@@ -220,16 +220,56 @@
 ;; Location Editor
 
 (reg-event-db
+  :set-tool
+  [spec-interceptor]
+  (fn [db [_ tool]]
+    (assoc-in db [:location-editor :tool] tool)))
+
+(reg-event-db
   :set-active-texture
   [spec-interceptor]
   (fn [db [_ texture]]
-    (assoc-in db [:location-editor :texture] texture)))
+    (assoc-in db [:location-editor :active-texture] texture)))
+
+(reg-event-db
+  :set-highlight
+  [spec-interceptor]
+  (fn [db [_ x y]]
+    (assoc-in db [:location-editor :highlight] [x y])))
+
+(reg-event-db
+  :unset-highlight
+  [spec-interceptor]
+  (fn [db _]
+    (update db :location-editor dissoc :highlight)))
+
+(reg-event-db
+  :start-entity-drag
+  [spec-interceptor]
+  (fn [db [_ payload]]
+    (assoc db :dnd-fuck-up payload)))
+
+(reg-event-db
+  :move-entity
+  [spec-interceptor]
+  (fn [db [_ location entity to]]
+    (-> db
+        (update :location-editor dissoc :highlight)
+        (update-in [:locations location :enemies] #(as-> % new-db
+                                                     (filter-map (fn [v] (not= v entity)) new-db)
+                                                     (assoc new-db to entity))))))
+
+(reg-event-db
+  :stop-entity-drag
+  [spec-interceptor]
+  (fn [db _]
+    (dissoc db :dnd-fuck-up)))
 
 (reg-event-db
   :start-painting
   [spec-interceptor]
   (fn [db [_ location-id x y]]
-    (let [texture (get-in db [:location-editor :texture])
+    (let [texture (get-in db [:location-editor :active-texture])
           texture-code (case texture :grass 1 :wall 0)]
       (-> db
           (assoc-in [:location-editor :painting?] true)
@@ -239,9 +279,9 @@
   :paint
   [spec-interceptor]
   (fn [db [_ location-id x y]]
-    (let [{:keys [painting? texture]} (:location-editor db)]
+    (let [{:keys [painting? active-texture]} (:location-editor db)]
       (if painting?
-        (let [texture-code (case texture :grass 1 :wall 0)]
+        (let [texture-code (case active-texture :grass 1 :wall 0)]
           (assoc-in db [:locations location-id :level x y] texture-code))
         db))))
 

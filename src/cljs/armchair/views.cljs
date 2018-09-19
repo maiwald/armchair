@@ -275,9 +275,12 @@
          ^{:key (str "location-connection" start "->" end)}
          [location-connection (get-pos start) (get-pos end)])]]]))
 
-(defn location-editor-sidebar [location-id display-name]
+(set! (.-ondragend js/document)
+      (fn [] (>evt [:stop-entity-drag])))
+
+(defn location-editor-sidebar [{:keys [tool active-texture]} {:keys [id display-name]}]
   (letfn [(update-display-name [e]
-            (>evt [:update-location location-id :display-name (e->val e)]))]
+            (>evt [:update-location id :display-name (e->val e)]))]
     [slds/form
      [slds/input-text {:label "Name"
                        :on-change update-display-name
@@ -290,25 +293,35 @@
                             :values #{:background :npcs}
                             :on-change #(js/console.log "selected" %)}]
      [slds/radio-button-group {:label "Tools"
-                               :options [[:select "Select" :disabled]
-                                         [:paint "Paint" #(js/console.log "paint")]]
-                               :active :paint
-                               :on-change #(js/console.log "tools:" %)}]
-     [slds/label "Background Textures"
-      (let [active-texture (<sub [:active-texture])]
-        [:ul {:class "texture-list"}
-         (for [texture background-textures]
-           [:li {:key (str "texture-select:" texture)
-                 :class ["texture-list__item"
-                         (when (= texture active-texture) "texture-list__item-active")]}
-            [:a {:on-click #(>evt [:set-active-texture texture])}
-             [:img {:src (texture-path texture)}]]])])]]))
+                               :options [[:paint "Background"]
+                                         [:select "NPCs"]]
+                               :active tool
+                               :on-change #(>evt [:set-tool %])}]
+     (case tool
+       :paint [slds/label "Background Textures"
+               [:ul {:class "tile-list"}
+                (for [texture background-textures]
+                  [:li {:key (str "texture-select:" texture)
+                        :class ["tile-list__item"
+                                (when (= texture active-texture) "tile-list__item-active")]}
+                   [:a {:on-click #(>evt [:set-active-texture texture])}
+                    [:img {:src (texture-path texture)}]]])]]
+       :select [slds/label "Available NPCs"
+                [:ul {:class "tile-list"}
+                 (for [[character-id {:keys [display-name texture]}] (<sub [:character-list])]
+                   [:li {:key (str "character-select" display-name)
+                         :class "tile-list__item"}
+                    [:img {:title display-name
+                           :src (texture-path texture)
+                           :draggable true
+                           :on-drag-start #(>evt [:start-entity-drag {:entity character-id}])}]])]])]))
 
-(defn location-editor-content [location-id level]
+(defn location-editor-content [{:keys [highlight tool painting?]} {:keys [id level enemies]}]
   (let [level-width (count level)
         level-height (count (first level))
-        painting? ^boolean (<sub [:painting?])]
+        dnd-payload (<sub [:dnd-payload])]
     [:div {:class "level"
+           :on-mouse-leave #(>evt [:unset-highlight])
            :style {:width (str (* config/tile-size level-width) "px")
                    :height (str (* config/tile-size level-height) "px")}}
      (for [x (range level-width)
@@ -316,22 +329,38 @@
        (let [texture-name (case (get-in level [x y])
                             0 "wall"
                             1 "grass")]
-         [:div {:key (str "location" location-id ":" x ":" y)
-                :class "level__cell"
-                :on-mouse-down (e-> #(>evt [:start-painting location-id x y]))
-                :on-mouse-over (e-> #(when painting? (>evt [:paint location-id x y])))
-                :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))
-                :style {:width (str config/tile-size "px")
-                        :height (str config/tile-size "px")}}
-          [:img {:src (texture-path texture-name)}]]))]))
+         [:div (merge {:key (str "location" id ":" x ":" y)
+                       :class "level__cell"
+                       :style {:width (str config/tile-size "px")
+                               :height (str config/tile-size "px")}}
+                      (case tool
+                        :select
+                        {:on-drag-over (fn [e] (when (contains? dnd-payload :entity)
+                                                 (.preventDefault e)
+                                                 (>evt [:set-highlight x y])))
+                         :on-drop #(when-let [{:keys [entity position]} dnd-payload]
+                                     (>evt [:move-entity id entity [x y]]))}
+                        :paint
+                        {:on-mouse-down (e-> #(>evt [:start-painting id x y]))
+                         :on-mouse-over (e-> #(when painting? (>evt [:paint id x y])))
+                         :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))}))
+          [:img {:class "no-drag"
+                 :src (texture-path texture-name)}]
+          (when (contains? enemies [x y])
+            [:img {:src (texture-path :enemy)
+                   :draggable true
+                   :on-drag-start #(>evt [:start-entity-drag {:entity (get enemies [x y])}])}])
+          (when (= [x y] highlight)
+            [:div {:class "highlight no-drag"}])]))]))
 
 (defn location-editor [location-id]
-  (let [{:keys [display-name level]} (<sub [:location location-id])]
+  (let [location (<sub [:location location-id])
+        editor-options (<sub [:location-editor-data])]
     [:div {:class "location-editor"}
      [:div {:class "location-editor__sidebar"}
-      [location-editor-sidebar location-id display-name]]
+      [location-editor-sidebar editor-options location]]
      [:div {:class "location-editor__content"}
-      [location-editor-content location-id level]]]))
+      [location-editor-content editor-options location]]]))
 
 (defn game-canvas [game-data]
   (let [game-data (<sub [:game-data])

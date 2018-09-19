@@ -159,14 +159,17 @@
      :connections (map sort connections)}))
 
 (reg-sub
-  :painting?
+  :location-editor-data
   (fn [db]
-    (get-in db [:location-editor :painting?])))
+    (select-keys (:location-editor db)
+                 [:highlight
+                  :painting?
+                  :tool
+                  :active-texture])))
 
 (reg-sub
-  :active-texture
-  (fn [db]
-    (get-in db [:location-editor :texture])))
+  :dnd-payload
+  (fn [db] (:dnd-fuck-up db)))
 
 (reg-sub
   :game-data
