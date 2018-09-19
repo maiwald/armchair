@@ -178,8 +178,8 @@
                   :position-id 17
                   :display-name "Park - Entrance"}}
    :location-connections #{#{1 2}}
-   :characters {1 {:id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)" :texture :enemy}
-                3 {:id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)" :texture :enemy}}
+   :characters {1 {:id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)" :texture :hugo}
+                3 {:id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)" :texture :gustav}}
    :dialogues {1 {:id 1 :display-name "Hugo's Dialogue" :initial-line-id 1 :location-id 1}
                2 {:id 2 :display-name "Gustav's Dialogue" :initial-line-id 14 :location-id 1}}
    :infos {1 {:id 1 :description "Hugo's Name is Hugo"}}

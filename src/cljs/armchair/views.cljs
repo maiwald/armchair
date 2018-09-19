@@ -278,6 +278,15 @@
 (set! (.-ondragend js/document)
       (fn [] (>evt [:stop-entity-drag])))
 
+(defn start-entity-drag-handler [{:keys [id texture]}]
+  (fn [e]
+    (let [image (js/Image.)]
+      (set! (.-src image) (texture-path texture))
+      (-> e .-dataTransfer (.setDragImage image
+                                          (/ config/tile-size 2)
+                                          (/ config/tile-size 2))))
+    (>evt [:start-entity-drag {:entity id}])))
+
 (defn location-editor-sidebar [{:keys [tool active-texture]} {:keys [id display-name]}]
   (letfn [(update-display-name [e]
             (>evt [:update-location id :display-name (e->val e)]))]
@@ -298,28 +307,32 @@
                                :active tool
                                :on-change #(>evt [:set-tool %])}]
      (case tool
-       :paint [slds/label "Background Textures"
-               [:ul {:class "tile-list"}
-                (for [texture background-textures]
-                  [:li {:key (str "texture-select:" texture)
-                        :class ["tile-list__item"
-                                (when (= texture active-texture) "tile-list__item-active")]}
-                   [:a {:on-click #(>evt [:set-active-texture texture])}
-                    [:img {:src (texture-path texture)}]]])]]
-       :select [slds/label "Available NPCs"
-                [:ul {:class "tile-list"}
-                 (for [[character-id {:keys [display-name texture]}] (<sub [:character-list])]
-                   [:li {:key (str "character-select" display-name)
-                         :class "tile-list__item"}
-                    [:img {:title display-name
-                           :src (texture-path texture)
-                           :draggable true
-                           :on-drag-start #(>evt [:start-entity-drag {:entity character-id}])}]])]])]))
+       :paint
+       [slds/label "Background Textures"
+        [:ul {:class "tile-grid"}
+         (for [texture background-textures]
+           [:li {:key (str "texture-select:" texture)
+                 :class ["tile-grid__item"
+                         (when (= texture active-texture) "tile-grid__item-active")]}
+            [:a {:on-click #(>evt [:set-active-texture texture])}
+             [:img {:src (texture-path texture)}]]])]]
+
+       :select
+       [slds/label "Available NPCs"
+        [:ul {:class "tile-list"}
+         (for [[_ {:keys [display-name texture] :as character}] (<sub [:character-list])]
+           [:li {:key (str "character-select" display-name)
+                 :class "tile-list__item"
+                 :draggable true
+                 :on-drag-start (start-entity-drag-handler character)}
+            [:img {:title display-name :src (texture-path texture)}]
+            [:span display-name]])]])]))
 
 (defn location-editor-content [{:keys [highlight tool painting?]} {:keys [id level enemies]}]
   (let [level-width (count level)
         level-height (count (first level))
-        dnd-payload (<sub [:dnd-payload])]
+        dnd-payload (<sub [:dnd-payload])
+        character-list (<sub [:character-list])]
     [:div {:class "level"
            :on-mouse-leave #(>evt [:unset-highlight])
            :style {:width (str (* config/tile-size level-width) "px")
@@ -335,21 +348,20 @@
                                :height (str config/tile-size "px")}}
                       (case tool
                         :select
-                        {:on-drag-over (fn [e] (when (contains? dnd-payload :entity)
-                                                 (.preventDefault e)
-                                                 (>evt [:set-highlight x y])))
-                         :on-drop #(when-let [{:keys [entity position]} dnd-payload]
-                                     (>evt [:move-entity id entity [x y]]))}
+                        (when-let [entity (:entity dnd-payload)]
+                          {:on-drag-over (e-> #(>evt [:set-highlight x y]))
+                           :on-drop #(>evt [:move-entity id entity [x y]])})
                         :paint
                         {:on-mouse-down (e-> #(>evt [:start-painting id x y]))
                          :on-mouse-over (e-> #(when painting? (>evt [:paint id x y])))
                          :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))}))
           [:img {:class "no-drag"
                  :src (texture-path texture-name)}]
-          (when (contains? enemies [x y])
-            [:img {:src (texture-path :enemy)
-                   :draggable true
-                   :on-drag-start #(>evt [:start-entity-drag {:entity (get enemies [x y])}])}])
+          (when-let [character-id (get enemies [x y])]
+            (let [character (get character-list character-id)]
+              [:img {:src (texture-path (:texture character))
+                     :draggable true
+                     :on-drag-start (start-entity-drag-handler character)}]))
           (when (= [x y] highlight)
             [:div {:class "highlight no-drag"}])]))]))
 

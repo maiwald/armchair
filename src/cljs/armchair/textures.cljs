@@ -5,6 +5,8 @@
                           :wall])
 
 (def textures (into background-textures [:player
+                                         :hugo
+                                         :gustav
                                          :enemy
                                          :arrow]))
 
