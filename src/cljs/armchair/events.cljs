@@ -269,21 +269,18 @@
   :start-painting
   [spec-interceptor]
   (fn [db [_ location-id x y]]
-    (let [texture (get-in db [:location-editor :active-texture])
-          texture-code (case texture :grass 1 :wall 0)]
+    (let [texture (get-in db [:location-editor :active-texture])]
       (-> db
           (assoc-in [:location-editor :painting?] true)
-          (assoc-in [:locations location-id :level x y] texture-code)))))
+          (assoc-in [:locations location-id :level x y] texture)))))
 
 (reg-event-db
   :paint
   [spec-interceptor]
   (fn [db [_ location-id x y]]
     (let [{:keys [painting? active-texture]} (:location-editor db)]
-      (if painting?
-        (let [texture-code (case active-texture :grass 1 :wall 0)]
-          (assoc-in db [:locations location-id :level x y] texture-code))
-        db))))
+      (cond-> db
+        painting? (assoc-in [:locations location-id :level x y] active-texture)))))
 
 (reg-event-db
   :stop-painting

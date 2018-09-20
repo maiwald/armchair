@@ -344,9 +344,7 @@
                    :height (str (* config/tile-size level-height) "px")}}
      (for [x (range level-width)
            y (range level-height)]
-       (let [texture-name (case (get-in level [x y])
-                            0 "wall"
-                            1 "grass")]
+       (let [texture (get-in level [x y])]
          [:div (merge {:key (str "location" id ":" x ":" y)
                        :class "level__cell"
                        :style {:width (str config/tile-size "px")
@@ -361,12 +359,12 @@
                          :on-mouse-over (e-> #(when painting? (>evt [:paint id x y])))
                          :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))}))
           [:img {:class "no-drag"
-                 :src (texture-path texture-name)}]
-          (when-let [{character-id :id texture :texture} (get npcs [x y])]
-            [:img {:src (texture-path texture)
+                 :src (texture-path texture)}]
+          (when-let [{character-id :id npc-texture :texture} (get npcs [x y])]
+            [:img {:src (texture-path npc-texture)
                    :draggable true
                    :on-drag-start (fn [e]
-                                    (set-drag-texture! e texture)
+                                    (set-drag-texture! e npc-texture)
                                     (>evt [:start-entity-drag {:entity character-id}]))}])
           (when (= [x y] highlight)
             [:div {:class "highlight no-drag"}])]))]))

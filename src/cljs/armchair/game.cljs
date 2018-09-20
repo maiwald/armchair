@@ -68,7 +68,7 @@
 
 (defn ^boolean walkable? [tile]
   (let [{:keys [level npcs]} @state]
-    (and (= (get-in level tile) 1)
+    (and (= (get-in level tile) :grass)
          (not (contains? npcs tile)))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
@@ -124,12 +124,8 @@
         rows (count level)]
     (doseq [x (range 0 rows)
             y (range 0 cols)
-            :let [value (get-in level [x y])]]
-      (draw-texture ctx
-                    (case value
-                      0 :wall
-                      1 :grass)
-                    (tile->coord [x y])))))
+            :let [texture (get-in level [x y])]]
+      (draw-texture ctx texture (tile->coord [x y])))))
 
 (defn draw-player [ctx player]
   (draw-texture ctx :player player))
