@@ -261,9 +261,9 @@
   (fn [db [_ location entity to]]
     (-> db
         (update :location-editor dissoc :highlight)
-        (update-in [:locations location :enemies] #(as-> % new-db
-                                                     (filter-map (fn [v] (not= v entity)) new-db)
-                                                     (assoc new-db to entity))))))
+        (update-in [:locations location :npcs] #(as-> % new-db
+                                                  (filter-map (fn [v] (not= v entity)) new-db)
+                                                  (assoc new-db to entity))))))
 
 (reg-event-db
   :start-painting

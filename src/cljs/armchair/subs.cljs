@@ -133,8 +133,9 @@
 (reg-sub
   :location
   :<- [:db-locations]
-  (fn [locations [_ location-id]]
-    (locations location-id)))
+  :<- [:db-characters]
+  (fn [[locations characters] [_ location-id]]
+    (update (locations location-id) :npcs #(map-values characters %))))
 
 (reg-sub
   :location-map
@@ -174,12 +175,13 @@
   :<- [:db-locations]
   :<- [:db-dialogues]
   :<- [:db-lines]
+  :<- [:db-characters]
   :<- [:db-infos]
-  (fn [[locations dialogues lines infos] _]
+  (fn [[locations dialogues lines characters infos] _]
     (let [location (get locations 1)
           location-dialogues (where-map :location-id 1 dialogues)]
       {:level (:level location)
-       :enemies (:enemies location)
+       :npcs (map-values characters (:npcs location))
        :infos infos
        :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
        :dialogues (into {} (map (fn [{:keys [id initial-line-id]}]

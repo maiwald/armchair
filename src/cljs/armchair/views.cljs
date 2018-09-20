@@ -334,11 +334,10 @@
             [:img {:title display-name :src (texture-path texture)}]
             [:span display-name]])]])]))
 
-(defn location-editor-content [{:keys [highlight tool painting?]} {:keys [id level enemies]}]
+(defn location-editor-content [{:keys [highlight tool painting?]} {:keys [id level npcs]}]
   (let [level-width (count level)
         level-height (count (first level))
-        dnd-payload (<sub [:dnd-payload])
-        character-list (<sub [:character-list])]
+        dnd-payload (<sub [:dnd-payload])]
     [:div {:class "level"
            :on-mouse-leave #(>evt [:unset-highlight])
            :style {:width (str (* config/tile-size level-width) "px")
@@ -363,13 +362,12 @@
                          :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))}))
           [:img {:class "no-drag"
                  :src (texture-path texture-name)}]
-          (when-let [character-id (get enemies [x y])]
-            (let [{character-id :id texture :texture} (get character-list character-id)]
-              [:img {:src (texture-path texture)
-                     :draggable true
-                     :on-drag-start (fn [e]
-                                      (set-drag-texture! e texture)
-                                      (>evt [:start-entity-drag {:entity character-id}]))}]))
+          (when-let [{character-id :id texture :texture} (get npcs [x y])]
+            [:img {:src (texture-path texture)
+                   :draggable true
+                   :on-drag-start (fn [e]
+                                    (set-drag-texture! e texture)
+                                    (>evt [:start-entity-drag {:entity character-id}]))}])
           (when (= [x y] highlight)
             [:div {:class "highlight no-drag"}])]))]))
 

@@ -4,7 +4,7 @@
             [clojure.set :refer [subset? union]]
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
-            [armchair.textures :refer [load-textures]]
+            [armchair.textures :refer [textures load-textures]]
             [armchair.util :refer [map-values translate-position]]
             [armchair.pathfinding :as path]))
 
@@ -32,14 +32,19 @@
 (s/def ::uniform-level (fn [level] (apply = (map count level))))
 (s/def ::level (s/and (s/coll-of vector? :kind vector?)
                       ::uniform-level))
-(s/def ::enemies (s/map-of ::position pos-int?))
+
+(s/def ::texture #(contains? (set textures) %))
+(s/def ::display-name string?)
+(s/def ::character (s/keys :req-un [::display-name ::texture]))
+(s/def ::npcs (s/map-of ::position ::character))
 (s/def ::highlight ::position)
 
-(s/def ::all-enemies-have-dialogue (fn [{:keys [enemies dialogues]}]
-                                     (= (vals enemies) (keys dialogues))))
-(s/def ::state (s/and (s/keys :req-un [::player ::level ::enemies]
+(s/def ::all-npcs-have-dialogue (fn [{:keys [npcs dialogues]}]
+                                  (= (set (map #(:id (second %)) npcs))
+                                     (set (keys dialogues)))))
+(s/def ::state (s/and (s/keys :req-un [::player ::level ::npcs]
                               :opt-un [::highlight ::interaction])
-                      ::all-enemies-have-dialogue))
+                      ::all-npcs-have-dialogue))
 
 ;; Conversion Helpers
 
@@ -62,9 +67,9 @@
             :infos #{}}})
 
 (defn ^boolean walkable? [tile]
-  (let [{:keys [level enemies]} @state]
+  (let [{:keys [level npcs]} @state]
     (and (= (get-in level tile) 1)
-         (not (contains? enemies tile)))))
+         (not (contains? npcs tile)))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
   (translate-position
@@ -129,9 +134,9 @@
 (defn draw-player [ctx player]
   (draw-texture ctx :player player))
 
-(defn draw-enemies [ctx coords]
-  (doseq [coord coords]
-    (draw-texture ctx :enemy coord)))
+(defn draw-npcs [ctx npcs]
+  (doseq [[tile {texture :texture}] npcs]
+    (draw-texture ctx texture (tile->coord tile))))
 
 (defn draw-highlight [ctx highlight-coord]
   (c/save! ctx)
@@ -198,7 +203,7 @@
     (when-not (interacting? @state)
       (draw-path @ctx @state))
     (draw-player @ctx (get-in view-state [:player :position]))
-    (draw-enemies @ctx (->> view-state :enemies keys (map tile->coord)))
+    (draw-npcs @ctx (:npcs view-state))
     (when (and (not (interacting? @state))
                (contains? @state :highlight))
       (draw-highlight @ctx (:highlight @state)))
@@ -233,8 +238,8 @@
                         (cond-> (merge % {:interaction {:line-id next-interaction
                                                         :selected-option 0}})
                           (not (empty? info-ids)) (update-in [:player :infos] union info-ids))))))
-    (if-let [enemy-id ((:enemies @state) (interaction-tile @state))]
-      (swap! state assoc :interaction {:line-id (get-in @state [:dialogues enemy-id])
+    (if-let [{npc-id :id} ((:npcs @state) (interaction-tile @state))]
+      (swap! state assoc :interaction {:line-id (get-in @state [:dialogues npc-id])
                                        :selected-option 0}))))
 
 (defn start-input-loop [channel]
