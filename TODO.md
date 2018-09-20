@@ -5,8 +5,15 @@
   - characters can only be placed once
   - placed characters may get a dialogue
   - allow placing location change triggers (and make them work)
+  - organize and cluster background textures
+- undo
 - saving state
-- moving camera for prototype
+- get it to benni!
+- epochs
 - validation error notifications
 - information dependency invariants
-- epochs
+- moving camera for prototype
+
+# nice things
+- enable double click for editing lines
+- copy and paste for background texture sets

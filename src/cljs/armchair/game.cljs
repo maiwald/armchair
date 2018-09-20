@@ -162,9 +162,9 @@
         x (/ (- (c/width ctx) w) 2)
         y (/ (- (c/height ctx) h) 2)]
     (c/save! ctx)
-    (c/set-fill-style! ctx "rgba(237, 224, 142, .8)")
+    (c/set-fill-style! ctx "rgba(230, 230, 230, .9)")
     (c/fill-rect! ctx [x y] w h)
-    (c/set-stroke-style! ctx "rgb(200, 200, 0)")
+    (c/set-stroke-style! ctx "rgb(0, 0, 0)")
     (c/stroke-rect! ctx [x y] w h)
 
     (c/set-fill-style! ctx "rgb(0, 0, 0)")
