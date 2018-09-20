@@ -1,5 +1,4 @@
 (ns armchair.subs
-  (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [clojure.spec.alpha :as s]
             [armchair.db :as db]

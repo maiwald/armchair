@@ -299,9 +299,9 @@
                        :on-change update-display-name
                        :value display-name}]
      [slds/radio-button-group {:label "Tools"
-                               :options [[:paint "Background"]
-                                         [:select "NPCs"]
-                                         [:collision "Collision"]]
+                               :options [[:paint [icon "layer-group" "Background"]]
+                                         [:collision [icon "walking" "Collision"]]
+                                         [:select [icon "user" "NPCs"]]]
                                :active tool
                                :on-change #(>evt [:set-tool %])}]
      (case tool
