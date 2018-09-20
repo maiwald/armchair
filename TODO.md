@@ -1,5 +1,11 @@
 # TODO
 - level editor
+  - allow extending/shrinking level
+  - prevent placing npcs on taken/non-walkable tiles
+  - characters can only be placed once
+  - placed characters may get a dialogue
+  - allow placing location change triggers (and make them work)
+- moving camera for prototype
 - validation error notifications
 - information dependency invariants
 - epochs
