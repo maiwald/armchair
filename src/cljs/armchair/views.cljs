@@ -298,13 +298,6 @@
      [slds/input-text {:label "Name"
                        :on-change update-display-name
                        :value display-name}]
-     [slds/checkbox-select {:label "Layers"
-                            :options [[:background "Background" :disabled]
-                                      [:collision "Collision"]
-                                      [:npcs "NPCs"]
-                                      [:triggers "Triggers"]]
-                            :values #{:background :npcs}
-                            :on-change #(js/console.log "selected" %)}]
      [slds/radio-button-group {:label "Tools"
                                :options [[:paint "Background"]
                                          [:select "NPCs"]]
