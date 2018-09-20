@@ -343,31 +343,32 @@
            :style {:width (str (* config/tile-size level-width) "px")
                    :height (str (* config/tile-size level-height) "px")}}
      (for [x (range level-width)
-           y (range level-height)]
-       (let [texture (get-in level [x y])]
-         [:div (merge {:key (str "location" id ":" x ":" y)
-                       :class "level__cell"
-                       :style {:width (str config/tile-size "px")
-                               :height (str config/tile-size "px")}}
-                      (case tool
-                        :select
-                        (when-let [entity (:entity dnd-payload)]
-                          {:on-drag-over (e-> (once #(>evt [:set-highlight x y])))
-                           :on-drop #(>evt [:move-entity id entity [x y]])})
-                        :paint
-                        {:on-mouse-down (e-> #(>evt [:start-painting id x y]))
-                         :on-mouse-over (e-> #(when painting? (>evt [:paint id x y])))
-                         :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))}))
-          [:img {:class "no-drag"
-                 :src (texture-path texture)}]
-          (when-let [{character-id :id npc-texture :texture} (get npcs [x y])]
-            [:img {:src (texture-path npc-texture)
-                   :draggable true
-                   :on-drag-start (fn [e]
-                                    (set-drag-texture! e npc-texture)
-                                    (>evt [:start-entity-drag {:entity character-id}]))}])
-          (when (= [x y] highlight)
-            [:div {:class "highlight no-drag"}])]))]))
+           y (range level-height)
+           :let [tile [x y]
+                 texture (get-in level tile)]]
+       [:div (merge {:key (str "location" id ":" tile)
+                     :class "level__cell"
+                     :style {:width (str config/tile-size "px")
+                             :height (str config/tile-size "px")}}
+                    (case tool
+                      :select
+                      (when-let [entity (:entity dnd-payload)]
+                        {:on-drag-over (e-> (once #(>evt [:set-highlight tile])))
+                         :on-drop #(>evt [:move-entity id entity tile])})
+                      :paint
+                      {:on-mouse-down (e-> #(>evt [:start-painting id tile]))
+                       :on-mouse-over (e-> #(when painting? (>evt [:paint id tile])))
+                       :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))}))
+        [:img {:class "no-drag"
+               :src (texture-path texture)}]
+        (when-let [{character-id :id npc-texture :texture} (get npcs tile)]
+          [:img {:src (texture-path npc-texture)
+                 :draggable true
+                 :on-drag-start (fn [e]
+                                  (set-drag-texture! e npc-texture)
+                                  (>evt [:start-entity-drag {:entity character-id}]))}])
+        (when (= tile highlight)
+          [:div {:class "highlight no-drag"}])])]))
 
 (defn location-editor [location-id]
   (let [location (<sub [:location location-id])

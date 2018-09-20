@@ -234,8 +234,8 @@
 (reg-event-db
   :set-highlight
   [spec-interceptor]
-  (fn [db [_ x y]]
-    (assoc-in db [:location-editor :highlight] [x y])))
+  (fn [db [_ tile]]
+    (assoc-in db [:location-editor :highlight] tile)))
 
 (reg-event-db
   :unset-highlight
@@ -268,7 +268,7 @@
 (reg-event-db
   :start-painting
   [spec-interceptor]
-  (fn [db [_ location-id x y]]
+  (fn [db [_ location-id [x y]]]
     (let [texture (get-in db [:location-editor :active-texture])]
       (-> db
           (assoc-in [:location-editor :painting?] true)
@@ -277,7 +277,7 @@
 (reg-event-db
   :paint
   [spec-interceptor]
-  (fn [db [_ location-id x y]]
+  (fn [db [_ location-id [x y]]]
     (let [{:keys [painting? active-texture]} (:location-editor db)]
       (cond-> db
         painting? (assoc-in [:locations location-id :level x y] active-texture)))))
