@@ -285,14 +285,11 @@
 (set! (.-ondragend js/document)
       (fn [] (>evt [:stop-entity-drag])))
 
-(defn start-entity-drag-handler [{:keys [id texture]}]
-  (fn [e]
-    (let [image (js/Image.)]
-      (set! (.-src image) (texture-path texture))
-      (-> e .-dataTransfer (.setDragImage image
-                                          (/ config/tile-size 2)
-                                          (/ config/tile-size 2))))
-    (>evt [:start-entity-drag {:entity id}])))
+(defn set-drag-texture! [e texture]
+  (let [offset (/ config/tile-size 2)
+        image (js/Image.)]
+    (set! (.-src image) (texture-path texture))
+    (-> e .-dataTransfer (.setDragImage image offset offset))))
 
 (defn location-editor-sidebar [{:keys [tool active-texture]} {:keys [id display-name]}]
   (letfn [(update-display-name [e]
@@ -327,11 +324,13 @@
        :select
        [slds/label "Available NPCs"
         [:ul {:class "tile-list"}
-         (for [[_ {:keys [display-name texture] :as character}] (<sub [:character-list])]
+         (for [[_ {character-id :id :keys [display-name texture]}] (<sub [:character-list])]
            [:li {:key (str "character-select" display-name)
                  :class "tile-list__item"
                  :draggable true
-                 :on-drag-start (start-entity-drag-handler character)}
+                 :on-drag-start (fn [e]
+                                  (set-drag-texture! e texture)
+                                  (>evt [:start-entity-drag {:entity character-id}]))}
             [:img {:title display-name :src (texture-path texture)}]
             [:span display-name]])]])]))
 
@@ -365,10 +364,12 @@
           [:img {:class "no-drag"
                  :src (texture-path texture-name)}]
           (when-let [character-id (get enemies [x y])]
-            (let [character (get character-list character-id)]
-              [:img {:src (texture-path (:texture character))
+            (let [{character-id :id texture :texture} (get character-list character-id)]
+              [:img {:src (texture-path texture)
                      :draggable true
-                     :on-drag-start (start-entity-drag-handler character)}]))
+                     :on-drag-start (fn [e]
+                                      (set-drag-texture! e texture)
+                                      (>evt [:start-entity-drag {:entity character-id}]))}]))
           (when (= [x y] highlight)
             [:div {:class "highlight no-drag"}])]))]))
 
