@@ -300,7 +300,8 @@
                        :value display-name}]
      [slds/radio-button-group {:label "Tools"
                                :options [[:paint "Background"]
-                                         [:select "NPCs"]]
+                                         [:select "NPCs"]
+                                         [:collision "Collision"]]
                                :active tool
                                :on-change #(>evt [:set-tool %])}]
      (case tool
@@ -325,9 +326,10 @@
                                   (set-drag-texture! e texture)
                                   (>evt [:start-entity-drag {:entity character-id}]))}
             [:img {:title display-name :src (texture-path texture)}]
-            [:span display-name]])]])]))
+            [:span display-name]])]]
+       nil)]))
 
-(defn location-editor-content [{:keys [highlight tool painting?]} {:keys [id level npcs]}]
+(defn location-editor-content [{:keys [highlight tool painting?]} {:keys [id level npcs walk-set]}]
   (let [level-width (count level)
         level-height (count (first level))
         dnd-payload (<sub [:dnd-payload])]
@@ -340,7 +342,7 @@
            :let [tile [x y]
                  texture (get-in level tile)]]
        [:div (merge {:key (str "location" id ":" tile)
-                     :class "level__cell"
+                     :class "level__tile"
                      :style {:width (str config/tile-size "px")
                              :height (str config/tile-size "px")}}
                     (case tool
@@ -351,8 +353,10 @@
                       :paint
                       {:on-mouse-down (e-> #(>evt [:start-painting id tile]))
                        :on-mouse-over (e-> #(when painting? (>evt [:paint id tile])))
-                       :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))}))
-        [:img {:class "no-drag"
+                       :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))}
+                      :collision
+                      {:on-click #(>evt [:flip-walkable id tile])}))
+        [:img {:class "background"
                :src (texture-path texture)}]
         (when-let [{character-id :id npc-texture :texture} (get npcs tile)]
           [:img {:src (texture-path npc-texture)
@@ -360,8 +364,15 @@
                  :on-drag-start (fn [e]
                                   (set-drag-texture! e npc-texture)
                                   (>evt [:start-entity-drag {:entity character-id}]))}])
-        (when (= tile highlight)
-          [:div {:class "highlight no-drag"}])])]))
+        (case tool
+          :collision
+          [:div {:class ["highlight" (if (contains? walk-set tile)
+                                       "highlight_walkable"
+                                       "highlight_not-walkable")]}]
+          :select
+          (when (= tile highlight)
+            [:div {:class "highlight"}])
+          nil)])]))
 
 (defn location-editor [location-id]
   (let [location (<sub [:location location-id])

@@ -288,6 +288,15 @@
   (fn [db _]
     (assoc-in db [:location-editor :painting?] false)))
 
+(reg-event-db
+  :flip-walkable
+  [spec-interceptor]
+  (fn [db [_ location-id tile]]
+    (update-in db [:locations location-id :walk-set] (fn [walk-set]
+                                                       (if (contains? walk-set tile)
+                                                         (disj walk-set tile)
+                                                         (conj walk-set tile))))))
+
 ;; Modal
 
 (defn open-modal [modal-key]

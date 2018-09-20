@@ -180,11 +180,11 @@
   (fn [[locations dialogues lines characters infos] _]
     (let [location (get locations 1)
           location-dialogues (where-map :location-id 1 dialogues)]
-      {:level (:level location)
-       :npcs (map-values characters (:npcs location))
-       :infos infos
-       :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
-       :dialogues (into {} (map (fn [{:keys [id initial-line-id]}]
-                                  [(:character-id (get lines initial-line-id))
-                                   initial-line-id])
-                                (vals location-dialogues)))})))
+      (merge (select-keys location [:level :walk-set])
+             {:npcs (map-values characters (:npcs location))
+              :infos infos
+              :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
+              :dialogues (into {} (map (fn [{:keys [id initial-line-id]}]
+                                         [(:character-id (get lines initial-line-id))
+                                          initial-line-id])
+                                       (vals location-dialogues)))}))))

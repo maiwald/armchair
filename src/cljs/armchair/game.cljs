@@ -67,8 +67,8 @@
             :infos #{}}})
 
 (defn ^boolean walkable? [tile]
-  (let [{:keys [level npcs]} @state]
-    (and (= (get-in level tile) :grass)
+  (let [{:keys [walk-set npcs]} @state]
+    (and (contains? walk-set tile)
          (not (contains? npcs tile)))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
