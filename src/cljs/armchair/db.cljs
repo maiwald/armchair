@@ -151,57 +151,74 @@
    :locations {1 {:id 1
                   :position-id 16
                   :display-name "Park - Camp"
-                  :level [[:wall :wall :wall :wall :wall :wall :wall :wall :wall :wall :wall :wall :grass :wall]
-                          [:wall :grass :wall :grass :grass :grass :grass :grass :grass :grass :grass :grass :grass :wall]
-                          [:wall :grass :grass :grass :wall :wall :wall :wall :wall :wall :grass :grass :wall :wall]
-                          [:wall :grass :grass :grass :wall :wall :wall :wall :wall :wall :grass :grass :grass :wall]
-                          [:wall :grass :wall :grass :wall :wall :grass :grass :grass :grass :grass :wall :grass :wall]
-                          [:wall :wall :wall :grass :grass :grass :grass :wall :wall :grass :wall :wall :grass :wall]
-                          [:wall :wall :grass :grass :wall :wall :grass :wall :wall :grass :wall :grass :grass :wall]
-                          [:wall :grass :grass :grass :grass :wall :grass :wall :wall :grass :grass :grass :grass :wall]
-                          [:wall :grass :wall :grass :grass :wall :grass :grass :grass :grass :wall :wall :grass :wall]
-                          [:wall :grass :wall :grass :grass :wall :grass :grass :grass :grass :wall :wall :grass :wall]
-                          [:wall :grass :wall :grass :grass :wall :grass :grass :grass :grass :wall :wall :grass :wall]
-                          [:wall :wall :wall :wall :grass :wall :grass :wall :wall :grass :wall :wall :wall :wall]
-                          [:wall :grass :wall :grass :grass :grass :grass :grass :grass :grass :grass :wall :grass :wall]
-                          [:wall :grass :grass :grass :wall :wall :wall :wall :wall :wall :grass :grass :grass :wall]
-                          [:wall :grass :grass :grass :wall :wall :wall :wall :wall :wall :grass :grass :grass :wall]
-                          [:wall :grass :wall :grass :wall :wall :grass :grass :grass :grass :grass :wall :grass :wall]
-                          [:wall :grass :wall :grass :grass :grass :grass :wall :wall :grass :wall :wall :grass :wall]
-                          [:wall :grass :grass :grass :wall :wall :grass :wall :wall :grass :wall :grass :grass :wall]
-                          [:wall :grass :grass :grass :grass :wall :grass :wall :wall :grass :wall :grass :grass :wall]
-                          [:wall :wall :wall :wall :wall :wall :grass :wall :wall :grass :wall :grass :grass :wall]
-                          [:grass :grass :grass :grass :grass :wall :grass :grass :wall :grass :wall :grass :wall :wall]
-                          [:wall :grass :grass :grass :grass :wall :grass :grass :wall :grass :grass :grass :wall :wall]
-                          [:wall :grass :wall :grass :grass :wall :grass :wall :wall :grass :wall :grass :wall :wall]
-                          [:wall :grass :wall :grass :grass :grass :grass :grass :grass :grass :wall :grass :grass :wall]
+                  :level [[:wall :wall :wall :wall :wall :wall :wall :wall :wall :wall :wall :stone :stone :wall]
+                          [:wall :dirt :wall :grass :grass :grass :grass :grass :grass :grass_stone_top
+                           :stone_2 :stone :stone :wall]
+                          [:wall :dirt :grass_dirt_bottom :grass :wall :wall :wall :wall :wall :wall :stone
+                           :stone :stone :wall]
+                          [:wall :dirt :grass_dirt_bottom :grass :wall :wall :wall :wall :wall :wall :stone
+                           :stone_grass_top-left :grass_stone_right :wall]
+                          [:wall :dirt :wall :grass :wall :wall :grass :grass :grass :grass_stone_top :stone
+                           :grass_stone_bottom :grass :wall]
+                          [:wall :wall :wall :grass :grass :grass :grass :wall :wall :stone_grass_bottom-right
+                           :stone :grass_stone_bottom :grass :wall]
+                          [:wall :wall :grass :grass :wall :wall :grass :wall :wall :stone :stone
+                           :grass_stone_bottom :grass :wall]
+                          [:wall :grass :grass_dirt_top-left :grass_dirt_left :grass_dirt_left :wall :grass
+                           :wall :wall :stone :stone_2 :grass_stone_bottom :grass :wall]
+                          [:wall :grass :wall :dirt :dirt :wall :grass :grass :wall :stone :stone_2 :wall :grass :wall]
+                          [:wall :grass :wall :dirt :dirt :wall :grass :grass :grass_stone_top :stone :stone
+                           :wall :grass :wall]
+                          [:wall :grass :wall :dirt :dirt :wall :grass :grass :grass_stone_top :stone_2 :stone
+                           :wall :grass :wall]
+                          [:wall :wall :wall :wall :grass_dirt_right :wall :grass :wall :wall :stone_2 :stone
+                           :wall :wall :wall]
+                          [:wall :grass :wall :grass :grass :grass :grass :grass :grass_stone_top :stone_2
+                           :stone :wall :grass :wall]
+                          [:wall :grass :grass :grass :wall :wall :wall :wall :wall :stone :stone
+                           :grass_stone_bottom :grass :wall]
+                          [:wall :grass :grass :grass :wall :wall :wall :wall :wall :stone :stone_grass_top-left
+                           :grass_stone_bottom-right :grass :wall]
+                          [:wall :grass :wall :grass :wall :wall :grass_stone_top-left :stone_grass_bottom-right
+                           :stone_2 :stone_bush :grass_stone_bottom :wall :grass :wall]
+                          [:wall :grass :wall :grass :grass :grass :grass_stone_top :stone_2 :stone_2 :stone
+                           :grass_stone_bottom :wall :grass :wall]
+                          [:wall :grass :grass :grass :wall :wall :grass_stone_top :stone_2 :stone_2 :stone
+                           :grass_stone_bottom :grass :grass :wall]
+                          [:wall :grass :grass :grass :grass :wall :stone_grass_bottom-right :stone_2 :wall
+                           :wall :wall :grass :grass :wall]
+                          [:wall :wall :wall :wall :wall :wall :stone_2 :stone_2 :wall :grass :wall :grass
+                           :grass :wall]
+                          [:stone_2 :stone_2 :stone_2 :stone_2 :stone_2 :stone_2 :stone_2 :stone_grass_top-left
+                           :wall :grass :wall :grass_stone_left :wall :wall]
+                          [:wall :stone_2 :stone_2 :stone_2 :stone_2 :wall :stone_grass_top-left :grass :wall
+                           :grass :grass_stone_top :stone :stone :wall]
+                          [:wall :grass_stone_right :wall :grass_stone_right :grass_stone_right :wall :wall
+                           :wall :wall :grass :wall :stone :stone :wall]
+                          [:wall :grass :wall :grass :grass :grass :grass :grass :grass :grass :wall :stone
+                           :stone :wall]
                           [:wall :wall :wall :wall :wall :wall :wall :wall :wall :wall :wall :wall :wall :wall]]
-                  :walk-set #{[0 12]
-                              [1 1] [1 3] [1 4] [1 5] [1 6] [1 7] [1 8] [1 9] [1 10] [1 11] [1 12]
-                              [2 1] [2 2] [2 3] [2 10] [2 11]
-                              [3 1] [3 2] [3 3] [3 10] [3 11] [3 12]
-                              [4 1] [4 3] [4 6] [4 7] [4 8] [4 9] [4 10] [4 12]
-                              [5 3] [5 4] [5 5] [5 6] [5 9] [5 12]
-                              [6 2] [6 3] [6 6] [6 9] [6 11] [6 12]
-                              [7 1] [7 2] [7 3] [7 4] [7 6] [7 9] [7 10] [7 11] [7 12]
-                              [8 1] [8 3] [8 4] [8 6] [8 7] [8 8] [8 9] [8 12]
-                              [9 1] [9 3] [9 4] [9 6] [9 7] [9 8] [9 9] [9 12]
-                              [10 1] [10 3] [10 4] [10 6] [10 7] [10 8] [10 9] [10 12]
-                              [11 4] [11 6] [11 9]
-                              [12 1] [12 3] [12 4] [12 5] [12 6] [12 7] [12 8] [12 9] [12 10] [12 12]
-                              [13 1] [13 2] [13 3] [13 10] [13 11] [13 12]
-                              [14 1] [14 2] [14 3] [14 10] [14 11] [14 12]
-                              [15 1] [15 3] [15 6] [15 7] [15 8] [15 9] [15 10] [15 12]
-                              [16 1] [16 3] [16 4] [16 5] [16 6] [16 9] [16 12]
-                              [17 1] [17 2] [17 3] [17 6] [17 9] [17 11] [17 12]
-                              [18 1] [18 2] [18 3] [18 4] [18 6] [18 9] [18 11] [18 12]
-                              [19 6] [19 9] [19 11] [19 12]
-                              [20 0] [20 1] [20 2] [20 3] [20 4] [20 6] [20 7] [20 9] [20 11]
-                              [21 1] [21 2] [21 3] [21 4] [21 6] [21 7] [21 9] [21 10] [21 11]
-                              [22 1] [22 3] [22 4] [22 6] [22 9] [22 11]
-                              [23 1] [23 3] [23 4] [23 5] [23 6] [23 7] [23 8] [23 9] [23 11] [23 12]}
-                  :npcs {[6 6] 1
-                         [5 12] 3}}
+                  :walk-set #{[18 7] [13 2] [1 10] [10 9] [13 11] [6 9] [5 9] [21 9] [21 7] [9 1]
+                              [4 3] [17 1] [4 11] [18 2] [14 10] [0 11] [9 7] [5 12] [5 3] [23 8]
+                              [2 2] [22 4] [1 5] [3 2] [4 6] [8 12] [13 10] [14 12] [1 11] [7 1]
+                              [21 2] [7 9] [20 9] [13 12] [23 3] [21 11] [2 12] [10 1] [23 7] [13 9]
+                              [10 6] [7 2] [12 6] [4 10] [1 3] [22 1] [5 5] [5 6] [2 3] [15 12] [8 1]
+                              [14 3] [18 12] [11 9] [23 1] [9 6] [15 3] [16 7] [23 6] [9 3] [2 11]
+                              [17 6] [4 7] [8 3] [3 1] [18 6] [17 2] [14 11] [22 9] [18 11] [21 10]
+                              [12 7] [17 9] [20 6] [19 9] [18 1] [4 9] [12 9] [15 8] [17 8] [20 4]
+                              [20 5] [14 2] [12 12] [11 4] [11 10] [20 0] [16 4] [18 4] [6 12] [16 3]
+                              [1 1] [15 7] [23 9] [15 9] [10 10] [12 4] [12 3] [10 7] [8 7] [12 5]
+                              [16 12] [7 4] [1 12] [18 3] [8 4] [13 1] [12 8] [16 10] [16 9] [16 1]
+                              [3 3] [12 10] [15 6] [10 12] [5 4] [21 12] [3 11] [6 11] [14 1] [10 3]
+                              [9 9] [20 7] [7 12] [16 6] [9 4] [17 7] [19 12] [22 11] [6 3] [23 12]
+                              [21 6] [8 6] [6 6] [15 10] [17 12] [1 4] [23 5] [12 1] [1 7] [4 8]
+                              [1 8] [23 4] [19 7] [13 3] [3 12] [3 10] [1 9] [2 10] [7 10] [14 9]
+                              [5 10] [19 6] [10 4] [2 1] [4 1] [16 8] [5 11] [0 12] [15 1] [7 11]
+                              [9 10] [6 10] [1 6] [22 3] [16 5] [17 11] [21 1] [17 3] [22 12] [9 8]
+                              [8 10] [4 12] [9 12] [11 6] [20 2] [7 3] [21 3] [8 9] [20 1] [21 4]
+                              [23 11] [10 8] [6 2] [20 11] [19 11] [20 3] [7 6] [17 10]}
+                  :npcs {[5 10] 3
+                         [22 11] 1}}
                2 {:id 2
                   :position-id 17
                   :display-name "Park - Entrance"
