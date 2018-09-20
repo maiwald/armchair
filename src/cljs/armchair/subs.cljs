@@ -20,6 +20,7 @@
 
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
+(reg-sub :dnd-payload #(:dnd-payload %))
 
 (reg-sub
   :character-list
@@ -167,9 +168,6 @@
                   :tool
                   :active-texture])))
 
-(reg-sub
-  :dnd-payload
-  (fn [db] (:dnd-fuck-up db)))
 
 (reg-sub
   :game-data

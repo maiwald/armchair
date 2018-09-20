@@ -247,7 +247,13 @@
   :start-entity-drag
   [spec-interceptor]
   (fn [db [_ payload]]
-    (assoc db :dnd-fuck-up payload)))
+    (assoc db :dnd-payload payload)))
+
+(reg-event-db
+  :stop-entity-drag
+  [spec-interceptor]
+  (fn [db _]
+    (dissoc db :dnd-payload)))
 
 (reg-event-db
   :move-entity
@@ -258,12 +264,6 @@
         (update-in [:locations location :enemies] #(as-> % new-db
                                                      (filter-map (fn [v] (not= v entity)) new-db)
                                                      (assoc new-db to entity))))))
-
-(reg-event-db
-  :stop-entity-drag
-  [spec-interceptor]
-  (fn [db _]
-    (dissoc db :dnd-fuck-up)))
 
 (reg-event-db
   :start-painting
