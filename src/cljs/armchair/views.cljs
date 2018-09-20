@@ -7,7 +7,7 @@
             [armchair.util :refer [translate-position]]
             [armchair.config :as config]
             [armchair.routes :refer [routes]]
-            [armchair.textures :refer [background-textures texture-path]]
+            [armchair.textures :refer [background-textures character-textures texture-path]]
             [bidi.bidi :refer [match-route path-for]]
             [clojure.core.async :refer [put!]]))
 
@@ -310,6 +310,7 @@
         [:ul {:class "tile-grid"}
          (for [texture background-textures]
            [:li {:key (str "texture-select:" texture)
+                 :title texture
                  :class ["tile-grid__item"
                          (when (= texture active-texture) "tile-grid__item-active")]}
             [:a {:on-click #(>evt [:set-active-texture texture])}
@@ -492,7 +493,11 @@
                         :value (:display-name character)}]
       [slds/input-text {:label "Color"
                         :on-change (update-handler :color)
-                        :value (:color character)}]]]))
+                        :value (:color character)}]
+      [slds/input-select {:label "Avatar"
+                          :options (mapv #(vector % %) character-textures)
+                          :value (:texture character)
+                          :on-change (update-handler :texture)}]]]))
 
 (defn info-form-modal [info-id]
   (let [info (<sub [:info info-id])

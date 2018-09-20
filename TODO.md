@@ -5,6 +5,7 @@
   - characters can only be placed once
   - placed characters may get a dialogue
   - allow placing location change triggers (and make them work)
+- saving state
 - moving camera for prototype
 - validation error notifications
 - information dependency invariants

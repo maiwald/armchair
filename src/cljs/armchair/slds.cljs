@@ -36,7 +36,7 @@
                  :value (or value "nil")}
         [:option {:key (str id "nil") :value "nil" :disabled "disabled"}]
         (for [[option option-label] options]
-          [:option {:key (str id ":" option) :value option} label])]]]]))
+          [:option {:key (str id ":" option) :value option} option-label])]]]]))
 
 (defn input-textarea [{:keys [label on-change value]}]
   (let [id (gensym "input-textarea")]

@@ -2,6 +2,20 @@
   (:require [clojure.core.async :refer [go chan take! put! <!]]))
 
 (def background-textures [:dirt
+                          :house_arch_top
+                          :house_bottom_left
+                          :house_bottom_right
+                          :house_door_bottom
+                          :house_roof_middle
+                          :house_roof_top
+                          :house_roof_bottom-left
+                          :house_roof_bottom-right
+                          :house_roof_bottom
+                          :house_roof_bottom2
+                          :house_roof_middle-left
+                          :house_roof_middle-right
+                          :house_roof_top-left
+                          :house_roof_top-right
                           :grass_dirt_bottom-left
                           :grass_dirt_bottom
                           :grass_dirt_bottom-right
@@ -28,11 +42,23 @@
                           :stone
                           :wall])
 
-(def textures (into background-textures [:player
-                                         :hugo
-                                         :gustav
-                                         :enemy
-                                         :arrow]))
+(def character-textures [:agent
+                         :dead_squirrel_idle
+                         :droog_idle
+                         :girl_idle
+                         :goth_idle
+                         :hugo
+                         :gustav
+                         :hi-tops_idle
+                         :punker
+                         :rourke
+                         :yakuza_idle])
+
+(def textures  (-> [:player
+                    :enemy
+                    :arrow]
+                   (into background-textures)
+                   (into character-textures)))
 
 (defn texture-path [texture-name]
   (str "/images/" (name texture-name) ".png"))
