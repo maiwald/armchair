@@ -23,3 +23,10 @@
 
 (defn where-map [property value coll]
   (filter-map #(= (property %) value) coll))
+
+(defn once [f]
+  (let [called (atom false)]
+    (fn [& args]
+      (when-not @called
+        (reset! called true)
+        (apply f args)))))
