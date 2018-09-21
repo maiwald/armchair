@@ -282,6 +282,8 @@
          ^{:key (str "location-connection" start "->" end)}
          [location-connection (get-pos start) (get-pos end)])]]]))
 
+;; Location Editor
+
 (set! (.-ondragend js/document)
       (fn [] (>evt [:stop-entity-drag])))
 
@@ -415,6 +417,8 @@
      [:div {:class "location-editor__content"}
       [location-editor-content editor-options location]]]))
 
+;; Game canvas
+
 (defn game-canvas [game-data]
   (let [game-data (<sub [:game-data])
         level-canvas (atom nil)
@@ -547,6 +551,8 @@
       :player-line-id [player-line-form-modal (:player-line-id modal)]
       :character-id   [character-form-modal (:character-id modal)]
       :info-id        [info-form-modal (:info-id modal)])))
+
+;; Root
 
 (defn root []
   (let [{page-name :handler
