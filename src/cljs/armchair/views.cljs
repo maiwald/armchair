@@ -291,7 +291,45 @@
     (set! (.-src image) (texture-path texture))
     (-> e .-dataTransfer (.setDragImage image offset offset))))
 
-(defn location-editor-sidebar [{:keys [tool active-texture]} {:keys [id display-name]}]
+(defn location-editor-sidebar-paint []
+  (let [{active-texture :active-texture} (<sub [:location-editor-data])]
+    [slds/label "Background Textures"
+     [:ul {:class "tile-grid"}
+      (for [texture background-textures]
+        [:li {:key (str "texture-select:" texture)
+              :title texture
+              :class ["tile-grid__item"
+                      (when (= texture active-texture) "tile-grid__item-active")]}
+         [:a {:on-click #(>evt [:set-active-texture texture])}
+          [:img {:src (texture-path texture)}]]])]]))
+
+(defn location-editor-sidebar-npcs [location-id]
+  [slds/label "Available NPCs"
+   [:ul {:class "tile-list"}
+    (for [[_ {character-id :id :keys [display-name texture]}] (<sub [:character-list])]
+      [:li {:key (str "character-select" display-name)
+            :class "tile-list__item"
+            :draggable true
+            :on-drag-start (fn [e]
+                             (set-drag-texture! e texture)
+                             (>evt [:start-entity-drag {:entity character-id}]))}
+       [:img {:title display-name :src (texture-path texture)}]
+       [:span display-name]])]])
+
+(defn location-editor-sidebar-connections [id]
+  [slds/label "Available NPCs"
+   [:ul {:class "tile-list"}
+    (for [[_ {target-id :id :keys [display-name]}] (<sub [:connected-locations id])]
+      [:li {:key (str "connection-select" display-name)
+            :class "tile-list__item"
+            :draggable true
+            :on-drag-start (fn [e]
+                             (set-drag-texture! e :marker)
+                             (>evt [:start-entity-drag {:connection-trigger target-id}]))}
+       [:img {:title display-name :src (texture-path :marker)}]
+       [:span display-name]])]])
+
+(defn location-editor-sidebar [{tool :tool} {:keys [id display-name]}]
   (letfn [(update-display-name [e]
             (>evt [:update-location id :display-name (e->val e)]))]
     [slds/form
@@ -301,36 +339,17 @@
      [slds/radio-button-group {:label "Tools"
                                :options [[:paint [icon "layer-group" "Background"]]
                                          [:collision [icon "walking" "Collision"]]
-                                         [:select [icon "user" "NPCs"]]]
+                                         [:select [icon "user" "NPCs"]]
+                                         [:connections [icon "external-link-alt" "Connections"]]]
                                :active tool
                                :on-change #(>evt [:set-tool %])}]
      (case tool
-       :paint
-       [slds/label "Background Textures"
-        [:ul {:class "tile-grid"}
-         (for [texture background-textures]
-           [:li {:key (str "texture-select:" texture)
-                 :title texture
-                 :class ["tile-grid__item"
-                         (when (= texture active-texture) "tile-grid__item-active")]}
-            [:a {:on-click #(>evt [:set-active-texture texture])}
-             [:img {:src (texture-path texture)}]]])]]
-
-       :select
-       [slds/label "Available NPCs"
-        [:ul {:class "tile-list"}
-         (for [[_ {character-id :id :keys [display-name texture]}] (<sub [:character-list])]
-           [:li {:key (str "character-select" display-name)
-                 :class "tile-list__item"
-                 :draggable true
-                 :on-drag-start (fn [e]
-                                  (set-drag-texture! e texture)
-                                  (>evt [:start-entity-drag {:entity character-id}]))}
-            [:img {:title display-name :src (texture-path texture)}]
-            [:span display-name]])]]
+       :paint [location-editor-sidebar-paint]
+       :select [location-editor-sidebar-npcs id]
+       :connections [location-editor-sidebar-connections id]
        nil)]))
 
-(defn location-editor-content [{:keys [highlight tool painting?]} {:keys [id level npcs walk-set]}]
+(defn location-editor-content [{:keys [highlight tool painting?]} {:keys [id level npcs walk-set connection-triggers]}]
   (let [level-width (count level)
         level-height (count (first level))
         dnd-payload (<sub [:dnd-payload])]
@@ -356,7 +375,11 @@
                        :on-mouse-over (e-> #(when painting? (>evt [:paint id tile])))
                        :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))}
                       :collision
-                      {:on-click #(>evt [:flip-walkable id tile])}))
+                      {:on-click #(>evt [:flip-walkable id tile])}
+                      :connections
+                      (when-let [target (:connection-trigger dnd-payload)]
+                        {:on-drag-over (e-> (once #(>evt [:set-highlight tile])))
+                         :on-drop #(>evt [:move-trigger id target tile])})))
         [:img {:class "background"
                :src (texture-path texture)}]
         (when-let [{character-id :id npc-texture :texture} (get npcs tile)]
@@ -365,12 +388,18 @@
                  :on-drag-start (fn [e]
                                   (set-drag-texture! e npc-texture)
                                   (>evt [:start-entity-drag {:entity character-id}]))}])
+        (when-let [connected-location (get connection-triggers tile)]
+          [:img {:src (texture-path :marker)
+                 :draggable true
+                 :on-drag-start (fn [e]
+                                  (set-drag-texture! e :marker)
+                                  (>evt [:start-entity-drag {:connection-trigger connected-location}]))}])
         (case tool
           :collision
           [:div {:class ["highlight" (if (contains? walk-set tile)
                                        "highlight_walkable"
                                        "highlight_not-walkable")]}]
-          :select
+          (:select :connections)
           (when (= tile highlight)
             [:div {:class "highlight"}])
           nil)])]))

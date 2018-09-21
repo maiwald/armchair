@@ -160,6 +160,16 @@
      :connections (map sort connections)}))
 
 (reg-sub
+  :connected-locations
+  :<- [:db-locations]
+  :<- [:db-location-connections]
+  (fn [[locations connections] [_ location-id]]
+    (let [other-location-ids (for [connection connections
+                                   :when (contains? connection location-id)]
+                                 (first (disj connection location-id)))]
+      (select-keys locations other-location-ids))))
+
+(reg-sub
   :location-editor-data
   (fn [db]
     (select-keys (:location-editor db)
@@ -167,7 +177,6 @@
                   :painting?
                   :tool
                   :active-texture])))
-
 
 (reg-sub
   :game-data

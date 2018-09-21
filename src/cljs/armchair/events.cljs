@@ -266,6 +266,16 @@
                                                   (assoc new-db to entity))))))
 
 (reg-event-db
+  :move-trigger
+  [spec-interceptor]
+  (fn [db [_ location target to]]
+    (-> db
+        (update :location-editor dissoc :highlight)
+        (update-in [:locations location :connection-triggers] #(as-> % new-db
+                                                                 (filter-map (fn [v] (not= v target)) new-db)
+                                                                 (assoc new-db to target))))))
+
+(reg-event-db
   :start-painting
   [spec-interceptor]
   (fn [db [_ location-id [x y]]]

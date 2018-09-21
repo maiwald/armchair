@@ -56,7 +56,8 @@
 
 (def textures  (-> [:player
                     :enemy
-                    :arrow]
+                    :arrow
+                    :marker]
                    (into background-textures)
                    (into character-textures)))
 
