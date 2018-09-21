@@ -532,7 +532,7 @@
       [slds/input-select {:label "Avatar"
                           :options (mapv #(vector % %) character-textures)
                           :value (:texture character)
-                          :on-change (update-handler :texture)}]]]))
+                          :on-change #(>evt [:update-character character-id :texture (keyword (e->val %))])}]]]))
 
 (defn info-form-modal [info-id]
   (let [info (<sub [:info info-id])
