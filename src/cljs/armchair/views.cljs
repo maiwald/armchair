@@ -382,14 +382,16 @@
                          :on-drop #(>evt [:move-trigger id target tile])})))
         [:img {:class "background"
                :src (texture-path texture)}]
-        (when-let [{character-id :id npc-texture :texture} (get npcs tile)]
+        (when-let [{character-id :id npc-texture :texture display-name :display-name} (get npcs tile)]
           [:img {:src (texture-path npc-texture)
+                 :title display-name
                  :draggable true
                  :on-drag-start (fn [e]
                                   (set-drag-texture! e npc-texture)
                                   (>evt [:start-entity-drag {:entity character-id}]))}])
-        (when-let [connected-location (get connection-triggers tile)]
+        (when-let [{connected-location :id display-name :display-name} (get connection-triggers tile)]
           [:img {:src (texture-path :marker)
+                 :title (str "to " display-name)
                  :draggable true
                  :on-drag-start (fn [e]
                                   (set-drag-texture! e :marker)

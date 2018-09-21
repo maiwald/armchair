@@ -134,7 +134,9 @@
   :<- [:db-locations]
   :<- [:db-characters]
   (fn [[locations characters] [_ location-id]]
-    (update (locations location-id) :npcs #(map-values characters %))))
+    (-> (locations location-id)
+        (update :npcs #(map-values characters %))
+        (update :connection-triggers #(map-values locations %)))))
 
 (reg-sub
   :location-map
