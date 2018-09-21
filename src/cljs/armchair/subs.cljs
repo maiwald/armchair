@@ -139,6 +139,18 @@
         (update :connection-triggers #(map-values locations %)))))
 
 (reg-sub
+  :available-npcs
+  :<- [:db-locations]
+  :<- [:db-characters]
+  (fn [[locations characters] [_ location-id]]
+    (let [placed-characters (->> (vals locations)
+                                 (map :npcs)
+                                 (filter some?)
+                                 (apply merge)
+                                 vals)]
+      (apply dissoc (into [characters] placed-characters)))))
+
+(reg-sub
   :location-map
   :<- [:db-locations]
   :<- [:db-dialogues]

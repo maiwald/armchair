@@ -306,9 +306,11 @@
           [:img {:src (texture-path texture)}]]])]]))
 
 (defn location-editor-sidebar-npcs [location-id]
+  (let [available-npcs (<sub [:available-npcs location-id])
+        dnd-entity (:entity (<sub [:dnd-payload]))]
   [slds/label "Available NPCs"
    [:ul {:class "tile-list"}
-    (for [[_ {character-id :id :keys [display-name texture]}] (<sub [:character-list])]
+    (for [[_ {character-id :id :keys [display-name texture]}] available-npcs]
       [:li {:key (str "character-select" display-name)
             :class "tile-list__item"
             :draggable true
@@ -316,7 +318,14 @@
                              (set-drag-texture! e texture)
                              (>evt [:start-entity-drag {:entity character-id}]))}
        [:img {:title display-name :src (texture-path texture)}]
-       [:span display-name]])]])
+       [:span display-name]])
+    (when (and (some? dnd-entity)
+               (not (contains? available-npcs dnd-entity)))
+      [:li {:class "tile-list__item"
+            :on-drag-over stop-e!
+            :on-drop #(>evt [:remove-entity location-id dnd-entity])}
+       [icon "trash" "Drop here to remove."]
+       [:span "Drop here to remove."]])]]))
 
 (defn location-editor-sidebar-connections [id]
   [slds/label "Available NPCs"

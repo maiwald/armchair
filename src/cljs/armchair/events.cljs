@@ -260,16 +260,26 @@
   [spec-interceptor]
   (fn [db [_ location entity to]]
     (-> db
+        (dissoc :dnd-payload)
         (update :location-editor dissoc :highlight)
         (update-in [:locations location :npcs] #(as-> % new-db
                                                   (filter-map (fn [v] (not= v entity)) new-db)
                                                   (assoc new-db to entity))))))
 
 (reg-event-db
+  :remove-entity
+  [spec-interceptor]
+  (fn [db [_ location entity]]
+    (-> db
+        (dissoc :dnd-payload)
+        (update-in [:locations location :npcs] #(filter-map (fn [v] (not= v entity)) %)))))
+
+(reg-event-db
   :move-trigger
   [spec-interceptor]
   (fn [db [_ location target to]]
     (-> db
+        (dissoc :dnd-payload)
         (update :location-editor dissoc :highlight)
         (update-in [:locations location :connection-triggers] #(as-> % new-db
                                                                  (filter-map (fn [v] (not= v target)) new-db)
