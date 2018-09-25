@@ -239,10 +239,6 @@ $gray: #888
   position: relative
   flex-grow: 1
 
-  i.fas
-    margin: 0 -4px
-    width: 16px
-
   &__sidebar
     width: 300px
     padding: 10px
@@ -310,7 +306,15 @@ $gray: #888
     border-radius: 5px
     margin-bottom: 7px
 
-    span
+    &_dropzone
+      border: 1px dashed black
+
+    &__image
+      display: flex
+      justify-content: center
+      align-items: center
+
+    &__label
       padding-left: 7px
       flex-grow: 1
 
@@ -323,7 +327,7 @@ $gray: #888
     border: 1px solid grey
     margin: 0 5px 5px 0
 
-    &-active
+    &_active
       border: 2px solid yellow
       margin: -1px 4px 4px -1px
 
@@ -338,3 +342,8 @@ $gray: #888
   .canvas-container
     & > canvas
       position: absolute
+
+.slds-radio_button
+  i.fas
+    margin: 0 -4px
+    width: 16px

@@ -45,7 +45,7 @@
         [:li {:key (str "texture-select:" texture)
               :title texture
               :class ["tile-grid__item"
-                      (when (= texture active-texture) "tile-grid__item-active")]}
+                      (when (= texture active-texture) "tile-grid__item_active")]}
          [:a {:on-click #(>evt [:set-active-texture texture])}
           [:img {:src (texture-path texture)}]]])]]))
 
@@ -61,15 +61,21 @@
               :on-drag-start (fn [e]
                                (set-drag-texture! e texture)
                                (>evt [:start-entity-drag {:entity character-id}]))}
-         [:img {:title display-name :src (texture-path texture)}]
-         [:span display-name]])
+         [:span {:class "tile-list__item__image"
+                 :style {:width (str config/tile-size "px")
+                         :height (str config/tile-size "px")}}
+           [:img {:title display-name :src (texture-path texture)}]]
+         [:span {:class "tile-list__item__label"} display-name]])
       (when (and (some? dnd-entity)
                  (not (contains? available-npcs dnd-entity)))
-        [:li {:class "tile-list__item"
+        [:li {:class "tile-list__item tile-list__item_dropzone"
               :on-drag-over stop-e!
               :on-drop #(>evt [:remove-entity location-id dnd-entity])}
-         [icon "trash" "Drop here to remove."]
-         [:span "Drop here to remove."]])]]))
+         [:span {:class "tile-list__item__image"
+                 :style {:width (str config/tile-size "px")
+                         :height (str config/tile-size "px")}}
+          [icon "trash" "Drop here to remove."]]
+         [:span {:class "tile-list__item__label"} "Drop here to remove."]])]]))
 
 (defn location-editor-sidebar-connections [id]
   [slds/label "Available NPCs"
