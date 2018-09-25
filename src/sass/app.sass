@@ -244,58 +244,51 @@ $gray: #888
     padding: 10px
     background: rgba(230, 230, 230, .8)
 
-  &__content
+  &__canvas
     display: flex
     justify-content: center
     flex-grow: 1
 
   .level
-    display: flex
-    flex-direction: column
-    flex-wrap: wrap
     margin: 40px
+
+  .level-layer
+    position: absolute
 
     &__tile
       $selection-border: 2px
 
       user-select: none
-      position: relative
+      position: absolute
       overflow: hidden
       box-sizing: content-box
       z-index: 1
 
-      &:hover
-        box-sizing: border-box
-        border: $selection-border solid yellow
-        z-index: 2
-
-      > *
-        max-width: none
-        position: absolute
-        top: 0
-        left: 0
-        bottom: 0
-        right: 0
-
       [draggable=true]
         cursor: grab
 
-      &:hover > *
-        top: -$selection-border
-        left: -$selection-border
+    .interactor
+      width: 100%
+      height: 100%
 
-      img.background
-        pointer-events: none
+      &_paint:hover, &_walkable:hover, &_not-walkable:hover
+        border: 2px solid yellow
+        border-radius: 5px
 
-      .highlight
-        pointer-events: none
-        background-color: rgba(255, 255, 0, .3)
+      &_walkable
+        background-color: rgba(0, 255, 0, .2)
 
-        &_walkable
-          background-color: rgba(0, 255, 0, .3) !important
+      &_not-walkable
+        background-color: rgba(255, 0, 0, .2)
 
-        &_not-walkable
-          background-color: rgba(255, 0, 0, .3) !important
+      &_draggable
+        cursor: grab
+        border: 2px solid yellow
+        border-radius: 5px
+
+      &_dropzone
+        background-color: rgba(255, 255, 0, .4)
+        border-radius: 5px
 
 .tile-list
   &__item

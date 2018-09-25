@@ -1,5 +1,5 @@
 (ns armchair.subs
-  (:require [re-frame.core :as re-frame :refer [reg-sub]]
+  (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
             [clojure.spec.alpha :as s]
             [armchair.db :as db]
             [armchair.config :as config]
@@ -137,6 +137,14 @@
     (-> (locations location-id)
         (update :npcs #(map-values characters %))
         (update :connection-triggers #(map-values locations %)))))
+
+(reg-sub
+  :level-dimensions
+  (fn [[_ location-id]]
+    (subscribe [:location location-id]))
+  (fn [{level :level} _]
+    {:width (count level)
+     :height (count (first level))}))
 
 (reg-sub
   :available-npcs
