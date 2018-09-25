@@ -4,7 +4,7 @@
             [clojure.spec.alpha :as s]
             [armchair.db :as db]
             [armchair.routes :refer [routes]]
-            [armchair.util :refer [filter-map map-values translate-positions position-delta]]))
+            [armchair.util :refer [filter-map map-keys map-values translate-position translate-positions position-delta]]))
 
 (def spec-interceptor (after (fn [db]
                                (when-not (s/valid? :armchair.db/state db)
@@ -316,6 +316,31 @@
                                                        (if (contains? walk-set tile)
                                                          (disj walk-set tile)
                                                          (conj walk-set tile))))))
+
+(reg-event-db
+  :resize-larger
+  [spec-interceptor]
+  (fn [db [_ location-id direction]]
+    (let [shift-delta (case direction
+                        :up [0 1]
+                        :left [1 0]
+                        [0 0])]
+      (letfn [(shift [pos] (translate-position pos shift-delta))
+              (shift-keys [m] (map-keys shift m))]
+        (update-in db [:locations location-id]
+          (fn [location]
+            (-> location (update :level
+                                 (fn [level]
+                                   (let [width (count level)
+                                         height (count (first level))]
+                                     (case direction
+                                       :up (mapv #(into [nil] %) level)
+                                       :down (mapv #(conj % nil) level)
+                                       :left (into [(vec (repeat height nil))] level)
+                                       :right (conj level (vec (repeat height nil)))))))
+                (update :npcs shift-keys)
+                (update :connection-triggers shift-keys)
+                (update :walk-set #(set (map shift %))))))))))
 
 ;; Modal
 

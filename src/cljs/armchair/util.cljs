@@ -6,7 +6,9 @@
    (- current-y start-y)])
 
 (defn translate-position [position delta]
-  (mapv + position delta))
+  (if (= delta [0 0])
+    position
+    (mapv + position delta)))
 
 (defn translate-positions [positions ids delta]
   (let [relevant-ids (intersection (-> positions keys set) ids)]
@@ -14,6 +16,9 @@
 
 (defn map-values [f m]
   (into {} (for [[k v] m] [k (f v)])))
+
+(defn map-keys [f m]
+  (into {} (for [[k v] m] [(f k) v])))
 
 (defn where [property value coll]
   (filter #(= (property %) value) coll))

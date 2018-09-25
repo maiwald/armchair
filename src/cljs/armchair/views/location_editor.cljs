@@ -37,7 +37,7 @@
     (set! (.-src image) (texture-path texture))
     (-> e .-dataTransfer (.setDragImage image offset offset))))
 
-(defn location-editor-sidebar-paint []
+(defn location-editor-sidebar-paint [location-id]
   (let [{active-texture :active-texture} (<sub [:location-editor-data])]
     [slds/label "Background Textures"
      [:ul {:class "tile-grid"}
@@ -48,6 +48,17 @@
                       (when (= texture active-texture) "tile-grid__item_active")]}
          [:a {:on-click #(>evt [:set-active-texture texture])}
           [:img {:src (texture-path texture)}]]])]]))
+
+(defn location-editor-sidebar-resize [location-id]
+  (let [{active-texture :active-texture} (<sub [:location-editor-data])]
+    [slds/label "Resize Level"
+     [:a {:on-click #(>evt [:resize-larger location-id :up])} "up"]
+     " - "
+     [:a {:on-click #(>evt [:resize-larger location-id :down])} "down"]
+     " - "
+     [:a {:on-click #(>evt [:resize-larger location-id :left])} "left"]
+     " - "
+     [:a {:on-click #(>evt [:resize-larger location-id :right])} "right"]]))
 
 (defn location-editor-sidebar-npcs [location-id]
   (let [available-npcs (<sub [:available-npcs location-id])
@@ -101,13 +112,15 @@
                          :value display-name}]
        [slds/radio-button-group {:label "Tools"
                                  :options [[:paint [icon "layer-group" "Background"]]
+                                           [:resize [icon "arrows-alt" "Resize"]]
                                            [:collision [icon "walking" "Collision"]]
                                            [:select [icon "user" "NPCs"]]
                                            [:connections [icon "external-link-alt" "Connections"]]]
                                  :active tool
                                  :on-change #(>evt [:set-tool %])}]
        (case tool
-         :paint [location-editor-sidebar-paint]
+         :paint [location-editor-sidebar-paint location-id]
+         :resize [location-editor-sidebar-resize location-id]
          :select [location-editor-sidebar-npcs location-id]
          :connections [location-editor-sidebar-connections location-id]
          nil)])))
@@ -137,9 +150,6 @@
   (do-all-tiles level "background"
                 (fn [tile]
                   [:img {:src (texture-path (get-in level tile))}])))
-
-(defn walkable-area [level walk-set]
-  )
 
 (defn do-some-tiles [coll layer-title f]
   [:div {:class "level-layer"}

@@ -4,7 +4,7 @@
             [clojure.set :refer [subset? union]]
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
-            [armchair.textures :refer [textures load-textures]]
+            [armchair.textures :refer [texture-set load-textures]]
             [armchair.util :refer [map-values translate-position]]
             [armchair.pathfinding :as path]))
 
@@ -33,7 +33,7 @@
 (s/def ::level (s/and (s/coll-of vector? :kind vector?)
                       ::uniform-level))
 
-(s/def ::texture #(contains? (set textures) %))
+(s/def ::texture #(contains? texture-set %))
 (s/def ::display-name string?)
 (s/def ::character (s/keys :req-un [::display-name ::texture]))
 (s/def ::npcs (s/map-of ::position ::character))
@@ -113,7 +113,7 @@
 
 (defn draw-texture [ctx texture coord]
   (when @texture-atlas
-    (c/draw-image! ctx (@texture-atlas texture) coord)))
+    (c/draw-image! ctx (get @texture-atlas texture (@texture-atlas :missing_texture)) coord)))
 
 (defn draw-texture-rotated [ctx texture coord deg]
   (when @texture-atlas

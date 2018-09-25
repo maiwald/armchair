@@ -54,15 +54,18 @@
                          :rourke
                          :yakuza_idle])
 
-(def textures  (-> [:player
-                    :enemy
-                    :arrow
-                    :marker]
-                   (into background-textures)
-                   (into character-textures)))
+(def texture-set (set (-> [:player
+                           :enemy
+                           :arrow
+                           :marker
+                           :missing_texture]
+                          (into background-textures)
+                          (into character-textures))))
 
 (defn texture-path [texture-name]
-  (str "/images/" (name texture-name) ".png"))
+  (if (contains? texture-set texture-name)
+    (str "/images/" (name texture-name) ".png")
+    (str "/images/missing_texture.png")))
 
 (defn load-textures [callback]
   (let [atlas (atom {})
@@ -71,9 +74,9 @@
             (let [image (js/Image.)]
               (set! (.-onload image) #(put! loaded [texture-name image]))
               (set! (.-src image) (texture-path texture-name))))
-          textures)
+          texture-set)
     (take! (go
-             (while (not= (count @atlas) (count textures))
+             (while (not= (count @atlas) (count texture-set))
                (let [[texture-name texture-image] (<! loaded)]
                  (swap! atlas assoc texture-name texture-image)))
              @atlas)

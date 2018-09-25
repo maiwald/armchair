@@ -2,7 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.set :refer [subset?]]
-            [armchair.textures :refer [background-textures textures]]
+            [armchair.textures :refer [background-textures texture-set]]
             [armchair.util :refer [where-map]]))
 
 ;; Types
@@ -12,7 +12,7 @@
 (s/def ::position (s/tuple integer? integer?))
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:id v)))))
 (s/def ::undirected-connection (s/coll-of ::id :kind set? :count 2))
-(s/def ::texture #(contains? (set textures) %))
+(s/def ::texture (s/nilable #(contains? texture-set %)))
 
 ;; UI State
 
@@ -32,7 +32,7 @@
 ;; Location Editor
 
 (s/def ::painting? boolean?)
-(s/def ::tool #{:select :collision :paint :connections})
+(s/def ::tool #{:select :resize :collision :paint :connections})
 (s/def ::highlight ::position)
 (s/def ::active-texture ::texture)
 (s/def ::location-editor (s/keys :req-un [::tool
