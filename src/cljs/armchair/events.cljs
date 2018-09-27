@@ -318,6 +318,31 @@
                                                          (conj walk-set tile))))))
 
 (reg-event-db
+  :resize-smaller
+  [spec-interceptor]
+  (fn [db [_ location-id direction]]
+    (let [shift-delta (case direction
+                        :up [0 -1]
+                        :left [-1 0]
+                        [0 0])]
+      (letfn [(shift [pos] (translate-position pos shift-delta))
+              (shift-keys [m] (map-keys shift m))]
+        (update-in db [:locations location-id]
+          (fn [location]
+            (-> location (update :level
+                                 (fn [level]
+                                   (let [width (count level)
+                                         height (count (first level))]
+                                     (case direction
+                                       :up (mapv #(subvec % 1) level)
+                                       :down (mapv pop level)
+                                       :left (subvec level 1)
+                                       :right (pop level)))))
+                (update :npcs shift-keys)
+                (update :connection-triggers shift-keys)
+                (update :walk-set #(set (map shift %))))))))))
+
+(reg-event-db
   :resize-larger
   [spec-interceptor]
   (fn [db [_ location-id direction]]

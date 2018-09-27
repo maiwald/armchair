@@ -50,15 +50,21 @@
           [:img {:src (texture-path texture)}]]])]]))
 
 (defn location-editor-sidebar-resize [location-id]
-  (let [{active-texture :active-texture} (<sub [:location-editor-data])]
-    [slds/label "Resize Level"
-     [:a {:on-click #(>evt [:resize-larger location-id :up])} "up"]
-     " - "
-     [:a {:on-click #(>evt [:resize-larger location-id :down])} "down"]
-     " - "
-     [:a {:on-click #(>evt [:resize-larger location-id :left])} "left"]
-     " - "
-     [:a {:on-click #(>evt [:resize-larger location-id :right])} "right"]]))
+  [slds/label "Resize level"
+   [:div {:class "resize-container"}
+    [:div {:class "resize-container__reference"}
+     [:div {:class "resizer resizer_horizontal resizer_top"}
+      [:a {:on-click #(>evt [:resize-larger location-id :up])} [icon "arrow-up" "extend"]]
+      [:a {:on-click #(>evt [:resize-smaller location-id :up])} [icon "arrow-down" "shrink"]]]
+     [:div {:class "resizer resizer_horizontal resizer_bottom"}
+      [:a {:on-click #(>evt [:resize-smaller location-id :down])} [icon "arrow-up" "shrink"]]
+      [:a {:on-click #(>evt [:resize-larger location-id :down])} [icon "arrow-down" "extend"]]]
+     [:div {:class "resizer resizer_vertical resizer_left"}
+      [:a {:on-click #(>evt [:resize-larger location-id :left])} [icon "arrow-left" "extend"]]
+      [:a {:on-click #(>evt [:resize-smaller location-id :left])} [icon "arrow-right" "shrink"]]]
+     [:div {:class "resizer resizer_vertical resizer_right"}
+      [:a {:on-click #(>evt [:resize-smaller location-id :right])} [icon "arrow-left" "shrink"]]
+      [:a {:on-click #(>evt [:resize-larger location-id :right])} [icon "arrow-right" "extend"]]]]]])
 
 (defn location-editor-sidebar-npcs [location-id]
   (let [available-npcs (<sub [:available-npcs location-id])
