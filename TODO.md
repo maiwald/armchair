@@ -11,7 +11,9 @@
 - moving camera for prototype
 
 # nice things
+- list of all dialogues
 - enable double click for editing lines
+- default to intial line's character when adding character lines
 - copy and paste for background texture sets
 - organize and cluster background textures
 - prevent placing npcs on taken/non-walkable tiles
