@@ -408,7 +408,7 @@
                                               :location-id nil
                                               :description nil})))
 
-;; Dialogue creation
+;; Dialogue CRUD
 
 (defn assert-dialogue-creation-modal [db]
   (assert (contains? (:modal db) :dialogue-creation)
@@ -441,6 +441,19 @@
                                         :text nil
                                         :next-line-id nil})
             (dissoc :modal))))))
+
+(reg-event-db
+  :delete-dialogue
+  [spec-interceptor]
+  (fn [db [_ dialogue-id]]
+    (-> db
+        (update :dialogues dissoc dialogue-id)
+        (update :lines #(filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %))
+        ; (update :locations (fn [locations]
+        ;                      (map-values (fn [{npcs :npcs}]
+        ;                                    (filter-map #(not= % dialogue-id) npcs))
+        ;                                  locations)))
+        )))
 
 ;; Page
 
