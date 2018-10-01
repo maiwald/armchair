@@ -109,6 +109,20 @@
 (s/def ::dialogues (s/and ::entity-map
                           (s/map-of ::dialogue-id ::dialogue)))
 
+;; Modals
+
+(s/def ::npc-line-id ::line-id)
+(s/def ::player-line-id ::line-id)
+(s/def ::dialogue-creation (s/keys :req-un [::character-id
+                                            ::location-id]
+                                   :opt-un [::description]))
+
+(s/def ::modal (s/keys :opt-un [::character-id
+                                ::info-id
+                                ::npc-line-id
+                                ::player-line-id
+                                ::dialogue-creation]))
+
 ;; Invariants
 
 (s/def ::location-connection-validation
@@ -139,7 +153,8 @@
                                        ::location-connections]
                               :opt-un [::connecting
                                        ::dragging
-                                       ::pointer])))
+                                       ::pointer
+                                       ::modal])))
 
 (def default-db
   {:current-page nil

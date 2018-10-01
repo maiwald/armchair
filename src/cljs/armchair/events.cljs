@@ -373,30 +373,35 @@
 
 (reg-event-db
   :open-character-modal
+  [spec-interceptor]
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :character-id] payload)))
 
 (reg-event-db
   :open-info-modal
+  [spec-interceptor]
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :info-id] payload)))
 
 (reg-event-db
   :open-npc-line-modal
+  [spec-interceptor]
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :npc-line-id] payload)))
 
 (reg-event-db
   :open-player-line-modal
+  [spec-interceptor]
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :player-line-id] payload)))
 
 (reg-event-db
   :open-dialogue-creation-modal
+  [spec-interceptor]
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :dialogue-creation] {:character-id nil
@@ -411,6 +416,7 @@
 
 (reg-event-db
   :dialogue-creation-update
+  [spec-interceptor]
   (fn [db [_ field value]]
     (assert-dialogue-creation-modal db)
     (assoc-in db [:modal :dialogue-creation field] value)))
