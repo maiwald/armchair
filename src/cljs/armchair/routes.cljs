@@ -5,7 +5,8 @@
   ["/" [["game" :game]
         ["locations" :locations]
         [["locations/" :id "/edit"] :location-edit]
-        [["dialogue/" :id] :dialogue]
+        ["dialogues" :dialogues]
+        [["dialogues/" :id "/edit"] :dialogue-edit]
         ["characters" :characters]
         ["infos" :infos]]])
 

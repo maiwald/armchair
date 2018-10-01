@@ -109,6 +109,20 @@
       positions)))
 
 (reg-sub
+  :dialogue-list
+  :<- [:db-dialogues]
+  :<- [:db-lines]
+  :<- [:db-locations]
+  :<- [:db-characters]
+  (fn [[dialogues lines locations characters]]
+    (map-values (fn [{:keys [initial-line-id location-id] :as dialogue}]
+                  (let [character-id (get-in lines [initial-line-id :character-id])]
+                    (assoc dialogue
+                           :character (select-keys (characters character-id) [:id :display-name])
+                           :location (select-keys (locations location-id) [:id :display-name]))))
+                dialogues)))
+
+(reg-sub
   :dialogue
   :<- [:db-lines]
   :<- [:db-dialogues]
@@ -118,11 +132,12 @@
     (let [dialogue (get dialogues dialogue-id)
           dialogue-lines (->> lines
                               (where-map :dialogue-id dialogue-id)
-                              (map-values #(assoc %
-                                                  :initial-line? (= (:initial-line-id dialogue) (:id %))
-                                                  :position (get positions (:position-id %))
-                                                  :character-color (get-in characters [(:character-id %) :color])
-                                                  :character-name (get-in characters [(:character-id %) :display-name]))))
+                              (map-values (fn [{:keys [id character-id position-id] :as line}]
+                                            (assoc line
+                                                   :initial-line? (= (:initial-line-id dialogue) id)
+                                                   :position (get positions position-id)
+                                                   :character-color (get-in characters [character-id :color])
+                                                   :character-name (get-in characters [character-id :display-name])))))
           lines-by-kind (group-by :kind (vals dialogue-lines))]
       {:lines dialogue-lines
        :npc-connections (->> (:npc lines-by-kind)

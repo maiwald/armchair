@@ -176,7 +176,7 @@
                                                              (* index config/line-height))])
                :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
 
-(defn dialogue-component [dialogue-id]
+(defn dialogue-editor [dialogue-id]
   (if-let [{:keys [lines npc-connections player-connections]} (<sub [:dialogue dialogue-id])]
     (letfn [(get-pos [line-id] get-pos (get-in lines [line-id :position]))]
       [:div {:class "full-page"}
@@ -199,13 +199,31 @@
            [player-connection (get-pos start) index (get-pos end)])]]])
     [:span "No dialogue selected!"]))
 
+(defn dialogue-management []
+  (let [dialogues (<sub [:dialogue-list])]
+    [slds/resource-page "Dialogues"
+     {:columns [:id :character :location :description :actions]
+      :collection (vals dialogues)
+      :cell-views {:character (fn [{:keys [id display-name]}]
+                                [:a {:on-click #(>evt [:open-character-modal id])}
+                                 display-name])
+                   :location (fn [{:keys [id display-name]}]
+                               [:a {:on-click #(>navigate :location-edit :id id)}
+                                display-name])
+                   :actions (fn [_ {id :id}]
+                              [:div {:class "slds-text-align_right"}
+                               [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this dialogue?")
+                                                                             (>evt [:delete-dialogue id]))}]
+                               [slds/symbol-button "edit" {:on-click #(>navigate :dialogue-edit :id id)}]])}
+      :new-resource #(>evt [:create-dialogue])}]))
+
 (defn character-management []
   (let [characters (<sub [:character-list])]
     [slds/resource-page "Characters"
      {:columns [:id :display-name :color :lines :actions]
       :collection (vals characters)
-      :cell-views {:color slds/color-cell
-                   :actions (fn [{:keys [id lines]} _]
+      :cell-views {:color (fn [color] [slds/badge color color])
+                   :actions (fn [_ {:keys [id lines]}]
                               [:div {:class "slds-text-align_right"}
                                (when (zero? lines)
                                  [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this character?")
@@ -218,7 +236,7 @@
     [slds/resource-page "Infos"
      {:columns [:id :description :actions]
       :collection (vals infos)
-      :cell-views {:actions (fn [{id :id}]
+      :cell-views {:actions (fn [_ {id :id}]
                               [:div {:class "slds-text-align_right"}
                                [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this info?")
                                                                              (>evt [:delete-info id]))}]
@@ -251,7 +269,7 @@
         [:li {:key (str "location-dialogue-" id " - " (:id dialogue))}
          [:a {:style {:background-color (:character-color dialogue)}
               :on-mouse-down stop-e!
-              :on-click #(>navigate :dialogue :id (:id dialogue))}
+              :on-click #(>navigate :dialogue-edit :id (:id dialogue))}
           (:character-name dialogue)]])]]))
 
 (defn location-connection [start end]
@@ -423,6 +441,7 @@
      [:div {:id "navigation"}
       [slds/global-navigation {:links (array-map :game "Game"
                                                  :locations "Locations"
+                                                 :dialogues "Dialogues"
                                                  :characters "Characters"
                                                  :infos "Infos")
                                :current-page page-name
@@ -432,7 +451,8 @@
         :game          [game-canvas]
         :locations     [location-management]
         :location-edit [location-editor (int (:id page-params))]
-        :dialogue      [dialogue-component (int (:id page-params))]
+        :dialogues     [dialogue-management]
+        :dialogue-edit [dialogue-editor (int (:id page-params))]
         :characters    [character-management]
         :infos         [info-management]
         [:div "Page not found"])]]))

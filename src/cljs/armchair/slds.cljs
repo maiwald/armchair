@@ -125,10 +125,6 @@
                   :background-color color}}
    value])
 
-(defn color-cell [item column]
-  (let [color (get item column)]
-    [badge color color]))
-
 (defn add-button [label click-handler]
   [:button {:class "slds-button slds-button_neutral"
             :on-click click-handler}
@@ -156,7 +152,7 @@
         (for [column columns]
           [:td {:key (str table-id (:id item) column)}
            (if-let [cell-view (get cell-views column)]
-             [cell-view item column]
+             [cell-view (get item column) item]
              (get item column))])])]]])
 
 (defn resource-page [title content-options]
