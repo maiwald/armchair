@@ -1,10 +1,14 @@
 (ns armchair.game
-  (:require [clojure.core.async :refer [chan sliding-buffer put! take! go go-loop <! >!]]
+  (:require [clojure.core.async :refer [chan sliding-buffer put! go-loop <!]]
             [clojure.spec.alpha :as s]
             [clojure.set :refer [subset? union]]
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
-            [armchair.util :refer [map-values translate-position]]
+            [armchair.textures :refer [texture-set load-textures]]
+            [armchair.util :refer [map-values
+                                   rect-width
+                                   rect-height
+                                   translate-position]]
             [armchair.pathfinding :as path]))
 
 ;; Definitions
@@ -18,7 +22,7 @@
 
 (s/def ::position (s/tuple number? number?))
 (s/def ::direction #{:up :down :left :right})
-
+(s/def ::texture #(contains? texture-set %))
 (s/def ::line-id pos-int?)
 (s/def ::selected-option int?)
 
@@ -28,17 +32,19 @@
 (s/def ::infos (s/coll-of pos-int? :kind set?))
 (s/def ::player (s/keys :req-un [::position ::direction ::infos]))
 
-(s/def ::uniform-level (fn [level] (apply = (map count level))))
-(s/def ::level (s/and (s/coll-of vector? :kind vector?)
-                      ::uniform-level))
-(s/def ::enemies (s/map-of ::position pos-int?))
+(s/def ::background (s/map-of ::position ::texture))
+
+(s/def ::display-name string?)
+(s/def ::character (s/keys :req-un [::display-name ::texture]))
+(s/def ::npcs (s/map-of ::position ::character))
 (s/def ::highlight ::position)
 
-(s/def ::all-enemies-have-dialogue (fn [{:keys [enemies dialogues]}]
-                                     (= (vals enemies) (keys dialogues))))
-(s/def ::state (s/and (s/keys :req-un [::player ::level ::enemies]
+(s/def ::all-npcs-have-dialogue (fn [{:keys [npcs dialogues]}]
+                                  (= (set (map #(:id (second %)) npcs))
+                                     (set (keys dialogues)))))
+(s/def ::state (s/and (s/keys :req-un [::player ::npcs]
                               :opt-un [::highlight ::interaction])
-                      ::all-enemies-have-dialogue))
+                      ::all-npcs-have-dialogue))
 
 ;; Conversion Helpers
 
@@ -61,9 +67,9 @@
             :infos #{}}})
 
 (defn ^boolean walkable? [tile]
-  (let [{:keys [level enemies]} @state]
-    (and (= (get-in level tile) 1)
-         (not (contains? enemies tile)))))
+  (let [{:keys [walk-set npcs]} @state]
+    (and (contains? walk-set tile)
+         (not (contains? npcs tile)))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
   (translate-position
@@ -100,58 +106,31 @@
         :npc next-line-id)
       next-line-id)))
 
-;; Textures
-
-(def textures ["grass"
-               "wall"
-               "player"
-               "enemy"
-               "arrow"])
-
-(def texture-atlas (atom nil))
-
-(defn get-texture-atlas-chan []
-  (let [atlas (atom {})
-        loaded (chan)]
-    (run! (fn [texture-name]
-            (let [image (js/Image.)]
-              (set! (.-onload image) #(put! loaded [texture-name image]))
-              (set! (.-src image) (str "/images/" texture-name ".png"))))
-          textures)
-    (go
-      (while (not= (count @atlas) (count textures))
-        (let [[texture-name texture-image] (<! loaded)]
-          (swap! atlas assoc (keyword texture-name) texture-image)))
-      @atlas)))
-
 ;; Rendering
 
 (def ctx (atom nil))
+(def texture-atlas (atom nil))
 
 (defn draw-texture [ctx texture coord]
   (when @texture-atlas
-    (c/draw-image! ctx (@texture-atlas texture) coord)))
+    (c/draw-image! ctx (get @texture-atlas texture (@texture-atlas :missing_texture)) coord)))
 
 (defn draw-texture-rotated [ctx texture coord deg]
   (when @texture-atlas
     (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
 
-(defn draw-level [ctx level]
-  (let [cols (count (first level))
-        rows (count level)]
-    (doseq [x (range 0 rows)
-            y (range 0 cols)
-            :let [value (get-in level [x y])]]
-      (draw-texture ctx
-                    ({0 :wall 1 :grass} value)
-                    (tile->coord [x y])))))
+(defn draw-background [ctx dimension background]
+  (doseq [x (range (rect-width dimension))
+          y (range (rect-height dimension))
+          :let [texture (get background [x y])]]
+    (draw-texture ctx texture (tile->coord [x y]))))
 
 (defn draw-player [ctx player]
   (draw-texture ctx :player player))
 
-(defn draw-enemies [ctx coords]
-  (doseq [coord coords]
-    (draw-texture ctx :enemy coord)))
+(defn draw-npcs [ctx npcs]
+  (doseq [[tile {texture :texture}] npcs]
+    (draw-texture ctx texture (tile->coord tile))))
 
 (defn draw-highlight [ctx highlight-coord]
   (c/save! ctx)
@@ -160,7 +139,7 @@
   (c/stroke-rect! ctx highlight-coord tile-size tile-size)
   (c/restore! ctx))
 
-(defn draw-path [ctx {:keys [level highlight] {:keys [position]} :player}]
+(defn draw-path [ctx {:keys [highlight] {:keys [position]} :player}]
   (if highlight
     (doseq [path-tile (path/a-star
                         walkable?
@@ -181,9 +160,9 @@
         x (/ (- (c/width ctx) w) 2)
         y (/ (- (c/height ctx) h) 2)]
     (c/save! ctx)
-    (c/set-fill-style! ctx "rgba(237, 224, 142, .8)")
+    (c/set-fill-style! ctx "rgba(230, 230, 230, .9)")
     (c/fill-rect! ctx [x y] w h)
-    (c/set-stroke-style! ctx "rgb(200, 200, 0)")
+    (c/set-stroke-style! ctx "rgb(0, 0, 0)")
     (c/stroke-rect! ctx [x y] w h)
 
     (c/set-fill-style! ctx "rgb(0, 0, 0)")
@@ -218,7 +197,7 @@
     (when-not (interacting? @state)
       (draw-path @ctx @state))
     (draw-player @ctx (get-in view-state [:player :position]))
-    (draw-enemies @ctx (->> view-state :enemies keys (map tile->coord)))
+    (draw-npcs @ctx (:npcs view-state))
     (when (and (not (interacting? @state))
                (contains? @state :highlight))
       (draw-highlight @ctx (:highlight @state)))
@@ -253,8 +232,8 @@
                         (cond-> (merge % {:interaction {:line-id next-interaction
                                                         :selected-option 0}})
                           (not (empty? info-ids)) (update-in [:player :infos] union info-ids))))))
-    (if-let [enemy-id ((:enemies @state) (interaction-tile @state))]
-      (swap! state assoc :interaction {:line-id (get-in @state [:dialogues enemy-id])
+    (if-let [{npc-id :id} ((:npcs @state) (interaction-tile @state))]
+      (swap! state assoc :interaction {:line-id (get-in @state [:dialogues npc-id])
                                        :selected-option 0}))))
 
 (defn start-input-loop [channel]
@@ -316,8 +295,13 @@
 
 ;; Game Loop
 
-(defn start-game [level-context entity-context data]
-  (reset! state (merge initial-game-state data))
+(defn start-game [background-context entity-context data]
+  (reset! state (merge initial-game-state (select-keys data
+                                                       [:npcs
+                                                        :walk-set
+                                                        :infos
+                                                        :lines
+                                                        :dialogues])))
   (reset! move-q #queue [])
   (reset! ctx entity-context)
   (let [input-chan (chan)
@@ -335,16 +319,17 @@
                  (when (and (empty? old-state)
                             (some? new-state))
                    (put! animation-chan true))))
-    (take! (get-texture-atlas-chan)
-           (fn [loaded-atlas]
-             (reset! texture-atlas loaded-atlas)
+    (load-textures (fn [loaded-atlas]
+                     (reset! texture-atlas loaded-atlas)
 
-             (c/clear! level-context)
-             (draw-level level-context (:level @state))
+                     (c/clear! background-context)
+                     (draw-background background-context
+                                      (:dimension data)
+                                      (:background data))
 
-             (start-input-loop input-chan)
-             (start-animation-loop animation-chan)
-             (js/requestAnimationFrame #(render @state))))
+                     (start-input-loop input-chan)
+                     (start-animation-loop animation-chan)
+                     (js/requestAnimationFrame #(render @state))))
     input-chan))
 
 (defn end-game []

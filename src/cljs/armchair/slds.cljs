@@ -18,6 +18,12 @@
                :on-change on-change
                :value value}]]]))
 
+(defn label [label & children]
+  [:div {:class "slds-form-element"}
+   [:label {:class "slds-form-element__label"} label]
+   (into [:div {:class "slds-form-element__control"}]
+         children)])
+
 (defn input-select [{:keys [label on-change value options]}]
   (let [id (gensym "input-select")]
     [:div {:class "slds-form-element"}
@@ -29,7 +35,8 @@
                  :on-change on-change
                  :value (or value "nil")}
         [:option {:key (str id "nil") :value "nil" :disabled "disabled"}]
-        (for [[k v] options] [:option {:key (str id k) :value k} v])]]]]))
+        (for [[option option-label] options]
+          [:option {:key (str id ":" option) :value option} option-label])]]]]))
 
 (defn input-textarea [{:keys [label on-change value]}]
   (let [id (gensym "input-textarea")]
@@ -41,8 +48,51 @@
                   :on-change on-change
                   :value value}]]]))
 
+(defn checkbox-select [{:keys [label options values on-change]}]
+  (let [id (gensym "checkbox-select")]
+    [:fieldset {:class "slds-form-element"}
+     [:legend {:class ["slds-form-element__legend"
+                       "slds-form-element__label"]}
+      label]
+     [:div {:class "slds-form-element__control"}
+      (for [[option option-label & attrs] options]
+        [:span {:key (str id ":" option)
+                :class "slds-checkbox"}
+         [:input (merge {:id (str id ":" option)
+                         :value option
+                         :name id
+                         :checked (contains? values option)
+                         :on-change #(on-change option)
+                         :type "checkbox"}
+                        (into {} (map #(vector % %) attrs)))]
+         [:label {:class "slds-checkbox__label" :for (str id ":" option)}
+          [:span {:class "slds-checkbox_faux"}]
+          [:span {:class "slds-form-element__label"} option-label]]])]]))
+
+(defn radio-button-group [{:keys [label options active on-change]}]
+  (let [id (gensym "radio-button-group")]
+    [:fieldset {:class "slds-form-element"}
+     [:legend {:class ["slds-form-element__legend"
+                       "slds-form-element__label"]}
+      label]
+     [:div {:class "slds-form-element__control"}
+      [:div {:class "slds-radio_button-group"}
+       (for [[option option-label & attrs] options]
+         [:span {:key (str id option)
+                 :class "slds-button slds-radio_button"}
+          [:input (merge {:type "radio"
+                          :name id
+                          :id (str id option)
+                          :checked (= active option)
+                          :on-change #(on-change option)}
+                         (into {} (map #(vector % %) attrs)))]
+          [:label {:class "slds-radio_button__label"
+                   :for (str id option)}
+           [:span {:class "slds-radio_faux"}
+            option-label]]])]]]))
+
 (defn multi-select [{:keys [label on-change values options]}]
-  (let [id (gensym "input-select")]
+  (let [id (gensym "multi-select")]
     [:div {:class "slds-form-element"}
      [:label {:class "slds-form-element__label" :for id} label]
      [:div {:class "slds-form-element__control"}

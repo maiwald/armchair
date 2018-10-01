@@ -20,8 +20,12 @@ $gray: #888
   flex-direction: column
 
   #content
+    display: flex
     position: relative
     flex-grow: 1
+
+    & > *
+      flex-grow: 1
 
 .graph
   +fill-container
@@ -230,13 +234,168 @@ $gray: #888
   .add
     align-self: flex-end
 
+.location-editor
+  display: flex
+  position: relative
+  flex-grow: 1
+
+  &__sidebar
+    width: 300px
+    padding: 10px
+    background: rgba(230, 230, 230, .8)
+
+  &__canvas
+    display: flex
+    justify-content: center
+    flex-grow: 1
+
+  .level
+    position: relative
+    margin: 40px
+
+  .resize-container
+    display: flex
+    justify-content: center
+    align-items: center
+    margin: 40px
+
+    &__reference
+      position: relative
+      height: 80px
+      width: 80px
+      border: 1px solid black
+
+  .resizer
+    $offset: 18px
+    position: absolute
+    display: flex
+    align-items: center
+    justify-content: center
+
+    a
+      display: flex
+      width: 18px
+      height: 18px
+      align-items: center
+      justify-content: center
+
+      &:hover
+        background-color: rgba(255, 255, 0, .2)
+        text-decoration: none
+
+    &_horizontal
+      width: 100%
+      flex-direction: column
+
+      a
+        width: 100%
+
+    &_vertical
+      height: 100%
+      flex-direction: row
+
+      a
+        height: 100%
+
+    &_left
+      left: -$offset
+
+    &_right
+      right: -$offset
+
+    &_top
+      top: -$offset
+
+    &_bottom
+      bottom: -$offset
+
+  .level-layer
+    position: absolute
+    width: 100%
+    height: 100%
+
+    &__tile
+      $selection-border: 2px
+
+      user-select: none
+      position: absolute
+      overflow: hidden
+      box-sizing: content-box
+      z-index: 1
+
+      [draggable=true]
+        cursor: grab
+
+    .interactor
+      width: 100%
+      height: 100%
+
+      &_paint:hover, &_walkable:hover, &_not-walkable:hover
+        border: 2px solid yellow
+        border-radius: 5px
+
+      &_walkable
+        background-color: rgba(0, 255, 0, .2)
+
+      &_not-walkable
+        background-color: rgba(255, 0, 0, .2)
+
+      &_draggable
+        cursor: grab
+        border: 2px solid yellow
+        border-radius: 5px
+
+      &_dropzone
+        background-color: rgba(255, 255, 0, .4)
+        border-radius: 5px
+
+.tile-list
+  &__item
+    display: flex
+    align-items: center
+    background: rgba(0, 0, 0, .1)
+    padding: 4px
+    border-radius: 5px
+    margin-bottom: 7px
+
+    &_dropzone
+      border: 1px dashed black
+
+    &__image
+      display: flex
+      justify-content: center
+      align-items: center
+
+    &__label
+      padding-left: 7px
+      flex-grow: 1
+
+.tile-grid
+  display: flex
+  flex-wrap: wrap
+  justify-content: flex-start
+
+  &__item
+    border: 1px solid grey
+    margin: 0 5px 5px 0
+
+    &_active
+      border: 2px solid yellow
+      margin: -1px 4px 4px -1px
+
+    > *
+      display: block
+
 #game
   display: flex
   justify-content: center
-  align-items: center
   padding: 40px
 
   .canvas-container
     & > canvas
       position: absolute
 
+.slds-radio_button
+  i.fas
+    margin: 0 -4px
+    width: 16px

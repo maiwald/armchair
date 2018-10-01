@@ -4,6 +4,7 @@
 (def routes
   ["/" [["game" :game]
         ["locations" :locations]
+        [["locations/" :id "/edit"] :location-edit]
         [["dialogue/" :id] :dialogue]
         ["characters" :characters]
         ["infos" :infos]]])

@@ -3,10 +3,12 @@
             [clojure.spec.alpha :as s]
             [reagent.core :as r]
             [armchair.game :refer [start-game end-game]]
+            [armchair.views.location-editor :refer [location-editor]]
             [armchair.slds :as slds]
             [armchair.util :refer [translate-position]]
             [armchair.config :as config]
             [armchair.routes :refer [routes]]
+            [armchair.textures :refer [character-textures]]
             [bidi.bidi :refer [match-route path-for]]
             [clojure.core.async :refer [put!]]))
 
@@ -17,12 +19,11 @@
 
 (defn stop-e! [e]
   (.preventDefault e)
-  (.stopPropagation e))
+  (.stopPropagation e)
+  e)
 
 (defn e-> [handler]
-  (fn [e]
-    (stop-e! e)
-    (handler e)))
+  (comp handler stop-e!))
 
 (defn e->val [e]
   (let [target (.-target e)]
@@ -176,9 +177,8 @@
                :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
 
 (defn dialogue-component [dialogue-id]
-  (if dialogue-id
-    (let [{:keys [lines npc-connections player-connections]} (<sub [:dialogue dialogue-id])
-          get-pos #(get-in lines [% :position])]
+  (if-let [{:keys [lines npc-connections player-connections]} (<sub [:dialogue dialogue-id])]
+    (letfn [(get-pos [line-id] get-pos (get-in lines [line-id :position]))]
       [:div {:class "full-page"}
        [:div {:class "new-item-button"}
         [slds/add-button "New Player Line" #(>evt [:create-player-line dialogue-id])]
@@ -240,7 +240,7 @@
                           (>evt [:delete-location id]))}
         [icon "trash" "Delete"]]
        [:li {:class "action"
-             :on-click #(>evt [:open-location-modal id])}
+             :on-click #(>navigate :location-edit :id id)}
         [icon "edit" "Edit"]]
        [:li {:class "action action_connect"
              :on-mouse-down (e-> #(when (left-button? %)
@@ -276,9 +276,11 @@
          ^{:key (str "location-connection" start "->" end)}
          [location-connection (get-pos start) (get-pos end)])]]]))
 
+;; Game canvas
+
 (defn game-canvas [game-data]
   (let [game-data (<sub [:game-data])
-        level-canvas (atom nil)
+        background-canvas (atom nil)
         entity-canvas (atom nil)
         game-input (atom nil)
         key-listener (fn [e]
@@ -291,30 +293,36 @@
                                            nil)]
                          (.preventDefault e)))]
     (r/create-class
-      {:component-did-mount (fn []
-                              (reset! game-input (start-game
-                                                   (.getContext @level-canvas "2d")
-                                                   (.getContext @entity-canvas "2d")
-                                                   game-data))
-                              (.addEventListener js/document "keydown" key-listener))
-       :component-will-unmount (fn []
-                                 (.removeEventListener js/document "keydown" key-listener)
-                                 (end-game))
-       :reagent-render (fn []
-                         [:div {:id "game"}
-                          [:div {:class "canvas-container"
-                                 :style {:width (str 800 "px")}}
-                           [:canvas {:height 450
-                                     :width 800
-                                     :ref (fn [el] (reset! level-canvas el))}]
-                           [:canvas {:on-mouse-move #(let [c (relative-pointer % @entity-canvas)]
-                                                       (put! @game-input [:cursor-position c]))
-                                     :on-mouse-out #(put! @game-input [:cursor-position nil])
-                                     :on-click #(let [c (relative-pointer % @entity-canvas)]
-                                                  (put! @game-input [:animate c]))
-                                     :height 450
-                                     :width 800
-                                     :ref (fn [el] (reset! entity-canvas el))}]]])})))
+      {:display-name "game-canvas"
+       :component-did-mount
+       (fn []
+         (reset! game-input (start-game
+                              (.getContext @background-canvas "2d")
+                              (.getContext @entity-canvas "2d")
+                              game-data))
+         (.addEventListener js/document "keydown" key-listener))
+
+       :component-will-unmount
+       (fn []
+         (.removeEventListener js/document "keydown" key-listener)
+         (end-game))
+
+       :reagent-render
+       (fn []
+         [:div {:id "game"}
+          [:div {:class "canvas-container"
+                 :style {:width (str 800 "px")}}
+           [:canvas {:height 450
+                     :width 800
+                     :ref (fn [el] (reset! background-canvas el))}]
+           [:canvas {:on-mouse-move #(let [c (relative-pointer % @entity-canvas)]
+                                       (put! @game-input [:cursor-position c]))
+                     :on-mouse-out #(put! @game-input [:cursor-position nil])
+                     :on-click #(let [c (relative-pointer % @entity-canvas)]
+                                  (put! @game-input [:animate c]))
+                     :height 450
+                     :width 800
+                     :ref (fn [el] (reset! entity-canvas el))}]]])})))
 
 ;; Modals
 
@@ -379,17 +387,11 @@
                         :value (:display-name character)}]
       [slds/input-text {:label "Color"
                         :on-change (update-handler :color)
-                        :value (:color character)}]]]))
-
-(defn location-form-modal [location-id]
-  (let [location (<sub [:location location-id])
-        update-display-name #(>evt [:update-location location-id :display-name (e->val %)])]
-    [slds/modal {:title (:display-name location)
-                 :close-handler #(>evt [:close-modal])}
-     [slds/form
-      [slds/input-text {:label "Name"
-                        :on-change update-display-name
-                        :value (:display-name location)}]]]))
+                        :value (:color character)}]
+      [slds/input-select {:label "Avatar"
+                          :options (mapv #(vector % %) character-textures)
+                          :value (:texture character)
+                          :on-change #(>evt [:update-character character-id :texture (keyword (e->val %))])}]]]))
 
 (defn info-form-modal [info-id]
   (let [info (<sub [:info info-id])
@@ -407,15 +409,9 @@
       :npc-line-id    [npc-line-form-modal (:npc-line-id modal)]
       :player-line-id [player-line-form-modal (:player-line-id modal)]
       :character-id   [character-form-modal (:character-id modal)]
-      :location-id    [location-form-modal (:location-id modal)]
       :info-id        [info-form-modal (:info-id modal)])))
 
-(def route-components
-  {:game (fn [params] [game-canvas])
-   :locations (fn [params] [location-management])
-   :dialogue (fn [{id :id}] [dialogue-component (int id)])
-   :characters (fn [params] [character-management])
-   :infos (fn [params] [info-management])})
+;; Root
 
 (defn root []
   (let [{page-name :handler
@@ -432,6 +428,11 @@
                                :current-page page-name
                                :click-handler #(>navigate %)}]]
      [:div {:id "content"}
-      (if-let [page-component (route-components page-name)]
-        [page-component page-params]
-        [:div "Nothing"])]]))
+      (case page-name
+        :game          [game-canvas]
+        :locations     [location-management]
+        :location-edit [location-editor (int (:id page-params))]
+        :dialogue      [dialogue-component (int (:id page-params))]
+        :characters    [character-management]
+        :infos         [info-management]
+        [:div "Page not found"])]]))

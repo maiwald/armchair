@@ -1,10 +1,16 @@
 (ns armchair.subs
-  (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [re-frame.core :as re-frame :refer [reg-sub]]
+  (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
             [clojure.spec.alpha :as s]
             [armchair.db :as db]
             [armchair.config :as config]
-            [armchair.util :refer [where filter-map where-map map-values position-delta translate-position translate-positions]]))
+            [armchair.util :refer [where
+                                   filter-map
+                                   where-map
+                                   map-keys
+                                   map-values
+                                   rect->0
+                                   position-delta
+                                   translate-positions]]))
 
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
@@ -20,6 +26,7 @@
 
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
+(reg-sub :dnd-payload #(:dnd-payload %))
 
 (reg-sub
   :character-list
@@ -132,8 +139,23 @@
 (reg-sub
   :location
   :<- [:db-locations]
-  (fn [locations [_ location-id]]
-    (locations location-id)))
+  :<- [:db-characters]
+  (fn [[locations characters] [_ location-id]]
+    (-> (locations location-id)
+        (update :npcs #(map-values characters %))
+        (update :connection-triggers #(map-values locations %)))))
+
+(reg-sub
+  :available-npcs
+  :<- [:db-locations]
+  :<- [:db-characters]
+  (fn [[locations characters] [_ location-id]]
+    (let [placed-characters (->> (vals locations)
+                                 (map :npcs)
+                                 (filter some?)
+                                 (apply merge)
+                                 vals)]
+      (apply dissoc (into [characters] placed-characters)))))
 
 (reg-sub
   :location-map
@@ -159,16 +181,41 @@
      :connections (map sort connections)}))
 
 (reg-sub
+  :connected-locations
+  :<- [:db-locations]
+  :<- [:db-location-connections]
+  (fn [[locations connections] [_ location-id]]
+    (let [other-location-ids (for [connection connections
+                                   :when (contains? connection location-id)]
+                                 (first (disj connection location-id)))]
+      (select-keys locations other-location-ids))))
+
+(reg-sub
+  :location-editor-data
+  (fn [db]
+    (select-keys (:location-editor db)
+                 [:highlight
+                  :painting?
+                  :tool
+                  :active-texture])))
+
+(reg-sub
   :game-data
   :<- [:db-locations]
   :<- [:db-dialogues]
   :<- [:db-lines]
+  :<- [:db-characters]
   :<- [:db-infos]
-  (fn [[locations dialogues lines infos] _]
+  (fn [[locations dialogues lines characters infos] _]
     (let [location (get locations 1)
+          normalize-tile (fn [tile] (rect->0 (:dimension location) tile))
           location-dialogues (where-map :location-id 1 dialogues)]
-      {:level (:level location)
-       :enemies (:enemies location)
+      {:dimension (:dimension location)
+       :npcs (into {} (map (fn [[tile npc]]
+                             [(normalize-tile tile) (get characters npc)])
+                           (:npcs location)))
+       :background (map-keys normalize-tile (:background location))
+       :walk-set (into #{} (map normalize-tile (:walk-set location)))
        :infos infos
        :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
        :dialogues (into {} (map (fn [{:keys [id initial-line-id]}]
