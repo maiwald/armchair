@@ -117,18 +117,18 @@
                          :on-change update-display-name
                          :value display-name}]
        [slds/radio-button-group {:label "Tools"
-                                 :options [[:paint [icon "layer-group" "Background"]]
+                                 :options [[:background-painter [icon "layer-group" "Background"]]
                                            [:resize [icon "arrows-alt" "Resize"]]
                                            [:collision [icon "walking" "Collision"]]
-                                           [:select [icon "user" "NPCs"]]
-                                           [:connections [icon "external-link-alt" "Connections"]]]
+                                           [:npcs-select [icon "user" "NPCs"]]
+                                           [:connection-select [icon "external-link-alt" "Connections"]]]
                                  :active tool
                                  :on-change #(>evt [:set-tool %])}]
        (case tool
-         :paint [location-editor-sidebar-paint location-id]
+         :background-painter [location-editor-sidebar-paint location-id]
          :resize [location-editor-sidebar-resize location-id]
-         :select [location-editor-sidebar-npcs location-id]
-         :connections [location-editor-sidebar-connections location-id]
+         :npcs-select [location-editor-sidebar-npcs location-id]
+         :connection-select [location-editor-sidebar-connections location-id]
          nil)])))
 
 (defn tile-style [x y]
@@ -189,7 +189,7 @@
      [conntection-trigger-layer dimension connection-triggers]
 
      (case tool
-       :paint
+       :background-painter
        (do-all-tiles dimension "paint"
                      (fn [tile]
                        [:div {:class "interactor interactor_paint"
@@ -204,7 +204,7 @@
                                         "interactor_walkable"
                                         "interactor_not-walkable")]
                               :on-click #(>evt [:flip-walkable location-id tile])}]))
-       :select
+       :npcs-select
        [:div
         (do-some-tiles dimension npcs "npc-select"
                        (fn [tile {:keys [id texture display-name]}]
@@ -220,7 +220,7 @@
                           [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
                                  :on-drag-over (e-> (once #(>evt [:set-highlight tile])))
                                  :on-drop #(>evt [:move-entity location-id target tile])}])))]
-       :connections
+       :connection-select
        [:div
         (do-some-tiles dimension connection-triggers "connection-select"
                        (fn [tile {:keys [id display-name]}]

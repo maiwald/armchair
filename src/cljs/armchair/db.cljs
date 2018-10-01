@@ -35,7 +35,7 @@
 ;; Location Editor
 
 (s/def ::painting? boolean?)
-(s/def ::tool #{:select :resize :collision :paint :connections})
+(s/def ::tool #{:npcs-select :resize :collision :background-painter :connection-select})
 (s/def ::highlight ::position)
 (s/def ::active-texture ::texture)
 (s/def ::location-editor (s/keys :req-un [::tool
@@ -172,7 +172,7 @@
                20 [707 151]
                21 [885 389]
                22 [1196 387]}
-   :location-editor {:tool :paint
+   :location-editor {:tool :background-painter
                      :painting? false
                      :active-texture (first background-textures)}
    :locations {1 {:id 1, :position-id 16, :display-name "Park - Camp",
