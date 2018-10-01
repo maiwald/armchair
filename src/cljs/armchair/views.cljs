@@ -215,7 +215,7 @@
                                [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this dialogue?")
                                                                              (>evt [:delete-dialogue id]))}]
                                [slds/symbol-button "edit" {:on-click #(>navigate :dialogue-edit :id id)}]])}
-      :new-resource #(>evt [:create-dialogue])}]))
+      :new-resource #(>evt [:open-dialogue-creation-modal])}]))
 
 (defn character-management []
   (let [characters (<sub [:character-list])]
@@ -344,6 +344,23 @@
 
 ;; Modals
 
+(defn dialogue-creation-modal [{:keys [character-id location-id description]}]
+  [slds/modal {:title "Create Dialogue"
+               :confirm-handler #(>evt [:create-dialogue])
+               :close-handler #(>evt [:close-modal])}
+   [slds/form
+    [slds/input-select {:label "Character"
+                        :on-change #(>evt [:dialogue-creation-update :character-id (int (e->val %))])
+                        :options (<sub [:character-options])
+                        :value character-id}]
+    [slds/input-select {:label "Location"
+                        :on-change #(>evt [:dialogue-creation-update :location-id (int (e->val %))])
+                        :options (<sub [:location-options])
+                        :value location-id}]
+    [slds/input-textarea {:label "Description"
+                          :on-change #(>evt [:dialogue-creation-update :description (e->val %)])
+                          :value description}]]])
+
 (defn npc-line-form-modal [line-id]
   (let [line (<sub [:line line-id])
         update-handler (fn [field] #(>evt [:update-line line-id field (e->val %)]))]
@@ -424,10 +441,11 @@
 (defn modal []
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
-      :npc-line-id    [npc-line-form-modal (:npc-line-id modal)]
-      :player-line-id [player-line-form-modal (:player-line-id modal)]
-      :character-id   [character-form-modal (:character-id modal)]
-      :info-id        [info-form-modal (:info-id modal)])))
+      :dialogue-creation [dialogue-creation-modal (:dialogue-creation modal)]
+      :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
+      :player-line-id    [player-line-form-modal (:player-line-id modal)]
+      :character-id      [character-form-modal (:character-id modal)]
+      :info-id           [info-form-modal (:info-id modal)])))
 
 ;; Root
 

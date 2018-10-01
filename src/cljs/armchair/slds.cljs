@@ -166,7 +166,7 @@
     [data-table
      (assoc content-options :table-id title)]]])
 
-(defn modal [{:keys [title close-handler width]} & children]
+(defn modal [{:keys [title close-handler confirm-handler width]} & children]
   [:div
    [:section {:class (cond-> ["slds-modal" "slds-fade-in-open"]
                        (= width :medium) (conj "slds-modal_medium"))}
@@ -182,5 +182,7 @@
            children)
      [:footer {:class "slds-modal__footer"}
       [:button {:class "slds-button slds-button_brand"
-                :on-click close-handler} "Ok"]]]]
+                :on-click (or confirm-handler
+                              close-handler)}
+       "Ok"]]]]
    [:div {:class "slds-backdrop slds-backdrop_open"}]])

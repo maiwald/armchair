@@ -367,31 +367,74 @@
 
 ;; Modal
 
-(defn open-modal [modal-key]
-  (fn [db [_ payload]]
-    (assert (not (contains? db :modal))
-            "Attempting to open a modal while modal is open!")
-    (assoc db :modal {modal-key payload})))
+(defn assert-no-open-modal [db]
+  (assert (not (contains? db :modal))
+          "Attempting to open a modal while modal is open!"))
 
 (reg-event-db
   :open-character-modal
-  [spec-interceptor]
-  (open-modal :character-id))
+  (fn [db [_ payload]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :character-id] payload)))
 
 (reg-event-db
   :open-info-modal
-  [spec-interceptor]
-  (open-modal :info-id))
+  (fn [db [_ payload]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :info-id] payload)))
 
 (reg-event-db
   :open-npc-line-modal
-  [spec-interceptor]
-  (open-modal :npc-line-id))
+  (fn [db [_ payload]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :npc-line-id] payload)))
 
 (reg-event-db
   :open-player-line-modal
+  (fn [db [_ payload]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :player-line-id] payload)))
+
+(reg-event-db
+  :open-dialogue-creation-modal
+  (fn [db [_ payload]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :dialogue-creation] {:character-id nil
+                                              :location-id nil
+                                              :description nil})))
+
+;; Dialogue creation
+
+(defn assert-dialogue-creation-modal [db]
+  (assert (contains? (:modal db) :dialogue-creation)
+          "No dialogue creation initiated. Cannot set value!"))
+
+(reg-event-db
+  :dialogue-creation-update
+  (fn [db [_ field value]]
+    (assert-dialogue-creation-modal db)
+    (assoc-in db [:modal :dialogue-creation field] value)))
+
+(reg-event-db
+  :create-dialogue
   [spec-interceptor]
-  (open-modal :player-line-id))
+  (with-new-position
+    (fn [db position-id]
+      (let [dialogue-id (new-id db :dialogues)
+            line-id (new-id db :lines)
+            modal-data (get-in db [:modal :dialogue-creation])]
+        (-> db
+            (assoc-in [:dialogues dialogue-id] (merge {:id dialogue-id
+                                                       :initial-line-id line-id}
+                                                      (select-keys modal-data [:location-id :description])))
+            (assoc-in [:lines line-id] {:id line-id
+                                        :kind :npc
+                                        :character-id (:character-id modal-data)
+                                        :dialogue-id dialogue-id
+                                        :position-id position-id
+                                        :text nil
+                                        :next-line-id nil})
+            (dissoc :modal))))))
 
 ;; Page
 

@@ -161,6 +161,12 @@
         (update :connection-triggers #(map-values locations %)))))
 
 (reg-sub
+  :location-options
+  :<- [:db-locations]
+  (fn [locations _]
+    (map-values :display-name locations)))
+
+(reg-sub
   :available-npcs
   :<- [:db-locations]
   :<- [:db-characters]
