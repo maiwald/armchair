@@ -3,7 +3,14 @@
             [clojure.spec.alpha :as s]
             [armchair.db :as db]
             [armchair.config :as config]
-            [armchair.util :refer [where filter-map where-map map-values position-delta translate-position translate-positions]]))
+            [armchair.util :refer [where
+                                   filter-map
+                                   where-map
+                                   map-keys
+                                   map-values
+                                   rect->0
+                                   position-delta
+                                   translate-positions]]))
 
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
@@ -139,14 +146,6 @@
         (update :connection-triggers #(map-values locations %)))))
 
 (reg-sub
-  :level-dimensions
-  (fn [[_ location-id]]
-    (subscribe [:location location-id]))
-  (fn [{level :level} _]
-    {:width (count level)
-     :height (count (first level))}))
-
-(reg-sub
   :available-npcs
   :<- [:db-locations]
   :<- [:db-characters]
@@ -209,12 +208,17 @@
   :<- [:db-infos]
   (fn [[locations dialogues lines characters infos] _]
     (let [location (get locations 1)
+          normalize-tile (fn [tile] (rect->0 (:dimension location) tile))
           location-dialogues (where-map :location-id 1 dialogues)]
-      (merge (select-keys location [:level :walk-set])
-             {:npcs (map-values characters (:npcs location))
-              :infos infos
-              :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
-              :dialogues (into {} (map (fn [{:keys [id initial-line-id]}]
-                                         [(:character-id (get lines initial-line-id))
-                                          initial-line-id])
-                                       (vals location-dialogues)))}))))
+      {:dimension (:dimension location)
+       :npcs (into {} (map (fn [[tile npc]]
+                             [(normalize-tile tile) (get characters npc)])
+                           (:npcs location)))
+       :background (map-keys normalize-tile (:background location))
+       :walk-set (into #{} (map normalize-tile (:walk-set location)))
+       :infos infos
+       :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
+       :dialogues (into {} (map (fn [{:keys [id initial-line-id]}]
+                                  [(:character-id (get lines initial-line-id))
+                                   initial-line-id])
+                                (vals location-dialogues)))})))

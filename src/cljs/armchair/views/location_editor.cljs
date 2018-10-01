@@ -1,7 +1,7 @@
 (ns armchair.views.location-editor
   (:require [armchair.slds :as slds]
             [armchair.config :as config]
-            [armchair.util :refer [once]]
+            [armchair.util :refer [rect->0 rect-width rect-height once translate-position]]
             [armchair.textures :refer [texture-path background-textures]]))
 
 ;; Helpers
@@ -137,42 +137,37 @@
    :top (* y config/tile-size)
    :left (* x config/tile-size)})
 
-(defn tile [layer-title x y child]
-  (into [:div {:key (str "location-cell:" layer-title ":" [x y])
-               :class "level-layer__tile"
-               :style (tile-style x y)}] child))
-
-(defn do-all-tiles [level layer-title f]
+(defn do-all-tiles [[[x1 y1] [x2 y2] :as rect] layer-title f]
   [:div {:class "level-layer"}
-   (for [x (range (count level))
-         y (range (count (first level)))
+   (for [x (range x1 x2)
+         y (range y1 y2)
          :let [tile [x y]]]
      [:div {:key (str "location-cell:" layer-title ":" tile)
             :class "level-layer__tile"
-            :style (tile-style x y)}
+            :style (apply tile-style (rect->0 rect tile))}
       (f tile)])])
 
-(defn background [level]
-  (do-all-tiles level "background"
+(defn background-tiles [rect background]
+  (do-all-tiles rect "background"
                 (fn [tile]
-                  [:img {:src (texture-path (get-in level tile))}])))
+                  [:img {:src (texture-path (get background tile))}])))
 
-(defn do-some-tiles [coll layer-title f]
+(defn do-some-tiles [rect coll layer-title f]
   [:div {:class "level-layer"}
-   (for [[[x y :as tile] item] coll]
+   (for [[tile item] coll]
      [:div {:key (str "location-cell:" layer-title ":" tile)
             :class "level-layer__tile"
-            :style (tile-style x y)}
+            :style (apply tile-style (rect->0 rect tile))}
       (f tile item)])])
 
-(defn npc-layer [npcs]
-  (do-some-tiles npcs "npc"
+(defn npc-layer [rect npcs]
+  (do-some-tiles rect npcs "npc"
                  (fn [tile {:keys [display-name texture]}]
                    [:img {:src (texture-path texture)
                           :title display-name}])))
 
-(defn conntection-trigger-layer [connection-triggers]
-  (do-some-tiles connection-triggers "connection-trigger"
+(defn conntection-trigger-layer [rect connection-triggers]
+  (do-some-tiles rect connection-triggers "connection-trigger"
                  (fn [tile {:keys [id display-name]}]
                    [:img {:src (texture-path :marker)
                           :title (str "to " display-name)
@@ -182,28 +177,27 @@
                                            (>evt [:start-entity-drag {:connection-trigger id}]))}])))
 
 (defn location-editor-canvas [location-id]
-  (let [{:keys [level npcs walk-set connection-triggers]} (<sub [:location location-id])
+  (let [{:keys [dimension background npcs walk-set connection-triggers]} (<sub [:location location-id])
         {:keys [tool highlight painting?]} (<sub [:location-editor-data])
-        {:keys [width height]} (<sub [:level-dimensions location-id])
         dnd-payload (<sub [:dnd-payload])]
     [:div {:class "level"
            :on-mouse-leave #(>evt [:unset-highlight])
-           :style {:width (str (* config/tile-size width) "px")
-                   :height (str (* config/tile-size height) "px")}}
-     [background level]
-     [npc-layer npcs]
-     [conntection-trigger-layer connection-triggers]
+           :style {:width (str (* config/tile-size (rect-width dimension)) "px")
+                   :height (str (* config/tile-size (rect-height dimension)) "px")}}
+     [background-tiles dimension background]
+     [npc-layer dimension npcs]
+     [conntection-trigger-layer dimension connection-triggers]
 
      (case tool
        :paint
-       (do-all-tiles level "paint"
+       (do-all-tiles dimension "paint"
                      (fn [tile]
                        [:div {:class "interactor interactor_paint"
                               :on-mouse-down (e-> #(>evt [:start-painting location-id tile]))
                               :on-mouse-over (e-> #(when painting? (>evt [:paint location-id tile])))
                               :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))}]))
        :collision
-       (do-all-tiles level "walkable-area"
+       (do-all-tiles dimension "walkable-area"
                      (fn [tile]
                        [:div {:class ["interactor"
                                       (if (contains? walk-set tile)
@@ -212,7 +206,7 @@
                               :on-click #(>evt [:flip-walkable location-id tile])}]))
        :select
        [:div
-        (do-some-tiles npcs "npc-select"
+        (do-some-tiles dimension npcs "npc-select"
                        (fn [tile {:keys [id texture display-name]}]
                          [:div {:class "interactor interactor_draggable"
                                 :title display-name
@@ -221,14 +215,14 @@
                                                  (set-drag-texture! e texture)
                                                  (>evt [:start-entity-drag {:entity id}]))}]))
         (when-let [target (:entity dnd-payload)]
-          (do-all-tiles level "dropzone"
+          (do-all-tiles dimension "dropzone"
                         (fn [tile]
                           [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
                                  :on-drag-over (e-> (once #(>evt [:set-highlight tile])))
                                  :on-drop #(>evt [:move-entity location-id target tile])}])))]
        :connections
        [:div
-        (do-some-tiles connection-triggers "connection-select"
+        (do-some-tiles dimension connection-triggers "connection-select"
                        (fn [tile {:keys [id display-name]}]
                          [:div {:class "interactor interactor_draggable"
                                 :title (str "to " display-name)
@@ -237,7 +231,7 @@
                                                  (set-drag-texture! e :marker)
                                                  (>evt [:start-entity-drag {:connection-trigger id}]))}]))
         (when-let [target (:connection-trigger dnd-payload)]
-          (do-all-tiles level "dropzone"
+          (do-all-tiles dimension "dropzone"
                         (fn [tile]
                           [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
                                  :on-drag-over (e-> (once #(>evt [:set-highlight tile])))

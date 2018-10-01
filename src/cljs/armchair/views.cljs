@@ -280,7 +280,7 @@
 
 (defn game-canvas [game-data]
   (let [game-data (<sub [:game-data])
-        level-canvas (atom nil)
+        background-canvas (atom nil)
         entity-canvas (atom nil)
         game-input (atom nil)
         key-listener (fn [e]
@@ -297,7 +297,7 @@
        :component-did-mount
        (fn []
          (reset! game-input (start-game
-                              (.getContext @level-canvas "2d")
+                              (.getContext @background-canvas "2d")
                               (.getContext @entity-canvas "2d")
                               game-data))
          (.addEventListener js/document "keydown" key-listener))
@@ -314,7 +314,7 @@
                  :style {:width (str 800 "px")}}
            [:canvas {:height 450
                      :width 800
-                     :ref (fn [el] (reset! level-canvas el))}]
+                     :ref (fn [el] (reset! background-canvas el))}]
            [:canvas {:on-mouse-move #(let [c (relative-pointer % @entity-canvas)]
                                        (put! @game-input [:cursor-position c]))
                      :on-mouse-out #(put! @game-input [:cursor-position nil])

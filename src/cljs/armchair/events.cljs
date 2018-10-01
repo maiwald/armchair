@@ -4,7 +4,14 @@
             [clojure.spec.alpha :as s]
             [armchair.db :as db]
             [armchair.routes :refer [routes]]
-            [armchair.util :refer [filter-map map-keys map-values translate-position translate-positions position-delta]]))
+            [armchair.util :refer [filter-map
+                                   filter-keys
+                                   map-keys
+                                   map-values
+                                   translate-position
+                                   translate-positions
+                                   position-delta
+                                   rect-contains?]]))
 
 (def spec-interceptor (after (fn [db]
                                (when-not (s/valid? :armchair.db/state db)
@@ -288,19 +295,19 @@
 (reg-event-db
   :start-painting
   [spec-interceptor]
-  (fn [db [_ location-id [x y]]]
+  (fn [db [_ location-id tile]]
     (let [texture (get-in db [:location-editor :active-texture])]
       (-> db
           (assoc-in [:location-editor :painting?] true)
-          (assoc-in [:locations location-id :level x y] texture)))))
+          (assoc-in [:locations location-id :background tile] texture)))))
 
 (reg-event-db
   :paint
   [spec-interceptor]
-  (fn [db [_ location-id [x y]]]
+  (fn [db [_ location-id tile]]
     (let [{:keys [painting? active-texture]} (:location-editor db)]
       (cond-> db
-        painting? (assoc-in [:locations location-id :level x y] active-texture)))))
+        painting? (assoc-in [:locations location-id :background tile] active-texture)))))
 
 (reg-event-db
   :stop-painting
@@ -321,51 +328,38 @@
   :resize-smaller
   [spec-interceptor]
   (fn [db [_ location-id direction]]
-    (let [shift-delta (case direction
-                        :up [0 -1]
-                        :left [-1 0]
-                        [0 0])]
-      (letfn [(shift [pos] (translate-position pos shift-delta))
-              (shift-keys [m] (map-keys shift m))]
-        (update-in db [:locations location-id]
-          (fn [location]
-            (-> location (update :level
-                                 (fn [level]
-                                   (let [width (count level)
-                                         height (count (first level))]
-                                     (case direction
-                                       :up (mapv #(subvec % 1) level)
-                                       :down (mapv pop level)
-                                       :left (subvec level 1)
-                                       :right (pop level)))))
-                (update :npcs shift-keys)
-                (update :connection-triggers shift-keys)
-                (update :walk-set #(set (map shift %))))))))))
+    (let [[shift-index shift-delta] (case direction
+                                      :up [0 [0 1]]
+                                      :left [0 [1 0]]
+                                      :right [1 [-1 0]]
+                                      :down [1 [0 -1]])
+          new-dimension (update (get-in db [:locations location-id :dimension])
+                                shift-index translate-position shift-delta)
+          in-bounds? (partial rect-contains? new-dimension)
+          remove-oob (fn [coll] (filter-keys in-bounds? coll))]
+      (update-in db [:locations location-id]
+                 (fn [location]
+                   (-> location
+                       (assoc :dimension new-dimension)
+                       (update :background remove-oob)
+                       (update :npcs remove-oob)
+                       (update :connection-triggers remove-oob)
+                       (update :walk-set (comp set #(filter in-bounds? %)))))))))
 
 (reg-event-db
   :resize-larger
   [spec-interceptor]
   (fn [db [_ location-id direction]]
-    (let [shift-delta (case direction
-                        :up [0 1]
-                        :left [1 0]
-                        [0 0])]
-      (letfn [(shift [pos] (translate-position pos shift-delta))
-              (shift-keys [m] (map-keys shift m))]
-        (update-in db [:locations location-id]
-          (fn [location]
-            (-> location (update :level
-                                 (fn [level]
-                                   (let [width (count level)
-                                         height (count (first level))]
-                                     (case direction
-                                       :up (mapv #(into [nil] %) level)
-                                       :down (mapv #(conj % nil) level)
-                                       :left (into [(vec (repeat height nil))] level)
-                                       :right (conj level (vec (repeat height nil)))))))
-                (update :npcs shift-keys)
-                (update :connection-triggers shift-keys)
-                (update :walk-set #(set (map shift %))))))))))
+    (let [[shift-index shift-delta] (case direction
+                                      :up [0 [0 -1]]
+                                      :left [0 [-1 0]]
+                                      :right [1 [1 0]]
+                                      :down [1 [0 1]])]
+      (update-in db [:locations
+                     location-id
+                     :dimension
+                     shift-index]
+                 translate-position shift-delta))))
 
 ;; Modal
 

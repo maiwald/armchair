@@ -5,7 +5,10 @@
             [armchair.canvas :as c]
             [armchair.config :refer [tile-size]]
             [armchair.textures :refer [texture-set load-textures]]
-            [armchair.util :refer [map-values translate-position]]
+            [armchair.util :refer [map-values
+                                   rect-width
+                                   rect-height
+                                   translate-position]]
             [armchair.pathfinding :as path]))
 
 ;; Definitions
@@ -19,7 +22,7 @@
 
 (s/def ::position (s/tuple number? number?))
 (s/def ::direction #{:up :down :left :right})
-
+(s/def ::texture #(contains? texture-set %))
 (s/def ::line-id pos-int?)
 (s/def ::selected-option int?)
 
@@ -29,11 +32,8 @@
 (s/def ::infos (s/coll-of pos-int? :kind set?))
 (s/def ::player (s/keys :req-un [::position ::direction ::infos]))
 
-(s/def ::uniform-level (fn [level] (apply = (map count level))))
-(s/def ::level (s/and (s/coll-of vector? :kind vector?)
-                      ::uniform-level))
+(s/def ::background (s/map-of ::position ::texture))
 
-(s/def ::texture #(contains? texture-set %))
 (s/def ::display-name string?)
 (s/def ::character (s/keys :req-un [::display-name ::texture]))
 (s/def ::npcs (s/map-of ::position ::character))
@@ -42,7 +42,7 @@
 (s/def ::all-npcs-have-dialogue (fn [{:keys [npcs dialogues]}]
                                   (= (set (map #(:id (second %)) npcs))
                                      (set (keys dialogues)))))
-(s/def ::state (s/and (s/keys :req-un [::player ::level ::npcs]
+(s/def ::state (s/and (s/keys :req-un [::player ::npcs]
                               :opt-un [::highlight ::interaction])
                       ::all-npcs-have-dialogue))
 
@@ -119,13 +119,11 @@
   (when @texture-atlas
     (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
 
-(defn draw-level [ctx level]
-  (let [cols (count (first level))
-        rows (count level)]
-    (doseq [x (range 0 rows)
-            y (range 0 cols)
-            :let [texture (get-in level [x y])]]
-      (draw-texture ctx texture (tile->coord [x y])))))
+(defn draw-background [ctx dimension background]
+  (doseq [x (range (rect-width dimension))
+          y (range (rect-height dimension))
+          :let [texture (get background [x y])]]
+    (draw-texture ctx texture (tile->coord [x y]))))
 
 (defn draw-player [ctx player]
   (draw-texture ctx :player player))
@@ -141,7 +139,7 @@
   (c/stroke-rect! ctx highlight-coord tile-size tile-size)
   (c/restore! ctx))
 
-(defn draw-path [ctx {:keys [level highlight] {:keys [position]} :player}]
+(defn draw-path [ctx {:keys [highlight] {:keys [position]} :player}]
   (if highlight
     (doseq [path-tile (path/a-star
                         walkable?
@@ -297,8 +295,13 @@
 
 ;; Game Loop
 
-(defn start-game [level-context entity-context data]
-  (reset! state (merge initial-game-state data))
+(defn start-game [background-context entity-context data]
+  (reset! state (merge initial-game-state (select-keys data
+                                                       [:npcs
+                                                        :walk-set
+                                                        :infos
+                                                        :lines
+                                                        :dialogues])))
   (reset! move-q #queue [])
   (reset! ctx entity-context)
   (let [input-chan (chan)
@@ -319,8 +322,10 @@
     (load-textures (fn [loaded-atlas]
                      (reset! texture-atlas loaded-atlas)
 
-                     (c/clear! level-context)
-                     (draw-level level-context (:level @state))
+                     (c/clear! background-context)
+                     (draw-background background-context
+                                      (:dimension data)
+                                      (:background data))
 
                      (start-input-loop input-chan)
                      (start-animation-loop animation-chan)
