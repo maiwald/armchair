@@ -41,12 +41,9 @@
   (let [items (get db resource-type)]
     (+ 1 (reduce max 0 (keys items)))))
 
-(defn with-new-position [func]
-  (fn [db ctx]
-    (let [position-id (new-id db :positions)]
-      (func (assoc-in db [:positions position-id] [20 20])
-            position-id
-            ctx))))
+(defn generate-position [db]
+  (let [position-id (new-id db :positions)]
+    [(assoc-in db [:positions position-id] [20 20]) position-id]))
 
 ;; Character CRUD
 
@@ -75,16 +72,16 @@
 (reg-event-db
   :create-location
   [spec-interceptor]
-  (with-new-position
-    (fn [db position-id]
-      (let [id (new-id db :locations)]
-        (assoc-in db [:locations id] {:id id
-                                      :dimension [[0 0] [2 2]]
-                                      :background #{}
-                                      :walk-set #{}
-                                      :connection-triggers #{}
-                                      :display-name (str "location #" id)
-                                      :position-id position-id})))))
+  (fn [db]
+    (let [[new-db position-id] (generate-position db)
+          id (new-id db :locations)]
+      (assoc-in new-db [:locations id] {:id id
+                                        :dimension [[0 0] [2 2]]
+                                        :background #{}
+                                        :walk-set #{}
+                                        :connection-triggers #{}
+                                        :display-name (str "location #" id)
+                                        :position-id position-id}))))
 
 ;; Location CRUD
 
@@ -110,28 +107,28 @@
 (reg-event-db
   :create-npc-line
   [spec-interceptor]
-  (with-new-position
-    (fn [db position-id [_ dialogue-id]]
-      (let [id (new-id db :lines)]
-        (assoc-in db [:lines id] {:id id
-                                  :kind :npc
-                                  :character-id nil
-                                  :dialogue-id dialogue-id
-                                  :position-id position-id
-                                  :text nil
-                                  :next-line-id nil})))))
+  (fn [db [_ dialogue-id]]
+    (let [[new-db position-id] (generate-position db)
+          id (new-id db :lines)]
+      (assoc-in new-db [:lines id] {:id id
+                                    :kind :npc
+                                    :character-id nil
+                                    :dialogue-id dialogue-id
+                                    :position-id position-id
+                                    :text nil
+                                    :next-line-id nil}))))
 
 (reg-event-db
   :create-player-line
   [spec-interceptor]
-  (with-new-position
-    (fn [db position-id [_ dialogue-id]]
-      (let [id (new-id db :lines)]
-        (assoc-in db [:lines id] {:id id
-                                  :kind :player
-                                  :dialogue-id dialogue-id
-                                  :position-id position-id
-                                  :options []})))))
+  (fn [db [_ dialogue-id]]
+    (let [[new-db position-id] (generate-position db)
+          id (new-id db :lines)]
+      (assoc-in new-db [:lines id] {:id id
+                                    :kind :player
+                                    :dialogue-id dialogue-id
+                                    :position-id position-id
+                                    :options []}))))
 
 (defn initial-line? [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
@@ -428,25 +425,25 @@
 (reg-event-db
   :create-dialogue
   [spec-interceptor]
-  (with-new-position
-    (fn [db position-id]
-      (let [dialogue-id (new-id db :dialogues)
-            line-id (new-id db :lines)
-            modal-data (get-in db [:modal :dialogue-creation])]
-        (-> db
-            (assoc-in [:dialogues dialogue-id] (merge {:id dialogue-id
-                                                       :initial-line-id line-id}
-                                                      (select-keys modal-data [:location-id
-                                                                               :character-id
-                                                                               :description])))
-            (assoc-in [:lines line-id] {:id line-id
-                                        :kind :npc
-                                        :character-id (:character-id modal-data)
-                                        :dialogue-id dialogue-id
-                                        :position-id position-id
-                                        :text nil
-                                        :next-line-id nil})
-            (dissoc :modal))))))
+  (fn [db]
+    (let [[new-db position-id] (generate-position db)
+          dialogue-id (new-id db :dialogues)
+          line-id (new-id db :lines)
+          modal-data (get-in db [:modal :dialogue-creation])]
+      (-> new-db
+          (assoc-in [:dialogues dialogue-id] (merge {:id dialogue-id
+                                                     :initial-line-id line-id}
+                                                    (select-keys modal-data [:location-id
+                                                                             :character-id
+                                                                             :description])))
+          (assoc-in [:lines line-id] {:id line-id
+                                      :kind :npc
+                                      :character-id (:character-id modal-data)
+                                      :dialogue-id dialogue-id
+                                      :position-id position-id
+                                      :text nil
+                                      :next-line-id nil})
+          (dissoc :modal)))))
 
 (reg-event-db
   :delete-dialogue
