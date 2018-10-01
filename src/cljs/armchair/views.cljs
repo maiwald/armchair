@@ -7,9 +7,9 @@
             [armchair.slds :as slds]
             [armchair.util :refer [translate-position]]
             [armchair.config :as config]
-            [armchair.routes :refer [routes]]
+            [armchair.routes :refer [routes >navigate]]
             [armchair.textures :refer [character-textures]]
-            [bidi.bidi :refer [match-route path-for]]
+            [bidi.bidi :refer [match-route]]
             [clojure.core.async :refer [put!]]))
 
 ;; Helpers
@@ -43,15 +43,6 @@
 
 (def left-button? #(zero? (.-button %)))
 
-;; Navigation / History
-
-(set! (.-onpopstate js/window)
-      (fn [e] (>evt [:show-page (subs js/location.hash 1)])))
-
-(defn >navigate [& args]
-  (let [url (apply path-for (into [routes] args))]
-    (js/history.pushState #js{} "" (str "#" url))
-    (>evt [:show-page url])))
 
 ;; Drag & Drop
 

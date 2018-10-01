@@ -1,5 +1,9 @@
 (ns armchair.routes
-  (:require [bidi.bidi :refer [path-for]]))
+  (:require [re-frame.core :refer [dispatch]]
+            [bidi.bidi :refer [path-for]]))
+
+(set! (.-onpopstate js/window)
+      (fn [e] (dispatch [:show-page (subs js/location.hash 1)])))
 
 (def routes
   ["/" [["game" :game]
@@ -11,3 +15,8 @@
         ["infos" :infos]]])
 
 (def root (str "#" (path-for routes :game)))
+
+(defn >navigate [& args]
+  (let [url (apply path-for (into [routes] args))]
+    (js/history.pushState #js{} "" (str "#" url))
+    (dispatch [:show-page url])))
