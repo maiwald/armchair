@@ -353,17 +353,17 @@
                           :value description}]]])
 
 (defn npc-line-form-modal [line-id]
-  (let [line (<sub [:line line-id])
-        update-handler (fn [field] #(>evt [:update-line line-id field (e->val %)]))]
+  (let [line (<sub [:line line-id])]
     [slds/modal {:title (str "Line #" line-id)
                  :close-handler #(>evt [:close-modal])}
      [slds/form
       [slds/input-select {:label "Character"
-                          :on-change (update-handler :character-id)
+                          :disabled (:initial-line? line)
+                          :on-change #(>evt [:update-line line-id :character-id (int (e->val %))])
                           :options (<sub [:character-options])
                           :value (:character-id line)}]
       [slds/input-textarea {:label "Text"
-                            :on-change (update-handler :text)
+                            :on-change #(>evt [:update-line line-id :text (e->val %)])
                             :value (:text line)}]
       [slds/multi-select {:label "Infos"
                           :options (clj->js (<sub [:info-options]))

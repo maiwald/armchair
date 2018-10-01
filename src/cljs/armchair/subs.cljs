@@ -42,8 +42,10 @@
 (reg-sub
   :line
   :<- [:db-lines]
-  (fn [lines [_ line-id]]
-    (lines line-id)))
+  :<- [:db-dialogues]
+  (fn [[lines dialogues] [_ line-id]]
+    (when-let [{:keys [id dialogue-id] :as line} (get lines line-id)]
+      (assoc line :initial-line? (= id (get-in dialogues [dialogue-id :initial-line-id]))))))
 
 (reg-sub
   :info-list

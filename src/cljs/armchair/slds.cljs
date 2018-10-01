@@ -24,7 +24,7 @@
    (into [:div {:class "slds-form-element__control"}]
          children)])
 
-(defn input-select [{:keys [label on-change value options]}]
+(defn input-select [{:keys [label disabled on-change value options]}]
   (let [id (gensym "input-select")]
     [:div {:class "slds-form-element"}
      [:label {:class "slds-form-element__label" :for id} label]
@@ -33,6 +33,7 @@
        [:select {:class "slds-select"
                  :id id
                  :on-change on-change
+                 :disabled disabled
                  :value (or value "nil")}
         [:option {:key (str id "nil") :value "nil" :disabled "disabled"}]
         (for [[option option-label] options]

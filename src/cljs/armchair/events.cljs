@@ -133,20 +133,24 @@
                                   :position-id position-id
                                   :options []})))))
 
+(defn initial-line? [db line-id]
+  (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
+    (= line-id (get-in db [:dialogues dialogue-id :initial-line-id]))))
+
 (reg-event-db
   :update-line
   [spec-interceptor]
   (fn [db [_ id field value]]
-    (let [newValue (case field
-                     :character-id (int value)
-                     value)]
-      (assoc-in db [:lines id field] newValue))))
+    (assert (not (and (= field :character-id)
+                      (initial-line? db id)))
+            "Cannot modify initial line's character!")
+    (assoc-in db [:lines id field] value)))
 
 (reg-event-db
   :delete-line
   [spec-interceptor]
   (fn [db [_ id]]
-    (assert (not (contains? (->> db :dialogues vals (map :initial-line-id) set) id))
+    (assert (not (initial-line? db id))
             "Initial lines cannot be deleted!")
     (letfn [(clear-line [line]
               (update line :next-line-id #(if (= id %) nil %)))
