@@ -104,7 +104,7 @@
 (s/def ::lines (s/and ::entity-map
                       (s/map-of ::line-id ::npc-or-player-line)))
 
-(s/def ::dialogue (s/keys :req-un [::id ::initial-line-id ::location-id]
+(s/def ::dialogue (s/keys :req-un [::id ::character-id ::initial-line-id ::location-id]
                           :opt-un [::description]))
 (s/def ::dialogues (s/and ::entity-map
                           (s/map-of ::dialogue-id ::dialogue)))
@@ -191,8 +191,8 @@
    :location-connections #{#{1 2}}
    :characters {1 {:id 1 :display-name "Hugo" :color "rgba(255, 0, 0, .6)" :texture :hugo}
                 3 {:id 3 :display-name "Gustav" :color "rgba(92, 154, 9, 0.8)" :texture :gustav}}
-   :dialogues {1 {:id 1 :description "Hugo's Dialogue" :initial-line-id 1 :location-id 1}
-               2 {:id 2 :description "Gustav's Dialogue" :initial-line-id 14 :location-id 1}}
+   :dialogues {1 {:id 1 :description "Hugo's Dialogue" :character-id 1 :initial-line-id 1 :location-id 1}
+               2 {:id 2 :description "Gustav's Dialogue" :character-id 3 :initial-line-id 14 :location-id 1}}
    :infos {1 {:id 1 :description "Hugo's Name is Hugo"}}
    :lines {1 {:id 1
               :kind :npc

@@ -436,7 +436,9 @@
         (-> db
             (assoc-in [:dialogues dialogue-id] (merge {:id dialogue-id
                                                        :initial-line-id line-id}
-                                                      (select-keys modal-data [:location-id :description])))
+                                                      (select-keys modal-data [:location-id
+                                                                               :character-id
+                                                                               :description])))
             (assoc-in [:lines line-id] {:id line-id
                                         :kind :npc
                                         :character-id (:character-id modal-data)
