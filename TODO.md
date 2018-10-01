@@ -16,6 +16,3 @@
 - copy and paste for background texture sets
 - organize and cluster background textures
 - prevent placing npcs on taken/non-walkable tiles
-
-# DONE
-- allow extending/shrinking level
