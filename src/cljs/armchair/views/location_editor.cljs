@@ -139,8 +139,8 @@
 
 (defn do-all-tiles [[[x1 y1] [x2 y2] :as rect] layer-title f]
   [:div {:class "level-layer"}
-   (for [x (range x1 x2)
-         y (range y1 y2)
+   (for [x (range x1 (inc x2))
+         y (range y1 (inc y2))
          :let [tile [x y]]]
      [:div {:key (str "location-cell:" layer-title ":" tile)
             :class "level-layer__tile"

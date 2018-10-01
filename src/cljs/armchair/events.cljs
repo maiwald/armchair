@@ -79,6 +79,10 @@
     (fn [db position-id]
       (let [id (new-id db :locations)]
         (assoc-in db [:locations id] {:id id
+                                      :dimension [[0 0] [2 2]]
+                                      :background #{}
+                                      :walk-set #{}
+                                      :connection-triggers #{}
                                       :display-name (str "location #" id)
                                       :position-id position-id})))))
 

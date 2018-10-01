@@ -2,10 +2,10 @@
   (:require [clojure.set :refer [intersection]]))
 
 (defn rect-width [[[x1 _] [x2 _]]]
-  (- x2 x1))
+  (inc (- x2 x1)))
 
 (defn rect-height [[[_ y1] [_ y2]]]
-  (- y2 y1))
+  (inc (- y2 y1)))
 
 (defn rect-contains? [[[x1 y1] [x2 y2]] [x y]]
   (and (<= x1 x x2)

@@ -1,6 +1,5 @@
 # TODO
-- level editor
-  - placed characters may get a dialogue
+- placed characters may get a dialogue
 - undo
 - make location changes work
 - saving state
