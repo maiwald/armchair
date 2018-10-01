@@ -27,7 +27,7 @@
 (reg-event-db
   :reset-db
   [spec-interceptor]
-  (fn [db _]
+  (fn [db]
     (merge db (select-keys db/default-db [:positions
                                           :characters
                                           :dialogues
@@ -251,7 +251,7 @@
 (reg-event-db
   :unset-highlight
   [spec-interceptor]
-  (fn [db _]
+  (fn [db]
     (update db :location-editor dissoc :highlight)))
 
 (reg-event-db
@@ -263,7 +263,7 @@
 (reg-event-db
   :stop-entity-drag
   [spec-interceptor]
-  (fn [db _]
+  (fn [db]
     (dissoc db :dnd-payload)))
 
 (reg-event-db
@@ -316,7 +316,7 @@
 (reg-event-db
   :stop-painting
   [spec-interceptor]
-  (fn [db _]
+  (fn [db]
     (assoc-in db [:location-editor :painting?] false)))
 
 (reg-event-db
@@ -467,7 +467,7 @@
 (reg-event-db
   :abort-connecting
   [spec-interceptor]
-  (fn [db _] (dissoc db :connecting)))
+  (fn [db] (dissoc db :connecting)))
 
 (reg-event-db
   :start-dragging
@@ -481,7 +481,7 @@
 (reg-event-db
   :end-dragging
   [spec-interceptor]
-  (fn [{:keys [dragging pointer] :as db} _]
+  (fn [{:keys [dragging pointer] :as db}]
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
     (let [{:keys [start-position position-ids]} dragging
