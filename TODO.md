@@ -1,6 +1,8 @@
 # TODO
 - placed characters may get a dialogue
+  - each character/location combination must only occur once
 - undo
+  - make modal changes apply on submit
 - make location changes work
 - saving state
 - get it to benni!
@@ -10,7 +12,6 @@
 - moving camera for prototype
 
 # nice things
-- list of all dialogues
 - enable double click for editing lines
 - default to intial line's character when adding character lines
 - copy and paste for background texture sets
