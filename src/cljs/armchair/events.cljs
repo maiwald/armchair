@@ -8,9 +8,8 @@
                                    filter-keys
                                    map-keys
                                    map-values
-                                   translate-position
+                                   translate-point
                                    translate-positions
-                                   position-delta
                                    rect-contains?]]))
 
 (def spec-interceptor (after (fn [db]
@@ -339,7 +338,7 @@
                                       :right [1 [-1 0]]
                                       :down [1 [0 -1]])
           new-dimension (update (get-in db [:locations location-id :dimension])
-                                shift-index translate-position shift-delta)
+                                shift-index translate-point shift-delta)
           in-bounds? (partial rect-contains? new-dimension)
           remove-oob (fn [coll] (filter-keys in-bounds? coll))]
       (update-in db [:locations location-id]
@@ -364,7 +363,7 @@
                      location-id
                      :dimension
                      shift-index]
-                 translate-position shift-delta))))
+                 translate-point shift-delta))))
 
 ;; Modal
 
@@ -475,22 +474,22 @@
 ;; Mouse, Drag & Drop
 
 (reg-event-db
-  :move-pointer
+  :move-cursor
   [spec-interceptor]
-  (fn [db [_ position]]
-    (assoc db :pointer position)))
+  (fn [db [_ cursor]]
+    (assoc db :cursor cursor)))
 
 (reg-event-db
   :start-connecting-lines
   [spec-interceptor]
-  (fn [db [_ line-id position index]]
+  (fn [db [_ line-id cursor index]]
     (assert (not (contains? db :connecting))
             "Attempting to start connecting lines while already in progress!")
     (assoc db
-           :connecting (cond-> {:start-position position
+           :connecting (cond-> {:cursor-start cursor
                                 :line-id line-id}
                          (some? index) (assoc :index index))
-           :pointer position)))
+           :cursor cursor)))
 
 (reg-event-db
   :end-connecting-lines
@@ -502,19 +501,19 @@
           id-path (if-let [index (get-in db [:connecting :index])]
                     [:lines start-id :options index :next-line-id]
                     [:lines start-id :next-line-id])]
-      (cond-> (dissoc db :connecting :pointer)
+      (cond-> (dissoc db :connecting :cursor)
         (not= start-id end-id) (assoc-in id-path end-id)))))
 
 (reg-event-db
   :start-connecting-locations
   [spec-interceptor]
-  (fn [db [_ location-id position]]
+  (fn [db [_ location-id cursor]]
     (assert (not (contains? db :connecting))
             "Attempting to start connecting locations while already in progress!")
     (assoc db
-           :connecting {:start-position position
+           :connecting {:cursor-start cursor
                         :location-id location-id}
-           :pointer position)))
+           :cursor cursor)))
 
 (reg-event-db
   :end-connecting-locations
@@ -523,7 +522,7 @@
     (assert (some? (:connecting db))
             "Attempting to end connecting while not in progress!")
     (let [start-id (get-in db [:connecting :location-id])
-          new-db (dissoc db :connecting :pointer)]
+          new-db (dissoc db :connecting :cursor)]
       (if-not (= start-id end-id)
         (update new-db :location-connections conj #{start-id end-id})
         new-db))))
@@ -537,20 +536,20 @@
 (reg-event-db
   :start-dragging
   [spec-interceptor]
-  (fn [db [_ position-ids position]]
+  (fn [db [_ position-ids cursor]]
     (cond-> db
       (not (contains? db :dragging)) (assoc :dragging {:position-ids position-ids
-                                                       :start-position position}
-                                            :pointer position))))
+                                                       :cursor-start cursor}
+                                            :cursor cursor))))
 
 (reg-event-db
   :end-dragging
   [spec-interceptor]
-  (fn [{:keys [dragging pointer] :as db}]
+  (fn [{:keys [dragging cursor] :as db}]
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
-    (let [{:keys [start-position position-ids]} dragging
-          delta (position-delta start-position pointer)]
+    (let [{:keys [cursor-start position-ids]} dragging
+          delta (translate-point cursor cursor-start -)]
       (-> db
           (update :positions translate-positions position-ids delta)
-          (dissoc :dragging :pointer)))))
+          (dissoc :dragging :cursor)))))

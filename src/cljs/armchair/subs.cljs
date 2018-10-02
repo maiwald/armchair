@@ -9,7 +9,7 @@
                                    map-keys
                                    map-values
                                    rect->0
-                                   position-delta
+                                   translate-point
                                    translate-positions]]))
 
 (reg-sub :db-characters #(:characters %))
@@ -22,7 +22,7 @@
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-connecting #(:connecting %))
 (reg-sub :db-positions #(:positions %))
-(reg-sub :db-pointer #(:pointer %))
+(reg-sub :db-cursor #(:cursor %))
 
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
@@ -93,21 +93,21 @@
 (reg-sub
   :connector
   :<- [:db-connecting]
-  :<- [:db-pointer]
-  (fn [[connecting pointer]]
+  :<- [:db-cursor]
+  (fn [[connecting cursor]]
     (when connecting
-      {:start (:start-position connecting)
-       :end pointer
+      {:start (:cursor-start connecting)
+       :end cursor
        :kind :connector})))
 
 (reg-sub
   :dragged-positions
   :<- [:db-dragging]
   :<- [:db-positions]
-  :<- [:db-pointer]
-  (fn [[dragging positions pointer]]
-    (if-let [{:keys [position-ids start-position]} dragging]
-      (translate-positions positions position-ids (position-delta start-position pointer))
+  :<- [:db-cursor]
+  (fn [[dragging positions cursor]]
+    (if-let [{:keys [position-ids cursor-start]} dragging]
+      (translate-positions positions position-ids (translate-point cursor cursor-start -))
       positions)))
 
 (reg-sub
@@ -206,7 +206,7 @@
   (fn [[locations connections] [_ location-id]]
     (let [other-location-ids (for [connection connections
                                    :when (contains? connection location-id)]
-                                 (first (disj connection location-id)))]
+                               (first (disj connection location-id)))]
       (select-keys locations other-location-ids))))
 
 (reg-sub

@@ -8,7 +8,7 @@
             [armchair.util :refer [map-values
                                    rect-width
                                    rect-height
-                                   translate-position]]
+                                   translate-point]]
             [armchair.pathfinding :as path]))
 
 ;; Definitions
@@ -20,7 +20,8 @@
                     :left [-1 0]
                     :right [1 0]})
 
-(s/def ::position (s/tuple number? number?))
+(s/def ::point (s/tuple number? number?))
+(s/def ::position ::point)
 (s/def ::direction #{:up :down :left :right})
 (s/def ::texture #(contains? texture-set %))
 (s/def ::line-id pos-int?)
@@ -32,12 +33,12 @@
 (s/def ::infos (s/coll-of pos-int? :kind set?))
 (s/def ::player (s/keys :req-un [::position ::direction ::infos]))
 
-(s/def ::background (s/map-of ::position ::texture))
+(s/def ::background (s/map-of ::point ::texture))
 
 (s/def ::display-name string?)
 (s/def ::character (s/keys :req-un [::display-name ::texture]))
-(s/def ::npcs (s/map-of ::position ::character))
-(s/def ::highlight ::position)
+(s/def ::npcs (s/map-of ::point ::character))
+(s/def ::highlight ::point)
 
 (s/def ::all-npcs-have-dialogue (fn [{:keys [npcs dialogues]}]
                                   (= (set (map #(:id (second %)) npcs))
@@ -72,7 +73,7 @@
          (not (contains? npcs tile)))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
-  (translate-position
+  (translate-point
     (coord->tile position)
     (direction-map direction)))
 
@@ -168,16 +169,16 @@
     (c/set-fill-style! ctx "rgb(0, 0, 0)")
     (c/set-font! ctx "40px serif")
     (c/set-baseline! ctx "top")
-    (c/draw-text! ctx "Dialogue!" (translate-position [x y] [20 20]))
+    (c/draw-text! ctx "Dialogue!" (translate-point [x y] [20 20]))
     (c/set-font! ctx "18px serif")
-    (c/draw-textbox! ctx text (translate-position [x y] [20 70]) (- w 40) 230)
+    (c/draw-textbox! ctx text (translate-point [x y] [20 70]) (- w 40) 230)
 
     (c/set-baseline! ctx "middle")
     (doseq [[idx option] (map-indexed vector options)]
       (let [w (- w 40)
             h 24
             offset 6
-            coord (translate-position [x y] [20 (+ 220 (* idx (+ offset h)))])]
+            coord (translate-point [x y] [20 (+ 220 (* idx (+ offset h)))])]
         (c/set-fill-style! ctx "rgba(0, 0, 0, .2)")
         (c/fill-rect! ctx coord w h)
 
@@ -188,7 +189,7 @@
         (c/stroke-rect! ctx coord w h)
 
         (c/set-fill-style! ctx "rgb(0, 0, 0)")
-        (c/draw-text! ctx option (translate-position coord [2 (/ h 2)]))))
+        (c/draw-text! ctx option (translate-point coord [2 (/ h 2)]))))
     (c/restore! ctx)))
 
 (defn render [view-state]
@@ -218,7 +219,7 @@
         :else))
     (swap! move-q conj direction)))
 
-(defn handle-cursor-position [coord]
+(defn handle-cursor [coord]
   (if coord
     (swap! state assoc :highlight (normalize-to-tile coord))
     (swap! state dissoc :highlight)))
@@ -239,7 +240,7 @@
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
            (let [handler (case cmd
-                           :cursor-position handle-cursor-position
+                           :cursor-position handle-cursor
                            :move handle-move
                            :interact handle-interact
                            identity)]
@@ -286,7 +287,7 @@
   (go-loop [_ (<! channel)]
            (when-let [direction (first @move-q)]
              (let [position-delta (direction-map direction)
-                   new-position (translate-position (coord->tile (get-in @state [:player :position])) position-delta)]
+                   new-position (translate-point (coord->tile (get-in @state [:player :position])) position-delta)]
                (swap! state assoc-in [:player :direction] direction)
                (if (walkable? new-position)
                  (animate-move new-position channel)

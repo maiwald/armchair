@@ -5,7 +5,7 @@
             [armchair.game :refer [start-game end-game]]
             [armchair.views.location-editor :refer [location-editor]]
             [armchair.slds :as slds]
-            [armchair.util :refer [translate-position]]
+            [armchair.util :refer [translate-point]]
             [armchair.config :as config]
             [armchair.routes :refer [routes >navigate]]
             [armchair.textures :refer [character-textures]]
@@ -31,15 +31,15 @@
       "checkbox" (.-checked target)
       (.-value target))))
 
-(defn relative-pointer [e elem]
+(defn relative-cursor [e elem]
   (let [rect (.getBoundingClientRect elem)]
     [(- (.-clientX e) (.-left rect))
      (- (.-clientY e) (.-top rect))]))
 
-(defn e->graph-pointer [e]
-  (relative-pointer e (-> js/document
-                          (.getElementsByClassName "graph")
-                          (aget 0))))
+(defn e->graph-cursor [e]
+  (relative-cursor e (-> js/document
+                         (.getElementsByClassName "graph")
+                         (aget 0))))
 
 (def left-button? #(zero? (.-button %)))
 
@@ -48,7 +48,7 @@
 
 (defn start-dragging-handler [position-ids]
   (e-> #(when (left-button? %)
-          (>evt [:start-dragging position-ids (e->graph-pointer %)]))))
+          (>evt [:start-dragging position-ids (e->graph-cursor %)]))))
 
 (defn connection [{:keys [kind start end]}]
   [:line {:class ["graph__connection"
@@ -77,7 +77,7 @@
                     connecting? (conj "graph_is-connecting"))
            :on-mouse-down (start-dragging-handler position-ids)
            :on-mouse-move (e-> #(when (or dragging? connecting?)
-                                  (>evt [:move-pointer (e->graph-pointer %)])))
+                                  (>evt [:move-cursor (e->graph-cursor %)])))
            :on-mouse-up (e-> #(cond
                                 connecting? (>evt [:abort-connecting])
                                 dragging? (>evt [:end-dragging])))}
@@ -117,7 +117,7 @@
       [:p text]
       [:div {:class "action action_connect"
              :on-mouse-down (e-> #(when (left-button? %)
-                                    (>evt [:start-connecting-lines id (e->graph-pointer %)])))}
+                                    (>evt [:start-connecting-lines id (e->graph-cursor %)])))}
        [icon "project-diagram" "Connect"]]]]))
 
 (defn player-line-component [{:keys [id initial-line? options]}]
@@ -147,7 +147,7 @@
                        (:text option)]
                       [:div {:class "action action_connect"
                              :on-mouse-down (e-> #(when (left-button? %)
-                                                    (>evt [:start-connecting-lines id (e->graph-pointer %) index])))}
+                                                    (>evt [:start-connecting-lines id (e->graph-cursor %) index])))}
                        [icon "project-diagram" "Connect"]]])
                    options)]]))
 
@@ -157,15 +157,15 @@
     :player [player-line-component line]))
 
 (defn npc-connection [start-position end-position]
-  [connection {:start (translate-position start-position [(- config/line-width 15) (+ 33 (/ config/line-height 2))])
-               :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
+  [connection {:start (translate-point start-position [(- config/line-width 15) (+ 33 (/ config/line-height 2))])
+               :end (translate-point end-position [15 (+ 33 (/ config/line-height 2))])}])
 
 (defn player-connection [start-position index end-position]
-  [connection {:start (translate-position start-position [(- config/line-width 15)
+  [connection {:start (translate-point start-position [(- config/line-width 15)
                                                           (+ 33
                                                              (/ config/line-height 2)
                                                              (* index config/line-height))])
-               :end (translate-position end-position [15 (+ 33 (/ config/line-height 2))])}])
+               :end (translate-point end-position [15 (+ 33 (/ config/line-height 2))])}])
 
 (defn dialogue-editor [dialogue-id]
   (if-let [{:keys [lines npc-connections player-connections]} (<sub [:dialogue dialogue-id])]
@@ -253,7 +253,7 @@
         [icon "edit" "Edit"]]
        [:li {:class "action action_connect"
              :on-mouse-down (e-> #(when (left-button? %)
-                                    (>evt [:start-connecting-locations id (e->graph-pointer %)])))}
+                                    (>evt [:start-connecting-locations id (e->graph-cursor %)])))}
         [icon "project-diagram" "Connect"]]]]
      [:ul {:class "location__characters"}
       (for [dialogue dialogues]
@@ -264,8 +264,8 @@
           (:character-name dialogue)]])]]))
 
 (defn location-connection [start end]
-  [connection {:start (translate-position start [(/ config/line-width 2) 15])
-               :end (translate-position end [(/ config/line-width 2) 15])}])
+  [connection {:start (translate-point start [(/ config/line-width 2) 15])
+               :end (translate-point end [(/ config/line-width 2) 15])}])
 
 (defn location-management []
   (let [{:keys [locations connections]} (<sub [:location-map])
@@ -324,10 +324,10 @@
            [:canvas {:height 450
                      :width 800
                      :ref (fn [el] (reset! background-canvas el))}]
-           [:canvas {:on-mouse-move #(let [c (relative-pointer % @entity-canvas)]
+           [:canvas {:on-mouse-move #(let [c (relative-cursor % @entity-canvas)]
                                        (put! @game-input [:cursor-position c]))
                      :on-mouse-out #(put! @game-input [:cursor-position nil])
-                     :on-click #(let [c (relative-pointer % @entity-canvas)]
+                     :on-click #(let [c (relative-cursor % @entity-canvas)]
                                   (put! @game-input [:animate c]))
                      :height 450
                      :width 800

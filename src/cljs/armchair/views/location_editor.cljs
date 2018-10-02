@@ -1,7 +1,7 @@
 (ns armchair.views.location-editor
   (:require [armchair.slds :as slds]
             [armchair.config :as config]
-            [armchair.util :refer [rect->0 rect-width rect-height once translate-position]]
+            [armchair.util :refer [rect->0 rect-width rect-height once]]
             [armchair.textures :refer [texture-path background-textures]]))
 
 ;; Helpers

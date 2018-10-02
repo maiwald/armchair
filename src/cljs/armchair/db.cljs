@@ -9,34 +9,37 @@
 
 (s/def ::id pos-int?)
 (s/def ::text #(not (string/blank? %)))
-(s/def ::position (s/tuple integer? integer?))
-(s/def ::rect (s/and (s/tuple ::position ::position)
-                          (fn [[[x1 y1] [x2 y2]]] (and (< x1 x2)
-                                                       (< y1 y2)))))
+(s/def ::point (s/tuple integer? integer?))
+(s/def ::rect (s/and (s/tuple ::point ::point)
+                     (fn [[[x1 y1] [x2 y2]]] (and (< x1 x2)
+                                                  (< y1 y2)))))
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:id v)))))
 (s/def ::undirected-connection (s/coll-of ::id :kind set? :count 2))
 (s/def ::texture (s/nilable #(contains? texture-set %)))
 
+(s/def ::cursor ::point)
+(s/def ::position ::point)
+
 ;; UI State
 
-(s/def ::pointer ::position)
-(s/def ::position-ids (s/coll-of ::position-id))
+(s/def ::positions (s/map-of ::position-id ::position))
 
-(s/def ::start-position ::position)
-(s/def ::connecting-lines (s/keys :req-un [::start-position ::line-id]
+(s/def ::cursor-start ::point)
+(s/def ::connecting-lines (s/keys :req-un [::cursor-start ::line-id]
                                   :opt-un [::index]))
-(s/def ::connecting-locations (s/keys :req-un [::start-position ::location-id]))
+(s/def ::connecting-locations (s/keys :req-un [::cursor-start ::location-id]))
 (s/def ::connecting (s/or :lines ::connecting-lines
                           :locations ::connecting-locations))
 
-(s/def ::dragging (s/keys :req-un [::start-position ::position-ids]))
+(s/def ::position-ids (s/coll-of ::position-id))
+(s/def ::dragging (s/keys :req-un [::cursor-start ::position-ids]))
 (s/def ::current-page (s/nilable string?))
 
 ;; Location Editor
 
 (s/def ::painting? boolean?)
 (s/def ::tool #{:npcs-select :resize :collision :background-painter :connection-select})
-(s/def ::highlight ::position)
+(s/def ::highlight ::point)
 (s/def ::active-texture ::texture)
 (s/def ::location-editor (s/keys :req-un [::tool
                                           ::painting?
@@ -57,10 +60,10 @@
 (s/def ::color ::text)
 
 (s/def ::dimension ::rect)
-(s/def ::background (s/map-of ::position ::texture))
-(s/def ::walk-set (s/coll-of ::position :kind set?))
-(s/def ::connection-triggers (s/map-of ::position ::location-id))
-(s/def ::npcs (s/map-of ::position ::character-id))
+(s/def ::background (s/map-of ::point ::texture))
+(s/def ::walk-set (s/coll-of ::point :kind set?))
+(s/def ::connection-triggers (s/map-of ::point ::location-id))
+(s/def ::npcs (s/map-of ::point ::character-id))
 (s/def ::location (s/keys :req-un [::id
                                    ::dimension
                                    ::display-name
@@ -144,6 +147,7 @@
                       ::player-options-must-not-point-to-player-line
                       ::location-connection-validation
                       (s/keys :req-un [::current-page
+                                       ::positions
                                        ::characters
                                        ::dialogues
                                        ::lines
@@ -153,7 +157,7 @@
                                        ::location-connections]
                               :opt-un [::connecting
                                        ::dragging
-                                       ::pointer
+                                       ::cursor
                                        ::modal])))
 
 (def default-db

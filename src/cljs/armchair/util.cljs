@@ -11,23 +11,19 @@
   (and (<= x1 x x2)
        (<= y1 y y2)))
 
-(defn position-delta [[start-x start-y] [current-x current-y]]
-  [(- current-x start-x)
-   (- current-y start-y)])
+(defn translate-point
+  ([point delta] (translate-point point delta +))
+  ([point delta f] (if (= delta [0 0])
+                        point
+                        (mapv f point delta))))
 
-(defn translate-position
-  ([position delta] (translate-position position delta +))
-  ([position delta f] (if (= delta [0 0])
-                        position
-                        (mapv f position delta))))
-
-(defn rect->0 [[top-left _] position]
-  "Normalize a position relative to a rect to a 0,0 based rect"
-  (translate-position position top-left -))
+(defn rect->0 [[top-left _] point]
+  "Normalize a point relative to a rect to a 0,0 based rect"
+  (translate-point point top-left -))
 
 (defn translate-positions [positions ids delta]
   (let [relevant-ids (intersection (-> positions keys set) ids)]
-    (reduce #(update %1 %2 translate-position delta) positions relevant-ids)))
+    (reduce #(update %1 %2 translate-point delta) positions relevant-ids)))
 
 (defn map-values [f m]
   (into {} (for [[k v] m] [k (f v)])))
