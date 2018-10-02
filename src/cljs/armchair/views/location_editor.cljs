@@ -170,11 +170,7 @@
   (do-some-tiles rect connection-triggers "connection-trigger"
                  (fn [tile {:keys [id display-name]}]
                    [:img {:src (texture-path :marker)
-                          :title (str "to " display-name)
-                          :draggable true
-                          :on-drag-start (fn [e]
-                                           (set-drag-texture! e :marker)
-                                           (>evt [:start-entity-drag {:connection-trigger id}]))}])))
+                          :title (str "to " display-name)}])))
 
 (defn location-editor-canvas [location-id]
   (let [{:keys [dimension background npcs walk-set connection-triggers]} (<sub [:location location-id])
