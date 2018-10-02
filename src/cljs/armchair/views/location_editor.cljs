@@ -31,11 +31,18 @@
 
 ;; Location Editor
 
-(defn set-drag-texture! [e texture]
+(defn dnd-texture [texture]
+  [:div.dnd-texture
+   [:img {:src (texture-path texture)
+          :style {:height (str config/tile-size "px")
+                  :width (str config/tile-size "px")
+                  :max-width (str config/tile-size "px")
+                  :max-height (str config/tile-size "px")}}]])
+
+(defn set-dnd-texture! [e]
   (let [offset (/ config/tile-size 2)
-        image (js/Image.)]
-    (set! (.-src image) (texture-path texture))
-    (-> e .-dataTransfer (.setDragImage image offset offset))))
+        image (.querySelector (.-currentTarget e) ".dnd-texture img")]
+    (.setDragImage (.-dataTransfer e) image offset offset)))
 
 (defn location-editor-sidebar-paint [location-id]
   (let [{active-texture :active-texture} (<sub [:location-editor-data])]
@@ -76,8 +83,9 @@
               :class "tile-list__item"
               :draggable true
               :on-drag-start (fn [e]
-                               (set-drag-texture! e texture)
+                               (set-dnd-texture! e)
                                (>evt [:start-entity-drag {:entity character-id}]))}
+         [dnd-texture texture]
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
                          :height (str config/tile-size "px")}}
@@ -102,8 +110,9 @@
             :class "tile-list__item"
             :draggable true
             :on-drag-start (fn [e]
-                             (set-drag-texture! e :marker)
+                             (set-dnd-texture! e)
                              (>evt [:start-entity-drag {:connection-trigger target-id}]))}
+       [dnd-texture :marker]
        [:img {:title display-name :src (texture-path :marker)}]
        [:span display-name]])]])
 
@@ -208,8 +217,9 @@
                                 :title display-name
                                 :draggable true
                                 :on-drag-start (fn [e]
-                                                 (set-drag-texture! e texture)
-                                                 (>evt [:start-entity-drag {:entity id}]))}]))
+                                                 (set-dnd-texture! e)
+                                                 (>evt [:start-entity-drag {:entity id}]))}
+                          [dnd-texture texture]]))
         (when-let [target (:entity dnd-payload)]
           (do-all-tiles dimension "dropzone"
                         (fn [tile]
@@ -224,8 +234,9 @@
                                 :title (str "to " display-name)
                                 :draggable true
                                 :on-drag-start (fn [e]
-                                                 (set-drag-texture! e :marker)
-                                                 (>evt [:start-entity-drag {:connection-trigger id}]))}]))
+                                                 (set-dnd-texture! e)
+                                                 (>evt [:start-entity-drag {:connection-trigger id}]))}
+                          [dnd-texture :marker]]))
         (when-let [target (:connection-trigger dnd-payload)]
           (do-all-tiles dimension "dropzone"
                         (fn [tile]
