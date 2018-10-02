@@ -57,7 +57,7 @@
 (def texture-set (set (-> [:player
                            :enemy
                            :arrow
-                           :marker
+                           :exit
                            :missing_texture]
                           (into background-textures)
                           (into character-textures))))

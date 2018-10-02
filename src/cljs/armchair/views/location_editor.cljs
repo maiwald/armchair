@@ -112,8 +112,8 @@
             :on-drag-start (fn [e]
                              (set-dnd-texture! e)
                              (>evt [:start-entity-drag {:connection-trigger target-id}]))}
-       [dnd-texture :marker]
-       [:img {:title display-name :src (texture-path :marker)}]
+       [dnd-texture :exit]
+       [:img {:title display-name :src (texture-path :exit)}]
        [:span display-name]])]])
 
 (defn location-editor-sidebar [location-id]
@@ -178,7 +178,7 @@
 (defn conntection-trigger-layer [rect connection-triggers]
   (do-some-tiles rect connection-triggers "connection-trigger"
                  (fn [tile {:keys [id display-name]}]
-                   [:img {:src (texture-path :marker)
+                   [:img {:src (texture-path :exit)
                           :title (str "to " display-name)}])))
 
 (defn location-editor-canvas [location-id]
@@ -236,7 +236,7 @@
                                 :on-drag-start (fn [e]
                                                  (set-dnd-texture! e)
                                                  (>evt [:start-entity-drag {:connection-trigger id}]))}
-                          [dnd-texture :marker]]))
+                          [dnd-texture :exit]]))
         (when-let [target (:connection-trigger dnd-payload)]
           (do-all-tiles dimension "dropzone"
                         (fn [tile]
