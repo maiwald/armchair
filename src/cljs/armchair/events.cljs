@@ -12,10 +12,10 @@
                                    translate-positions
                                    rect-contains?]]))
 
-(def spec-interceptor (after (fn [db]
-                               (when-not (s/valid? :armchair.db/state db)
-                                 (let [explain (s/explain-data :armchair.db/state db)]
-                                   (js/console.log (:cljs.spec.alpha/problems explain)))))))
+(def spec-interceptor (after (fn [db])))
+                               ; (when-not (s/valid? :armchair.db/state db)
+                               ;   (let [explain (s/explain-data :armchair.db/state db)]
+                               ;     (js/console.log (:cljs.spec.alpha/problems explain)))))))
 
 (reg-event-db
   :initialize-db

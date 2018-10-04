@@ -4,8 +4,11 @@
             [armchair.events]
             [armchair.subs]
             [armchair.routes :refer [root]]
+            [datascript.core :as d]
+            [armchair.datascript :refer [conn]]
             [armchair.views :as views]
             [armchair.config :as config]))
+
 
 (defn dev-setup []
   (when config/debug?

@@ -5,7 +5,8 @@
                  [re-frame "0.10.6"]
                  [tailrecursion/cljs-priority-map "1.2.1"]
                  [cljsjs/react-select "1.2.1-1"]
-                 [bidi "2.1.4"]]
+                 [bidi "2.1.4"]
+                 [datascript "0.16.6"]]
 
   :plugins [[lein-cljsbuild "1.1.5"]]
 

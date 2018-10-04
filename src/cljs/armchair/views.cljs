@@ -68,6 +68,20 @@
                    :top (second position)}}
      component]))
 
+(defn drag-item2 [item-id component]
+  (let [position (<sub [:ui/position item-id])
+        dragging? (<sub [:dragging-item? item-id])
+        start-dragging (start-dragging-handler #{item-id})
+        stop-dragging (e-> #(when dragging? (>evt [:end-dragging])))]
+    (fn []
+      [:div {:class ["graph__item"
+                     (when dragging? "graph__item_is-dragging")]
+             :on-mouse-down start-dragging
+             :on-mouse-up stop-dragging
+             :style {:left (first position)
+                     :top (second position)}}
+       [component item-id]])))
+
 (defn drag-canvas [{:keys [items kind item-component]} & connection-children]
   (let [position-ids (->> items vals (map :position-id) set)
         connecting? (some? (<sub [:connector]))
@@ -83,7 +97,26 @@
                                 dragging? (>evt [:end-dragging])))}
      (into [:div] connection-children)
      (for [[id item] items]
-       ^{:key (str kind id)} [drag-item item [item-component item]])]))
+       ^{:key (str kind id)} [drag-item item item-component])]))
+
+(defn drag-canvas2 [{:keys [item-ids kind item-component]} & connection-children]
+  (let [connecting? (some? (<sub [:connector]))
+        dragging? (<sub [:dragging?])
+        mouse-down (start-dragging-handler (set item-ids))
+        mouse-move (e-> #(when (or dragging? connecting?)
+                           (>evt [:move-cursor (e->graph-cursor %)])))
+        mouse-up (cond
+                   connecting? (e-> #(>evt [:abort-connecting]))
+                   dragging? (e-> #(>evt [:end-dragging]))) ]
+    [:div {:class (cond-> ["graph"]
+                    dragging? (conj "graph_is-dragging")
+                    connecting? (conj "graph_is-connecting"))
+           :on-mouse-down mouse-down
+           :on-mouse-move mouse-move
+           :on-mouse-up mouse-up}
+     (into [:div] connection-children)
+     (for [id item-ids]
+       ^{:key (str kind id)} [drag-item2 id item-component])]))
 
 ;; Components
 
@@ -211,12 +244,12 @@
 (defn character-management []
   (let [characters (<sub [:character-list])]
     [slds/resource-page "Characters"
-     {:columns [:id :display-name :color :lines :actions]
-      :collection (vals characters)
+     {:columns [:id :display-name :color :line-count :actions]
+      :collection characters
       :cell-views {:color (fn [color] [slds/badge color color])
-                   :actions (fn [_ {:keys [id lines]}]
+                   :actions (fn [_ {:keys [id line-count]}]
                               [:div {:class "slds-text-align_right"}
-                               (when (zero? lines)
+                               (when (zero? line-count)
                                  [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this character?")
                                                                                (>evt [:delete-character id]))}])
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}
@@ -233,6 +266,36 @@
                                                                              (>evt [:delete-info id]))}]
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-info-modal id])}]])}
       :new-resource #(>evt [:create-info])}]))
+
+(defn location-component2 [location-id]
+  (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])
+        connecting? (some? (<sub [:connector]))]
+    [:div {:class "location"
+           :on-mouse-up (when connecting? #(>evt [:end-connecting-locations location-id]))
+           :style {:width (str config/line-width "px")}}
+     [:div {:class "location__header"}
+      [:p {:class "id"} (str "#" location-id)]
+      [:p {:class "name"} display-name]
+      [:ul {:class "actions"
+            :on-mouse-down stop-e!}
+       [:li {:class "action"
+             :on-click #(when (js/confirm "Are you sure you want to delete this location?")
+                          (>evt [:delete-location location-id]))}
+        [icon "trash" "Delete"]]
+       [:li {:class "action"
+             :on-click #(>navigate :location-edit :id location-id)}
+        [icon "edit" "Edit"]]
+       [:li {:class "action action_connect"
+             :on-mouse-down (e-> #(when (left-button? %)
+                                    (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
+        [icon "project-diagram" "Connect"]]]]
+     [:ul {:class "location__characters"}
+      (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
+        [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
+         [:a {:style {:background-color npc-color}
+              :on-mouse-down stop-e!
+              :on-click #(>navigate :dialogue-edit :id dialogue-id)}
+          npc-name]])]]))
 
 (defn location-component [{:keys [id display-name dialogues] :as location}]
   (let [connecting? (some? (<sub [:connector]))]
@@ -268,14 +331,13 @@
                :end (translate-point end [(/ config/line-width 2) 15])}])
 
 (defn location-management []
-  (let [{:keys [locations connections]} (<sub [:location-map])
-        get-pos #(get-in locations [% :position])]
+  (let [{:keys [location-ids connections]} (<sub [:location-map])]
     [:div {:class "full-page"}
      [:div {:class "new-item-button"}
       [slds/add-button "New" #(>evt [:create-location])]]
-     [drag-canvas {:kind "location"
-                   :items locations
-                   :item-component location-component}
+     [drag-canvas2 {:kind "location"
+                    :item-ids location-ids
+                    :item-component location-component2}
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
@@ -283,7 +345,7 @@
          [connection connector])
        (for [[start end] connections]
          ^{:key (str "location-connection" start "->" end)}
-         [location-connection (get-pos start) (get-pos end)])]]]))
+         [location-connection start end])]]]))
 
 ;; Game canvas
 
