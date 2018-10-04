@@ -1,6 +1,8 @@
 (ns armchair.subs
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
             [clojure.spec.alpha :as s]
+            [clojure.set :refer [rename-keys]]
+            [datascript.core :as d]
             [armchair.db :as db]
             [armchair.config :as config]
             [armchair.util :refer [where
@@ -27,17 +29,31 @@
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
 (reg-sub :dnd-payload #(:dnd-payload %))
+(reg-sub :db-store #(deref (:store %)))
+
+(defn l [item]
+  (js/console.log item)
+  item)
 
 (reg-sub
   :character-list
-  :<- [:db-characters]
-  :<- [:db-lines]
-  (fn [[characters lines] _]
-    (map-values
-      (fn [character]
-        (let [line-count (db/line-count-for-character lines (:id character))]
-          (assoc character :lines line-count)))
-      characters)))
+  :<- [:db-store]
+  (fn [store _]
+    (let [counts (->> (d/q '[:find ?n (count ?l)
+                             :where
+                             [?l :line/npc ?n]]
+                           store)
+                      (into {}))]
+      (->> (d/q '[:find ?n ?name ?color
+                  :where
+                  [?n :npc/name ?name]
+                  [?n :npc/color ?color]]
+                store)
+           (map (fn [[id name color]]
+                  {:id id
+                   :display-name name
+                   :color color
+                   :line-count (get counts id 0)}))))))
 
 (reg-sub
   :line
@@ -179,25 +195,42 @@
       (apply dissoc (into [characters] placed-characters)))))
 
 (reg-sub
+  :ui/position
+  :<- [:db-store]
+  (fn [store [_ entity-id]]
+    (:ui/position (d/pull store [:ui/position] entity-id))))
+
+
+(reg-sub
   :location-map
-  :<- [:db-locations]
-  :<- [:db-dialogues]
-  :<- [:db-characters]
-  :<- [:db-location-connections]
-  :<- [:dragged-positions]
-  (fn [[locations dialogues characters connections positions] _]
-    {:locations (map-values (fn [location]
-                              (assoc location
-                                     :position (get positions (:position-id location))
-                                     :dialogues (->> dialogues
-                                                     vals
-                                                     (where :location-id (:id location))
-                                                     (map #(let [character (get characters (:character-id %))]
-                                                             (assoc %
-                                                                    :character-name (:display-name character)
-                                                                    :character-color (:color character)))))))
-                            locations)
-     :connections (map sort connections)}))
+  :<- [:db-store]
+  (fn [store _]
+    {:location-ids (->> (d/q '[:find ?location-id
+                               :where [?location-id :location/name]]
+                             store)
+                        (map (fn [[id]] id)))
+     :connections (d/q '[:find ?start ?end
+                         :where
+                         [?s :location/connections ?e]
+                         [?s :ui/position ?start]
+                         [?e :ui/position ?end]]
+                       store)}))
+
+(reg-sub
+  :location-map/location
+  :<- [:db-store]
+  (fn [store [_ location-id]]
+    (let [res (d/pull store [:location/name
+                             {:location/dialogues [:db/id
+                                                   {:npc/_dialogues [:npc/name :npc/color]}]}]
+                      location-id)]
+      {:display-name (:location/name res)
+       :dialogues (map (fn [{id :db/id {npc-name :npc/name
+                                        npc-color :npc/color} :npc/_dialogues}]
+                         {:dialogue-id id
+                          :npc-name npc-name
+                          :npc-color npc-color})
+                       (:location/dialogues res))})))
 
 (reg-sub
   :connected-locations
