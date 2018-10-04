@@ -8,9 +8,8 @@
                                    filter-keys
                                    map-keys
                                    map-values
-                                   translate-position
+                                   translate-point
                                    translate-positions
-                                   position-delta
                                    rect-contains?]]))
 
 (def spec-interceptor (after (fn [db]
@@ -27,7 +26,7 @@
 (reg-event-db
   :reset-db
   [spec-interceptor]
-  (fn [db _]
+  (fn [db]
     (merge db (select-keys db/default-db [:positions
                                           :characters
                                           :dialogues
@@ -41,12 +40,9 @@
   (let [items (get db resource-type)]
     (+ 1 (reduce max 0 (keys items)))))
 
-(defn with-new-position [func]
-  (fn [db ctx]
-    (let [position-id (new-id db :positions)]
-      (func (assoc-in db [:positions position-id] [20 20])
-            position-id
-            ctx))))
+(defn generate-position [db]
+  (let [position-id (new-id db :positions)]
+    [(assoc-in db [:positions position-id] [20 20]) position-id]))
 
 ;; Character CRUD
 
@@ -75,16 +71,16 @@
 (reg-event-db
   :create-location
   [spec-interceptor]
-  (with-new-position
-    (fn [db position-id]
-      (let [id (new-id db :locations)]
-        (assoc-in db [:locations id] {:id id
-                                      :dimension [[0 0] [2 2]]
-                                      :background #{}
-                                      :walk-set #{}
-                                      :connection-triggers #{}
-                                      :display-name (str "location #" id)
-                                      :position-id position-id})))))
+  (fn [db]
+    (let [[new-db position-id] (generate-position db)
+          id (new-id db :locations)]
+      (assoc-in new-db [:locations id] {:id id
+                                        :dimension [[0 0] [2 2]]
+                                        :background #{}
+                                        :walk-set #{}
+                                        :connection-triggers #{}
+                                        :display-name (str "location #" id)
+                                        :position-id position-id}))))
 
 ;; Location CRUD
 
@@ -110,43 +106,47 @@
 (reg-event-db
   :create-npc-line
   [spec-interceptor]
-  (with-new-position
-    (fn [db position-id [_ dialogue-id]]
-      (let [id (new-id db :lines)]
-        (assoc-in db [:lines id] {:id id
-                                  :kind :npc
-                                  :character-id nil
-                                  :dialogue-id dialogue-id
-                                  :position-id position-id
-                                  :text nil
-                                  :next-line-id nil})))))
+  (fn [db [_ dialogue-id]]
+    (let [[new-db position-id] (generate-position db)
+          id (new-id db :lines)]
+      (assoc-in new-db [:lines id] {:id id
+                                    :kind :npc
+                                    :character-id nil
+                                    :dialogue-id dialogue-id
+                                    :position-id position-id
+                                    :text nil
+                                    :next-line-id nil}))))
 
 (reg-event-db
   :create-player-line
   [spec-interceptor]
-  (with-new-position
-    (fn [db position-id [_ dialogue-id]]
-      (let [id (new-id db :lines)]
-        (assoc-in db [:lines id] {:id id
-                                  :kind :player
-                                  :dialogue-id dialogue-id
-                                  :position-id position-id
-                                  :options []})))))
+  (fn [db [_ dialogue-id]]
+    (let [[new-db position-id] (generate-position db)
+          id (new-id db :lines)]
+      (assoc-in new-db [:lines id] {:id id
+                                    :kind :player
+                                    :dialogue-id dialogue-id
+                                    :position-id position-id
+                                    :options []}))))
+
+(defn initial-line? [db line-id]
+  (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
+    (= line-id (get-in db [:dialogues dialogue-id :initial-line-id]))))
 
 (reg-event-db
   :update-line
   [spec-interceptor]
   (fn [db [_ id field value]]
-    (let [newValue (case field
-                     :character-id (int value)
-                     value)]
-      (assoc-in db [:lines id field] newValue))))
+    (assert (not (and (= field :character-id)
+                      (initial-line? db id)))
+            "Cannot modify initial line's character!")
+    (assoc-in db [:lines id field] value)))
 
 (reg-event-db
   :delete-line
   [spec-interceptor]
   (fn [db [_ id]]
-    (assert (not (contains? (->> db :dialogues vals (map :initial-line-id) set) id))
+    (assert (not (initial-line? db id))
             "Initial lines cannot be deleted!")
     (letfn [(clear-line [line]
               (update line :next-line-id #(if (= id %) nil %)))
@@ -251,7 +251,7 @@
 (reg-event-db
   :unset-highlight
   [spec-interceptor]
-  (fn [db _]
+  (fn [db]
     (update db :location-editor dissoc :highlight)))
 
 (reg-event-db
@@ -263,7 +263,7 @@
 (reg-event-db
   :stop-entity-drag
   [spec-interceptor]
-  (fn [db _]
+  (fn [db]
     (dissoc db :dnd-payload)))
 
 (reg-event-db
@@ -316,7 +316,7 @@
 (reg-event-db
   :stop-painting
   [spec-interceptor]
-  (fn [db _]
+  (fn [db]
     (assoc-in db [:location-editor :painting?] false)))
 
 (reg-event-db
@@ -338,7 +338,7 @@
                                       :right [1 [-1 0]]
                                       :down [1 [0 -1]])
           new-dimension (update (get-in db [:locations location-id :dimension])
-                                shift-index translate-position shift-delta)
+                                shift-index translate-point shift-delta)
           in-bounds? (partial rect-contains? new-dimension)
           remove-oob (fn [coll] (filter-keys in-bounds? coll))]
       (update-in db [:locations location-id]
@@ -363,35 +363,99 @@
                      location-id
                      :dimension
                      shift-index]
-                 translate-position shift-delta))))
+                 translate-point shift-delta))))
 
 ;; Modal
 
-(defn open-modal [modal-key]
-  (fn [db [_ payload]]
-    (assert (not (contains? db :modal))
-            "Attempting to open a modal while modal is open!")
-    (assoc db :modal {modal-key payload})))
+(defn assert-no-open-modal [db]
+  (assert (not (contains? db :modal))
+          "Attempting to open a modal while modal is open!"))
 
 (reg-event-db
   :open-character-modal
   [spec-interceptor]
-  (open-modal :character-id))
+  (fn [db [_ payload]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :character-id] payload)))
 
 (reg-event-db
   :open-info-modal
   [spec-interceptor]
-  (open-modal :info-id))
+  (fn [db [_ payload]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :info-id] payload)))
 
 (reg-event-db
   :open-npc-line-modal
   [spec-interceptor]
-  (open-modal :npc-line-id))
+  (fn [db [_ payload]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :npc-line-id] payload)))
 
 (reg-event-db
   :open-player-line-modal
   [spec-interceptor]
-  (open-modal :player-line-id))
+  (fn [db [_ payload]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :player-line-id] payload)))
+
+(reg-event-db
+  :open-dialogue-creation-modal
+  [spec-interceptor]
+  (fn [db [_ payload]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :dialogue-creation] {:character-id nil
+                                              :location-id nil
+                                              :description nil})))
+
+;; Dialogue CRUD
+
+(defn assert-dialogue-creation-modal [db]
+  (assert (contains? (:modal db) :dialogue-creation)
+          "No dialogue creation initiated. Cannot set value!"))
+
+(reg-event-db
+  :dialogue-creation-update
+  [spec-interceptor]
+  (fn [db [_ field value]]
+    (assert-dialogue-creation-modal db)
+    (assoc-in db [:modal :dialogue-creation field] value)))
+
+(reg-event-db
+  :create-dialogue
+  [spec-interceptor]
+  (fn [db]
+    (let [[new-db position-id] (generate-position db)
+          dialogue-id (new-id db :dialogues)
+          line-id (new-id db :lines)
+          modal-data (get-in db [:modal :dialogue-creation])]
+      (-> new-db
+          (assoc-in [:dialogues dialogue-id] (merge {:id dialogue-id
+                                                     :initial-line-id line-id}
+                                                    (select-keys modal-data [:location-id
+                                                                             :character-id
+                                                                             :description])))
+          (assoc-in [:lines line-id] {:id line-id
+                                      :kind :npc
+                                      :character-id (:character-id modal-data)
+                                      :dialogue-id dialogue-id
+                                      :position-id position-id
+                                      :text nil
+                                      :next-line-id nil})
+          (dissoc :modal)))))
+
+(reg-event-db
+  :delete-dialogue
+  [spec-interceptor]
+  (fn [db [_ dialogue-id]]
+    (-> db
+        (update :dialogues dissoc dialogue-id)
+        (update :lines #(filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %))
+        ; (update :locations (fn [locations]
+        ;                      (map-values (fn [{npcs :npcs}]
+        ;                                    (filter-map #(not= % dialogue-id) npcs))
+        ;                                  locations)))
+        )))
 
 ;; Page
 
@@ -410,22 +474,22 @@
 ;; Mouse, Drag & Drop
 
 (reg-event-db
-  :move-pointer
+  :move-cursor
   [spec-interceptor]
-  (fn [db [_ position]]
-    (assoc db :pointer position)))
+  (fn [db [_ cursor]]
+    (assoc db :cursor cursor)))
 
 (reg-event-db
   :start-connecting-lines
   [spec-interceptor]
-  (fn [db [_ line-id position index]]
+  (fn [db [_ line-id cursor index]]
     (assert (not (contains? db :connecting))
             "Attempting to start connecting lines while already in progress!")
     (assoc db
-           :connecting (cond-> {:start-position position
+           :connecting (cond-> {:cursor-start cursor
                                 :line-id line-id}
                          (some? index) (assoc :index index))
-           :pointer position)))
+           :cursor cursor)))
 
 (reg-event-db
   :end-connecting-lines
@@ -437,19 +501,19 @@
           id-path (if-let [index (get-in db [:connecting :index])]
                     [:lines start-id :options index :next-line-id]
                     [:lines start-id :next-line-id])]
-      (cond-> (dissoc db :connecting :pointer)
+      (cond-> (dissoc db :connecting :cursor)
         (not= start-id end-id) (assoc-in id-path end-id)))))
 
 (reg-event-db
   :start-connecting-locations
   [spec-interceptor]
-  (fn [db [_ location-id position]]
+  (fn [db [_ location-id cursor]]
     (assert (not (contains? db :connecting))
             "Attempting to start connecting locations while already in progress!")
     (assoc db
-           :connecting {:start-position position
+           :connecting {:cursor-start cursor
                         :location-id location-id}
-           :pointer position)))
+           :cursor cursor)))
 
 (reg-event-db
   :end-connecting-locations
@@ -458,7 +522,7 @@
     (assert (some? (:connecting db))
             "Attempting to end connecting while not in progress!")
     (let [start-id (get-in db [:connecting :location-id])
-          new-db (dissoc db :connecting :pointer)]
+          new-db (dissoc db :connecting :cursor)]
       (if-not (= start-id end-id)
         (update new-db :location-connections conj #{start-id end-id})
         new-db))))
@@ -467,25 +531,25 @@
 (reg-event-db
   :abort-connecting
   [spec-interceptor]
-  (fn [db _] (dissoc db :connecting)))
+  (fn [db] (dissoc db :connecting)))
 
 (reg-event-db
   :start-dragging
   [spec-interceptor]
-  (fn [db [_ position-ids position]]
+  (fn [db [_ position-ids cursor]]
     (cond-> db
       (not (contains? db :dragging)) (assoc :dragging {:position-ids position-ids
-                                                       :start-position position}
-                                            :pointer position))))
+                                                       :cursor-start cursor}
+                                            :cursor cursor))))
 
 (reg-event-db
   :end-dragging
   [spec-interceptor]
-  (fn [{:keys [dragging pointer] :as db} _]
+  (fn [{:keys [dragging cursor] :as db}]
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
-    (let [{:keys [start-position position-ids]} dragging
-          delta (position-delta start-position pointer)]
+    (let [{:keys [cursor-start position-ids]} dragging
+          delta (translate-point cursor cursor-start -)]
       (-> db
           (update :positions translate-positions position-ids delta)
-          (dissoc :dragging :pointer)))))
+          (dissoc :dragging :cursor)))))

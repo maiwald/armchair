@@ -24,7 +24,7 @@
    (into [:div {:class "slds-form-element__control"}]
          children)])
 
-(defn input-select [{:keys [label on-change value options]}]
+(defn input-select [{:keys [label disabled on-change value options]}]
   (let [id (gensym "input-select")]
     [:div {:class "slds-form-element"}
      [:label {:class "slds-form-element__label" :for id} label]
@@ -33,6 +33,7 @@
        [:select {:class "slds-select"
                  :id id
                  :on-change on-change
+                 :disabled disabled
                  :value (or value "nil")}
         [:option {:key (str id "nil") :value "nil" :disabled "disabled"}]
         (for [[option option-label] options]
@@ -125,10 +126,6 @@
                   :background-color color}}
    value])
 
-(defn color-cell [item column]
-  (let [color (get item column)]
-    [badge color color]))
-
 (defn add-button [label click-handler]
   [:button {:class "slds-button slds-button_neutral"
             :on-click click-handler}
@@ -156,7 +153,7 @@
         (for [column columns]
           [:td {:key (str table-id (:id item) column)}
            (if-let [cell-view (get cell-views column)]
-             [cell-view item column]
+             [cell-view (get item column) item]
              (get item column))])])]]])
 
 (defn resource-page [title content-options]
@@ -170,7 +167,7 @@
     [data-table
      (assoc content-options :table-id title)]]])
 
-(defn modal [{:keys [title close-handler width]} & children]
+(defn modal [{:keys [title close-handler confirm-handler width]} & children]
   [:div
    [:section {:class (cond-> ["slds-modal" "slds-fade-in-open"]
                        (= width :medium) (conj "slds-modal_medium"))}
@@ -186,5 +183,7 @@
            children)
      [:footer {:class "slds-modal__footer"}
       [:button {:class "slds-button slds-button_brand"
-                :on-click close-handler} "Ok"]]]]
+                :on-click (or confirm-handler
+                              close-handler)}
+       "Ok"]]]]
    [:div {:class "slds-backdrop slds-backdrop_open"}]])

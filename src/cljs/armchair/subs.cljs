@@ -9,7 +9,7 @@
                                    map-keys
                                    map-values
                                    rect->0
-                                   position-delta
+                                   translate-point
                                    translate-positions]]))
 
 (reg-sub :db-characters #(:characters %))
@@ -22,7 +22,7 @@
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-connecting #(:connecting %))
 (reg-sub :db-positions #(:positions %))
-(reg-sub :db-pointer #(:pointer %))
+(reg-sub :db-cursor #(:cursor %))
 
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
@@ -42,8 +42,10 @@
 (reg-sub
   :line
   :<- [:db-lines]
-  (fn [lines [_ line-id]]
-    (lines line-id)))
+  :<- [:db-dialogues]
+  (fn [[lines dialogues] [_ line-id]]
+    (when-let [{:keys [id dialogue-id] :as line} (get lines line-id)]
+      (assoc line :initial-line? (= id (get-in dialogues [dialogue-id :initial-line-id]))))))
 
 (reg-sub
   :info-list
@@ -91,22 +93,34 @@
 (reg-sub
   :connector
   :<- [:db-connecting]
-  :<- [:db-pointer]
-  (fn [[connecting pointer]]
+  :<- [:db-cursor]
+  (fn [[connecting cursor]]
     (when connecting
-      {:start (:start-position connecting)
-       :end pointer
+      {:start (:cursor-start connecting)
+       :end cursor
        :kind :connector})))
 
 (reg-sub
   :dragged-positions
   :<- [:db-dragging]
   :<- [:db-positions]
-  :<- [:db-pointer]
-  (fn [[dragging positions pointer]]
-    (if-let [{:keys [position-ids start-position]} dragging]
-      (translate-positions positions position-ids (position-delta start-position pointer))
+  :<- [:db-cursor]
+  (fn [[dragging positions cursor]]
+    (if-let [{:keys [position-ids cursor-start]} dragging]
+      (translate-positions positions position-ids (translate-point cursor cursor-start -))
       positions)))
+
+(reg-sub
+  :dialogue-list
+  :<- [:db-dialogues]
+  :<- [:db-locations]
+  :<- [:db-characters]
+  (fn [[dialogues locations characters]]
+    (map-values (fn [{:keys [character-id location-id] :as dialogue}]
+                  (assoc dialogue
+                         :character (select-keys (characters character-id) [:id :display-name])
+                         :location (select-keys (locations location-id) [:id :display-name])))
+                dialogues)))
 
 (reg-sub
   :dialogue
@@ -118,11 +132,12 @@
     (let [dialogue (get dialogues dialogue-id)
           dialogue-lines (->> lines
                               (where-map :dialogue-id dialogue-id)
-                              (map-values #(assoc %
-                                                  :initial-line? (= (:initial-line-id dialogue) (:id %))
-                                                  :position (get positions (:position-id %))
-                                                  :character-color (get-in characters [(:character-id %) :color])
-                                                  :character-name (get-in characters [(:character-id %) :display-name]))))
+                              (map-values (fn [{:keys [id character-id position-id] :as line}]
+                                            (assoc line
+                                                   :initial-line? (= (:initial-line-id dialogue) id)
+                                                   :position (get positions position-id)
+                                                   :character-color (get-in characters [character-id :color])
+                                                   :character-name (get-in characters [character-id :display-name])))))
           lines-by-kind (group-by :kind (vals dialogue-lines))]
       {:lines dialogue-lines
        :npc-connections (->> (:npc lines-by-kind)
@@ -146,6 +161,12 @@
         (update :connection-triggers #(map-values locations %)))))
 
 (reg-sub
+  :location-options
+  :<- [:db-locations]
+  (fn [locations _]
+    (map-values :display-name locations)))
+
+(reg-sub
   :available-npcs
   :<- [:db-locations]
   :<- [:db-characters]
@@ -161,19 +182,17 @@
   :location-map
   :<- [:db-locations]
   :<- [:db-dialogues]
-  :<- [:db-lines]
   :<- [:db-characters]
   :<- [:db-location-connections]
   :<- [:dragged-positions]
-  (fn [[locations dialogues lines characters connections positions] _]
+  (fn [[locations dialogues characters connections positions] _]
     {:locations (map-values (fn [location]
                               (assoc location
                                      :position (get positions (:position-id location))
                                      :dialogues (->> dialogues
                                                      vals
                                                      (where :location-id (:id location))
-                                                     (map #(let [line (get lines (:initial-line-id %))
-                                                                 character (get characters (:character-id line))]
+                                                     (map #(let [character (get characters (:character-id %))]
                                                              (assoc %
                                                                     :character-name (:display-name character)
                                                                     :character-color (:color character)))))))
@@ -187,7 +206,7 @@
   (fn [[locations connections] [_ location-id]]
     (let [other-location-ids (for [connection connections
                                    :when (contains? connection location-id)]
-                                 (first (disj connection location-id)))]
+                               (first (disj connection location-id)))]
       (select-keys locations other-location-ids))))
 
 (reg-sub
@@ -218,7 +237,6 @@
        :walk-set (into #{} (map normalize-tile (:walk-set location)))
        :infos infos
        :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
-       :dialogues (into {} (map (fn [{:keys [id initial-line-id]}]
-                                  [(:character-id (get lines initial-line-id))
-                                   initial-line-id])
+       :dialogues (into {} (map (fn [{:keys [character-id initial-line-id]}]
+                                  [character-id initial-line-id])
                                 (vals location-dialogues)))})))
