@@ -29,11 +29,7 @@
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
 (reg-sub :dnd-payload #(:dnd-payload %))
-(reg-sub :db-store #(deref (:store %)))
-
-(defn l [item]
-  (js/console.log item)
-  item)
+(reg-sub :db-store #(:store %))
 
 (reg-sub
   :character-list
@@ -103,8 +99,8 @@
 (reg-sub
   :dragging-item?
   :<- [:db-dragging]
-  (fn [dragging [_ position-id]]
-    (= (:position-ids dragging) #{position-id})))
+  (fn [dragging [_ id]]
+    (= (:position-ids dragging) #{id})))
 
 (reg-sub
   :connector
@@ -168,15 +164,6 @@
                              (:player lines-by-kind))})))
 
 (reg-sub
-  :location
-  :<- [:db-locations]
-  :<- [:db-characters]
-  (fn [[locations characters] [_ location-id]]
-    (-> (locations location-id)
-        (update :npcs #(map-values characters %))
-        (update :connection-triggers #(map-values locations %)))))
-
-(reg-sub
   :location-options
   :<- [:db-locations]
   (fn [locations _]
@@ -197,23 +184,29 @@
 (reg-sub
   :ui/position
   :<- [:db-store]
-  (fn [store [_ entity-id]]
-    (:ui/position (d/pull store [:ui/position] entity-id))))
-
+  :<- [:db-dragging]
+  :<- [:db-cursor]
+  (fn [[store {:keys [ids cursor-start]} cursor] [_ id]]
+    (let [position (d/q '[:find ?pos .
+                          :in $ ?id
+                          :where [?id :ui/position ?pos]]
+                        store
+                        id)]
+      (if (contains? ids id)
+        (let [delta (translate-point cursor cursor-start -)]
+          (translate-point position delta))
+        position))))
 
 (reg-sub
   :location-map
   :<- [:db-store]
   (fn [store _]
-    {:location-ids (->> (d/q '[:find ?location-id
-                               :where [?location-id :location/name]]
-                             store)
-                        (map (fn [[id]] id)))
+    {:location-ids (d/q '[:find [?location-id ...]
+                          :where [?location-id :location/name]]
+                        store)
      :connections (d/q '[:find ?start ?end
                          :where
-                         [?s :location/connections ?e]
-                         [?s :ui/position ?start]
-                         [?e :ui/position ?end]]
+                         [?start :location/connections ?end]]
                        store)}))
 
 (reg-sub
@@ -243,13 +236,50 @@
       (select-keys locations other-location-ids))))
 
 (reg-sub
-  :location-editor-data
+  :location-editor/ui
   (fn [db]
     (select-keys (:location-editor db)
                  [:highlight
                   :painting?
                   :tool
                   :active-texture])))
+
+(reg-sub
+  :location-editor/npcs
+  :<- [:db-store]
+  (fn [store [_ location-id]]
+    (->> (d/q '[:find ?position ?dialogue ?name ?texture
+                :in $ ?location
+                :where
+                [?location :location/dialogues ?dialogue]
+                [?dialogue :dialogue/position ?position]
+                [?npc :npc/dialogues ?dialogue]
+                [?npc :npc/name ?name]
+                [?npc :npc/texture ?texture]]
+              store
+              location-id)
+         (map (fn [[position & args]]
+                   [position (zipmap [:id :display-name :texture] args)]))
+         (into {}))))
+
+(reg-sub
+  :location-editor/location
+  :<- [:db-store]
+  (fn [store [_ location-id]]
+    (->> (d/pull store [:location/name
+                        :location/dimension
+                        :location/background
+                        :location/walk-set]
+                 location-id)
+         (map-keys #(keyword (name %))))))
+
+(reg-sub
+  :location-editor/everything
+  (fn [[_ location-id]]
+    [(subscribe [:location-editor/location location-id])
+     (subscribe [:location-editor/npcs location-id])])
+  (fn [[location npcs]]
+    (assoc location :npcs npcs)))
 
 (reg-sub
   :game-data

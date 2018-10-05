@@ -46,9 +46,9 @@
 
 ;; Drag & Drop
 
-(defn start-dragging-handler [position-ids]
+(defn start-dragging-handler [ids]
   (e-> #(when (left-button? %)
-          (>evt [:start-dragging position-ids (e->graph-cursor %)]))))
+          (>evt [:start-dragging ids (e->graph-cursor %)]))))
 
 (defn connection [{:keys [kind start end]}]
   [:line {:class ["graph__connection"
@@ -68,20 +68,6 @@
                    :top (second position)}}
      component]))
 
-(defn drag-item2 [item-id component]
-  (let [position (<sub [:ui/position item-id])
-        dragging? (<sub [:dragging-item? item-id])
-        start-dragging (start-dragging-handler #{item-id})
-        stop-dragging (e-> #(when dragging? (>evt [:end-dragging])))]
-    (fn []
-      [:div {:class ["graph__item"
-                     (when dragging? "graph__item_is-dragging")]
-             :on-mouse-down start-dragging
-             :on-mouse-up stop-dragging
-             :style {:left (first position)
-                     :top (second position)}}
-       [component item-id]])))
-
 (defn drag-canvas [{:keys [items kind item-component]} & connection-children]
   (let [position-ids (->> items vals (map :position-id) set)
         connecting? (some? (<sub [:connector]))
@@ -98,6 +84,19 @@
      (into [:div] connection-children)
      (for [[id item] items]
        ^{:key (str kind id)} [drag-item item item-component])]))
+
+(defn drag-item2 [item-id component]
+  (let [position (<sub [:ui/position item-id])
+        dragging? (<sub [:dragging-item? item-id])
+        start-dragging (start-dragging-handler #{item-id})
+        stop-dragging (when dragging? (e-> #(>evt [:end-dragging])))]
+    [:div {:class ["graph__item"
+                   (when dragging? "graph__item_is-dragging")]
+           :on-mouse-down start-dragging
+           :on-mouse-up stop-dragging
+           :style {:left (first position)
+                   :top (second position)}}
+     [component item-id]]))
 
 (defn drag-canvas2 [{:keys [item-ids kind item-component]} & connection-children]
   (let [connecting? (some? (<sub [:connector]))
@@ -327,14 +326,16 @@
           (:character-name dialogue)]])]]))
 
 (defn location-connection [start end]
-  [connection {:start (translate-point start [(/ config/line-width 2) 15])
-               :end (translate-point end [(/ config/line-width 2) 15])}])
+  (let [start-pos (<sub [:ui/position start])
+        end-pos (<sub [:ui/position end])]
+    [connection {:start (translate-point start-pos [(/ config/line-width 2) 15])
+                 :end (translate-point end-pos [(/ config/line-width 2) 15])}]))
 
 (defn location-management []
   (let [{:keys [location-ids connections]} (<sub [:location-map])]
     [:div {:class "full-page"}
      [:div {:class "new-item-button"}
-      [slds/add-button "New" #(>evt [:create-location])]]
+      [slds/add-button "New" #(>evt [:location/create])]]
      [drag-canvas2 {:kind "location"
                     :item-ids location-ids
                     :item-component location-component2}

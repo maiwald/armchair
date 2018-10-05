@@ -33,7 +33,7 @@
                           :locations ::connecting-locations))
 
 (s/def ::position-ids (s/coll-of ::position-id))
-(s/def ::dragging (s/keys :req-un [::cursor-start ::position-ids]))
+(s/def ::dragging (s/keys :req-un [::cursor-start ::ids]))
 (s/def ::current-page (s/nilable string?))
 
 ;; Location Editor
@@ -163,7 +163,7 @@
 
 (def default-db
   {:current-page nil
-   :store conn
+   :store @conn
    :location-editor {:tool :background-painter
                      :painting? false
                      :active-texture (first background-textures)}})

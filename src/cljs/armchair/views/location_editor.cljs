@@ -45,7 +45,7 @@
     (.setDragImage (.-dataTransfer e) image offset offset)))
 
 (defn location-editor-sidebar-paint [location-id]
-  (let [{active-texture :active-texture} (<sub [:location-editor-data])]
+  (let [{active-texture :active-texture} (<sub [:location-editor/ui])]
     [slds/label "Background Textures"
      [:ul {:class "tile-grid"}
       (for [texture background-textures]
@@ -117,8 +117,8 @@
        [:span display-name]])]])
 
 (defn location-editor-sidebar [location-id]
-  (let [{:keys [display-name]} (<sub [:location location-id])
-        {:keys [tool]} (<sub [:location-editor-data])]
+  (let [{:keys [display-name]} (<sub [:location-editor/everything location-id])
+        {:keys [tool]} (<sub [:location-editor/ui])]
     (letfn [(update-display-name [e]
               (>evt [:update-location location-id :display-name (e->val e)]))]
       [slds/form
@@ -182,8 +182,8 @@
                           :title (str "to " display-name)}])))
 
 (defn location-editor-canvas [location-id]
-  (let [{:keys [dimension background npcs walk-set connection-triggers]} (<sub [:location location-id])
-        {:keys [tool highlight painting?]} (<sub [:location-editor-data])
+  (let [{:keys [dimension background npcs walk-set connection-triggers]} (<sub [:location-editor/everything location-id])
+        {:keys [tool highlight painting?]} (<sub [:location-editor/ui])
         dnd-payload (<sub [:dnd-payload])]
     [:div {:class "level"
            :on-mouse-leave #(>evt [:unset-highlight])
@@ -204,11 +204,12 @@
        :collision
        (do-all-tiles dimension "walkable-area"
                      (fn [tile]
-                       [:div {:class ["interactor"
-                                      (if (contains? walk-set tile)
-                                        "interactor_walkable"
-                                        "interactor_not-walkable")]
-                              :on-click #(>evt [:flip-walkable location-id tile])}]))
+                       (let [walkable? (contains? walk-set tile)]
+                         [:div {:class ["interactor"
+                                        (if walkable?
+                                          "interactor_walkable"
+                                          "interactor_not-walkable")]
+                                :on-click #(>evt [:set-walkable location-id tile (not walkable?)])}])))
        :npcs-select
        [:div
         (do-some-tiles dimension npcs "npc-select"
@@ -218,14 +219,15 @@
                                 :draggable true
                                 :on-drag-start (fn [e]
                                                  (set-dnd-texture! e)
+                                                 (js/console.log "fll")
                                                  (>evt [:start-entity-drag {:entity id}]))}
                           [dnd-texture texture]]))
-        (when-let [target (:entity dnd-payload)]
+        (when-let [entity (:entity dnd-payload)]
           (do-all-tiles dimension "dropzone"
                         (fn [tile]
                           [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
                                  :on-drag-over (e-> (once #(>evt [:set-highlight tile])))
-                                 :on-drop #(>evt [:move-entity location-id target tile])}])))]
+                                 :on-drop #(>evt [:move-entity entity tile])}])))]
        :connection-select
        [:div
         (do-some-tiles dimension connection-triggers "connection-select"

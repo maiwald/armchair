@@ -54,11 +54,12 @@
                     :npc/dialogues [-6]}
                    {:db/id -5
                     :dialogue/description "Hugo's Dialogue"
+                    :dialogue/position [5 4]
                     :dialogue/initial-line -7
                     :dialogue/lines [-7 -8 -10 -12]}
                    {:db/id -6
                     :dialogue/description "Gustav's Dialogue"
-                    :dialogue/npc -4}
+                    :dialogue/position [6 8]}
                    {:db/id -7
                     :line/type :npc
                     :line/text "Hey, who are you?"

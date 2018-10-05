@@ -2,8 +2,10 @@
   (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
+            [datascript.core :as d]
             [armchair.db :as db]
             [armchair.routes :refer [routes]]
+            [armchair.datascript :refer [conn]]
             [armchair.util :refer [filter-map
                                    filter-keys
                                    map-keys
@@ -69,18 +71,17 @@
     (assoc-in db [:characters id field] value)))
 
 (reg-event-db
-  :create-location
+  :location/create
   [spec-interceptor]
   (fn [db]
-    (let [[new-db position-id] (generate-position db)
-          id (new-id db :locations)]
-      (assoc-in new-db [:locations id] {:id id
-                                        :dimension [[0 0] [2 2]]
-                                        :background #{}
-                                        :walk-set #{}
-                                        :connection-triggers #{}
-                                        :display-name (str "location #" id)
-                                        :position-id position-id}))))
+    (d/transact! conn [{:db/id -1
+                        :location/name "New Location"
+                        :ui/position [20 20]
+                        :location/dimension [[0 0] [2 2]]
+                        :location/background #{}
+                        :location/walk-set #{}
+                        :location/connection-triggers #{}}])
+    (assoc db :store @conn)))
 
 ;; Location CRUD
 
@@ -269,13 +270,12 @@
 (reg-event-db
   :move-entity
   [spec-interceptor]
-  (fn [db [_ location entity to]]
+  (fn [db [_ dialogue-id position]]
+    (d/transact! conn [[:db/add dialogue-id :dialogue/position position]])
     (-> db
         (dissoc :dnd-payload)
         (update :location-editor dissoc :highlight)
-        (update-in [:locations location :npcs] #(as-> % new-db
-                                                  (filter-map (fn [v] (not= v entity)) new-db)
-                                                  (assoc new-db to entity))))))
+        (assoc :store @conn))))
 
 (reg-event-db
   :remove-entity
@@ -320,13 +320,15 @@
     (assoc-in db [:location-editor :painting?] false)))
 
 (reg-event-db
-  :flip-walkable
+  :set-walkable
   [spec-interceptor]
-  (fn [db [_ location-id tile]]
-    (update-in db [:locations location-id :walk-set] (fn [walk-set]
-                                                       (if (contains? walk-set tile)
-                                                         (disj walk-set tile)
-                                                         (conj walk-set tile))))))
+  (fn [{store :store :as db} [_ location-id tile value]]
+    (let [old-value (-> (d/pull store [:location/walk-set] location-id)
+                        :location/walk-set)]
+      (d/transact! conn [[:db/add location-id :location/walk-set (if value
+                                                                   (conj old-value tile)
+                                                                   (disj old-value tile))]])
+      (assoc db :store @conn))))
 
 (reg-event-db
   :resize-smaller
@@ -353,17 +355,17 @@
 (reg-event-db
   :resize-larger
   [spec-interceptor]
-  (fn [db [_ location-id direction]]
+  (fn [{store :sotre :as db} [_ location-id direction]]
     (let [[shift-index shift-delta] (case direction
                                       :up [0 [0 -1]]
                                       :left [0 [-1 0]]
                                       :right [1 [1 0]]
-                                      :down [1 [0 1]])]
-      (update-in db [:locations
-                     location-id
-                     :dimension
-                     shift-index]
-                 translate-point shift-delta))))
+                                      :down [1 [0 1]])
+          old-value (-> (d/pull store [:location/dimension] location-id)
+                        :location/dimension)]
+      (d/transact! conn [[:db/add location-id :location/dimension
+                          (update old-value shift-index translate-point shift-delta)]])
+      (assoc db :store @conn))))
 
 ;; Modal
 
@@ -527,7 +529,6 @@
         (update new-db :location-connections conj #{start-id end-id})
         new-db))))
 
-
 (reg-event-db
   :abort-connecting
   [spec-interceptor]
@@ -536,20 +537,30 @@
 (reg-event-db
   :start-dragging
   [spec-interceptor]
-  (fn [db [_ position-ids cursor]]
+  (fn [db [_ ids cursor]]
     (cond-> db
-      (not (contains? db :dragging)) (assoc :dragging {:position-ids position-ids
+      (not (contains? db :dragging)) (assoc :dragging {:ids ids
                                                        :cursor-start cursor}
                                             :cursor cursor))))
 
 (reg-event-db
   :end-dragging
   [spec-interceptor]
-  (fn [{:keys [dragging cursor] :as db}]
+  (fn [{:keys [store dragging cursor] :as db}]
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
-    (let [{:keys [cursor-start position-ids]} dragging
-          delta (translate-point cursor cursor-start -)]
+    (let [{:keys [cursor-start ids]} dragging
+          delta (translate-point cursor cursor-start -)
+          old-positions (d/q '[:find ?id ?position
+                               :in $ [?id ...]
+                               :where
+                               [?id :ui/position ?position]]
+                             store
+                             ids)]
+      (d/transact! conn
+                   (map (fn [[id position]]
+                          [:db/add id :ui/position (translate-point position delta)])
+                        old-positions))
       (-> db
-          (update :positions translate-positions position-ids delta)
+          (assoc :store @conn)
           (dissoc :dragging :cursor)))))
