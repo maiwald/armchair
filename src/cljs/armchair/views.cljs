@@ -211,12 +211,12 @@
 (defn character-management []
   (let [characters (<sub [:character-list])]
     [slds/resource-page "Characters"
-     {:columns [:id :display-name :color :lines :actions]
+     {:columns [:id :display-name :color :line-count :actions]
       :collection (vals characters)
       :cell-views {:color (fn [color] [slds/badge color color])
-                   :actions (fn [_ {:keys [id lines]}]
+                   :actions (fn [_ {:keys [id line-count]}]
                               [:div {:class "slds-text-align_right"}
-                               (when (zero? lines)
+                               (when (zero? line-count)
                                  [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this character?")
                                                                                (>evt [:delete-character id]))}])
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}

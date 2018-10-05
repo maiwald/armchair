@@ -33,11 +33,12 @@
   :<- [:db-characters]
   :<- [:db-lines]
   (fn [[characters lines] _]
-    (map-values
-      (fn [character]
-        (let [line-count (db/line-count-for-character lines (:id character))]
-          (assoc character :lines line-count)))
-      characters)))
+    (let [line-counts (->> (vals lines)
+                           (group-by :character-id)
+                           (map-values count))]
+      (map-values (fn [{id :id :as character}]
+                    (assoc character :line-count (get line-counts id 0)))
+                  characters))))
 
 (reg-sub
   :line

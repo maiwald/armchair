@@ -286,7 +286,3 @@
 (when-not (s/valid? ::state default-db)
   (js/console.log "Default DB state explain:")
   (s/explain ::state default-db))
-
-(defn line-count-for-character [lines character-id]
-  (let [filter-fn #(= (:character-id %) character-id)]
-    (->> lines vals (filter filter-fn) count)))

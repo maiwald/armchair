@@ -58,9 +58,12 @@
   :delete-character
   [spec-interceptor]
   (fn [db [_ id]]
-    (cond-> db
-      (zero? (db/line-count-for-character (:lines db) id))
-      (update :characters dissoc id))))
+    (let [line-count (->> (:lines db)
+                          (filter-map #(= (:character-id %) id))
+                          count)]
+      (cond-> db
+        (zero? line-count)
+        (update :characters dissoc id)))))
 
 (reg-event-db
   :update-character
