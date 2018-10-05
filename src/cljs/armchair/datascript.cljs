@@ -12,6 +12,7 @@
              :dialogue/lines {:db/valueType :db.type/ref
                               :db/cardinality :db.cardinality/many
                               :db/isComponent true}
+             :dialogue/position {:db/cardinality :db.cardinality/one}
              :dialogue/initial-line {:db/valueType :db.type/ref
                                      :db/cardinality :db.cardinality/one}
              :line/next {:db/valueType :db.type/ref

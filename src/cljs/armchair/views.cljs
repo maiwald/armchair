@@ -250,7 +250,7 @@
                               [:div {:class "slds-text-align_right"}
                                (when (zero? line-count)
                                  [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this character?")
-                                                                               (>evt [:delete-character id]))}])
+                                                                               (>evt [:characters/delete id]))}])
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}
       :new-resource #(>evt [:create-character])}]))
 

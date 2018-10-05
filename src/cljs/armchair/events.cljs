@@ -57,12 +57,11 @@
       (update db :characters assoc id new-character))))
 
 (reg-event-db
-  :delete-character
+  :characters/delete
   [spec-interceptor]
   (fn [db [_ id]]
-    (cond-> db
-      (zero? (db/line-count-for-character (:lines db) id))
-      (update :characters dissoc id))))
+    (d/transact! conn [[:db/retractEntity id]])
+    (assoc db :store @conn)))
 
 (reg-event-db
   :update-character
@@ -97,10 +96,11 @@
             (update :location-connections difference location-connections))))))
 
 (reg-event-db
-  :update-location
+  :location-editor/update-name
   [spec-interceptor]
-  (fn [db [_ id field value]]
-    (assoc-in db [:locations id field] value)))
+  (fn [db [_ location-id value]]
+    (d/transact! conn [[:db/add location-id :location/name value]])
+    (assoc db :store @conn)))
 
 ;; Line CRUD
 
@@ -270,8 +270,9 @@
 (reg-event-db
   :move-entity
   [spec-interceptor]
-  (fn [db [_ dialogue-id position]]
-    (d/transact! conn [[:db/add dialogue-id :dialogue/position position]])
+  (fn [db [_ location-id dialogue-id position]]
+    (d/transact! conn [[:db/add dialogue-id :dialogue/position position]
+                       [:db/add location-id :location/dialogues dialogue-id]])
     (-> db
         (dissoc :dnd-payload)
         (update :location-editor dissoc :highlight)
@@ -280,10 +281,18 @@
 (reg-event-db
   :remove-entity
   [spec-interceptor]
-  (fn [db [_ location entity]]
+  (fn [{store :store :as db} [_ location-id dialogue-id position]]
+    (let [pos (d/q '[:find ?p .
+                     :in $ ?d
+                     :where [?d :dialogue/position ?p]]
+                   store
+                   dialogue-id)]
+      (d/transact! conn [[:db/retract dialogue-id :dialogue/position pos]
+                         [:db/retract location-id :location/dialogues dialogue-id]]))
     (-> db
         (dissoc :dnd-payload)
-        (update-in [:locations location :npcs] #(filter-map (fn [v] (not= v entity)) %)))))
+        (update :location-editor dissoc :highlight)
+        (assoc :store @conn))))
 
 (reg-event-db
   :move-trigger
@@ -333,29 +342,22 @@
 (reg-event-db
   :resize-smaller
   [spec-interceptor]
-  (fn [db [_ location-id direction]]
+  (fn [{store :store :as db} [_ location-id direction]]
     (let [[shift-index shift-delta] (case direction
                                       :up [0 [0 1]]
                                       :left [0 [1 0]]
                                       :right [1 [-1 0]]
                                       :down [1 [0 -1]])
-          new-dimension (update (get-in db [:locations location-id :dimension])
-                                shift-index translate-point shift-delta)
-          in-bounds? (partial rect-contains? new-dimension)
-          remove-oob (fn [coll] (filter-keys in-bounds? coll))]
-      (update-in db [:locations location-id]
-                 (fn [location]
-                   (-> location
-                       (assoc :dimension new-dimension)
-                       (update :background remove-oob)
-                       (update :npcs remove-oob)
-                       (update :connection-triggers remove-oob)
-                       (update :walk-set (comp set #(filter in-bounds? %)))))))))
+          old-value (-> (d/pull store [:location/dimension] location-id)
+                        :location/dimension)]
+      (d/transact! conn [[:db/add location-id :location/dimension
+                          (update old-value shift-index translate-point shift-delta)]])
+      (assoc db :store @conn))))
 
 (reg-event-db
   :resize-larger
   [spec-interceptor]
-  (fn [{store :sotre :as db} [_ location-id direction]]
+  (fn [{store :store :as db} [_ location-id direction]]
     (let [[shift-index shift-delta] (case direction
                                       :up [0 [0 -1]]
                                       :left [0 [-1 0]]

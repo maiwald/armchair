@@ -74,11 +74,11 @@
       [:a {:on-click #(>evt [:resize-larger location-id :right])} [icon "arrow-right" "extend"]]]]]])
 
 (defn location-editor-sidebar-npcs [location-id]
-  (let [available-npcs (<sub [:available-npcs location-id])
+  (let [available-npcs (<sub [:location-editor/available-npcs])
         dnd-entity (:entity (<sub [:dnd-payload]))]
     [slds/label "Available NPCs"
      [:ul {:class "tile-list"}
-      (for [[_ {character-id :id :keys [display-name texture]}] available-npcs]
+      (for [[character-id {:keys [display-name texture]}] available-npcs]
         [:li {:key (str "character-select" display-name)
               :class "tile-list__item"
               :draggable true
@@ -117,28 +117,26 @@
        [:span display-name]])]])
 
 (defn location-editor-sidebar [location-id]
-  (let [{:keys [display-name]} (<sub [:location-editor/everything location-id])
+  (let [{:keys [name]} (<sub [:location-editor/everything location-id])
         {:keys [tool]} (<sub [:location-editor/ui])]
-    (letfn [(update-display-name [e]
-              (>evt [:update-location location-id :display-name (e->val e)]))]
-      [slds/form
-       [slds/input-text {:label "Name"
-                         :on-change update-display-name
-                         :value display-name}]
-       [slds/radio-button-group {:label "Tools"
-                                 :options [[:background-painter [icon "layer-group" "Background"]]
-                                           [:resize [icon "arrows-alt" "Resize"]]
-                                           [:collision [icon "walking" "Collision"]]
-                                           [:npcs-select [icon "user" "NPCs"]]
-                                           [:connection-select [icon "external-link-alt" "Connections"]]]
-                                 :active tool
-                                 :on-change #(>evt [:set-tool %])}]
-       (case tool
-         :background-painter [location-editor-sidebar-paint location-id]
-         :resize [location-editor-sidebar-resize location-id]
-         :npcs-select [location-editor-sidebar-npcs location-id]
-         :connection-select [location-editor-sidebar-connections location-id]
-         nil)])))
+    [slds/form
+     [slds/input-text {:label "Name"
+                       :on-change #(>evt [:location-editor/update-name location-id (e->val %)])
+                       :value name}]
+     [slds/radio-button-group {:label "Tools"
+                               :options [[:background-painter [icon "layer-group" "Background"]]
+                                         [:resize [icon "arrows-alt" "Resize"]]
+                                         [:collision [icon "walking" "Collision"]]
+                                         [:npcs-select [icon "user" "NPCs"]]
+                                         [:connection-select [icon "external-link-alt" "Connections"]]]
+                               :active tool
+                               :on-change #(>evt [:set-tool %])}]
+     (case tool
+       :background-painter [location-editor-sidebar-paint location-id]
+       :resize [location-editor-sidebar-resize location-id]
+       :npcs-select [location-editor-sidebar-npcs location-id]
+       :connection-select [location-editor-sidebar-connections location-id]
+       nil)]))
 
 (defn tile-style [x y]
   {:width (str config/tile-size "px")
@@ -219,7 +217,6 @@
                                 :draggable true
                                 :on-drag-start (fn [e]
                                                  (set-dnd-texture! e)
-                                                 (js/console.log "fll")
                                                  (>evt [:start-entity-drag {:entity id}]))}
                           [dnd-texture texture]]))
         (when-let [entity (:entity dnd-payload)]
@@ -227,7 +224,7 @@
                         (fn [tile]
                           [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
                                  :on-drag-over (e-> (once #(>evt [:set-highlight tile])))
-                                 :on-drop #(>evt [:move-entity entity tile])}])))]
+                                 :on-drop #(>evt [:move-entity location-id entity tile])}])))]
        :connection-select
        [:div
         (do-some-tiles dimension connection-triggers "connection-select"

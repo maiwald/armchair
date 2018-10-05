@@ -1,7 +1,6 @@
 (ns armchair.subs
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
             [clojure.spec.alpha :as s]
-            [clojure.set :refer [rename-keys]]
             [datascript.core :as d]
             [armchair.db :as db]
             [armchair.config :as config]
@@ -30,6 +29,10 @@
 (reg-sub :modal #(:modal %))
 (reg-sub :dnd-payload #(:dnd-payload %))
 (reg-sub :db-store #(:store %))
+
+(defn l [item]
+  (js/console.log item)
+  item)
 
 (reg-sub
   :character-list
@@ -170,16 +173,19 @@
     (map-values :display-name locations)))
 
 (reg-sub
-  :available-npcs
-  :<- [:db-locations]
-  :<- [:db-characters]
-  (fn [[locations characters] [_ location-id]]
-    (let [placed-characters (->> (vals locations)
-                                 (map :npcs)
-                                 (filter some?)
-                                 (apply merge)
-                                 vals)]
-      (apply dissoc (into [characters] placed-characters)))))
+  :location-editor/available-npcs
+  :<- [:db-store]
+  (fn [store _]
+    (->> (d/q '[:find ?dialogue ?name ?texture (pull ?dialogue [:location/_dialogues])
+                :where
+                [?npc :npc/dialogues ?dialogue]
+                [?npc :npc/name ?name]
+                [?npc :npc/texture ?texture]]
+              store)
+         (filter #(nil? (nth % 3)))
+         (map (fn [[dialogue & args]]
+                [dialogue (zipmap [:display-name :texture] args)]))
+         (into {}))))
 
 (reg-sub
   :ui/position
