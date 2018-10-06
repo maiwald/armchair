@@ -79,9 +79,9 @@
           id (new-id db :locations)]
       (assoc-in new-db [:locations id] {:id id
                                         :dimension [[0 0] [2 2]]
-                                        :background #{}
+                                        :background {}
                                         :walk-set #{}
-                                        :connection-triggers #{}
+                                        :connection-triggers {}
                                         :display-name (str "location #" id)
                                         :position-id position-id}))))
 
@@ -111,10 +111,12 @@
   [spec-interceptor]
   (fn [db [_ dialogue-id]]
     (let [[new-db position-id] (generate-position db)
-          id (new-id db :lines)]
+          id (new-id db :lines)
+          character-id (get-in new-db [:dialogues dialogue-id :initial-line-id])]
+      (js/console.log character-id)
       (assoc-in new-db [:lines id] {:id id
                                     :kind :npc
-                                    :character-id nil
+                                    :character-id character-id
                                     :dialogue-id dialogue-id
                                     :position-id position-id
                                     :text nil

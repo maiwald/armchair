@@ -63,7 +63,7 @@
 (def state (atom nil))
 
 (def initial-game-state
-  {:player {:position (tile->coord [0 12])
+  {:player {:position (tile->coord [8 12])
             :direction :right
             :infos #{}}})
 

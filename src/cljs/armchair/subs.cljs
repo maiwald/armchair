@@ -120,6 +120,7 @@
     (map-values (fn [{:keys [character-id location-id] :as dialogue}]
                   (assoc dialogue
                          :character (select-keys (characters character-id) [:id :display-name])
+                         :texture (:texture (characters character-id))
                          :location (select-keys (locations location-id) [:id :display-name])))
                 dialogues)))
 
@@ -227,9 +228,10 @@
   :<- [:db-characters]
   :<- [:db-infos]
   (fn [[locations dialogues lines characters infos] _]
-    (let [location (get locations 1)
+    (let [location-id 1
+          location (get locations location-id)
           normalize-tile (fn [tile] (rect->0 (:dimension location) tile))
-          location-dialogues (where-map :location-id 1 dialogues)]
+          location-dialogues (where-map :location-id location-id dialogues)]
       {:dimension (:dimension location)
        :npcs (into {} (map (fn [[tile npc]]
                              [(normalize-tile tile) (get characters npc)])

@@ -29,3 +29,7 @@ To compile clojurescript to javascript:
 lein clean
 lein cljsbuild once min
 ```
+
+# Credit
+
+https://opengameart.org/content/lpc-tile-atlas2

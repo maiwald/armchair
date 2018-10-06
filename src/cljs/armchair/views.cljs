@@ -8,7 +8,7 @@
             [armchair.util :refer [translate-point]]
             [armchair.config :as config]
             [armchair.routes :refer [routes >navigate]]
-            [armchair.textures :refer [character-textures]]
+            [armchair.textures :refer [character-textures texture-path]]
             [bidi.bidi :refer [match-route]]
             [clojure.core.async :refer [put!]]))
 
@@ -193,11 +193,13 @@
 (defn dialogue-management []
   (let [dialogues (<sub [:dialogue-list])]
     [slds/resource-page "Dialogues"
-     {:columns [:id :character :location :description :actions]
+     {:columns [:id :location :texture :character :description :actions]
       :collection (vals dialogues)
       :cell-views {:character (fn [{:keys [id display-name]}]
                                 [:a {:on-click #(>evt [:open-character-modal id])}
                                  display-name])
+                   :texture (fn [texture]
+                              [:img {:src (texture-path texture)}])
                    :location (fn [{:keys [id display-name]}]
                                [:a {:on-click #(>navigate :location-edit :id id)}
                                 display-name])
@@ -211,9 +213,11 @@
 (defn character-management []
   (let [characters (<sub [:character-list])]
     [slds/resource-page "Characters"
-     {:columns [:id :display-name :color :line-count :actions]
+     {:columns [:id :texture :display-name :color :line-count :actions]
       :collection (vals characters)
       :cell-views {:color (fn [color] [slds/badge color color])
+                   :texture (fn [texture]
+                              [:img {:src (texture-path texture)}])
                    :actions (fn [_ {:keys [id line-count]}]
                               [:div {:class "slds-text-align_right"}
                                (when (zero? line-count)

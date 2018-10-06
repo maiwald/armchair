@@ -2,6 +2,16 @@
   (:require [clojure.core.async :refer [go chan take! put! <!]]))
 
 (def background-textures [:dirt
+                          :stairs
+                          :red_wall-top-left
+                          :red_wall-top
+                          :red_wall_top-right
+                          :red_wall-left
+                          :red_wall-center
+                          :red_wall-right
+                          :red_wall-bottom-left
+                          :red_wall-bottom
+                          :red_wall-bottom-right
                           :house_arch_top
                           :house_bottom_left
                           :house_bottom_right
