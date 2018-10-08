@@ -21,18 +21,20 @@
   "Normalize a point relative to a rect to a 0,0 based rect"
   (translate-point point top-left -))
 
-(defn translate-positions [positions ids delta]
-  (let [relevant-ids (intersection (-> positions keys set) ids)]
-    (reduce #(update %1 %2 translate-point delta) positions relevant-ids)))
-
 (defn map-values [f m]
   (into {} (for [[k v] m] [k (f v)])))
 
 (defn map-keys [f m]
   (into {} (for [[k v] m] [(f k) v])))
 
-(defn where [property value coll]
-  (filter #(= (property %) value) coll))
+(defn where
+  ([property value coll]
+   (filter #(= (property %) value)
+           coll))
+  ([property-map coll]
+   (filter #(every? (fn [[p v]] (= (p %) v))
+                    property-map)
+           coll)))
 
 (defn filter-map [pred? coll]
   (into {} (filter #(pred? (second %)) coll)))
@@ -40,8 +42,14 @@
 (defn filter-keys [pred? coll]
   (into {} (filter #(pred? (first %)) coll)))
 
-(defn where-map [property value coll]
-  (filter-map #(= (property %) value) coll))
+(defn where-map
+  ([property value coll]
+   (filter-map #(= (property %) value)
+               coll))
+  ([property-map coll]
+   (filter-map #(every? (fn [[p v]] (= (p %) v))
+                        property-map)
+               coll)))
 
 (defn once [f]
   (let [called (atom false)]

@@ -78,7 +78,7 @@
         dnd-entity (:entity (<sub [:dnd-payload]))]
     [slds/label "Available NPCs"
      [:ul {:class "tile-list"}
-      (for [[_ {character-id :id :keys [display-name texture]}] available-npcs]
+      (for [[_ {character-id :entity/id :keys [display-name texture]}] available-npcs]
         [:li {:key (str "character-select" display-name)
               :class "tile-list__item"
               :draggable true
@@ -105,7 +105,7 @@
 (defn location-editor-sidebar-connections [location-id]
   [slds/label "Assigned Connections"
    [:ul {:class "tile-list"}
-    (for [[_ {target-id :id :keys [display-name]}] (<sub [:connected-locations location-id])]
+    (for [[_ {target-id :entity/id :keys [display-name]}] (<sub [:connected-locations location-id])]
       [:li {:key (str "connection-select" display-name)
             :class "tile-list__item"
             :draggable true
@@ -212,7 +212,7 @@
        :npcs-select
        [:div
         (do-some-tiles dimension npcs "npc-select"
-                       (fn [tile {:keys [id texture display-name]}]
+                       (fn [tile {id :entity/id :keys [texture display-name]}]
                          [:div {:class "interactor interactor_draggable"
                                 :title display-name
                                 :draggable true
@@ -229,7 +229,7 @@
        :connection-select
        [:div
         (do-some-tiles dimension connection-triggers "connection-select"
-                       (fn [tile {:keys [id display-name]}]
+                       (fn [tile {id :entity/id :keys [display-name]}]
                          [:div {:class "interactor interactor_draggable"
                                 :title (str "to " display-name)
                                 :draggable true

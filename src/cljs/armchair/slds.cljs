@@ -137,7 +137,7 @@
              options)
    [:i {:class (str "slds-button__icon fas fa-" sym)} ]])
 
-(defn data-table [{:keys [table-id columns cell-views title collection]}]
+(defn data-table [{:keys [table-id id columns cell-views title collection]}]
   [:div {:class "slds-grid slds-gutters"}
    [:table {:class "slds-table slds-table_bordered slds-table_cell-buffer"}
     [:thead {:class "slds-text-title_caps"}
@@ -149,9 +149,9 @@
          column])]]
     [:tbody
      (for [item collection]
-       [:tr {:key (str table-id (:id item))}
+       [:tr {:key (str table-id (get item id))}
         (for [column columns]
-          [:td {:key (str table-id (:id item) column)}
+          [:td {:key (str table-id (get item id) column)}
            (if-let [cell-view (get cell-views column)]
              [cell-view (get item column) item]
              (get item column))])])]]])

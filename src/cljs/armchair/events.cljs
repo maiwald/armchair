@@ -6,11 +6,10 @@
             [armchair.routes :refer [routes]]
             [armchair.util :refer [filter-map
                                    filter-keys
-                                   map-keys
                                    map-values
                                    translate-point
-                                   translate-positions
                                    rect-contains?]]))
+
 
 (def spec-interceptor (after (fn [db]
                                (when-not (s/valid? :armchair.db/state db)
@@ -36,13 +35,7 @@
 
 ;; Resources
 
-(defn new-id [db resource-type]
-  (let [items (get db resource-type)]
-    (+ 1 (reduce max 0 (keys items)))))
-
-(defn generate-position [db]
-  (let [position-id (new-id db :positions)]
-    [(assoc-in db [:positions position-id] [20 20]) position-id]))
+(def default-ui-position [20 20])
 
 ;; Character CRUD
 
@@ -50,9 +43,12 @@
   :create-character
   [spec-interceptor]
   (fn [db]
-    (let [id (new-id db :characters)
-          new-character {:id id :color "black" :display-name (str "Character #" id)}]
-      (update db :characters assoc id new-character))))
+    (let [id (random-uuid)
+          new-character {:entity/id id
+                         :entity/type :character
+                         :color "black"
+                         :display-name (str "Character #" id)}]
+      (assoc-in db [:characters id] new-character))))
 
 (reg-event-db
   :delete-character
@@ -75,15 +71,16 @@
   :create-location
   [spec-interceptor]
   (fn [db]
-    (let [[new-db position-id] (generate-position db)
-          id (new-id db :locations)]
-      (assoc-in new-db [:locations id] {:id id
-                                        :dimension [[0 0] [2 2]]
-                                        :background {}
-                                        :walk-set #{}
-                                        :connection-triggers {}
-                                        :display-name (str "location #" id)
-                                        :position-id position-id}))))
+    (let [id (random-uuid)]
+      (-> db
+          (assoc-in [:ui/positions id] default-ui-position)
+          (assoc-in [:locations id] {:entity/id id
+                                     :entity/type :location
+                                     :dimension [[0 0] [2 2]]
+                                     :background {}
+                                     :walk-set #{}
+                                     :connection-triggers {}
+                                     :display-name (str "location #" id)})))))
 
 ;; Location CRUD
 
@@ -110,29 +107,30 @@
   :create-npc-line
   [spec-interceptor]
   (fn [db [_ dialogue-id]]
-    (let [[new-db position-id] (generate-position db)
-          id (new-id db :lines)
-          character-id (get-in new-db [:dialogues dialogue-id :initial-line-id])]
-      (js/console.log character-id)
-      (assoc-in new-db [:lines id] {:id id
-                                    :kind :npc
-                                    :character-id character-id
-                                    :dialogue-id dialogue-id
-                                    :position-id position-id
-                                    :text nil
-                                    :next-line-id nil}))))
+    (let [id (random-uuid)
+          character-id (get-in db [:dialogues dialogue-id :character-id])]
+      (-> db
+          (assoc-in [:ui/positions id] default-ui-position)
+          (assoc-in [:lines id] {:entity/id id
+                                 :entity/type :line
+                                 :kind :npc
+                                 :character-id character-id
+                                 :dialogue-id dialogue-id
+                                 :text nil
+                                 :next-line-id nil})))))
 
 (reg-event-db
   :create-player-line
   [spec-interceptor]
   (fn [db [_ dialogue-id]]
-    (let [[new-db position-id] (generate-position db)
-          id (new-id db :lines)]
-      (assoc-in new-db [:lines id] {:id id
-                                    :kind :player
-                                    :dialogue-id dialogue-id
-                                    :position-id position-id
-                                    :options []}))))
+    (let [id (random-uuid)]
+      (-> db
+          (assoc-in [:ui/positions id] default-ui-position)
+          (assoc-in [:lines id] {:entity/id id
+                                 :entity/type :line
+                                 :kind :player
+                                 :dialogue-id dialogue-id
+                                 :options []})))))
 
 (defn initial-line? [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
@@ -218,8 +216,10 @@
   :create-info
   [spec-interceptor]
   (fn [db]
-    (let [id (new-id db :infos)]
-      (update db :infos assoc id {:id id :text ""}))))
+    (let [id (random-uuid)]
+      (update db :infos assoc id {:entity/id id
+                                  :entity/type :info
+                                  :text ""}))))
 
 (reg-event-db
   :delete-info
@@ -430,21 +430,21 @@
   :create-dialogue
   [spec-interceptor]
   (fn [db]
-    (let [[new-db position-id] (generate-position db)
-          dialogue-id (new-id db :dialogues)
-          line-id (new-id db :lines)
+    (let [dialogue-id (random-uuid)
+          line-id (random-uuid)
           modal-data (get-in db [:modal :dialogue-creation])]
-      (-> new-db
-          (assoc-in [:dialogues dialogue-id] (merge {:id dialogue-id
+      (-> db
+          (assoc-in [:dialogues dialogue-id] (merge {:entity/id dialogue-id
+                                                     :entity/type :dialogue
                                                      :initial-line-id line-id}
                                                     (select-keys modal-data [:location-id
                                                                              :character-id
                                                                              :description])))
-          (assoc-in [:lines line-id] {:id line-id
+          (assoc-in [:lines line-id] {:entity/id line-id
+                                      :entity/type :line
                                       :kind :npc
                                       :character-id (:character-id modal-data)
                                       :dialogue-id dialogue-id
-                                      :position-id position-id
                                       :text nil
                                       :next-line-id nil})
           (dissoc :modal)))))
@@ -541,9 +541,9 @@
 (reg-event-db
   :start-dragging
   [spec-interceptor]
-  (fn [db [_ position-ids cursor]]
+  (fn [db [_ ids cursor]]
     (cond-> db
-      (not (contains? db :dragging)) (assoc :dragging {:position-ids position-ids
+      (not (contains? db :dragging)) (assoc :dragging {:ids ids
                                                        :cursor-start cursor}
                                             :cursor cursor))))
 
@@ -553,8 +553,12 @@
   (fn [{:keys [dragging cursor] :as db}]
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
-    (let [{:keys [cursor-start position-ids]} dragging
+    (let [{:keys [cursor-start ids]} dragging
           delta (translate-point cursor cursor-start -)]
       (-> db
-          (update :positions translate-positions position-ids delta)
+          (update :ui/positions (fn [positions]
+                                  (reduce
+                                    (fn [acc id] (update acc id translate-point delta))
+                                    positions
+                                    ids)))
           (dissoc :dragging :cursor)))))

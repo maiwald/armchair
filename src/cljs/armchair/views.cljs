@@ -46,44 +46,49 @@
 
 ;; Drag & Drop
 
-(defn start-dragging-handler [position-ids]
+(defn start-dragging-handler [ids]
   (e-> #(when (left-button? %)
-          (>evt [:start-dragging position-ids (e->graph-cursor %)]))))
+          (>evt [:start-dragging ids (e->graph-cursor %)]))))
 
-(defn connection [{:keys [kind start end]}]
+(defn connection [{kind :kind [x1 y1] :start [x2 y2] :end}]
   [:line {:class ["graph__connection"
                   (when (= kind :connector) "graph__connection_is-connector")]
-          :x1 (first start)
-          :y1 (second start)
-          :x2 (first end)
-          :y2 (second end)}])
+          :x1 x1
+          :y1 y1
+          :x2 x2
+          :y2 y2}])
 
-(defn drag-item [{:keys [position position-id]} component]
-  (let [dragging? (<sub [:dragging-item? position-id])]
+(defn drag-item [item-id component]
+  (let [position (<sub [:ui/position item-id])
+        dragging? (<sub [:dragging-item? item-id])
+        start-dragging (start-dragging-handler #{item-id})
+        stop-dragging (when dragging? (e-> #(>evt [:end-dragging])))]
     [:div {:class ["graph__item"
                    (when dragging? "graph__item_is-dragging")]
-           :on-mouse-down (start-dragging-handler #{position-id})
-           :on-mouse-up (e-> #(when dragging? (>evt [:end-dragging])))
+           :on-mouse-down start-dragging
+           :on-mouse-up stop-dragging
            :style {:left (first position)
                    :top (second position)}}
-     component]))
+     [component item-id]]))
 
-(defn drag-canvas [{:keys [items kind item-component]} & connection-children]
-  (let [position-ids (->> items vals (map :position-id) set)
-        connecting? (some? (<sub [:connector]))
-        dragging? (<sub [:dragging?])]
+(defn drag-canvas [{:keys [item-ids kind item-component]} & connection-children]
+  (let [connecting? (some? (<sub [:connector]))
+        dragging? (<sub [:dragging?])
+        mouse-down (start-dragging-handler (set item-ids))
+        mouse-move (e-> #(when (or dragging? connecting?)
+                           (>evt [:move-cursor (e->graph-cursor %)])))
+        mouse-up (cond
+                   connecting? (e-> #(>evt [:abort-connecting]))
+                   dragging? (e-> #(>evt [:end-dragging]))) ]
     [:div {:class (cond-> ["graph"]
                     dragging? (conj "graph_is-dragging")
                     connecting? (conj "graph_is-connecting"))
-           :on-mouse-down (start-dragging-handler position-ids)
-           :on-mouse-move (e-> #(when (or dragging? connecting?)
-                                  (>evt [:move-cursor (e->graph-cursor %)])))
-           :on-mouse-up (e-> #(cond
-                                connecting? (>evt [:abort-connecting])
-                                dragging? (>evt [:end-dragging])))}
+           :on-mouse-down mouse-down
+           :on-mouse-move mouse-move
+           :on-mouse-up mouse-up}
      (into [:div] connection-children)
-     (for [[id item] items]
-       ^{:key (str kind id)} [drag-item item [item-component item]])]))
+     (for [id item-ids]
+       ^{:key (str kind id)} [drag-item id item-component])]))
 
 ;; Components
 
@@ -91,14 +96,13 @@
   [:i {:class (str "fas fa-" glyph)
        :title title}])
 
-(defn npc-line-component [{:keys [id info-ids initial-line? text character-name character-color]}]
+(defn npc-line-component [{id :entity/id :keys [info-ids initial-line? text character-name character-color]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:border-color character-color
                    :width (str config/line-width "px")}}
      [:header {:class "line__header"}
-      [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} character-name]
       [:ul {:class "states"}
        (when initial-line?
@@ -120,13 +124,12 @@
                                     (>evt [:start-connecting-lines id (e->graph-cursor %)])))}
        [icon "project-diagram" "Connect"]]]]))
 
-(defn player-line-component [{:keys [id initial-line? options]}]
+(defn player-line-component [{id :entity/id :keys [initial-line? options]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
            :style {:width (str config/line-width "px")}}
      [:div {:class "line__header"}
-      [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} "Player"]
       [:ul {:class "actions" :on-mouse-down stop-e!}
        (when-not initial-line?
@@ -151,59 +154,65 @@
                        [icon "project-diagram" "Connect"]]])
                    options)]]))
 
-(defn line-component [line]
-  (case (:kind line)
-    :npc [npc-line-component line]
-    :player [player-line-component line]))
+(defn line-component [line-id]
+  (let [line (<sub [:dialogue/line line-id])]
+        (case (:kind line)
+          :npc [npc-line-component line]
+          :player [player-line-component line])))
 
-(defn npc-connection [start-position end-position]
-  [connection {:start (translate-point start-position [(- config/line-width 15) (+ 33 (/ config/line-height 2))])
-               :end (translate-point end-position [15 (+ 33 (/ config/line-height 2))])}])
+(defn npc-connection [start end]
+  (let [start-pos (<sub [:ui/position start])
+        end-pos (<sub [:ui/position end])]
+    [connection {:start (translate-point start-pos [(- config/line-width 15)
+                                                    (+ 33 (/ config/line-height 2))])
+                 :end (translate-point end-pos [15 (+ 33 (/ config/line-height 2))])}]))
 
-(defn player-connection [start-position index end-position]
-  [connection {:start (translate-point start-position [(- config/line-width 15)
-                                                          (+ 33
-                                                             (/ config/line-height 2)
-                                                             (* index config/line-height))])
-               :end (translate-point end-position [15 (+ 33 (/ config/line-height 2))])}])
+(defn player-connection [start index end]
+  (let [start-pos (<sub [:ui/position start])
+        end-pos (<sub [:ui/position end])]
+    [connection {:start (translate-point start-pos [(- config/line-width 15)
+                                                    (+ 33
+                                                       (/ config/line-height 2)
+                                                       (* index config/line-height))])
+                 :end (translate-point end-pos [15 (+ 33 (/ config/line-height 2))])}]))
 
 (defn dialogue-editor [dialogue-id]
-  (if-let [{:keys [lines npc-connections player-connections]} (<sub [:dialogue dialogue-id])]
-    (letfn [(get-pos [line-id] get-pos (get-in lines [line-id :position]))]
-      [:div {:class "full-page"}
-       [:div {:class "new-item-button"}
-        [slds/add-button "New Player Line" #(>evt [:create-player-line dialogue-id])]
-        [slds/add-button "New NPC Line" #(>evt [:create-npc-line dialogue-id])]]
-       [drag-canvas {:kind "line"
-                     :items lines
-                     :item-component line-component}
-        [:svg {:class "graph__connection-container" :version "1.1"
-               :baseProfile "full"
-               :xmlns "http://www.w3.org/2000/svg"}
-         (when-let [connector (<sub [:connector])]
-           [connection connector])
-         (for [[start end] npc-connections]
-           ^{:key (str "line-connection:" start "->" end)}
-           [npc-connection (get-pos start) (get-pos end)])
-         (for [[start index end] player-connections]
-           ^{:key (str "response-connection:" start ":" index "->" end)}
-           [player-connection (get-pos start) index (get-pos end)])]]])
+  (if-let [{:keys [line-ids npc-connections player-connections]} (<sub [:dialogue dialogue-id])]
+    [:div {:class "full-page"}
+     [:div {:class "new-item-button"}
+      [slds/add-button "New Player Line" #(>evt [:create-player-line dialogue-id])]
+      [slds/add-button "New NPC Line" #(>evt [:create-npc-line dialogue-id])]]
+     [drag-canvas {:kind "line"
+                    :item-ids line-ids
+                    :item-component line-component}
+      [:svg {:class "graph__connection-container" :version "1.1"
+             :baseProfile "full"
+             :xmlns "http://www.w3.org/2000/svg"}
+       (when-let [connector (<sub [:connector])]
+         [connection connector])
+       (for [[start end] npc-connections]
+         ^{:key (str "line-connection:" start "->" end)}
+         [npc-connection start end])
+       (for [[start index end] player-connections]
+         ^{:key (str "response-connection:" start ":" index "->" end)}
+         [player-connection start index end])]]]
     [:span "No dialogue selected!"]))
 
 (defn dialogue-management []
   (let [dialogues (<sub [:dialogue-list])]
     [slds/resource-page "Dialogues"
-     {:columns [:id :location :texture :character :description :actions]
+     {:id :entity/id
+      :columns [:location :texture :character :description :actions]
       :collection (vals dialogues)
-      :cell-views {:character (fn [{:keys [id display-name]}]
+      :cell-views {:character (fn [{id :entity/id :keys [display-name]}]
                                 [:a {:on-click #(>evt [:open-character-modal id])}
                                  display-name])
                    :texture (fn [texture]
                               [:img {:src (texture-path texture)}])
-                   :location (fn [{:keys [id display-name]}]
+                   :location (fn [{id :entity/id :keys [entity/id display-name]}]
                                [:a {:on-click #(>navigate :location-edit :id id)}
                                 display-name])
-                   :actions (fn [_ {id :id}]
+                   :actions (fn [_ {id :entity/id}]
                               [:div {:class "slds-text-align_right"}
                                [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this dialogue?")
                                                                              (>evt [:delete-dialogue id]))}]
@@ -213,12 +222,13 @@
 (defn character-management []
   (let [characters (<sub [:character-list])]
     [slds/resource-page "Characters"
-     {:columns [:id :texture :display-name :color :line-count :actions]
+     {:id :entity/id
+      :columns [:texture :display-name :color :line-count :actions]
       :collection (vals characters)
       :cell-views {:color (fn [color] [slds/badge color color])
                    :texture (fn [texture]
                               [:img {:src (texture-path texture)}])
-                   :actions (fn [_ {:keys [id line-count]}]
+                   :actions (fn [_ {id :entity/id :keys [line-count]}]
                               [:div {:class "slds-text-align_right"}
                                (when (zero? line-count)
                                  [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this character?")
@@ -231,55 +241,56 @@
     [slds/resource-page "Infos"
      {:columns [:id :description :actions]
       :collection (vals infos)
-      :cell-views {:actions (fn [_ {id :id}]
+      :cell-views {:actions (fn [_ {id :entity/id}]
                               [:div {:class "slds-text-align_right"}
                                [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this info?")
                                                                              (>evt [:delete-info id]))}]
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-info-modal id])}]])}
       :new-resource #(>evt [:create-info])}]))
 
-(defn location-component [{:keys [id display-name dialogues] :as location}]
-  (let [connecting? (some? (<sub [:connector]))]
+(defn location-component [location-id]
+  (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])
+        connecting? (some? (<sub [:connector]))]
     [:div {:class "location"
-           :on-mouse-up (when connecting? #(>evt [:end-connecting-locations id]))
+           :on-mouse-up (when connecting? #(>evt [:end-connecting-locations location-id]))
            :style {:width (str config/line-width "px")}}
      [:div {:class "location__header"}
-      [:p {:class "id"} (str "#" id)]
       [:p {:class "name"} display-name]
       [:ul {:class "actions"
             :on-mouse-down stop-e!}
        [:li {:class "action"
              :on-click #(when (js/confirm "Are you sure you want to delete this location?")
-                          (>evt [:delete-location id]))}
+                          (>evt [:delete-location location-id]))}
         [icon "trash" "Delete"]]
        [:li {:class "action"
-             :on-click #(>navigate :location-edit :id id)}
+             :on-click #(>navigate :location-edit :id location-id)}
         [icon "edit" "Edit"]]
        [:li {:class "action action_connect"
              :on-mouse-down (e-> #(when (left-button? %)
-                                    (>evt [:start-connecting-locations id (e->graph-cursor %)])))}
+                                    (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
         [icon "project-diagram" "Connect"]]]]
      [:ul {:class "location__characters"}
-      (for [dialogue dialogues]
-        [:li {:key (str "location-dialogue-" id " - " (:id dialogue))}
-         [:a {:style {:background-color (:character-color dialogue)}
+      (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
+        [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
+         [:a {:style {:background-color npc-color}
               :on-mouse-down stop-e!
-              :on-click #(>navigate :dialogue-edit :id (:id dialogue))}
-          (:character-name dialogue)]])]]))
+              :on-click #(>navigate :dialogue-edit :id dialogue-id)}
+          npc-name]])]]))
 
 (defn location-connection [start end]
-  [connection {:start (translate-point start [(/ config/line-width 2) 15])
-               :end (translate-point end [(/ config/line-width 2) 15])}])
+  (let [start-pos (<sub [:ui/position start])
+        end-pos (<sub [:ui/position end])]
+    [connection {:start (translate-point start-pos [(/ config/line-width 2) 15])
+                 :end (translate-point end-pos [(/ config/line-width 2) 15])}]))
 
 (defn location-management []
-  (let [{:keys [locations connections]} (<sub [:location-map])
-        get-pos #(get-in locations [% :position])]
+  (let [{:keys [location-ids connections]} (<sub [:location-map])]
     [:div {:class "full-page"}
      [:div {:class "new-item-button"}
-      [slds/add-button "New" #(>evt [:create-location])]]
+      [slds/add-button "New" #(>evt [:location/create])]]
      [drag-canvas {:kind "location"
-                   :items locations
-                   :item-component location-component}
+                    :item-ids location-ids
+                    :item-component location-component}
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
@@ -287,7 +298,7 @@
          [connection connector])
        (for [[start end] connections]
          ^{:key (str "location-connection" start "->" end)}
-         [location-connection (get-pos start) (get-pos end)])]]]))
+         [location-connection start end])]]]))
 
 ;; Game canvas
 
@@ -345,11 +356,11 @@
                :close-handler #(>evt [:close-modal])}
    [slds/form
     [slds/input-select {:label "Character"
-                        :on-change #(>evt [:dialogue-creation-update :character-id (int (e->val %))])
+                        :on-change #(>evt [:dialogue-creation-update :character-id (uuid (e->val %))])
                         :options (<sub [:character-options])
                         :value character-id}]
     [slds/input-select {:label "Location"
-                        :on-change #(>evt [:dialogue-creation-update :location-id (int (e->val %))])
+                        :on-change #(>evt [:dialogue-creation-update :location-id (uuid (e->val %))])
                         :options (<sub [:location-options])
                         :value location-id}]
     [slds/input-textarea {:label "Description"
@@ -363,7 +374,7 @@
      [slds/form
       [slds/input-select {:label "Character"
                           :disabled (:initial-line? line)
-                          :on-change #(>evt [:update-line line-id :character-id (int (e->val %))])
+                          :on-change #(>evt [:update-line line-id :character-id (uuid (e->val %))])
                           :options (<sub [:character-options])
                           :value (:character-id line)}]
       [slds/input-textarea {:label "Text"
@@ -463,9 +474,9 @@
       (case page-name
         :game          [game-canvas]
         :locations     [location-management]
-        :location-edit [location-editor (int (:id page-params))]
+        :location-edit [location-editor (uuid (:id page-params))]
         :dialogues     [dialogue-management]
-        :dialogue-edit [dialogue-editor (int (:id page-params))]
+        :dialogue-edit [dialogue-editor (uuid (:id page-params))]
         :characters    [character-management]
         :infos         [info-management]
         [:div "Page not found"])]]))

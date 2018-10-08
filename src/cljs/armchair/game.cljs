@@ -41,7 +41,7 @@
 (s/def ::highlight ::point)
 
 (s/def ::all-npcs-have-dialogue (fn [{:keys [npcs dialogues]}]
-                                  (= (set (map #(:id (second %)) npcs))
+                                  (= (set (map #(:entity/id (second %)) npcs))
                                      (set (keys dialogues)))))
 (s/def ::state (s/and (s/keys :req-un [::player ::npcs]
                               :opt-un [::highlight ::interaction])
@@ -233,7 +233,7 @@
                         (cond-> (merge % {:interaction {:line-id next-interaction
                                                         :selected-option 0}})
                           (not (empty? info-ids)) (update-in [:player :infos] union info-ids))))))
-    (if-let [{npc-id :id} ((:npcs @state) (interaction-tile @state))]
+    (if-let [{npc-id :entity/id} ((:npcs @state) (interaction-tile @state))]
       (swap! state assoc :interaction {:line-id (get-in @state [:dialogues npc-id])
                                        :selected-option 0}))))
 
