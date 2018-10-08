@@ -57,3 +57,7 @@
       (when-not @called
         (reset! called true)
         (apply f args)))))
+
+(defn log [& args]
+  (apply js/console.log args)
+  (first args))

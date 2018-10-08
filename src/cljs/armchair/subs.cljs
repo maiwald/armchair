@@ -10,10 +10,6 @@
                                    map-values
                                    rect->0
                                    translate-point]]))
-(defn l [& args]
-  (apply js/console.log args)
-  (first args))
-
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
 (reg-sub :db-infos #(:infos %))

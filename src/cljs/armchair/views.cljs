@@ -79,7 +79,7 @@
                            (>evt [:move-cursor (e->graph-cursor %)])))
         mouse-up (cond
                    connecting? (e-> #(>evt [:abort-connecting]))
-                   dragging? (e-> #(>evt [:end-dragging]))) ]
+                   dragging? (e-> #(>evt [:end-dragging])))]
     [:div {:class (cond-> ["graph"]
                     dragging? (conj "graph_is-dragging")
                     connecting? (conj "graph_is-connecting"))
@@ -156,9 +156,9 @@
 
 (defn line-component [line-id]
   (let [line (<sub [:dialogue/line line-id])]
-        (case (:kind line)
-          :npc [npc-line-component line]
-          :player [player-line-component line])))
+    (case (:kind line)
+      :npc [npc-line-component line]
+      :player [player-line-component line])))
 
 (defn npc-connection [start end]
   (let [start-pos (<sub [:ui/position start])

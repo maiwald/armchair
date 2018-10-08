@@ -26,8 +26,8 @@
     :plugins      [[lein-figwheel "0.5.16"]
                    [lein-ancient "0.6.15"]]
     :source-paths ["src/cljs" "dev"]
-    :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
-    }}
+    :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}}}
+
 
   :cljsbuild
   {:builds
@@ -43,8 +43,7 @@
                     :closure-defines      {"re_frame.trace.trace_enabled_QMARK_" true}
                     :external-config      {:devtools/config
                                            {:features-to-install [:formatters :hints]}}
-                    :optimizations        :none
-                    }}
+                    :optimizations        :none}}
 
     {:id           "min"
      :source-paths ["src/cljs"]
@@ -52,6 +51,4 @@
                     :output-to       "resources/public/js/compiled/app.js"
                     :optimizations   :advanced
                     :closure-defines {goog.DEBUG false}
-                    :pretty-print    false}}
-    ]}
-  )
+                    :pretty-print    false}}]})

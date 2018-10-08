@@ -35,7 +35,11 @@
 ;; Location Editor
 
 (s/def ::painting? boolean?)
-(s/def ::tool #{:npcs-select :resize :collision :background-painter :connection-select})
+(s/def ::tool #{:npcs-select
+                :resize
+                :collision
+                :background-painter
+                :connection-select})
 (s/def ::highlight ::point)
 (s/def ::active-texture ::texture)
 (s/def ::location-editor (s/keys :req-un [::tool
@@ -102,14 +106,17 @@
 (s/def ::npc-or-player-line (s/and (s/keys :req [:entity/id
                                                  :entity/type]
                                            :req-un [::dialogue-id])
-                                   (s/or :npc ::npc-line :player ::player-line)))
+                                   (s/or :npc ::npc-line
+                                         :player ::player-line)))
 
 (s/def ::lines (s/and ::entity-map
                       (s/map-of ::line-id ::npc-or-player-line)))
 
 (s/def ::dialogue (s/keys :req [:entity/id
                                 :entity/type]
-                                :req-un [::character-id ::initial-line-id ::location-id]
+                          :req-un [::character-id
+                                   ::initial-line-id
+                                   ::location-id]
                           :opt-un [::description]))
 (s/def ::dialogues (s/and ::entity-map
                           (s/map-of ::dialogue-id ::dialogue)))
