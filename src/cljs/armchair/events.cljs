@@ -272,23 +272,24 @@
     (dissoc db :dnd-payload)))
 
 (reg-event-db
-  :move-entity
+  :move-dialogue
   [spec-interceptor]
-  (fn [db [_ location entity to]]
+  (fn [db [_ location-id dialogue-id to]]
     (-> db
         (dissoc :dnd-payload)
         (update :location-editor dissoc :highlight)
-        (update-in [:locations location :npcs] #(as-> % new-db
-                                                  (filter-map (fn [v] (not= v entity)) new-db)
-                                                  (assoc new-db to entity))))))
+        (update-in [:dialogues dialogue-id]
+                   assoc
+                   :location-id location-id
+                   :location-position to))))
 
 (reg-event-db
-  :remove-entity
+  :remove-dialogue
   [spec-interceptor]
-  (fn [db [_ location entity]]
+  (fn [db [_ dialogue-id]]
     (-> db
         (dissoc :dnd-payload)
-        (update-in [:locations location :npcs] #(filter-map (fn [v] (not= v entity)) %)))))
+        (update-in [:dialogues dialogue-id] dissoc :location-id :location-position))))
 
 (reg-event-db
   :move-trigger
@@ -410,7 +411,6 @@
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :dialogue-creation] {:character-id nil
-                                              :location-id nil
                                               :description nil})))
 
 ;; Dialogue CRUD

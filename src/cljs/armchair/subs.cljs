@@ -10,6 +10,7 @@
                                    map-values
                                    rect->0
                                    translate-point]]))
+
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
 (reg-sub :db-infos #(:infos %))
@@ -172,8 +173,21 @@
   :<- [:db-characters]
   (fn [[locations characters] [_ location-id]]
     (-> (locations location-id)
-        (update :npcs #(map-values characters %))
         (update :connection-triggers #(map-values locations %)))))
+
+(reg-sub
+  :location-editor/npcs
+  :<- [:db-dialogues]
+  :<- [:db-characters]
+  (fn [[dialogues characters] [_ location-id]]
+    (->> (vals dialogues)
+         (where :location-id location-id)
+         (map (fn [dialogue]
+                (let [character (characters (:character-id dialogue))]
+                  [(:location-position dialogue)
+                   (merge {:entity/id (:entity/id dialogue)}
+                          (select-keys character [:texture :display-name]))])))
+         (into {}))))
 
 (reg-sub
   :location-options
@@ -182,16 +196,15 @@
     (map-values :display-name locations)))
 
 (reg-sub
-  :available-npcs
-  :<- [:db-locations]
+  :location-editor/available-npcs
   :<- [:db-characters]
-  (fn [[locations characters] [_ location-id]]
-    (let [placed-characters (->> (vals locations)
-                                 (map :npcs)
-                                 (filter some?)
-                                 (apply merge)
-                                 vals)]
-      (apply dissoc characters placed-characters))))
+  :<- [:db-dialogues]
+  (fn [[characters dialogues] _]
+    (->>  dialogues
+         (filter-map #(not (contains? % :location-id)))
+         (map-values (fn [dialogue]
+                       (let [character (characters (:character-id dialogue))]
+                         (select-keys character [:texture :display-name])))))))
 
 (reg-sub
   :location-map
@@ -249,9 +262,9 @@
           normalize-tile (fn [tile] (rect->0 (:dimension location) tile))
           location-dialogues (where-map :location-id location-id dialogues)]
       {:dimension (:dimension location)
-       :npcs (into {} (map (fn [[tile npc]]
+       :npcs (into {} (map (fn [{tile :location-position npc :character-id}]
                              [(normalize-tile tile) (get characters npc)])
-                           (:npcs location)))
+                           (vals location-dialogues)))
        :background (map-keys normalize-tile (:background location))
        :walk-set (into #{} (map normalize-tile (:walk-set location)))
        :infos infos

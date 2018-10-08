@@ -350,7 +350,7 @@
 
 ;; Modals
 
-(defn dialogue-creation-modal [{:keys [character-id location-id description]}]
+(defn dialogue-creation-modal [{:keys [character-id description]}]
   [slds/modal {:title "Create Dialogue"
                :confirm-handler #(>evt [:create-dialogue])
                :close-handler #(>evt [:close-modal])}
@@ -359,10 +359,6 @@
                         :on-change #(>evt [:dialogue-creation-update :character-id (uuid (e->val %))])
                         :options (<sub [:character-options])
                         :value character-id}]
-    [slds/input-select {:label "Location"
-                        :on-change #(>evt [:dialogue-creation-update :location-id (uuid (e->val %))])
-                        :options (<sub [:location-options])
-                        :value location-id}]
     [slds/input-textarea {:label "Description"
                           :on-change #(>evt [:dialogue-creation-update :description (e->val %)])
                           :value description}]]])
