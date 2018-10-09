@@ -1,7 +1,6 @@
-(ns armchair.events.undo
-  (:require [re-frame.core :refer [reg-event-db after]]
+(ns armchair.undo
+  (:require [re-frame.core :refer [after reg-event-db]]
             [re-frame.db :refer [app-db]]
-            [armchair.events :refer [validate]]
             [armchair.db :refer [content-data]]))
 
 (def undo-list (atom []))
@@ -21,7 +20,6 @@
 
 (reg-event-db
   :undo
-  [validate]
   (fn [db]
     (if (not-empty @undo-list)
       (let [prev-db (peek @undo-list)]
@@ -32,7 +30,6 @@
 
 (reg-event-db
   :redo
-  [validate]
   (fn [db]
     (if (not-empty @redo-list)
       (let [next-db (peek @redo-list)]

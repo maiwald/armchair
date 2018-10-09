@@ -61,3 +61,29 @@
 (defn log [& args]
   (apply js/console.log args)
   (first args))
+
+;; View Helpers
+
+(def <sub (comp deref re-frame.core/subscribe))
+(def >evt re-frame.core/dispatch)
+
+(defn stop-e! [e]
+  (.preventDefault e)
+  (.stopPropagation e)
+  e)
+
+(defn e-> [handler]
+  (comp handler stop-e!))
+
+(defn e->val [e]
+  (let [target (.-target e)]
+    (case (.-type target)
+      "checkbox" (.-checked target)
+      (.-value target))))
+
+(defn relative-cursor [e elem]
+  (let [rect (.getBoundingClientRect elem)]
+    [(- (.-clientX e) (.-left rect))
+     (- (.-clientY e) (.-top rect))]))
+
+(def left-button? #(zero? (.-button %)))

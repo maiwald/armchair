@@ -3,7 +3,7 @@
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
             [armchair.db :refer [default-db content-data]]
-            [armchair.events.undo :refer [record-undo reset-undos!]]
+            [armchair.undo :refer [reset-undos! record-undo]]
             [armchair.routes :refer [routes]]
             [armchair.util :refer [filter-map
                                    filter-keys
@@ -99,13 +99,6 @@
         (empty? location-connections)
         (-> (update :locations dissoc id)
             (update :location-connections difference location-connections))))))
-
-(reg-event-db
-  :update-location
-  [validate
-   record-undo]
-  (fn [db [_ id field value]]
-    (assoc-in db [:locations id field] value)))
 
 ;; Line CRUD
 
@@ -254,149 +247,6 @@
 
 ;; Location Editor
 
-(reg-event-db
-  :set-tool
-  [validate]
-  (fn [db [_ tool]]
-    (assoc-in db [:location-editor :tool] tool)))
-
-(reg-event-db
-  :set-active-texture
-  [validate]
-  (fn [db [_ texture]]
-    (assoc-in db [:location-editor :active-texture] texture)))
-
-(reg-event-db
-  :set-highlight
-  [validate]
-  (fn [db [_ tile]]
-    (assoc-in db [:location-editor :highlight] tile)))
-
-(reg-event-db
-  :unset-highlight
-  [validate]
-  (fn [db]
-    (update db :location-editor dissoc :highlight)))
-
-(reg-event-db
-  :start-entity-drag
-  [validate]
-  (fn [db [_ payload]]
-    (assoc db :dnd-payload payload)))
-
-(reg-event-db
-  :stop-entity-drag
-  [validate]
-  (fn [db]
-    (dissoc db :dnd-payload)))
-
-(reg-event-db
-  :move-dialogue
-  [validate
-   record-undo]
-  (fn [db [_ location-id dialogue-id to]]
-    (-> db
-        (dissoc :dnd-payload)
-        (update :location-editor dissoc :highlight)
-        (update-in [:dialogues dialogue-id]
-                   assoc
-                   :location-id location-id
-                   :location-position to))))
-
-(reg-event-db
-  :remove-dialogue
-  [validate
-   record-undo]
-  (fn [db [_ dialogue-id]]
-    (-> db
-        (dissoc :dnd-payload)
-        (update-in [:dialogues dialogue-id] dissoc :location-id :location-position))))
-
-(reg-event-db
-  :move-trigger
-  [validate
-   record-undo]
-  (fn [db [_ location target to]]
-    (-> db
-        (dissoc :dnd-payload)
-        (update :location-editor dissoc :highlight)
-        (update-in [:locations location :connection-triggers] #(as-> % new-db
-                                                                 (filter-map (fn [v] (not= v target)) new-db)
-                                                                 (assoc new-db to target))))))
-
-(reg-event-db
-  :start-painting
-  [validate
-   record-undo]
-  (fn [db [_ location-id tile]]
-    (let [texture (get-in db [:location-editor :active-texture])]
-      (-> db
-          (assoc-in [:location-editor :painting?] true)
-          (assoc-in [:locations location-id :background tile] texture)))))
-
-(reg-event-db
-  :paint
-  [validate
-   record-undo]
-  (fn [db [_ location-id tile]]
-    (let [{:keys [painting? active-texture]} (:location-editor db)]
-      (cond-> db
-        painting? (assoc-in [:locations location-id :background tile] active-texture)))))
-
-(reg-event-db
-  :stop-painting
-  [validate]
-  (fn [db]
-    (assoc-in db [:location-editor :painting?] false)))
-
-(reg-event-db
-  :flip-walkable
-  [validate
-   record-undo]
-  (fn [db [_ location-id tile]]
-    (update-in db [:locations location-id :walk-set] (fn [walk-set]
-                                                       (if (contains? walk-set tile)
-                                                         (disj walk-set tile)
-                                                         (conj walk-set tile))))))
-
-(reg-event-db
-  :resize-smaller
-  [validate
-   record-undo]
-  (fn [db [_ location-id direction]]
-    (let [[shift-index shift-delta] (case direction
-                                      :up [0 [0 1]]
-                                      :left [0 [1 0]]
-                                      :right [1 [-1 0]]
-                                      :down [1 [0 -1]])
-          new-dimension (update (get-in db [:locations location-id :dimension])
-                                shift-index translate-point shift-delta)
-          in-bounds? (partial rect-contains? new-dimension)
-          remove-oob (fn [coll] (filter-keys in-bounds? coll))]
-      (update-in db [:locations location-id]
-                 (fn [location]
-                   (-> location
-                       (assoc :dimension new-dimension)
-                       (update :background remove-oob)
-                       (update :npcs remove-oob)
-                       (update :connection-triggers remove-oob)
-                       (update :walk-set (comp set #(filter in-bounds? %)))))))))
-
-(reg-event-db
-  :resize-larger
-  [validate
-   record-undo]
-  (fn [db [_ location-id direction]]
-    (let [[shift-index shift-delta] (case direction
-                                      :up [0 [0 -1]]
-                                      :left [0 [-1 0]]
-                                      :right [1 [1 0]]
-                                      :down [1 [0 1]])]
-      (update-in db [:locations
-                     location-id
-                     :dimension
-                     shift-index]
-                 translate-point shift-delta))))
 
 ;; Modal
 

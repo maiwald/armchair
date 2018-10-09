@@ -1,10 +1,6 @@
 (ns armchair.subs
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
-            [clojure.spec.alpha :as s]
-            [armchair.db :as db]
-            [armchair.config :as config]
-            [armchair.util :refer [where
-                                   filter-map
+            [armchair.util :refer [filter-map
                                    where-map
                                    map-keys
                                    map-values
@@ -185,45 +181,10 @@
               :character-name (:display-name character)}))))
 
 (reg-sub
-  :location-editor/location
-  :<- [:db-locations]
-  :<- [:db-characters]
-  (fn [[locations characters] [_ location-id]]
-    (-> (locations location-id)
-        (update :connection-triggers
-                (fn [ct] (map-values #(assoc (locations %) :id %)
-                                     ct))))))
-
-(reg-sub
-  :location-editor/npcs
-  :<- [:db-dialogues]
-  :<- [:db-characters]
-  (fn [[dialogues characters] [_ location-id]]
-    (->> (vals dialogues)
-         (where :location-id location-id)
-         (map (fn [dialogue]
-                (let [character (characters (:character-id dialogue))]
-                  [(:location-position dialogue)
-                   (merge {:id (:entity/id dialogue)}
-                          (select-keys character [:texture :display-name]))])))
-         (into {}))))
-
-(reg-sub
   :location-options
   :<- [:db-locations]
   (fn [locations _]
     (map-values :display-name locations)))
-
-(reg-sub
-  :location-editor/available-npcs
-  :<- [:db-characters]
-  :<- [:db-dialogues]
-  (fn [[characters dialogues] _]
-    (->>  dialogues
-         (filter-map #(not (contains? % :location-id)))
-         (map-values (fn [dialogue]
-                       (let [character (characters (:character-id dialogue))]
-                         (select-keys character [:texture :display-name])))))))
 
 (reg-sub
   :location-map
@@ -248,49 +209,3 @@
                                   :npc-name (:display-name character)
                                   :npc-color (:color character)}))
                              location-dialogues)))))
-
-(reg-sub
-  :connected-locations
-  :<- [:db-locations]
-  :<- [:db-location-connections]
-  (fn [[locations connections] [_ location-id]]
-    (let [other-location-ids (for [connection connections
-                                   :when (contains? connection location-id)]
-                               (first (disj connection location-id)))]
-      (select-keys locations other-location-ids))))
-
-(reg-sub
-  :location-editor-data
-  (fn [db]
-    (select-keys (:location-editor db)
-                 [:highlight
-                  :painting?
-                  :tool
-                  :active-texture])))
-
-(reg-sub
-  :game-data
-  :<- [:db-locations]
-  :<- [:db-dialogues]
-  :<- [:db-lines]
-  :<- [:db-characters]
-  :<- [:db-infos]
-  (fn [[locations dialogues lines characters infos] _]
-    (let [location-id (uuid "121fb127-fbc8-44b9-ba62-2ca2517b6995")
-          location (get locations location-id)
-          normalize-tile (fn [tile] (rect->0 (:dimension location) tile))
-          location-dialogues (where-map :location-id location-id dialogues)]
-      {:dimension (:dimension location)
-       :npcs (into {} (map (fn [{tile :location-position character-id :character-id}]
-                             (let [{id :entity/id
-                                    texture :texture} (get characters character-id)]
-                               [(normalize-tile tile) {:id id
-                                                       :texture texture}]))
-                           (vals location-dialogues)))
-       :background (map-keys normalize-tile (:background location))
-       :walk-set (into #{} (map normalize-tile (:walk-set location)))
-       :infos infos
-       :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
-       :dialogues (into {} (map (fn [{:keys [character-id initial-line-id]}]
-                                  [character-id initial-line-id])
-                                (vals location-dialogues)))})))

@@ -1,8 +1,8 @@
-(ns armchair.game
+(ns armchair.game.core
   (:require [clojure.core.async :refer [chan sliding-buffer put! go-loop <!]]
             [clojure.spec.alpha :as s]
             [clojure.set :refer [subset? union]]
-            [armchair.canvas :as c]
+            [armchair.game.canvas :as c]
             [armchair.config :refer [tile-size]]
             [armchair.textures :refer [texture-set load-textures]]
             [armchair.util :refer [map-values
@@ -30,7 +30,7 @@
 (s/def ::interaction (s/keys :req-un [::line-id
                                       ::selected-option]))
 
-(s/def ::infos (s/coll-of pos-int? :kind set?))
+(s/def ::infos (s/coll-of uuid? :kind set?))
 (s/def ::player (s/keys :req-un [::position ::direction ::infos]))
 
 (s/def ::background (s/map-of ::point ::texture))

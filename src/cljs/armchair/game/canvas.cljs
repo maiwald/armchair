@@ -1,4 +1,4 @@
-(ns armchair.canvas
+(ns armchair.game.canvas
   (:require [armchair.config :refer [tile-size]]))
 
 (defn save! [ctx] (.save ctx))

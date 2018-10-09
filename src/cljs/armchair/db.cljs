@@ -171,11 +171,12 @@
 
 (defn content-data [db]
   (let [content-keys [:ui/positions
-                       :locations
-                       :characters
-                       :dialogues
-                       :location-connections
-                       :lines]]
+                      :infos
+                      :locations
+                      :characters
+                      :dialogues
+                      :location-connections
+                      :lines]]
     (select-keys db content-keys)))
 
 (def default-db

@@ -1,48 +1,27 @@
 (ns armchair.views
-  (:require [re-frame.core :as re-frame]
-            [clojure.spec.alpha :as s]
-            [reagent.core :as r]
-            [armchair.game :refer [start-game end-game]]
-            [armchair.views.location-editor :refer [location-editor]]
+  (:require [clojure.spec.alpha :as s]
             [armchair.slds :as slds]
-            [armchair.util :refer [translate-point]]
+            [armchair.location-editor.views :refer [location-editor]]
+            [armchair.util :refer [left-button?
+                                   <sub
+                                   >evt
+                                   stop-e!
+                                   relative-cursor
+                                   e->
+                                   e->val
+                                   translate-point]]
             [armchair.config :as config]
             [armchair.routes :refer [routes >navigate]]
             [armchair.textures :refer [character-textures texture-path]]
-            [bidi.bidi :refer [match-route]]
-            [clojure.core.async :refer [put!]]))
+            [armchair.game.views :refer [game-canvas]]
+            [bidi.bidi :refer [match-route]]))
 
 ;; Helpers
-
-(def <sub (comp deref re-frame.core/subscribe))
-(def >evt re-frame.core/dispatch)
-
-(defn stop-e! [e]
-  (.preventDefault e)
-  (.stopPropagation e)
-  e)
-
-(defn e-> [handler]
-  (comp handler stop-e!))
-
-(defn e->val [e]
-  (let [target (.-target e)]
-    (case (.-type target)
-      "checkbox" (.-checked target)
-      (.-value target))))
-
-(defn relative-cursor [e elem]
-  (let [rect (.getBoundingClientRect elem)]
-    [(- (.-clientX e) (.-left rect))
-     (- (.-clientY e) (.-top rect))]))
 
 (defn e->graph-cursor [e]
   (relative-cursor e (-> js/document
                          (.getElementsByClassName "graph")
                          (aget 0))))
-
-(def left-button? #(zero? (.-button %)))
-
 
 ;; Drag & Drop
 
@@ -297,54 +276,6 @@
          ^{:key (str "location-connection" start "->" end)}
          [location-connection start end])]]]))
 
-;; Game canvas
-
-(defn game-canvas [game-data]
-  (let [game-data (<sub [:game-data])
-        background-canvas (atom nil)
-        entity-canvas (atom nil)
-        game-input (atom nil)
-        key-listener (fn [e]
-                       (when-let [action (case (.-code e)
-                                           ("ArrowUp" "KeyW" "KeyK") (put! @game-input [:move :up])
-                                           ("ArrowRight" "KeyD" "KeyL") (put! @game-input [:move :right])
-                                           ("ArrowDown" "KeyS" "KeyJ") (put! @game-input [:move :down])
-                                           ("ArrowLeft" "KeyA" "KeyH") (put! @game-input [:move :left])
-                                           "Space" (put! @game-input [:interact])
-                                           nil)]
-                         (.preventDefault e)))]
-    (r/create-class
-      {:display-name "game-canvas"
-       :component-did-mount
-       (fn []
-         (reset! game-input (start-game
-                              (.getContext @background-canvas "2d")
-                              (.getContext @entity-canvas "2d")
-                              game-data))
-         (.addEventListener js/document "keydown" key-listener))
-
-       :component-will-unmount
-       (fn []
-         (.removeEventListener js/document "keydown" key-listener)
-         (end-game))
-
-       :reagent-render
-       (fn []
-         [:div {:id "game"}
-          [:div {:class "canvas-container"
-                 :style {:width (str 800 "px")}}
-           [:canvas {:height 450
-                     :width 800
-                     :ref (fn [el] (reset! background-canvas el))}]
-           [:canvas {:on-mouse-move #(let [c (relative-cursor % @entity-canvas)]
-                                       (put! @game-input [:cursor-position c]))
-                     :on-mouse-out #(put! @game-input [:cursor-position nil])
-                     :on-click #(let [c (relative-cursor % @entity-canvas)]
-                                  (put! @game-input [:animate c]))
-                     :height 450
-                     :width 800
-                     :ref (fn [el] (reset! entity-canvas el))}]]])})))
-
 ;; Modals
 
 (defn dialogue-creation-modal [{:keys [character-id description]}]
@@ -447,15 +378,6 @@
       :player-line-id    [player-line-form-modal (:player-line-id modal)]
       :character-id      [character-form-modal (:character-id modal)]
       :info-id           [info-form-modal (:info-id modal)])))
-
-;; Undo/Redo key bindings
-
-(set! (.-onkeypress js/window)
-      (fn [e]
-        (when (.-ctrlKey e)
-          (condp = (.-code e)
-            "KeyZ" (>evt [:undo])
-            "KeyY" (>evt [:redo])))))
 
 ;; Root
 

@@ -1,35 +1,12 @@
-(ns armchair.views.location-editor
+(ns armchair.location-editor.views
   (:require [armchair.slds :as slds]
             [armchair.config :as config]
-            [armchair.util :refer [rect->0 rect-width rect-height once]]
+            [armchair.util :refer [<sub >evt stop-e! e-> e->val rect->0 rect-width rect-height once]]
             [armchair.textures :refer [texture-path background-textures]]))
-
-;; Helpers
-
-(def <sub (comp deref re-frame.core/subscribe))
-(def >evt re-frame.core/dispatch)
-
-(defn stop-e! [e]
-  (.preventDefault e)
-  (.stopPropagation e)
-  e)
-
-(defn e-> [handler]
-  (comp handler stop-e!))
-
-(defn e->val [e]
-  (let [target (.-target e)]
-    (case (.-type target)
-      "checkbox" (.-checked target)
-      (.-value target))))
-
-;; Components
 
 (defn icon [glyph title]
   [:i {:class (str "fas fa-" glyph)
        :title title}])
-
-;; Location Editor
 
 (defn dnd-texture [texture]
   [:div.dnd-texture
@@ -45,7 +22,7 @@
     (.setDragImage (.-dataTransfer e) image offset offset)))
 
 (defn location-editor-sidebar-paint [location-id]
-  (let [{active-texture :active-texture} (<sub [:location-editor-data])]
+  (let [{active-texture :active-texture} (<sub [:location-editor/ui])]
     [slds/label "Background Textures"
      [:ul {:class "tile-grid"}
       (for [texture background-textures]
@@ -53,7 +30,7 @@
               :title texture
               :class ["tile-grid__item"
                       (when (= texture active-texture) "tile-grid__item_active")]}
-         [:a {:on-click #(>evt [:set-active-texture texture])}
+         [:a {:on-click #(>evt [:location-editor/set-active-texture texture])}
           [:img {:src (texture-path texture)}]]])]]))
 
 (defn location-editor-sidebar-resize [location-id]
@@ -61,17 +38,17 @@
    [:div {:class "resize-container"}
     [:div {:class "resize-container__reference"}
      [:div {:class "resizer resizer_horizontal resizer_top"}
-      [:a {:on-click #(>evt [:resize-larger location-id :up])} [icon "arrow-up" "extend"]]
-      [:a {:on-click #(>evt [:resize-smaller location-id :up])} [icon "arrow-down" "shrink"]]]
+      [:a {:on-click #(>evt [:location-editor/resize-larger location-id :up])} [icon "arrow-up" "extend"]]
+      [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :up])} [icon "arrow-down" "shrink"]]]
      [:div {:class "resizer resizer_horizontal resizer_bottom"}
-      [:a {:on-click #(>evt [:resize-smaller location-id :down])} [icon "arrow-up" "shrink"]]
-      [:a {:on-click #(>evt [:resize-larger location-id :down])} [icon "arrow-down" "extend"]]]
+      [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :down])} [icon "arrow-up" "shrink"]]
+      [:a {:on-click #(>evt [:location-editor/resize-larger location-id :down])} [icon "arrow-down" "extend"]]]
      [:div {:class "resizer resizer_vertical resizer_left"}
-      [:a {:on-click #(>evt [:resize-larger location-id :left])} [icon "arrow-left" "extend"]]
-      [:a {:on-click #(>evt [:resize-smaller location-id :left])} [icon "arrow-right" "shrink"]]]
+      [:a {:on-click #(>evt [:location-editor/resize-larger location-id :left])} [icon "arrow-left" "extend"]]
+      [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :left])} [icon "arrow-right" "shrink"]]]
      [:div {:class "resizer resizer_vertical resizer_right"}
-      [:a {:on-click #(>evt [:resize-smaller location-id :right])} [icon "arrow-left" "shrink"]]
-      [:a {:on-click #(>evt [:resize-larger location-id :right])} [icon "arrow-right" "extend"]]]]]])
+      [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [icon "arrow-left" "shrink"]]
+      [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [icon "arrow-right" "extend"]]]]]])
 
 (defn location-editor-sidebar-npcs [location-id]
   (let [available-npcs (<sub [:location-editor/available-npcs location-id])
@@ -84,7 +61,7 @@
               :draggable true
               :on-drag-start (fn [e]
                                (set-dnd-texture! e)
-                               (>evt [:start-entity-drag {:dialogue-id dialogue-id}]))}
+                               (>evt [:location-editor/start-entity-drag {:dialogue-id dialogue-id}]))}
          [dnd-texture texture]
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
@@ -95,7 +72,7 @@
                  (not (contains? available-npcs dnd-dialogue-id)))
         [:li {:class "tile-list__item tile-list__item_dropzone"
               :on-drag-over stop-e!
-              :on-drop #(>evt [:remove-dialogue dnd-dialogue-id])}
+              :on-drop #(>evt [:location-editor/remove-dialogue dnd-dialogue-id])}
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
                          :height (str config/tile-size "px")}}
@@ -105,40 +82,38 @@
 (defn location-editor-sidebar-connections [location-id]
   [slds/label "Assigned Connections"
    [:ul {:class "tile-list"}
-    (for [[target-loctation-id {:keys [display-name]}] (<sub [:connected-locations location-id])]
+    (for [[target-loctation-id {:keys [display-name]}] (<sub [:location-editor/connected-locations location-id])]
       [:li {:key (str "connection-select" display-name)
             :class "tile-list__item"
             :draggable true
             :on-drag-start (fn [e]
                              (set-dnd-texture! e)
-                             (>evt [:start-entity-drag {:connection-trigger target-loctation-id}]))}
+                             (>evt [:location-editor/start-entity-drag {:connection-trigger target-loctation-id}]))}
        [dnd-texture :exit]
        [:img {:title display-name :src (texture-path :exit)}]
        [:span display-name]])]])
 
 (defn location-editor-sidebar [location-id]
   (let [{:keys [display-name]} (<sub [:location-editor/location location-id])
-        {:keys [tool]} (<sub [:location-editor-data])]
-    (letfn [(update-display-name [e]
-              (>evt [:update-location location-id :display-name (e->val e)]))]
-      [slds/form
-       [slds/input-text {:label "Name"
-                         :on-change update-display-name
-                         :value display-name}]
-       [slds/radio-button-group {:label "Tools"
-                                 :options [[:background-painter [icon "layer-group" "Background"]]
-                                           [:resize [icon "arrows-alt" "Resize"]]
-                                           [:collision [icon "walking" "Collision"]]
-                                           [:npcs-select [icon "user" "NPCs"]]
-                                           [:connection-select [icon "external-link-alt" "Connections"]]]
-                                 :active tool
-                                 :on-change #(>evt [:set-tool %])}]
-       (case tool
-         :background-painter [location-editor-sidebar-paint location-id]
-         :resize [location-editor-sidebar-resize location-id]
-         :npcs-select [location-editor-sidebar-npcs location-id]
-         :connection-select [location-editor-sidebar-connections location-id]
-         nil)])))
+        {:keys [tool]} (<sub [:location-editor/ui])]
+    [slds/form
+     [slds/input-text {:label "Name"
+                       :on-change #(>evt [:location-editor/update-name location-id (e->val %)])
+                       :value display-name}]
+     [slds/radio-button-group {:label "Tools"
+                               :options [[:background-painter [icon "layer-group" "Background"]]
+                                         [:resize [icon "arrows-alt" "Resize"]]
+                                         [:collision [icon "walking" "Collision"]]
+                                         [:npcs-select [icon "user" "NPCs"]]
+                                         [:connection-select [icon "external-link-alt" "Connections"]]]
+                               :active tool
+                               :on-change #(>evt [:location-editor/set-tool %])}]
+     (case tool
+       :background-painter [location-editor-sidebar-paint location-id]
+       :resize [location-editor-sidebar-resize location-id]
+       :npcs-select [location-editor-sidebar-npcs location-id]
+       :connection-select [location-editor-sidebar-connections location-id]
+       nil)]))
 
 (defn tile-style [x y]
   {:width (str config/tile-size "px")
@@ -184,10 +159,10 @@
 (defn location-editor-canvas [location-id]
   (let [{:keys [dimension background walk-set connection-triggers]} (<sub [:location-editor/location location-id])
         npcs (<sub [:location-editor/npcs location-id])
-        {:keys [tool highlight painting?]} (<sub [:location-editor-data])
+        {:keys [tool highlight painting?]} (<sub [:location-editor/ui])
         dnd-payload (<sub [:dnd-payload])]
     [:div {:class "level"
-           :on-mouse-leave #(>evt [:unset-highlight])
+           :on-mouse-leave #(>evt [:location-editor/unset-highlight])
            :style {:width (str (* config/tile-size (rect-width dimension)) "px")
                    :height (str (* config/tile-size (rect-height dimension)) "px")}}
      [background-tiles dimension background]
@@ -199,9 +174,9 @@
        (do-all-tiles dimension "paint"
                      (fn [tile]
                        [:div {:class "interactor interactor_paint"
-                              :on-mouse-down (e-> #(>evt [:start-painting location-id tile]))
-                              :on-mouse-over (e-> #(when painting? (>evt [:paint location-id tile])))
-                              :on-mouse-up (e-> #(when painting? (>evt [:stop-painting])))}]))
+                              :on-mouse-down (e-> #(>evt [:location-editor/start-painting location-id tile]))
+                              :on-mouse-over (e-> #(when painting? (>evt [:location-editor/paint location-id tile])))
+                              :on-mouse-up (e-> #(when painting? (>evt [:location-editor/stop-painting])))}]))
        :collision
        (do-all-tiles dimension "walkable-area"
                      (fn [tile]
@@ -209,7 +184,7 @@
                                       (if (contains? walk-set tile)
                                         "interactor_walkable"
                                         "interactor_not-walkable")]
-                              :on-click #(>evt [:flip-walkable location-id tile])}]))
+                              :on-click #(>evt [:location-editor/flip-walkable location-id tile])}]))
        :npcs-select
        [:div
         (do-some-tiles dimension npcs "npc-select"
@@ -219,14 +194,14 @@
                                 :draggable true
                                 :on-drag-start (fn [e]
                                                  (set-dnd-texture! e)
-                                                 (>evt [:start-entity-drag {:dialogue-id id}]))}
+                                                 (>evt [:location-editor/start-entity-drag {:dialogue-id id}]))}
                           [dnd-texture texture]]))
         (when-let [dialogue-id (:dialogue-id dnd-payload)]
           (do-all-tiles dimension "dropzone"
                         (fn [tile]
                           [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-                                 :on-drag-over (e-> (once #(>evt [:set-highlight tile])))
-                                 :on-drop #(>evt [:move-dialogue location-id dialogue-id tile])}])))]
+                                 :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
+                                 :on-drop #(>evt [:location-editor/move-dialogue location-id dialogue-id tile])}])))]
        :connection-select
        [:div
         (do-some-tiles dimension connection-triggers "connection-select"
@@ -236,19 +211,19 @@
                                 :draggable true
                                 :on-drag-start (fn [e]
                                                  (set-dnd-texture! e)
-                                                 (>evt [:start-entity-drag {:connection-trigger id}]))}
+                                                 (>evt [:location-editor/start-entity-drag {:connection-trigger id}]))}
                           [dnd-texture :exit]]))
         (when-let [target (:connection-trigger dnd-payload)]
           (do-all-tiles dimension "dropzone"
                         (fn [tile]
                           [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-                                 :on-drag-over (e-> (once #(>evt [:set-highlight tile])))
-                                 :on-drop #(>evt [:move-trigger location-id target tile])}])))]
+                                 :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
+                                 :on-drop #(>evt [:location-editor/move-trigger location-id target tile])}])))]
        nil)]))
 
 (defn location-editor [location-id]
   [:div {:class "location-editor"
-         :on-drag-end #(>evt [:stop-entity-drag])}
+         :on-drag-end #(>evt [:location-editor/stop-entity-drag])}
    [:div {:class "location-editor__sidebar"}
     [location-editor-sidebar location-id]]
    [:div {:class "location-editor__canvas"}

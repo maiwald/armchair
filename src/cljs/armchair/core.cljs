@@ -2,8 +2,11 @@
   (:require [reagent.core :as reagent]
             [re-frame.core :as re-frame]
             [armchair.events]
-            [armchair.events.undo]
             [armchair.subs]
+            [armchair.location-editor.events]
+            [armchair.location-editor.subs]
+            [armchair.game.subs]
+            [armchair.util :refer [>evt]]
             [armchair.routes :as routes]
             [armchair.views :as views]
             [armchair.config :as config]))
@@ -25,3 +28,12 @@
   (re-frame/dispatch-sync [:show-page (subs js/location.hash 1)])
   (dev-setup)
   (mount-root))
+
+;; Undo/Redo key bindings
+(set! (.-onkeypress js/window)
+      (fn [e]
+        (when (.-ctrlKey e)
+          (condp = (.-code e)
+            "KeyZ" (>evt [:undo])
+            "KeyY" (>evt [:redo])))))
+
