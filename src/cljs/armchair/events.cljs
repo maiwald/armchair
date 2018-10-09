@@ -68,7 +68,7 @@
     (assoc-in db [:characters id field] value)))
 
 (reg-event-db
-  :create-location
+  :location/create
   [spec-interceptor]
   (fn [db]
     (let [id (random-uuid)]
@@ -80,7 +80,7 @@
                                      :background {}
                                      :walk-set #{}
                                      :connection-triggers {}
-                                     :display-name (str "location #" id)})))))
+                                     :display-name "New Location"})))))
 
 ;; Location CRUD
 
@@ -91,6 +91,7 @@
     (let [location-connections (filter #(contains? % id)
                                        (:location-connections db))]
       (cond-> db
+        ;; TODO: reflect "empty connection" requirement in UI
         (empty? location-connections)
         (-> (update :locations dissoc id)
             (update :location-connections difference location-connections))))))

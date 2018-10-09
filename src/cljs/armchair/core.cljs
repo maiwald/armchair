@@ -3,7 +3,7 @@
             [re-frame.core :as re-frame]
             [armchair.events]
             [armchair.subs]
-            [armchair.routes :refer [root]]
+            [armchair.routes :as routes]
             [armchair.views :as views]
             [armchair.config :as config]))
 
@@ -20,7 +20,7 @@
 (defn ^:export init []
   (re-frame/dispatch-sync [:initialize-db])
   (when (empty? js/location.hash)
-    (js/history.replaceState #js{} "" root))
+    (js/history.replaceState #js{} "" routes/root))
   (re-frame/dispatch-sync [:show-page (subs js/location.hash 1)])
   (dev-setup)
   (mount-root))
