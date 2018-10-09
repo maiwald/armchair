@@ -2,6 +2,7 @@
   (:require [reagent.core :as reagent]
             [re-frame.core :as re-frame]
             [armchair.events]
+            [armchair.events.undo]
             [armchair.subs]
             [armchair.routes :as routes]
             [armchair.views :as views]

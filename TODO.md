@@ -1,6 +1,5 @@
 # TODO
-- undo
-  - make modal changes apply on submit
+- make modal changes apply on submit
 - make location changes work
 - saving state
 - get it to benni!

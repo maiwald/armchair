@@ -2,7 +2,8 @@
   (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
-            [armchair.db :as db]
+            [armchair.db :refer [default-db content-data]]
+            [armchair.events.undo :refer [record-undo reset-undos!]]
             [armchair.routes :refer [routes]]
             [armchair.util :refer [filter-map
                                    filter-keys
@@ -10,28 +11,26 @@
                                    translate-point
                                    rect-contains?]]))
 
+(def validate
+  (after (fn [db]
+           (when-not (s/valid? :armchair.db/state db)
+             (let [explain (s/explain-data :armchair.db/state db)]
+               (js/console.log (:cljs.spec.alpha/problems explain)))))))
 
-(def spec-interceptor (after (fn [db]
-                               (when-not (s/valid? :armchair.db/state db)
-                                 (let [explain (s/explain-data :armchair.db/state db)]
-                                   (js/console.log (:cljs.spec.alpha/problems explain)))))))
+;; Initializer
 
 (reg-event-db
   :initialize-db
-  [spec-interceptor]
-  (fn [_ _]
-    db/default-db))
+  [validate
+   record-undo]
+  (fn [_ _] default-db))
 
 (reg-event-db
   :reset-db
-  [spec-interceptor]
+  [validate]
   (fn [db]
-    (merge db (select-keys db/default-db [:positions
-                                          :characters
-                                          :dialogues
-                                          :locations
-                                          :location-connections
-                                          :lines]))))
+    (reset-undos!)
+    (merge db (content-data default-db))))
 
 ;; Resources
 
@@ -41,7 +40,8 @@
 
 (reg-event-db
   :create-character
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db]
     (let [id (random-uuid)
           new-character {:entity/id id
@@ -52,7 +52,8 @@
 
 (reg-event-db
   :delete-character
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ id]]
     (let [line-count (->> (:lines db)
                           (filter-map #(= (:character-id %) id))
@@ -63,13 +64,15 @@
 
 (reg-event-db
   :update-character
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ id field value]]
     (assoc-in db [:characters id field] value)))
 
 (reg-event-db
   :location/create
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db]
     (let [id (random-uuid)]
       (-> db
@@ -86,7 +89,8 @@
 
 (reg-event-db
   :delete-location
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ id]]
     (let [location-connections (filter #(contains? % id)
                                        (:location-connections db))]
@@ -98,7 +102,8 @@
 
 (reg-event-db
   :update-location
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ id field value]]
     (assoc-in db [:locations id field] value)))
 
@@ -106,7 +111,8 @@
 
 (reg-event-db
   :create-npc-line
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ dialogue-id]]
     (let [id (random-uuid)
           character-id (get-in db [:dialogues dialogue-id :character-id])]
@@ -122,7 +128,8 @@
 
 (reg-event-db
   :create-player-line
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ dialogue-id]]
     (let [id (random-uuid)]
       (-> db
@@ -139,7 +146,8 @@
 
 (reg-event-db
   :update-line
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ id field value]]
     (assert (not (and (= field :character-id)
                       (initial-line? db id)))
@@ -148,7 +156,8 @@
 
 (reg-event-db
   :delete-line
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ id]]
     (assert (not (initial-line? db id))
             "Initial lines cannot be deleted!")
@@ -164,7 +173,8 @@
 
 (reg-event-db
   :move-option
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ line-id s-index direction]]
     (let [t-index (case direction
                     :up (dec s-index)
@@ -177,27 +187,31 @@
 
 (reg-event-db
   :add-option
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ line-id]]
     (update-in db [:lines line-id :options] conj {:text ""
                                                   :next-line-id nil})))
 
 (reg-event-db
   :update-option
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ line-id index text]]
     (assoc-in db [:lines line-id :options index :text] text)))
 
 (reg-event-db
   :delete-option
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ line-id index]]
     (update-in db [:lines line-id :options] (fn [v] (vec (concat (take index v)
                                                                  (drop (inc index) v)))))))
 
 (reg-event-db
   :set-infos
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ line-id info-ids]]
     (assert (= :npc (get-in db [:lines line-id :kind]))
             "Infos can only be set on NPC lines!")
@@ -205,7 +219,8 @@
 
 (reg-event-db
   :set-required-info
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ line-id index info-ids]]
     (assert (= :player (get-in db [:lines line-id :kind]))
             "Required infos can only be set on player options!")
@@ -215,7 +230,8 @@
 
 (reg-event-db
   :create-info
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db]
     (let [id (random-uuid)]
       (update db :infos assoc id {:entity/id id
@@ -224,13 +240,15 @@
 
 (reg-event-db
   :delete-info
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ id]]
     (update db :infos dissoc id)))
 
 (reg-event-db
   :update-info
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ id text]]
     (assoc-in db [:infos id :description] text)))
 
@@ -238,43 +256,44 @@
 
 (reg-event-db
   :set-tool
-  [spec-interceptor]
+  [validate]
   (fn [db [_ tool]]
     (assoc-in db [:location-editor :tool] tool)))
 
 (reg-event-db
   :set-active-texture
-  [spec-interceptor]
+  [validate]
   (fn [db [_ texture]]
     (assoc-in db [:location-editor :active-texture] texture)))
 
 (reg-event-db
   :set-highlight
-  [spec-interceptor]
+  [validate]
   (fn [db [_ tile]]
     (assoc-in db [:location-editor :highlight] tile)))
 
 (reg-event-db
   :unset-highlight
-  [spec-interceptor]
+  [validate]
   (fn [db]
     (update db :location-editor dissoc :highlight)))
 
 (reg-event-db
   :start-entity-drag
-  [spec-interceptor]
+  [validate]
   (fn [db [_ payload]]
     (assoc db :dnd-payload payload)))
 
 (reg-event-db
   :stop-entity-drag
-  [spec-interceptor]
+  [validate]
   (fn [db]
     (dissoc db :dnd-payload)))
 
 (reg-event-db
   :move-dialogue
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ location-id dialogue-id to]]
     (-> db
         (dissoc :dnd-payload)
@@ -286,7 +305,8 @@
 
 (reg-event-db
   :remove-dialogue
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ dialogue-id]]
     (-> db
         (dissoc :dnd-payload)
@@ -294,7 +314,8 @@
 
 (reg-event-db
   :move-trigger
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ location target to]]
     (-> db
         (dissoc :dnd-payload)
@@ -305,7 +326,8 @@
 
 (reg-event-db
   :start-painting
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ location-id tile]]
     (let [texture (get-in db [:location-editor :active-texture])]
       (-> db
@@ -314,7 +336,8 @@
 
 (reg-event-db
   :paint
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ location-id tile]]
     (let [{:keys [painting? active-texture]} (:location-editor db)]
       (cond-> db
@@ -322,13 +345,14 @@
 
 (reg-event-db
   :stop-painting
-  [spec-interceptor]
+  [validate]
   (fn [db]
     (assoc-in db [:location-editor :painting?] false)))
 
 (reg-event-db
   :flip-walkable
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ location-id tile]]
     (update-in db [:locations location-id :walk-set] (fn [walk-set]
                                                        (if (contains? walk-set tile)
@@ -337,7 +361,8 @@
 
 (reg-event-db
   :resize-smaller
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ location-id direction]]
     (let [[shift-index shift-delta] (case direction
                                       :up [0 [0 1]]
@@ -359,7 +384,8 @@
 
 (reg-event-db
   :resize-larger
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ location-id direction]]
     (let [[shift-index shift-delta] (case direction
                                       :up [0 [0 -1]]
@@ -380,35 +406,35 @@
 
 (reg-event-db
   :open-character-modal
-  [spec-interceptor]
+  [validate]
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :character-id] payload)))
 
 (reg-event-db
   :open-info-modal
-  [spec-interceptor]
+  [validate]
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :info-id] payload)))
 
 (reg-event-db
   :open-npc-line-modal
-  [spec-interceptor]
+  [validate]
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :npc-line-id] payload)))
 
 (reg-event-db
   :open-player-line-modal
-  [spec-interceptor]
+  [validate]
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :player-line-id] payload)))
 
 (reg-event-db
   :open-dialogue-creation-modal
-  [spec-interceptor]
+  [validate]
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :dialogue-creation] {:character-id nil
@@ -422,14 +448,15 @@
 
 (reg-event-db
   :dialogue-creation-update
-  [spec-interceptor]
+  [validate]
   (fn [db [_ field value]]
     (assert-dialogue-creation-modal db)
     (assoc-in db [:modal :dialogue-creation field] value)))
 
 (reg-event-db
   :create-dialogue
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db]
     (let [dialogue-id (random-uuid)
           line-id (random-uuid)
@@ -452,28 +479,29 @@
 
 (reg-event-db
   :delete-dialogue
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ dialogue-id]]
     (-> db
         (update :dialogues dissoc dialogue-id)
-        (update :lines #(filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %))
+        (update :lines #(filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %)))))
         ; (update :locations (fn [locations]
         ;                      (map-values (fn [{npcs :npcs}]
         ;                                    (filter-map #(not= % dialogue-id) npcs))
         ;                                  locations)))
-        )))
+
 
 ;; Page
 
 (reg-event-db
   :close-modal
-  [spec-interceptor]
+  [validate]
   (fn [db [_ modal-fn | args]]
     (dissoc db :modal)))
 
 (reg-event-db
   :show-page
-  [spec-interceptor]
+  [validate]
   (fn [db [_ path]]
     (assoc db :current-page path)))
 
@@ -481,13 +509,13 @@
 
 (reg-event-db
   :move-cursor
-  [spec-interceptor]
+  [validate]
   (fn [db [_ cursor]]
     (assoc db :cursor cursor)))
 
 (reg-event-db
   :start-connecting-lines
-  [spec-interceptor]
+  [validate]
   (fn [db [_ line-id cursor index]]
     (assert (not (contains? db :connecting))
             "Attempting to start connecting lines while already in progress!")
@@ -499,7 +527,8 @@
 
 (reg-event-db
   :end-connecting-lines
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ end-id]]
     (assert (s/valid? :armchair.db/connecting-lines (:connecting db))
             "Attempting to end connecting with missing or invalid state!")
@@ -512,7 +541,7 @@
 
 (reg-event-db
   :start-connecting-locations
-  [spec-interceptor]
+  [validate]
   (fn [db [_ location-id cursor]]
     (assert (not (contains? db :connecting))
             "Attempting to start connecting locations while already in progress!")
@@ -523,7 +552,8 @@
 
 (reg-event-db
   :end-connecting-locations
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [db [_ end-id]]
     (assert (some? (:connecting db))
             "Attempting to end connecting while not in progress!")
@@ -536,12 +566,12 @@
 
 (reg-event-db
   :abort-connecting
-  [spec-interceptor]
+  [validate]
   (fn [db] (dissoc db :connecting)))
 
 (reg-event-db
   :start-dragging
-  [spec-interceptor]
+  [validate]
   (fn [db [_ ids cursor]]
     (cond-> db
       (not (contains? db :dragging)) (assoc :dragging {:ids ids
@@ -550,7 +580,8 @@
 
 (reg-event-db
   :end-dragging
-  [spec-interceptor]
+  [validate
+   record-undo]
   (fn [{:keys [dragging cursor] :as db}]
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")

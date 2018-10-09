@@ -448,6 +448,15 @@
       :character-id      [character-form-modal (:character-id modal)]
       :info-id           [info-form-modal (:info-id modal)])))
 
+;; Undo/Redo key bindings
+
+(set! (.-onkeypress js/window)
+      (fn [e]
+        (when (.-ctrlKey e)
+          (condp = (.-code e)
+            "KeyZ" (>evt [:undo])
+            "KeyY" (>evt [:redo])))))
+
 ;; Root
 
 (defn root []
