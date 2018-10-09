@@ -42,12 +42,22 @@
                   characters))))
 
 (reg-sub
-  :line
+  :dialogue/modal-line
   :<- [:db-lines]
   :<- [:db-dialogues]
   (fn [[lines dialogues] [_ line-id]]
     (when-let [{:keys [id dialogue-id] :as line} (get lines line-id)]
-      (assoc line :initial-line? (= id (get-in dialogues [dialogue-id :initial-line-id]))))))
+      (-> line
+        (assoc :initial-line? (= id (get-in dialogues [dialogue-id :initial-line-id])))
+        (assoc :option-count (count (:options line)))
+        (update :info-ids #(map str %))))))
+
+(reg-sub
+  :dialogue/player-line-option
+  :<- [:db-lines]
+  (fn [lines [_ line-id index]]
+    (-> (get-in lines [line-id :options index])
+        (update :required-info-ids #(map str %)))))
 
 (reg-sub
   :info-list
@@ -61,7 +71,7 @@
   :<- [:db-infos]
   (fn [infos]
     (map (fn [info] {:label (:description info)
-                     :value (:id info)})
+                     :value (str (:entity/id info))})
          (vals infos))))
 
 (reg-sub

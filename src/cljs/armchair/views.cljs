@@ -361,7 +361,7 @@
                           :value description}]]])
 
 (defn npc-line-form-modal [line-id]
-  (let [line (<sub [:line line-id])]
+  (let [line (<sub [:dialogue/modal-line line-id])]
     [slds/modal {:title (str "Line #" line-id)
                  :close-handler #(>evt [:close-modal])}
      [slds/form
@@ -376,39 +376,41 @@
       [slds/multi-select {:label "Infos"
                           :options (clj->js (<sub [:info-options]))
                           :values (:info-ids line)
-                          :on-change #(>evt [:set-infos line-id %])}]]]))
+                          :on-change #(>evt [:set-infos line-id (map uuid %)])}]]]))
+
+(defn player-line-form-modal-option [line-id index total-count]
+  (let [{:keys [text required-info-ids]} (<sub [:dialogue/player-line-option line-id index])
+        info-options (<sub [:info-options])]
+    [:div { :class "player-line-form__response"}
+     [:div {:class "text"}
+      [slds/input-textarea {:label (str "Response " (inc index))
+                            :on-change #(>evt [:update-option line-id index (e->val %)])
+                            :value text}]
+      [slds/multi-select {:label "Required Infos"
+                          :options info-options
+                          :values required-info-ids
+                          :on-change #(>evt [:set-required-info line-id index (map uuid %)])}]]
+     [:ul {:class "actions actions_vertial"}
+      [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
+                                         (>evt [:delete-option line-id index]))}
+       [icon "trash" "Delete"]]
+      (when-not (= index 0)
+        [:li {:class "action" :on-click #(>evt [:move-option line-id index :up])}
+         [icon "arrow-up" "Move up"]])
+      (when-not (= index (dec total-count))
+        [:li {:class "action" :on-click #(>evt [:move-option line-id index :down])}
+         [icon "arrow-down" "Move down"]])]]))
 
 (defn player-line-form-modal [line-id]
-  (let [line (<sub [:line line-id])
-        info-options (<sub [:info-options])]
+  (let [{:keys [option-count]} (<sub [:dialogue/modal-line line-id])]
     [slds/modal {:title (str "Line #" line-id)
                  :close-handler #(>evt [:close-modal])}
      [:div {:class "player-line-form"}
       [slds/form
-       (map-indexed
-         (fn [index option]
-           [:div {:key (str "option:" line-id ":" index)
-                  :class "player-line-form__response"}
-            [:div {:class "text"}
-             [slds/input-textarea {:label (str "Response " (inc index))
-                                   :on-change #(>evt [:update-option line-id index (e->val %)])
-                                   :value (:text option)}]
-             [slds/multi-select {:label "Required Infos"
-                                 :options info-options
-                                 :values (:required-info-ids option)
-                                 :on-change #(>evt [:set-required-info line-id index %])}]]
-            [:ul {:class "actions actions_vertial"}
-             [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
-                                                (>evt [:delete-option line-id index]))}
-              [icon "trash" "Delete"]]
-             (when-not (= index 0)
-               [:li {:class "action" :on-click #(>evt [:move-option line-id index :up])}
-                [icon "arrow-up" "Move up"]])
-             (when-not (= index (dec (count (:options line))))
-               [:li {:class "action" :on-click #(>evt [:move-option line-id index :down])}
-                [icon "arrow-down" "Move down"]])]])
-         (:options line))]
-      [slds/add-button "New Option" #(>evt [:add-option line-id])]]]))
+       (for [index (range option-count)]
+         ^{:key (str "option:" line-id ":" index)}
+         [player-line-form-modal-option line-id index option-count])
+       [slds/add-button "New Option" #(>evt [:add-option line-id])]]]]))
 
 (defn character-form-modal [character-id]
   (let [character (<sub [:character character-id])
