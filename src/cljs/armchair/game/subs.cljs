@@ -1,6 +1,35 @@
 (ns armchair.game.subs
-  (:require [re-frame.core :refer [reg-sub]]
-            [armchair.util :refer [map-keys filter-map where-map rect->0]]))
+  (:require [clojure.spec.alpha :as s]
+            [re-frame.core :refer [reg-sub]]
+            [armchair.util :refer [map-keys
+                                   map-values
+                                   filter-map
+                                   where-map
+                                   rect->0]]))
+
+(defn line-screen [lines line]
+  {:pre [(= (:kind line) :npc)]}
+  (let [next-line (get lines (:next-line-id line))]
+    {:text (:text line)
+     :info-ids (:info-ids line)
+     :options (if-let [next-line (get lines (:next-line-id line))]
+                (case (:kind next-line)
+                  :npc (vector {:text "Continue..."
+                                :next-line-id (:next-line-id next-line)})
+                  :player (:options next-line))
+                (vector {:text "Yeah..., whatever. Farewell"
+                         :next-line-id nil}))}))
+
+
+(s/def :game/data (s/keys :req-un [:game/infos :game/lines :game/locations]))
+(s/def :game/lines (s/map-of :entity/id (s/keys :req-un [:game/text :game/info-ids :game/options])))
+(s/def :game/options (s/coll-of (s/keys :req-un [:game/text :game/next-line-id]) :kind vector?))
+(s/def :game/locations (s/map-of :entity/id (s/keys :req-un [:game/dimension :game/background :game/walk-set :game/npcs])))
+(s/def :game/dimension :type/rect)
+(s/def :game/walk-set (s/coll-of :type/point :kind set?))
+(s/def :game/npcs (s/map-of :type/point (s/keys :req-un [:game/npc-texture :game/initial-line-id])))
+(s/def :game/initial-line-id :entity/id)
+(s/def :game/next-line-id (s/nilable :entity/id))
 
 (reg-sub
   :game/data
@@ -10,21 +39,25 @@
   :<- [:db-characters]
   :<- [:db-infos]
   (fn [[locations dialogues lines characters infos] _]
-    (let [location-id (uuid "121fb127-fbc8-44b9-ba62-2ca2517b6995")
-          location (get locations location-id)
-          normalize-tile (fn [tile] (rect->0 (:dimension location) tile))
-          location-dialogues (where-map :location-id location-id dialogues)]
-      {:dimension (:dimension location)
-       :npcs (into {} (map (fn [{tile :location-position character-id :character-id}]
-                             (let [{id :entity/id
-                                    texture :texture} (get characters character-id)]
-                               [(normalize-tile tile) {:id id
-                                                       :texture texture}]))
-                           (vals location-dialogues)))
-       :background (map-keys normalize-tile (:background location))
-       :walk-set (into #{} (map normalize-tile (:walk-set location)))
-       :infos infos
-       :lines (filter-map #(location-dialogues (:dialogue-id %)) lines)
-       :dialogues (into {} (map (fn [{:keys [character-id initial-line-id]}]
-                                  [character-id initial-line-id])
-                                (vals location-dialogues)))})))
+    {:post [(or (s/valid? :game/data %)
+                (s/explain :game/data %))]}
+    (let [dialogues-by-location (->> dialogues vals (group-by :location-id))]
+      {:infos infos
+       :lines (map-values (partial line-screen lines)
+                          (->> lines (where-map :kind :npc)))
+       :locations (map-values (fn [{:keys [dimension background walk-set]
+                                    id :entity/id
+                                    :as location}]
+                                (letfn [(normalize-tile [tile]
+                                          (rect->0 dimension tile))]
+                                  {:dimension dimension
+                                   :background (map-keys normalize-tile background)
+                                   :walk-set (set (map normalize-tile walk-set))
+                                   :npcs (->> (dialogues-by-location id)
+                                           (map (fn [{line-id :initial-line-id
+                                                      :keys [location-position character-id]}]
+                                                  [(normalize-tile location-position)
+                                                   {:npc-texture (get-in characters [character-id :texture])
+                                                    :initial-line-id line-id}]))
+                                           (into {}))}))
+                              locations)})))

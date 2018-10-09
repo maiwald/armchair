@@ -20,11 +20,10 @@
                     :left [-1 0]
                     :right [1 0]})
 
-(s/def ::point (s/tuple number? number?))
-(s/def ::position ::point)
+(s/def ::position :type/point)
 (s/def ::direction #{:up :down :left :right})
 (s/def ::texture #(contains? texture-set %))
-(s/def ::line-id uuid?)
+(s/def ::line-id :entity/id)
 (s/def ::selected-option int?)
 
 (s/def ::interaction (s/keys :req-un [::line-id
@@ -33,19 +32,15 @@
 (s/def ::infos (s/coll-of uuid? :kind set?))
 (s/def ::player (s/keys :req-un [::position ::direction ::infos]))
 
-(s/def ::background (s/map-of ::point ::texture))
+(s/def ::background (s/map-of :type/point ::texture))
 
 (s/def ::character (s/keys :req-un [::texture]))
-(s/def ::npcs (s/map-of ::point ::character))
-(s/def ::highlight ::point)
+(s/def ::npcs (s/map-of :type/point ::character))
+(s/def ::highlight :type/point)
+(s/def ::infos (s/coll-of :entity/id :kind set?))
 
-(s/def ::all-npcs-have-dialogue (fn [{:keys [npcs dialogues]}]
-                                  (= (->> npcs vals (map :id) set)
-                                     (-> dialogues keys set))))
-
-(s/def ::state (s/and (s/keys :req-un [::player ::npcs]
-                              :opt-un [::highlight ::interaction])
-                      ::all-npcs-have-dialogue))
+(s/def ::state (s/and (s/keys :req-un [::player]
+                              :opt-un [::highlight ::interaction])))
 
 ;; Conversion Helpers
 
@@ -61,14 +56,17 @@
 ;; State
 
 (def state (atom nil))
+(def data (atom nil))
 
 (def initial-game-state
-  {:player {:position (tile->coord [8 12])
+  {:player {:location-id #uuid "121fb127-fbc8-44b9-ba62-2ca2517b6995"
+            :position (tile->coord [8 12])
             :direction :right
             :infos #{}}})
 
 (defn ^boolean walkable? [tile]
-  (let [{:keys [walk-set npcs]} @state]
+  (let [{l :location-id} (:player @state)
+        {:keys [walk-set npcs]} (get-in @data [:locations l])]
     (and (contains? walk-set tile)
          (not (contains? npcs tile)))))
 
@@ -78,18 +76,12 @@
     (direction-map direction)))
 
 (defn dialogue-data [{{:keys [line-id selected-option]} :interaction
-                      {player-infos :infos} :player
-                      lines :lines}]
-  (if-let [line (lines line-id)]
+                      {player-infos :infos} :player}]
+  (let [line (get-in @data [:lines line-id])]
     {:text (:text line)
-     :options (if (nil? (:next-line-id line))
-                (list "Yeah..., whatever. Farewell.")
-                (let [next-line (lines (:next-line-id line))]
-                  (case (:kind next-line)
-                    :npc (list "Continue...")
-                    :player (->> (:options next-line)
-                                 (filter #(subset? (:required-info-ids %) player-infos))
-                                 (map :text)))))
+     :options (->> (:options line)
+                   (filterv #(subset? (:required-info-ids %) player-infos))
+                   (map :text))
      :selected-option selected-option}))
 
 (defn ^boolean interacting? [state]
@@ -98,14 +90,8 @@
 (defn interaction-option-count [state]
   (count (:options (dialogue-data state))))
 
-(defn next-interaction [{{:keys [line-id selected-option]} :interaction
-                         lines :lines}]
-  (let [next-line-id (get-in lines [line-id :next-line-id])]
-    (if-let [next-line (lines next-line-id)]
-      (case (:kind next-line)
-        :player (get-in next-line [:options selected-option :next-line-id])
-        :npc next-line-id)
-      next-line-id)))
+(defn next-interaction [{{:keys [line-id selected-option]} :interaction}]
+  (get-in @data [:lines line-id :options selected-option :next-line-id]))
 
 ;; Rendering
 
@@ -130,7 +116,7 @@
   (draw-texture ctx :player player))
 
 (defn draw-npcs [ctx npcs]
-  (doseq [[tile {texture :texture}] npcs]
+  (doseq [[tile {texture :npc-texture}] npcs]
     (draw-texture ctx texture (tile->coord tile))))
 
 (defn draw-highlight [ctx highlight-coord]
@@ -194,17 +180,19 @@
 
 (defn render [view-state]
   (when @ctx
-    (c/clear! @ctx)
-    (when-not (interacting? @state)
-      (draw-path @ctx @state))
-    (draw-player @ctx (get-in view-state [:player :position]))
-    (draw-npcs @ctx (:npcs view-state))
-    (when (and (not (interacting? @state))
-               (contains? @state :highlight))
-      (draw-highlight @ctx (:highlight @state)))
-    (draw-direction-indicator @ctx view-state)
-    (when (interacting? @state)
-      (draw-dialogue-box @ctx (dialogue-data @state)))))
+    (let [l (get-in @state [:player :location-id])
+          location (get-in @data [:locations l])]
+      (c/clear! @ctx)
+      (when-not (interacting? @state)
+        (draw-path @ctx @state))
+      (draw-player @ctx (get-in view-state [:player :position]))
+      (draw-npcs @ctx (:npcs location))
+      (when (and (not (interacting? @state))
+                 (contains? @state :highlight))
+        (draw-highlight @ctx (:highlight @state)))
+      (draw-direction-indicator @ctx view-state)
+      (when (interacting? @state)
+        (draw-dialogue-box @ctx (dialogue-data @state))))))
 
 ;; Input Handlers
 
@@ -229,13 +217,16 @@
     (let [next-interaction (next-interaction @state)]
       (if (nil? next-interaction)
         (swap! state dissoc :interaction)
-        (swap! state #(let [info-ids (get-in % [:lines (get-in % [:interaction :line-id]) :info-ids])]
+        (swap! state #(let [line-id (get-in % [:interaction :line-id])
+                            info-ids (get-in @data [:lines line-id :info-ids])]
                         (cond-> (merge % {:interaction {:line-id next-interaction
                                                         :selected-option 0}})
                           (not (empty? info-ids)) (update-in [:player :infos] union info-ids))))))
-    (if-let [{npc-id :id} ((:npcs @state) (interaction-tile @state))]
-      (swap! state assoc :interaction {:line-id (get-in @state [:dialogues npc-id])
-                                       :selected-option 0}))))
+    (let [l (get-in @state [:player :location-id])
+          location (get-in @data [:locations l])]
+      (if-let [{line-id :initial-line-id} ((:npcs location) (interaction-tile @state))]
+        (swap! state assoc :interaction {:line-id line-id
+                                         :selected-option 0})))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
@@ -291,13 +282,9 @@
 
 ;; Game Loop
 
-(defn start-game [background-context entity-context data]
-  (reset! state (merge initial-game-state (select-keys data
-                                                       [:npcs
-                                                        :walk-set
-                                                        :infos
-                                                        :lines
-                                                        :dialogues])))
+(defn start-game [background-context entity-context game-data]
+  (reset! state initial-game-state)
+  (reset! data game-data)
   (reset! move-q #queue [])
   (reset! ctx entity-context)
   (let [input-chan (chan)
@@ -319,9 +306,9 @@
                      (reset! texture-atlas loaded-atlas)
 
                      (c/clear! background-context)
-                     (draw-background background-context
-                                      (:dimension data)
-                                      (:background data))
+                     (let [l (get-in @state [:player :location-id])
+                           {:keys [dimension background]} (get-in @data [:locations l])]
+                       (draw-background background-context dimension background))
 
                      (start-input-loop input-chan)
                      (start-move-loop move-chan)
@@ -333,5 +320,6 @@
   (remove-watch state :state-update)
   (remove-watch move-q :animation-update)
   (reset! state nil)
+  (reset! data nil)
   (reset! move-q nil)
   (reset! ctx nil))
