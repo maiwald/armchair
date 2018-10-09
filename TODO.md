@@ -8,6 +8,7 @@
 - validation error notifications
 - information dependency invariants
 - moving camera for prototype
+- remove line and location connections
 
 # nice things
 - paint walk-set

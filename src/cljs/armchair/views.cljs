@@ -96,7 +96,7 @@
   [:i {:class (str "fas fa-" glyph)
        :title title}])
 
-(defn npc-line-component [{id :entity/id :keys [info-ids initial-line? text character-name character-color]}]
+(defn npc-line-component [{:keys [id info-ids initial-line? text character-name character-color]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
@@ -124,7 +124,7 @@
                                     (>evt [:start-connecting-lines id (e->graph-cursor %)])))}
        [icon "project-diagram" "Connect"]]]]))
 
-(defn player-line-component [{id :entity/id :keys [initial-line? options]}]
+(defn player-line-component [{:keys [id options]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
@@ -132,10 +132,9 @@
      [:div {:class "line__header"}
       [:p {:class "name"} "Player"]
       [:ul {:class "actions" :on-mouse-down stop-e!}
-       (when-not initial-line?
-         [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
-                                            (>evt [:delete-line id]))}
-          [icon "trash" "Delete"]])
+       [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
+                                          (>evt [:delete-line id]))}
+        [icon "trash" "Delete"]]
        [:li {:class "action" :on-click #(>evt [:open-player-line-modal id])}
         [icon "edit" "Edit"]]]]
      [:ul {:class "line__options"}
@@ -201,18 +200,17 @@
 (defn dialogue-management []
   (let [dialogues (<sub [:dialogue-list])]
     [slds/resource-page "Dialogues"
-     {:id :entity/id
-      :columns [:location :texture :character :description :actions]
+     {:columns [:location :texture :character :description :actions]
       :collection (vals dialogues)
-      :cell-views {:character (fn [{id :entity/id :keys [display-name]}]
+      :cell-views {:character (fn [{:keys [id display-name]}]
                                 [:a {:on-click #(>evt [:open-character-modal id])}
                                  display-name])
                    :texture (fn [texture]
                               [:img {:src (texture-path texture)}])
-                   :location (fn [{id :entity/id :keys [entity/id display-name]}]
+                   :location (fn [{:keys [id display-name]}]
                                [:a {:on-click #(>navigate :location-edit :id id)}
                                 display-name])
-                   :actions (fn [_ {id :entity/id}]
+                   :actions (fn [_ {id :id}]
                               [:div {:class "slds-text-align_right"}
                                [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this dialogue?")
                                                                              (>evt [:delete-dialogue id]))}]
@@ -222,13 +220,12 @@
 (defn character-management []
   (let [characters (<sub [:character-list])]
     [slds/resource-page "Characters"
-     {:id :entity/id
-      :columns [:texture :display-name :color :line-count :actions]
+     {:columns [:texture :display-name :color :line-count :actions]
       :collection (vals characters)
       :cell-views {:color (fn [color] [slds/badge color color])
                    :texture (fn [texture]
                               [:img {:src (texture-path texture)}])
-                   :actions (fn [_ {id :entity/id :keys [line-count]}]
+                   :actions (fn [_ {:keys [id line-count]}]
                               [:div {:class "slds-text-align_right"}
                                (when (zero? line-count)
                                  [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this character?")
@@ -239,9 +236,9 @@
 (defn info-management []
   (let [infos (<sub [:info-list])]
     [slds/resource-page "Infos"
-     {:columns [:id :description :actions]
+     {:columns [:description :actions]
       :collection (vals infos)
-      :cell-views {:actions (fn [_ {id :entity/id}]
+      :cell-views {:actions (fn [_ {id :id}]
                               [:div {:class "slds-text-align_right"}
                                [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this info?")
                                                                              (>evt [:delete-info id]))}]

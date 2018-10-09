@@ -105,19 +105,19 @@
 (defn location-editor-sidebar-connections [location-id]
   [slds/label "Assigned Connections"
    [:ul {:class "tile-list"}
-    (for [[_ {target-id :entity/id :keys [display-name]}] (<sub [:connected-locations location-id])]
+    (for [[target-loctation-id {:keys [display-name]}] (<sub [:connected-locations location-id])]
       [:li {:key (str "connection-select" display-name)
             :class "tile-list__item"
             :draggable true
             :on-drag-start (fn [e]
                              (set-dnd-texture! e)
-                             (>evt [:start-entity-drag {:connection-trigger target-id}]))}
+                             (>evt [:start-entity-drag {:connection-trigger target-loctation-id}]))}
        [dnd-texture :exit]
        [:img {:title display-name :src (texture-path :exit)}]
        [:span display-name]])]])
 
 (defn location-editor-sidebar [location-id]
-  (let [{:keys [display-name]} (<sub [:location location-id])
+  (let [{:keys [display-name]} (<sub [:location-editor/location location-id])
         {:keys [tool]} (<sub [:location-editor-data])]
     (letfn [(update-display-name [e]
               (>evt [:update-location location-id :display-name (e->val e)]))]
@@ -182,7 +182,7 @@
                           :title (str "to " display-name)}])))
 
 (defn location-editor-canvas [location-id]
-  (let [{:keys [dimension background walk-set connection-triggers]} (<sub [:location location-id])
+  (let [{:keys [dimension background walk-set connection-triggers]} (<sub [:location-editor/location location-id])
         npcs (<sub [:location-editor/npcs location-id])
         {:keys [tool highlight painting?]} (<sub [:location-editor-data])
         dnd-payload (<sub [:dnd-payload])]
@@ -213,7 +213,7 @@
        :npcs-select
        [:div
         (do-some-tiles dimension npcs "npc-select"
-                       (fn [tile {id :entity/id :keys [texture display-name]}]
+                       (fn [tile {:keys [id texture display-name]}]
                          [:div {:class "interactor interactor_draggable"
                                 :title display-name
                                 :draggable true

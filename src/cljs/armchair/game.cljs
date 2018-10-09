@@ -24,7 +24,7 @@
 (s/def ::position ::point)
 (s/def ::direction #{:up :down :left :right})
 (s/def ::texture #(contains? texture-set %))
-(s/def ::line-id pos-int?)
+(s/def ::line-id uuid?)
 (s/def ::selected-option int?)
 
 (s/def ::interaction (s/keys :req-un [::line-id
@@ -35,14 +35,14 @@
 
 (s/def ::background (s/map-of ::point ::texture))
 
-(s/def ::display-name string?)
-(s/def ::character (s/keys :req-un [::display-name ::texture]))
+(s/def ::character (s/keys :req-un [::texture]))
 (s/def ::npcs (s/map-of ::point ::character))
 (s/def ::highlight ::point)
 
 (s/def ::all-npcs-have-dialogue (fn [{:keys [npcs dialogues]}]
-                                  (= (set (map #(:entity/id (second %)) npcs))
-                                     (set (keys dialogues)))))
+                                  (= (->> npcs vals (map :id) set)
+                                     (-> dialogues keys set))))
+
 (s/def ::state (s/and (s/keys :req-un [::player ::npcs]
                               :opt-un [::highlight ::interaction])
                       ::all-npcs-have-dialogue))
@@ -233,7 +233,7 @@
                         (cond-> (merge % {:interaction {:line-id next-interaction
                                                         :selected-option 0}})
                           (not (empty? info-ids)) (update-in [:player :infos] union info-ids))))))
-    (if-let [{npc-id :entity/id} ((:npcs @state) (interaction-tile @state))]
+    (if-let [{npc-id :id} ((:npcs @state) (interaction-tile @state))]
       (swap! state assoc :interaction {:line-id (get-in @state [:dialogues npc-id])
                                        :selected-option 0}))))
 
@@ -242,8 +242,7 @@
            (let [handler (case cmd
                            :cursor-position handle-cursor
                            :move handle-move
-                           :interact handle-interact
-                           identity)]
+                           :interact handle-interact)]
              (handler payload)
              (recur (<! channel)))))
 

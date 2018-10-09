@@ -37,6 +37,7 @@
                            (map-values count))]
       (map-values (fn [{id :entity/id :as character}]
                     (assoc character
+                           :id id
                            :line-count (get line-counts id 0)))
                   characters))))
 
@@ -51,7 +52,9 @@
 (reg-sub
   :info-list
   :<- [:db-infos]
-  (fn [infos] infos))
+  (fn [infos] (map-values (fn [{id :entity/id :as info}]
+                            (assoc info :id id))
+                          infos)))
 
 (reg-sub
   :info-options
@@ -124,11 +127,14 @@
   :<- [:db-locations]
   :<- [:db-characters]
   (fn [[dialogues locations characters]]
-    (map-values (fn [{:keys [character-id location-id] :as dialogue}]
-                  (assoc dialogue
-                         :character (select-keys (characters character-id) [:entity/id :display-name])
-                         :texture (:texture (characters character-id))
-                         :location (select-keys (locations location-id) [:entity/id :display-name])))
+    (map-values (fn [{id :entity/id :keys [character-id location-id] :as dialogue}]
+                  (let [character (characters character-id)
+                        location (locations location-id)]
+                    (assoc dialogue
+                           :id id
+                           :character (merge {:id character-id} character)
+                           :texture (:texture character)
+                           :location (merge {:id location-id} location))))
                 dialogues)))
 
 (reg-sub
@@ -162,18 +168,21 @@
     (let [line (get lines line-id)
           character (get characters (:character-id line))
           dialogue (get dialogues (:dialogue-id line))]
-    (assoc line
-           :initial-line? (= (:initial-line-id dialogue) (:entity/id line))
-           :character-color (:color character)
-           :character-name (:display-name character)))))
+      (merge (select-keys line [:kind :text :options :info-ids])
+             {:id line-id
+              :initial-line? (= (:initial-line-id dialogue) line-id)
+              :character-color (:color character)
+              :character-name (:display-name character)}))))
 
 (reg-sub
-  :location
+  :location-editor/location
   :<- [:db-locations]
   :<- [:db-characters]
   (fn [[locations characters] [_ location-id]]
     (-> (locations location-id)
-        (update :connection-triggers #(map-values locations %)))))
+        (update :connection-triggers
+                (fn [ct] (map-values #(assoc (locations %) :id %)
+                                     ct))))))
 
 (reg-sub
   :location-editor/npcs
@@ -185,7 +194,7 @@
          (map (fn [dialogue]
                 (let [character (characters (:character-id dialogue))]
                   [(:location-position dialogue)
-                   (merge {:entity/id (:entity/id dialogue)}
+                   (merge {:id (:entity/id dialogue)}
                           (select-keys character [:texture :display-name]))])))
          (into {}))))
 
@@ -262,8 +271,11 @@
           normalize-tile (fn [tile] (rect->0 (:dimension location) tile))
           location-dialogues (where-map :location-id location-id dialogues)]
       {:dimension (:dimension location)
-       :npcs (into {} (map (fn [{tile :location-position npc :character-id}]
-                             [(normalize-tile tile) (get characters npc)])
+       :npcs (into {} (map (fn [{tile :location-position character-id :character-id}]
+                             (let [{id :entity/id
+                                    texture :texture} (get characters character-id)]
+                               [(normalize-tile tile) {:id id
+                                                       :texture texture}]))
                            (vals location-dialogues)))
        :background (map-keys normalize-tile (:background location))
        :walk-set (into #{} (map normalize-tile (:walk-set location)))
