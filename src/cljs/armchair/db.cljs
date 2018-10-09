@@ -10,19 +10,19 @@
 (s/def :entity/id uuid?)
 (s/def :entity/type #{:location :character :line :info :dialogue})
 (s/def ::text #(not (string/blank? %)))
-(s/def ::point (s/tuple integer? integer?))
-(s/def ::rect (s/and (s/tuple ::point ::point)
+(s/def :type/point (s/tuple integer? integer?))
+(s/def :type/rect (s/and (s/tuple :type/point :type/point)
                      (fn [[[x1 y1] [x2 y2]]] (and (< x1 x2)
                                                   (< y1 y2)))))
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:entity/id v)))))
 (s/def ::undirected-connection (s/coll-of :entity/id :kind set? :count 2))
 (s/def ::texture (s/nilable #(contains? texture-set %)))
 
-(s/def :ui/cursor ::point)
+(s/def :ui/cursor :type/point)
 
 ;; UI State
 
-(s/def ::cursor-start ::point)
+(s/def ::cursor-start :type/point)
 (s/def ::connecting-lines (s/keys :req-un [::cursor-start ::line-id]
                                   :opt-un [::index]))
 (s/def ::connecting-locations (s/keys :req-un [::cursor-start ::location-id]))
@@ -40,7 +40,7 @@
                 :collision
                 :background-painter
                 :connection-select})
-(s/def ::highlight ::point)
+(s/def ::highlight :type/point)
 (s/def ::active-texture ::texture)
 (s/def ::location-editor (s/keys :req-un [::tool
                                           ::painting?
@@ -59,11 +59,11 @@
 (s/def ::display-name ::text)
 (s/def ::color ::text)
 
-(s/def ::dimension ::rect)
-(s/def ::background (s/map-of ::point ::texture))
-(s/def ::walk-set (s/coll-of ::point :kind set?))
-(s/def ::connection-triggers (s/map-of ::point ::location-id))
-(s/def ::npcs (s/map-of ::point ::character-id))
+(s/def ::dimension :type/rect)
+(s/def ::background (s/map-of :type/point ::texture))
+(s/def ::walk-set (s/coll-of :type/point :kind set?))
+(s/def ::connection-triggers (s/map-of :type/point ::location-id))
+(s/def ::npcs (s/map-of :type/point ::character-id))
 (s/def ::location (s/keys :req [:entity/id
                                 :entity/type]
                           :req-un [::dimension
@@ -111,7 +111,7 @@
 
 (s/def ::lines (s/and ::entity-map
                       (s/map-of ::line-id ::npc-or-player-line)))
-(s/def ::location-position ::point)
+(s/def ::location-position :type/point)
 
 (s/def ::dialogue (s/keys :req [:entity/id
                                 :entity/type]
