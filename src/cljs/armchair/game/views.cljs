@@ -44,8 +44,6 @@
            [:canvas {:on-mouse-move #(let [c (relative-cursor % @entity-canvas)]
                                        (put! @game-input [:cursor-position c]))
                      :on-mouse-out #(put! @game-input [:cursor-position nil])
-                     :on-click #(let [c (relative-cursor % @entity-canvas)]
-                                  (put! @game-input [:animate c]))
                      :height 450
                      :width 800
                      :ref (fn [el] (reset! entity-canvas el))}]]])})))
