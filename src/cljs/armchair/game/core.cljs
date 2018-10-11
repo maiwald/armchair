@@ -261,7 +261,7 @@
 (defn animation-done? [start duration now]
   (< (+ start duration) now))
 
-(defn animate-move [destination-tile move-chan]
+(defn animate-move [destination-tile done-fn]
   (let [anim-c (chan 1)
         destination (tile->coord destination-tile)
         start (* time-factor (.now js/performance))
@@ -278,18 +278,18 @@
                      (do
                        (swap! state assoc-in [:player :position] destination)
                        (swap! move-q pop)
-                       (put! move-chan true))))))
+                       (done-fn))))))
              (recur (<! anim-c)))
     (put! anim-c true)))
 
 (defn start-animation-loop [channel]
   (go-loop [_ (<! channel)]
            (when-let [direction (first @move-q)]
-             (let [position-delta (direction-map direction)
-                   new-position (translate-point (coord->tile (get-in @state [:player :position])) position-delta)]
-               (swap! state assoc-in [:player :direction] direction)
+             (swap! state assoc-in [:player :direction] direction)
+             (let [new-position (translate-point (coord->tile (get-in @state [:player :position]))
+                                                 (direction-map direction))]
                (if (walkable? new-position)
-                 (animate-move new-position channel)
+                 (animate-move new-position #(put! channel true))
                  (when-not (empty? (swap! move-q pop)) (put! channel true)))))
            (recur (<! channel))))
 
