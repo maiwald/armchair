@@ -282,7 +282,7 @@
              (recur (<! anim-c)))
     (put! anim-c true)))
 
-(defn start-animation-loop [channel]
+(defn start-move-loop [channel]
   (go-loop [_ (<! channel)]
            (when-let [direction (first @move-q)]
              (swap! state assoc-in [:player :direction] direction)
@@ -305,7 +305,7 @@
   (reset! move-q #queue [])
   (reset! ctx entity-context)
   (let [input-chan (chan)
-        animation-chan (chan (sliding-buffer 1))]
+        move-chan (chan (sliding-buffer 1))]
     (add-watch state
                :state-update
                (fn [_ _ old-state new-state]
@@ -318,7 +318,7 @@
                (fn [_ _ old-state new-state]
                  (when (and (empty? old-state)
                             (some? new-state))
-                   (put! animation-chan true))))
+                   (put! move-chan true))))
     (load-textures (fn [loaded-atlas]
                      (reset! texture-atlas loaded-atlas)
 
@@ -328,7 +328,8 @@
                                       (:background data))
 
                      (start-input-loop input-chan)
-                     (start-animation-loop animation-chan)
+                     (start-move-loop move-chan)
+
                      (js/requestAnimationFrame #(render @state))))
     input-chan))
 
