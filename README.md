@@ -1,6 +1,6 @@
 # Armchair
 
-Armchair will be an Editor for complex branching dialogue in games.
+Armchair will be an Editor for games with branching dialogue.
 
 I have rather intricate plans for what I want to to with dialogue in a little
 game I am working on that an off-the-shelf editor was not an option. :)
