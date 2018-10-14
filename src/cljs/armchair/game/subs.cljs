@@ -39,43 +39,49 @@
 (s/def :game/next-line-id (s/nilable :entity/id))
 
 (reg-sub
+  :game/dialogues-by-location
+  :<- [:db-dialogues]
+  :<- [:db-characters]
+  (fn [[dialogues characters] _]
+    (->> (vals dialogues)
+         (group-by :location-id)
+         (map-values #(into {} (map (fn [{line-id :initial-line-id
+                                          :keys [location-position character-id]}]
+                                      [location-position
+                                       {:npc-texture (get-in characters [character-id :texture])
+                                        :initial-line-id line-id}])
+                                    %))))))
+
+(reg-sub
   :game/data
   :<- [:db-locations]
-  :<- [:db-dialogues]
+  :<- [:game/dialogues-by-location]
   :<- [:db-lines]
-  :<- [:db-characters]
   :<- [:db-infos]
-  (fn [[locations dialogues lines characters infos] _]
+  (fn [[locations dialogues-by-location lines infos] _]
     {:post [(or (s/valid? :game/data %)
                 (s/explain :game/data %))]}
-    (let [dialogues-by-location (->> dialogues vals (group-by :location-id))]
-      {:infos infos
-       :lines (map-values (partial line-screen lines)
-                          (->> lines (where-map :kind :npc)))
-       :locations (map-values (fn [{:keys [dimension background connection-triggers walk-set]
-                                    id :entity/id
-                                    :as location}]
-                                (letfn [(normalize-tile [tile]
-                                          (rect->0 dimension tile))]
-                                  {:dimension dimension
-                                   :background (map-keys normalize-tile background)
-                                   :connection-triggers (->> connection-triggers
-                                                          (map (fn [[pos target-loctation-id]]
-                                                                 (let [target-dimension (get-in locations [target-loctation-id :dimension])]
-                                                                   [(normalize-tile pos) {:location-id target-loctation-id
-                                                                                          :position (->> (get locations target-loctation-id)
-                                                                                                         :connection-triggers
-                                                                                                         (filter-map #(= id %))
-                                                                                                         keys
-                                                                                                         (map #(rect->0 target-dimension %))
-                                                                                                         first)}])))
-                                                          (into {}))
-                                   :walk-set (set (map normalize-tile walk-set))
-                                   :npcs (->> (dialogues-by-location id)
-                                           (map (fn [{line-id :initial-line-id
-                                                      :keys [location-position character-id]}]
-                                                  [(normalize-tile location-position)
-                                                   {:npc-texture (get-in characters [character-id :texture])
-                                                    :initial-line-id line-id}]))
-                                           (into {}))}))
-                              locations)})))
+    {:infos infos
+     :lines (map-values (partial line-screen lines)
+                        (->> lines (where-map :kind :npc)))
+     :locations (map-values (fn [{:keys [dimension background connection-triggers walk-set]
+                                  id :entity/id
+                                  :as location}]
+                              (letfn [(normalize-tile [tile]
+                                        (rect->0 dimension tile))]
+                                {:dimension dimension
+                                 :background (map-keys normalize-tile background)
+                                 :connection-triggers (->> connection-triggers
+                                                        (map (fn [[pos target-loctation-id]]
+                                                               (let [target-dimension (get-in locations [target-loctation-id :dimension])]
+                                                                 [(normalize-tile pos) {:location-id target-loctation-id
+                                                                                        :position (->> (get locations target-loctation-id)
+                                                                                                       :connection-triggers
+                                                                                                       (filter-map #(= id %))
+                                                                                                       keys
+                                                                                                       (map #(rect->0 target-dimension %))
+                                                                                                       first)}])))
+                                                        (into {}))
+                                 :walk-set (set (map normalize-tile walk-set))
+                                 :npcs (map-keys normalize-tile (dialogues-by-location id))}))
+                            locations)}))
