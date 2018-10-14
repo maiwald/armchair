@@ -1,5 +1,4 @@
 # TODO
-- make location changes work
 - saving state
 - get it to benni!
 - epochs, effects in the world

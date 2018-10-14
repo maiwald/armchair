@@ -276,7 +276,17 @@
              (let [new-position (translate-point (coord->tile (get-in @state [:player :position]))
                                                  (direction-map direction))]
                (if (walkable? new-position)
-                 (animate-move new-position #(put! channel true))
+                 (animate-move new-position
+                               (fn []
+                                 (let [{l :location-id p :position} (:player @state)
+                                       {c :connection-triggers} (get-in @data [:locations l])]
+                                   (if-let [{new-location :location-id
+                                             position :position} (get c (coord->tile p))]
+                                     (do
+                                       (reset! move-q #queue [])
+                                       (swap! state update :player merge {:location-id new-location
+                                                                          :position (tile->coord position)}))
+                                     (put! channel true)))))
                  (when-not (empty? (swap! move-q pop)) (put! channel true)))))
            (recur (<! channel))))
 
@@ -295,6 +305,13 @@
                  (when (not= old-state new-state)
                    (when-not (s/valid? ::state new-state)
                      (js/console.log (s/explain ::state new-state)))
+                   (when (not= (get-in old-state [:player :location-id])
+                               (get-in new-state [:player :location-id]))
+                     (c/clear! background-context)
+                     (let [l (get-in @state [:player :location-id])
+                           {:keys [dimension background]} (get-in @data [:locations l])]
+                       (draw-background background-context dimension background)))
+
                    (js/requestAnimationFrame #(render new-state)))))
     (add-watch move-q
                :animation-update
