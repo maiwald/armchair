@@ -32,6 +32,8 @@
 (s/def :game/dimension :type/rect)
 (s/def :game/walk-set (s/coll-of :type/point :kind set?))
 (s/def :game/connection-triggers (s/map-of :type/point (s/keys :req-un [:game/location-id :game/position])))
+(s/def :game/location-id :entity/id)
+(s/def :game/position :type/point)
 (s/def :game/npcs (s/map-of :type/point (s/keys :req-un [:game/npc-texture :game/initial-line-id])))
 (s/def :game/initial-line-id :entity/id)
 (s/def :game/next-line-id (s/nilable :entity/id))
