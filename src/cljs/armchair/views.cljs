@@ -1,13 +1,14 @@
 (ns armchair.views
   (:require [clojure.spec.alpha :as s]
             [armchair.slds :as slds]
+            [armchair.components :refer [icon drag-canvas connection e->graph-cursor]]
             [armchair.location-editor.views :refer [location-editor]]
-            [armchair.util :refer [left-button?
-                                   <sub
+            [armchair.dialogue-editor.views :refer [dialogue-editor]]
+            [armchair.util :refer [<sub
                                    >evt
                                    stop-e!
-                                   relative-cursor
                                    e->
+                                   e->left?
                                    e->val
                                    translate-point]]
             [armchair.config :as config]
@@ -16,165 +17,7 @@
             [armchair.game.views :refer [game-canvas]]
             [bidi.bidi :refer [match-route]]))
 
-;; Helpers
-
-(defn e->graph-cursor [e]
-  (relative-cursor e (-> js/document
-                         (.getElementsByClassName "graph")
-                         (aget 0))))
-
-;; Drag & Drop
-
-(defn start-dragging-handler [ids]
-  (e-> #(when (left-button? %)
-          (>evt [:start-dragging ids (e->graph-cursor %)]))))
-
-(defn connection [{kind :kind [x1 y1] :start [x2 y2] :end}]
-  [:line {:class ["graph__connection"
-                  (when (= kind :connector) "graph__connection_is-connector")]
-          :x1 x1
-          :y1 y1
-          :x2 x2
-          :y2 y2}])
-
-(defn drag-item [item-id component]
-  (let [position (<sub [:ui/position item-id])
-        dragging? (<sub [:dragging-item? item-id])
-        start-dragging (start-dragging-handler #{item-id})
-        stop-dragging (when dragging? (e-> #(>evt [:end-dragging])))]
-    [:div {:class ["graph__item"
-                   (when dragging? "graph__item_is-dragging")]
-           :on-mouse-down start-dragging
-           :on-mouse-up stop-dragging
-           :style {:left (first position)
-                   :top (second position)}}
-     [component item-id]]))
-
-(defn drag-canvas [{:keys [item-ids kind item-component]} & connection-children]
-  (let [connecting? (some? (<sub [:connector]))
-        dragging? (<sub [:dragging?])
-        mouse-down (start-dragging-handler (set item-ids))
-        mouse-move (e-> #(when (or dragging? connecting?)
-                           (>evt [:move-cursor (e->graph-cursor %)])))
-        mouse-up (cond
-                   connecting? (e-> #(>evt [:abort-connecting]))
-                   dragging? (e-> #(>evt [:end-dragging])))]
-    [:div {:class (cond-> ["graph"]
-                    dragging? (conj "graph_is-dragging")
-                    connecting? (conj "graph_is-connecting"))
-           :on-mouse-down mouse-down
-           :on-mouse-move mouse-move
-           :on-mouse-up mouse-up}
-     (into [:div] connection-children)
-     (for [id item-ids]
-       ^{:key (str kind id)} [drag-item id item-component])]))
-
 ;; Components
-
-(defn icon [glyph title]
-  [:i {:class (str "fas fa-" glyph)
-       :title title}])
-
-(defn npc-line-component [{:keys [id info-ids initial-line? text character-name character-color]}]
-  (let [connecting? (some? (<sub [:connector]))]
-    [:div {:class "line"
-           :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
-           :style {:border-color character-color
-                   :width (str config/line-width "px")}}
-     [:header {:class "line__header"}
-      [:p {:class "name"} character-name]
-      [:ul {:class "states"}
-       (when initial-line?
-         [:li {:class "state"} [icon "play-circle" "This is the initial line of this dialogue"]])
-       (when-not (empty? info-ids)
-         [:li {:class "state"} [icon "info-circle" "This line contains infos."]])]
-      [:ul {:class "actions" :on-mouse-down stop-e!}
-       (when-not initial-line?
-         [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
-                                            (>evt [:delete-line id]))}
-          [icon "trash" "Delete"]])
-       [:li {:class "action" :on-click #(>evt [:open-npc-line-modal id])}
-        [icon "edit" "Edit"]]]]
-     [:div {:class "line__text"
-            :style {:height (str config/line-height "px")}}
-      [:p text]
-      [:div {:class "action action_connect"
-             :on-mouse-down (e-> #(when (left-button? %)
-                                    (>evt [:start-connecting-lines id (e->graph-cursor %)])))}
-       [icon "project-diagram" "Connect"]]]]))
-
-(defn player-line-component [{:keys [id options]}]
-  (let [connecting? (some? (<sub [:connector]))]
-    [:div {:class "line"
-           :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
-           :style {:width (str config/line-width "px")}}
-     [:div {:class "line__header"}
-      [:p {:class "name"} "Player"]
-      [:ul {:class "actions" :on-mouse-down stop-e!}
-       [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
-                                          (>evt [:delete-line id]))}
-        [icon "trash" "Delete"]]
-       [:li {:class "action" :on-click #(>evt [:open-player-line-modal id])}
-        [icon "edit" "Edit"]]]]
-     [:ul {:class "line__options"}
-      (map-indexed (fn [index option]
-                     [:li {:key (str "line-option" id ":" index)
-                           :class "line__text"
-                           :style {:height (str config/line-height "px")}}
-                      [:p
-                       (when-not (empty? (:required-info-ids option))
-                         [:span {:class "state"}
-                          [icon "lock" "This option requires information."]])
-                       (:text option)]
-                      [:div {:class "action action_connect"
-                             :on-mouse-down (e-> #(when (left-button? %)
-                                                    (>evt [:start-connecting-lines id (e->graph-cursor %) index])))}
-                       [icon "project-diagram" "Connect"]]])
-                   options)]]))
-
-(defn line-component [line-id]
-  (let [line (<sub [:dialogue/line line-id])]
-    (case (:kind line)
-      :npc [npc-line-component line]
-      :player [player-line-component line])))
-
-(defn npc-connection [start end]
-  (let [start-pos (<sub [:ui/position start])
-        end-pos (<sub [:ui/position end])]
-    [connection {:start (translate-point start-pos [(- config/line-width 15)
-                                                    (+ 33 (/ config/line-height 2))])
-                 :end (translate-point end-pos [15 (+ 33 (/ config/line-height 2))])}]))
-
-(defn player-connection [start index end]
-  (let [start-pos (<sub [:ui/position start])
-        end-pos (<sub [:ui/position end])]
-    [connection {:start (translate-point start-pos [(- config/line-width 15)
-                                                    (+ 33
-                                                       (/ config/line-height 2)
-                                                       (* index config/line-height))])
-                 :end (translate-point end-pos [15 (+ 33 (/ config/line-height 2))])}]))
-
-(defn dialogue-editor [dialogue-id]
-  (if-let [{:keys [line-ids npc-connections player-connections]} (<sub [:dialogue dialogue-id])]
-    [:div {:class "full-page"}
-     [:div {:class "new-item-button"}
-      [slds/add-button "New Player Line" #(>evt [:create-player-line dialogue-id])]
-      [slds/add-button "New NPC Line" #(>evt [:create-npc-line dialogue-id])]]
-     [drag-canvas {:kind "line"
-                    :item-ids line-ids
-                    :item-component line-component}
-      [:svg {:class "graph__connection-container" :version "1.1"
-             :baseProfile "full"
-             :xmlns "http://www.w3.org/2000/svg"}
-       (when-let [connector (<sub [:connector])]
-         [connection connector])
-       (for [[start end] npc-connections]
-         ^{:key (str "line-connection:" start "->" end)}
-         [npc-connection start end])
-       (for [[start index end] player-connections]
-         ^{:key (str "response-connection:" start ":" index "->" end)}
-         [player-connection start index end])]]]
-    [:span "No dialogue selected!"]))
 
 (defn dialogue-management []
   (let [dialogues (<sub [:dialogue-list])]
@@ -242,7 +85,7 @@
              :on-click #(>navigate :location-edit :id location-id)}
         [icon "edit" "Edit"]]
        [:li {:class "action action_connect"
-             :on-mouse-down (e-> #(when (left-button? %)
+             :on-mouse-down (e-> #(when (e->left? %)
                                     (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
         [icon "project-diagram" "Connect"]]]]
      [:ul {:class "location__characters"}

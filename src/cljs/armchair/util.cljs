@@ -86,4 +86,5 @@
     [(- (.-clientX e) (.-left rect))
      (- (.-clientY e) (.-top rect))]))
 
-(def left-button? #(zero? (.-button %)))
+(defn e->left? [e]
+  (zero? (.-button e)))
