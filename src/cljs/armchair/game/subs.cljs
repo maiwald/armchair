@@ -52,6 +52,9 @@
                                         :initial-line-id line-id}])
                                     %))))))
 
+(defn reverse-map [m]
+  (into {} (map (fn [[k v]] [v k]) m)))
+
 (reg-sub
   :game/data
   :<- [:db-locations]
@@ -72,16 +75,13 @@
                                 {:dimension dimension
                                  :background (map-keys normalize-tile background)
                                  :connection-triggers (->> connection-triggers
-                                                        (map (fn [[pos target-loctation-id]]
-                                                               (let [target-dimension (get-in locations [target-loctation-id :dimension])]
-                                                                 [(normalize-tile pos) {:location-id target-loctation-id
-                                                                                        :position (->> (get locations target-loctation-id)
-                                                                                                       :connection-triggers
-                                                                                                       (filter-map #(= id %))
-                                                                                                       keys
-                                                                                                       (map #(rect->0 target-dimension %))
-                                                                                                       first)}])))
-                                                        (into {}))
+                                                        (map-values (fn [target-loctation-id]
+                                                                      (let [{target-dimension :dimension
+                                                                             connection-triggers :connection-triggers} (locations target-loctation-id)
+                                                                            conn-lookup (reverse-map connection-triggers)]
+                                                                        {:location-id target-loctation-id
+                                                                         :position (rect->0 target-dimension (conn-lookup id))})))
+                                                        (map-keys normalize-tile))
                                  :walk-set (set (map normalize-tile walk-set))
                                  :npcs (map-keys normalize-tile (dialogues-by-location id))}))
                             locations)}))
