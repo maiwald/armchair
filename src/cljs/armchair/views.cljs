@@ -386,8 +386,10 @@
          page-params :route-params} (match-route routes (<sub [:current-page]))]
     [:div {:id "page"}
      [modal]
-     [:a {:id "reset"
-          :on-click #(>evt [:reset-db])} "reset"]
+     [:div {:id "global-options"}
+      [:a {:on-click #(>evt [:undo])} "undo"]
+      [:a {:on-click #(>evt [:redo])} "redo"]
+      [:a {:on-click #(>evt [:reset-db])} "reset"]]
      [:div {:id "navigation"}
       [slds/global-navigation {:links (array-map :game "Game"
                                                  :locations "Locations"

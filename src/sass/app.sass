@@ -7,13 +7,6 @@ $gray: #888
   height: 100%
   width: 100%
 
-#reset
-  position: absolute
-  right: 0
-  top: 0
-  margin: 10px
-  z-index: 1000
-
 #page
   +fill-container
   display: flex
@@ -400,6 +393,16 @@ $gray: #888
   .canvas-container
     & > canvas
       position: absolute
+
+#global-options
+  position: absolute
+  right: 0
+  top: 0
+  margin: 10px
+  z-index: 1000
+
+  a
+    margin-left: 10px
 
 .slds-radio_button
   i.fas

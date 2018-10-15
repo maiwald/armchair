@@ -6,6 +6,7 @@
 - information dependency invariants
 - moving camera for prototype
 - remove line and location connections
+- npc movement
 
 # nice things
 - enable double click for editing lines
