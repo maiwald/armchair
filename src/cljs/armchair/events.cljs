@@ -3,7 +3,7 @@
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
-            [armchair.db :refer [default-db content-data save-file-contents]]
+            [armchair.db :refer [default-db content-data serialize-db deserialize-db]]
             [armchair.undo :refer [reset-undos! record-undo]]
             [armchair.routes :refer [routes]]
             [armchair.util :refer [filter-map
@@ -39,13 +39,18 @@
     (let [mime-type (str "application/json;charset="
                          (.-characterSet js/document))
           blob (new js/Blob
-                    (clj->js [(save-file-contents db)])
+                    (clj->js [(serialize-db db)])
                     (clj->js {:type mime-type}))
           filename (str "armchair-save-"
                         (.toISOString (new js/Date))
                         ".json")]
       (js/saveAs blob filename))
     {}))
+
+(reg-event-db
+  :upload-state
+  (fn [db [_ json]]
+    (merge db (:payload (deserialize-db json)))))
 
 ;; Resources
 

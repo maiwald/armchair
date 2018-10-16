@@ -10,7 +10,8 @@
                                    e->
                                    e->left?
                                    e->val
-                                   translate-point]]
+                                   translate-point
+                                   upload-json!]]
             [armchair.config :as config]
             [armchair.routes :refer [routes >navigate]]
             [armchair.textures :refer [character-textures texture-path]]
@@ -230,9 +231,11 @@
     [:div {:id "page"}
      [modal]
      [:div {:id "global-options"}
-      [:a {:on-click #(>evt [:undo])} "undo"]
-      [:a {:on-click #(>evt [:redo])} "redo"]
-      [:a {:on-click #(>evt [:download-state])} "download"]
+      [:a {:on-click #(>evt [:undo])} [icon "undo" "undo"] "undo"]
+      [:a {:on-click #(>evt [:redo])} [icon "redo" "redo"] "redo"]
+      [:a {:on-click #(>evt [:download-state])} [icon "download" "download"] "download"]
+      [:a {:on-click #(upload-json! (fn [json] (>evt [:upload-state json])))}
+       [icon "upload" "upload"] "upload"]
       [:a {:on-click #(>evt [:reset-db])} "reset"]]
      [:div {:id "navigation"}
       [slds/global-navigation {:links (array-map :game "Game"

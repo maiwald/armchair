@@ -2,6 +2,20 @@
   (:require [clojure.set :refer [intersection]]
             [re-frame.core :as re-frame]))
 
+(defn upload-json! [callback]
+  (let [file-input (doto (js/document.createElement "input")
+                     (.setAttribute "type" "file")
+                     (.setAttribute "multiple" false)
+                     (.setAttribute "accept" "application/json"))
+        file-reader (new js/FileReader)]
+    (set! (.-onchange file-input)
+          #(let [file (-> file-input .-files (aget 0))]
+             (.readAsText file-reader file)))
+    (set! (.-onloadend file-reader)
+          #(let [content (.-result file-reader)]
+             (callback content)))
+    (.click file-input)))
+
 (defn rect-width [[[x1 _] [x2 _]]]
   (inc (- x2 x1)))
 
