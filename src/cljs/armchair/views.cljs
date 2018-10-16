@@ -232,6 +232,7 @@
      [:div {:id "global-options"}
       [:a {:on-click #(>evt [:undo])} "undo"]
       [:a {:on-click #(>evt [:redo])} "redo"]
+      [:a {:on-click #(>evt [:download-state])} "download"]
       [:a {:on-click #(>evt [:reset-db])} "reset"]]
      [:div {:id "navigation"}
       [slds/global-navigation {:links (array-map :game "Game"

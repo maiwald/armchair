@@ -1,5 +1,6 @@
 (ns armchair.util
-  (:require [clojure.set :refer [intersection]]))
+  (:require [clojure.set :refer [intersection]]
+            [re-frame.core :as re-frame]))
 
 (defn rect-width [[[x1 _] [x2 _]]]
   (inc (- x2 x1)))
@@ -64,8 +65,8 @@
 
 ;; View Helpers
 
-(def <sub (comp deref re-frame.core/subscribe))
-(def >evt re-frame.core/dispatch)
+(def <sub (comp deref re-frame/subscribe))
+(def >evt re-frame/dispatch)
 
 (defn stop-e! [e]
   (.preventDefault e)

@@ -2,7 +2,8 @@
   (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
-            [armchair.db :refer [default-db content-data]]
+            cljsjs.filesaverjs
+            [armchair.db :refer [default-db content-data save-file-contents]]
             [armchair.undo :refer [reset-undos! record-undo]]
             [armchair.routes :refer [routes]]
             [armchair.util :refer [filter-map
@@ -31,6 +32,20 @@
   (fn [db]
     (reset-undos!)
     (merge db (content-data default-db))))
+
+(reg-event-fx
+  :download-state
+  (fn [{db :db}]
+    (let [mime-type (str "application/json;charset="
+                         (.-characterSet js/document))
+          blob (new js/Blob
+                    (clj->js [(save-file-contents db)])
+                    (clj->js {:type mime-type}))
+          filename (str "armchair-save-"
+                        (.toISOString (new js/Date))
+                        ".json")]
+      (js/saveAs blob filename))
+    {}))
 
 ;; Resources
 
