@@ -1,4 +1,4 @@
-(ns armchair.pathfinding
+(ns armchair.game.pathfinding
   (:require [tailrecursion.priority-map :refer [priority-map]]))
 
 (defn abs [x]
