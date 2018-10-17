@@ -3,13 +3,13 @@
             [clojure.spec.alpha :as s]
             [clojure.set :refer [subset? union]]
             [armchair.game.canvas :as c]
+            [armchair.game.pathfinding :as path]
             [armchair.config :refer [tile-size]]
             [armchair.textures :refer [texture-set load-textures]]
             [armchair.util :refer [map-values
                                    rect-width
                                    rect-height
-                                   translate-point]]
-            [armchair.pathfinding :as path]))
+                                   translate-point]]))
 
 ;; Definitions
 
