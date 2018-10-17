@@ -1,5 +1,5 @@
 (ns armchair.undo
-  (:require [re-frame.core :refer [after reg-event-db]]
+  (:require [re-frame.core :refer [after reg-event-db reg-sub]]
             [re-frame.db :refer [app-db]]
             [armchair.db :refer [content-data]]))
 
@@ -9,6 +9,15 @@
 (defn reset-undos! []
   (reset! undo-list [])
   (reset! redo-list []))
+
+(defn can-undo? []
+  (not (empty? @undo-list)))
+
+(defn can-redo? []
+  (not (empty? @redo-list)))
+
+(reg-sub :can-undo? can-undo?)
+(reg-sub :can-redo? can-redo?)
 
 (def record-undo
   (after (fn [db]
@@ -21,7 +30,7 @@
 (reg-event-db
   :undo
   (fn [db]
-    (if (not-empty @undo-list)
+    (if (can-undo?)
       (let [prev-db (peek @undo-list)]
         (swap! undo-list pop)
         (swap! redo-list conj (content-data db))
@@ -31,7 +40,7 @@
 (reg-event-db
   :redo
   (fn [db]
-    (if (not-empty @redo-list)
+    (if (can-redo?)
       (let [next-db (peek @redo-list)]
         (swap! undo-list conj (content-data db))
         (swap! redo-list pop)

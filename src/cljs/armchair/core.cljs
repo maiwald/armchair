@@ -1,6 +1,7 @@
 (ns armchair.core
   (:require [reagent.core :as reagent]
             [re-frame.core :as re-frame]
+            [armchair.undo]
             [armchair.events]
             [armchair.subs]
             [armchair.location-editor.events]

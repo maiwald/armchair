@@ -231,8 +231,12 @@
     [:div {:id "page"}
      [modal]
      [:div {:id "global-options"}
-      [:a {:on-click #(>evt [:undo])} [icon "undo"] "undo"]
-      [:a {:on-click #(>evt [:redo])} [icon "redo"] "redo"]
+      (if (<sub [:can-undo?])
+        [:a {:on-click #(>evt [:undo])} [icon "undo"] "undo"]
+        [:span {:class "disabled"} [icon "undo"] "undo"])
+      (if (<sub [:can-redo?])
+        [:a {:on-click #(>evt [:redo])} [icon "redo"] "redo"]
+        [:span {:class "disabled"} [icon "redo"] "redo"])
       [:a {:on-click #(>evt [:download-state])} [icon "download"] "save to file"]
       [:a {:on-click #(upload-json! (fn [json] (>evt [:upload-state json])))}
        [icon "upload"] "load from file"]

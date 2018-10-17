@@ -401,8 +401,9 @@ $gray: #888
   margin: 10px
   z-index: 1000
   display: flex
+  user-select: none
 
-  a
+  a, span
     display: flex
     justify-content: center
     align-items: center
@@ -410,6 +411,9 @@ $gray: #888
 
     i
       margin-right: 4px
+
+  span.disabled
+    color: grey
 
 .slds-radio_button
   i.fas
