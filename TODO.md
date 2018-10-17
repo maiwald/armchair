@@ -1,5 +1,4 @@
 # TODO
-- saving state
 - get it to benni!
 - epochs, effects in the world
 - validation error notifications
