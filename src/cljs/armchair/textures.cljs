@@ -1,7 +1,7 @@
 (ns armchair.textures
   (:require [clojure.core.async :refer [go chan take! put! <!]]))
 
-(def background-textures [:dirt
+(def background-textures [:wall
                           :stairs
                           :red_wall-top-left
                           :red_wall-top
@@ -26,6 +26,7 @@
                           :house_roof_middle-right
                           :house_roof_top-left
                           :house_roof_top-right
+                          :dirt
                           :grass_dirt_bottom-left
                           :grass_dirt_bottom
                           :grass_dirt_bottom-right
@@ -49,8 +50,7 @@
                           :stone_grass_bottom-right
                           :stone_grass_top-left
                           :stone_grass_top-right
-                          :stone
-                          :wall])
+                          :stone])
 
 (def character-textures [:agent
                          :dead_squirrel_idle
