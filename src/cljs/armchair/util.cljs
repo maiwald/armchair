@@ -39,8 +39,9 @@
 
 (defn update-in-map
   "Updates specific map keys in a nested data structure"
-  [m path-ks map-ks f & args]
-  (let [wrapped-f #(apply f % args)]
+  [m path map-ks f & args]
+  (let [wrapped-f #(apply f % args)
+        path-ks (if (vector? path) path [path])]
     (loop [m m
            [k & ks] map-ks]
       (if (nil? k)

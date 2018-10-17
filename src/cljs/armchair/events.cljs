@@ -125,8 +125,8 @@
       (-> db
           (update :locations dissoc id)
           (update :location-connections difference location-connections)
-          (update-in-map [:locations] connected-location-ids update :connection-triggers (fn [cts] (filter-map #(not= id %) cts)))
-          (update-in-map [:dialogues] location-dialogue-ids dissoc :location-id :location-position)))))
+          (update-in-map :locations connected-location-ids update :connection-triggers (fn [cts] (filter-map #(not= id %) cts)))
+          (update-in-map :dialogues location-dialogue-ids dissoc :location-id :location-position)))))
 
 ;; Line CRUD
 
@@ -466,5 +466,5 @@
     (let [{:keys [cursor-start ids]} dragging
           delta (translate-point cursor cursor-start -)]
       (-> db
-          (update-in-map [:ui/positions] ids translate-point delta)
+          (update-in-map :ui/positions ids translate-point delta)
           (dissoc :dragging :cursor)))))
