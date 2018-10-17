@@ -9,10 +9,10 @@
                      (.setAttribute "accept" "application/json"))
         file-reader (new js/FileReader)]
     (set! (.-onchange file-input)
-          #(let [file (-> file-input .-files (aget 0))]
+          #(if-let [file (-> file-input .-files (aget 0))]
              (.readAsText file-reader file)))
     (set! (.-onloadend file-reader)
-          #(let [content (.-result file-reader)]
+          #(if-let [content (.-result file-reader)]
              (callback content)))
     (.click file-input)))
 
