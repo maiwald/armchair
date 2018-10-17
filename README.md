@@ -32,4 +32,10 @@ lein cljsbuild once min
 
 # Credit
 
-https://opengameart.org/content/lpc-tile-atlas2
+All graphic assets are taken from opengameart.com
+
+- https://opengameart.org/content/chadmandoo-pixel-city-bros-characters
+- https://opengameart.org/content/dungeon-crawl-32x32-tiles
+- https://opengameart.org/content/lpc-adobe-building-set
+- https://opengameart.org/content/lpc-tile-atlas2
+- https://opengameart.org/content/rpg-tiles-cobble-stone-paths-town-objects
