@@ -9,6 +9,8 @@
             [armchair.util :refer [filter-map
                                    filter-keys
                                    map-values
+                                   where-map
+                                   update-in-map
                                    translate-point
                                    rect-contains?]]))
 
@@ -113,12 +115,18 @@
    record-undo]
   (fn [db [_ id]]
     (let [location-connections (filter #(contains? % id)
-                                       (:location-connections db))]
-      (cond-> db
-        ;; TODO: reflect "empty connection" requirement in UI
-        (empty? location-connections)
-        (-> (update :locations dissoc id)
-            (update :location-connections difference location-connections))))))
+                                       (:location-connections db))
+          location-dialogue-ids (->> (:dialogues db)
+                                     (where-map :location-id id)
+                                     keys)
+          connected-location-ids (->> (:locations db)
+                                      (filter-map #(contains? (-> % :connection-triggers vals set) id))
+                                      keys)]
+      (-> db
+          (update :locations dissoc id)
+          (update :location-connections difference location-connections)
+          (update-in-map [:locations] connected-location-ids update :connection-triggers (fn [cts] (filter-map #(not= id %) cts)))
+          (update-in-map [:dialogues] location-dialogue-ids dissoc :location-id :location-position)))))
 
 ;; Line CRUD
 
@@ -458,9 +466,5 @@
     (let [{:keys [cursor-start ids]} dragging
           delta (translate-point cursor cursor-start -)]
       (-> db
-          (update :ui/positions (fn [positions]
-                                  (reduce
-                                    (fn [acc id] (update acc id translate-point delta))
-                                    positions
-                                    ids)))
+          (update-in-map [:ui/positions] ids translate-point delta)
           (dissoc :dragging :cursor)))))

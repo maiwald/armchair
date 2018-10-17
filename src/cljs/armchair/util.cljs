@@ -32,9 +32,21 @@
                         point
                         (mapv f point delta))))
 
-(defn rect->0 [[top-left _] point]
+(defn rect->0
   "Normalize a point relative to a rect to a 0,0 based rect"
+  [[top-left _] point]
   (translate-point point top-left -))
+
+(defn update-in-map
+  "Updates specific map keys in a nested data structure"
+  [m path-ks map-ks f & args]
+  (let [wrapped-f #(apply f % args)]
+    (loop [m m
+           [k & ks] map-ks]
+      (if (nil? k)
+        m
+        (recur (update-in m (conj path-ks k) wrapped-f)
+               ks)))))
 
 (defn map-values [f m]
   (into {} (for [[k v] m] [k (f v)])))
