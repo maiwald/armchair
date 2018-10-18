@@ -50,6 +50,8 @@
 
 (reg-event-db
   :upload-state
+  [validate
+   record-undo]
   (fn [db [_ json]]
     (merge db (:payload (deserialize-db json)))))
 
