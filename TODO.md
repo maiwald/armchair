@@ -1,5 +1,4 @@
 # TODO
-- get it to benni!
 - epochs, effects in the world
 - validation error notifications
 - information dependency invariants
