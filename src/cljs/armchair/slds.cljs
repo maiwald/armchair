@@ -178,7 +178,7 @@
                 :on-click close-handler
                 :title "Close"}
        [:svg {:class "slds-button__icon slds-button__icon_large"}
-        [:use {:xlinkHref "/assets/icons/utility-sprite/svg/symbols.svg#close", :xmlnsXlink "http://www.w3.org/1999/xlink"}]]]
+        [:use {:xlinkHref "assets/icons/utility-sprite/svg/symbols.svg#close", :xmlnsXlink "http://www.w3.org/1999/xlink"}]]]
       [:h2 {:class "slds-text-heading_medium slds-hyphenate"} title]]
      (into [:div {:class "slds-modal__content slds-p-around_medium"}]
            children)
