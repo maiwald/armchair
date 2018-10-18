@@ -199,7 +199,3 @@
                             :painting? false
                             :active-texture :wall}}
          dummy-data))
-
-(when-not (s/valid? ::state default-db)
-  (js/console.log "Default DB state explain:")
-  (s/explain ::state default-db))
