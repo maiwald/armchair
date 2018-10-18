@@ -3,12 +3,8 @@
             [re-frame.db :refer [app-db]]
             [armchair.db :refer [content-data]]))
 
-(def undo-list (atom []))
-(def redo-list (atom []))
-
-(defn reset-undos! []
-  (reset! undo-list [])
-  (reset! redo-list []))
+(defonce undo-list (atom []))
+(defonce redo-list (atom []))
 
 (defn can-undo? []
   (not (empty? @undo-list)))

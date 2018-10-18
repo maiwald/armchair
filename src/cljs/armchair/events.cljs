@@ -4,7 +4,7 @@
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
             [armchair.db :refer [default-db content-data serialize-db deserialize-db]]
-            [armchair.undo :refer [reset-undos! record-undo]]
+            [armchair.undo :refer [record-undo]]
             [armchair.routes :refer [routes]]
             [armchair.util :refer [filter-map
                                    filter-keys
@@ -24,15 +24,14 @@
 
 (reg-event-db
   :initialize-db
-  [validate
-   record-undo]
+  [validate]
   (fn [_ _] default-db))
 
 (reg-event-db
   :reset-db
-  [validate]
+  [validate
+   record-undo]
   (fn [db]
-    (reset-undos!)
     (merge db (content-data default-db))))
 
 (reg-event-fx
