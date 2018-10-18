@@ -85,13 +85,14 @@
 (s/def ::background (s/map-of :type/point ::texture))
 (s/def ::walk-set (s/coll-of :type/point :kind set?))
 (s/def ::connection-triggers (s/map-of :type/point ::location-id))
-(s/def ::npcs (s/map-of :type/point ::character-id))
+(s/def ::npcs (s/map-of :type/point ::dialogue-id))
 (s/def ::location (s/keys :req [:entity/id
                                 :entity/type]
                           :req-un [::dimension
                                    ::display-name
                                    ::background
                                    ::walk-set
+                                   ::npcs
                                    ::connection-triggers]))
 
 (s/def ::locations (s/and ::entity-map
