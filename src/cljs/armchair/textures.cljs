@@ -74,8 +74,8 @@
 
 (defn texture-path [texture-name]
   (if (contains? texture-set texture-name)
-    (str "/images/" (name texture-name) ".png")
-    (str "/images/missing_texture.png")))
+    (str "images/" (name texture-name) ".png")
+    (str "images/missing_texture.png")))
 
 (defn load-textures [callback]
   (let [atlas (atom {})

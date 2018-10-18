@@ -50,7 +50,7 @@
     {:id           "min"
      :source-paths ["src/cljs"]
      :compiler     {:main            armchair.core
-                    :output-to       "resources/public/js/compiled/app.js"
+                    :output-to       "docs/app.js"
                     :optimizations   :advanced
                     :closure-defines {goog.DEBUG false}
                     :pretty-print    false}}]})

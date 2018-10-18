@@ -240,7 +240,10 @@
       [:a {:on-click #(>evt [:download-state])} [icon "download"] "save to file"]
       [:a {:on-click #(upload-json! (fn [json] (>evt [:upload-state json])))}
        [icon "upload"] "load from file"]
-      (when config/debug? [:a {:on-click #(>evt [:reset-db])} "reset"])]
+      (if config/debug?
+        [:a {:on-click #(>evt [:reset-db])} "reset"]
+        [:a {:href "https://github.com/maiwald/armchair"
+             :target "_blank"} [icon "code-branch"] "source"])]
      [:div {:id "navigation"}
       [slds/global-navigation {:links (array-map :game "Game"
                                                  :locations "Locations"
