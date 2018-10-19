@@ -131,36 +131,38 @@
 
 ;; Line CRUD
 
-(reg-event-db
+(reg-event-fx
   :create-npc-line
   [validate
    record-undo]
-  (fn [db [_ dialogue-id]]
+  (fn [{db :db} [_ dialogue-id]]
     (let [id (random-uuid)
           character-id (get-in db [:dialogues dialogue-id :character-id])]
-      (-> db
-          (assoc-in [:ui/positions id] default-ui-position)
-          (assoc-in [:lines id] {:entity/id id
-                                 :entity/type :line
-                                 :kind :npc
-                                 :character-id character-id
-                                 :dialogue-id dialogue-id
-                                 :text nil
-                                 :next-line-id nil})))))
+      {:db (-> db
+               (assoc-in [:ui/positions id] default-ui-position)
+               (assoc-in [:lines id] {:entity/id id
+                                      :entity/type :line
+                                      :kind :npc
+                                      :character-id character-id
+                                      :dialogue-id dialogue-id
+                                      :text nil
+                                      :next-line-id nil}))
+       :dispatch [:open-npc-line-modal id]})))
 
-(reg-event-db
+(reg-event-fx
   :create-player-line
   [validate
    record-undo]
-  (fn [db [_ dialogue-id]]
+  (fn [{db :db} [_ dialogue-id]]
     (let [id (random-uuid)]
-      (-> db
-          (assoc-in [:ui/positions id] default-ui-position)
-          (assoc-in [:lines id] {:entity/id id
-                                 :entity/type :line
-                                 :kind :player
-                                 :dialogue-id dialogue-id
-                                 :options []})))))
+      {:db (-> db
+               (assoc-in [:ui/positions id] default-ui-position)
+               (assoc-in [:lines id] {:entity/id id
+                                      :entity/type :line
+                                      :kind :player
+                                      :dialogue-id dialogue-id
+                                      :options []}))
+       :dispatch [:open-player-line-modal id]})))
 
 (defn initial-line? [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
