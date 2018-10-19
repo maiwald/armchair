@@ -349,6 +349,7 @@
                                                     (select-keys modal-data [:location-id
                                                                              :character-id
                                                                              :description])))
+          (assoc-in [:ui/positions line-id] default-ui-position)
           (assoc-in [:lines line-id] {:entity/id line-id
                                       :entity/type :line
                                       :kind :npc
