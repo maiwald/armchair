@@ -104,7 +104,6 @@
                                      :entity/type :location
                                      :dimension [[0 0] [2 2]]
                                      :background {}
-                                     :npcs {}
                                      :walk-set #{}
                                      :connection-triggers {}
                                      :display-name "New Location"})))))
@@ -364,12 +363,7 @@
   (fn [db [_ dialogue-id]]
     (-> db
         (update :dialogues dissoc dialogue-id)
-        (update :lines #(filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %))
-        (update :locations (fn [locations]
-                             (map-values (fn [{npcs :npcs :as l}]
-                                           (assoc l :npcs (filter-map #(not= % dialogue-id) npcs)))
-                                         locations))))))
-
+        (update :lines #(filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %)))))
 
 ;; Page
 
