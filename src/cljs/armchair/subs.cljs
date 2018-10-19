@@ -44,9 +44,9 @@
   (fn [[lines dialogues] [_ line-id]]
     (when-let [{:keys [id dialogue-id] :as line} (get lines line-id)]
       (-> line
-        (assoc :initial-line? (= id (get-in dialogues [dialogue-id :initial-line-id])))
-        (assoc :option-count (count (:options line)))
-        (update :info-ids #(map str %))))))
+          (assoc :initial-line? (= id (get-in dialogues [dialogue-id :initial-line-id])))
+          (assoc :option-count (count (:options line)))
+          (update :info-ids #(map str %))))))
 
 (reg-sub
   :dialogue/player-line-option

@@ -137,7 +137,7 @@
 
 (defn npc-line-form-modal [line-id]
   (let [line (<sub [:dialogue/modal-line line-id])]
-    [slds/modal {:title (str "Line #" line-id)
+    [slds/modal {:title "NPC Line"
                  :close-handler #(>evt [:close-modal])}
      [slds/form
       [slds/input-select {:label "Character"
@@ -178,7 +178,7 @@
 
 (defn player-line-form-modal [line-id]
   (let [{:keys [option-count]} (<sub [:dialogue/modal-line line-id])]
-    [slds/modal {:title (str "Line #" line-id)
+    [slds/modal {:title "Player Line"
                  :close-handler #(>evt [:close-modal])}
      [:div {:class "player-line-form"}
       [slds/form
