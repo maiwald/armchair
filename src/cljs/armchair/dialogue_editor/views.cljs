@@ -22,7 +22,7 @@
          [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
                                             (>evt [:delete-line id]))}
           [icon "trash" "Delete"]])
-       [:li {:class "action" :on-click #(>evt [:open-npc-line-modal id])}
+       [:li {:class "action" :on-click #(>evt [:modal/npc-line-edit id])}
         [icon "edit" "Edit"]]]]
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}

@@ -39,10 +39,12 @@
 
 (reg-sub
   :dialogue/modal-line
-  :<- [:db-lines]
+  :<- [:modal]
   :<- [:db-dialogues]
-  (fn [[lines dialogues] [_ line-id]]
-    (when-let [{id :entity/id :keys [dialogue-id] :as line} (get lines line-id)]
+  (fn [[modal dialogues] _]
+    (assert (some? (:npc-line modal))
+            "Cannot edit line when no modal data was set!")
+    (let [{id :entity/id :keys [dialogue-id] :as line} (:npc-line modal)]
       (-> line
           (assoc :initial-line? (= id (get-in dialogues [dialogue-id :initial-line-id])))
           (assoc :option-count (count (:options line)))

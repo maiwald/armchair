@@ -135,23 +135,23 @@
                           :on-change #(>evt [:dialogue-creation-update :description (e->val %)])
                           :value description}]]])
 
-(defn npc-line-form-modal [line-id]
-  (let [line (<sub [:dialogue/modal-line line-id])]
+(defn npc-line-form-modal []
+  (let [{line-id :entity/id :as line} (<sub [:dialogue/modal-line])]
     [slds/modal {:title "NPC Line"
                  :close-handler #(>evt [:close-modal])}
      [slds/form
       [slds/input-select {:label "Character"
                           :disabled (:initial-line? line)
-                          :on-change #(>evt [:update-line line-id :character-id (uuid (e->val %))])
+                          :on-change #(>evt [:update-npc-line :character-id (uuid (e->val %))])
                           :options (<sub [:character-options])
                           :value (:character-id line)}]
       [slds/input-textarea {:label "Text"
-                            :on-change #(>evt [:update-line line-id :text (e->val %)])
+                            :on-change #(>evt [:update-npc-line :text (e->val %)])
                             :value (:text line)}]
       [slds/multi-select {:label "Infos"
                           :options (clj->js (<sub [:info-options]))
                           :values (:info-ids line)
-                          :on-change #(>evt [:set-infos line-id (map uuid %)])}]]]))
+                          :on-change #(>evt [:update-npc-line :info-ids (set (map uuid %))])}]]]))
 
 (defn player-line-form-modal-option [line-id index total-count]
   (let [{:keys [text required-info-ids]} (<sub [:dialogue/player-line-option line-id index])
@@ -218,7 +218,7 @@
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
       :dialogue-creation [dialogue-creation-modal (:dialogue-creation modal)]
-      :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
+      :npc-line          [npc-line-form-modal]
       :player-line-id    [player-line-form-modal (:player-line-id modal)]
       :character-id      [character-form-modal (:character-id modal)]
       :info-id           [info-form-modal (:info-id modal)])))

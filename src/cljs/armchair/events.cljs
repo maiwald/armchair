@@ -169,14 +169,14 @@
     (= line-id (get-in db [:dialogues dialogue-id :initial-line-id]))))
 
 (reg-event-db
-  :update-line
+  :update-npc-line
   [validate
    record-undo]
-  (fn [db [_ id field value]]
+  (fn [db [_ field value]]
     (assert (not (and (= field :character-id)
-                      (initial-line? db id)))
+                      (initial-line? db (get-in db [:modal :npc-line :entity/id]))))
             "Cannot modify initial line's character!")
-    (assoc-in db [:lines id field] value)))
+    (assoc-in db [:modal :npc-line field] value)))
 
 (reg-event-db
   :delete-line
@@ -231,15 +231,6 @@
   (fn [db [_ line-id index]]
     (update-in db [:lines line-id :options] (fn [v] (vec (concat (take index v)
                                                                  (drop (inc index) v)))))))
-
-(reg-event-db
-  :set-infos
-  [validate
-   record-undo]
-  (fn [db [_ line-id info-ids]]
-    (assert (= :npc (get-in db [:lines line-id :kind]))
-            "Infos can only be set on NPC lines!")
-    (assoc-in db [:lines line-id :info-ids] (set info-ids))))
 
 (reg-event-db
   :set-required-info
@@ -300,11 +291,20 @@
     (assoc-in db [:modal :info-id] payload)))
 
 (reg-event-db
-  :open-npc-line-modal
-  [validate]
-  (fn [db [_ payload]]
+  :modal/npc-line-edit
+  (fn [db [_ line-id]]
     (assert-no-open-modal db)
-    (assoc-in db [:modal :npc-line-id] payload)))
+    (assoc-in db [:modal :npc-line] (get-in db [:lines line-id]))))
+
+(reg-event-db
+  :modal/npc-line-create
+  [validate]
+  (fn [db [_ dialogue-id character-id]]
+    (assert-no-open-modal db)
+    (assoc-in db [:ui/modal :modal/npc-line] {:entity/id (random-uuid)
+                                              :dialogue-id dialogue-id
+                                              ::character-id character-id
+                                              ::text ""})))
 
 (reg-event-db
   :open-player-line-modal

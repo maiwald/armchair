@@ -147,16 +147,26 @@
 
 ;; Modals
 
-(s/def ::npc-line-id ::line-id)
-(s/def ::player-line-id ::line-id)
-(s/def ::dialogue-creation (s/keys :req-un [::character-id]
-                                   :opt-un [::description]))
+(s/def :ui/modal (s/and
+                   (fn [m] (= 1 (count m))) ;; there can only be one modal!
+                   (s/keys :opt-un [::character-id
+                                    ::info-id
+                                    ::player-line-id
+                                    :modal/npc-line
+                                    :modal/dialogue-creation])))
 
-(s/def ::modal (s/keys :opt-un [::character-id
-                                ::info-id
-                                ::npc-line-id
-                                ::player-line-id
-                                ::dialogue-creation]))
+(s/def ::player-line-id ::line-id)
+(s/def :modal/dialogue-creation (s/keys :req-un [::character-id]
+                                        :opt-un [::description]))
+
+(s/def :modal/npc-line (s/keys :req [:entity/id]
+                               :req-un [:modal/dialogue-id
+                                        :modal/character-id
+                                        :modal/text]))
+
+(s/def :modal/character-id (s/nilable ::character-id))
+(s/def :modal/dialogue-id ::dialogue-id)
+(s/def :modal/text (s/nilable string?))
 
 ;; Invariants
 
@@ -189,7 +199,7 @@
                               :opt-un [::connecting
                                        ::dragging
                                        ::cursor
-                                       ::modal])))
+                                       :ui/modal])))
 
 (def default-db
   (merge {:location-editor {:tool :background-painter
