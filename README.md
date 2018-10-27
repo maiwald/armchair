@@ -32,7 +32,7 @@ lein cljsbuild once min
 
 # Credit
 
-All graphic assets are taken from opengameart.com
+All graphic assets are taken from [opengameart.org](https://opengameart.org)
 
 - https://opengameart.org/content/chadmandoo-pixel-city-bros-characters
 - https://opengameart.org/content/dungeon-crawl-32x32-tiles
