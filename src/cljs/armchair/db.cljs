@@ -111,19 +111,18 @@
 ;; Dialogue & Lines
 
 (s/def ::next-line-id (s/or :line-id (s/nilable ::line-id)))
-(s/def ::line (s/keys :req-un [::text ::next-line-id]))
 
-(s/def ::info-ids (s/coll-of ::info-id :kind set?))
-(s/def ::npc-line (s/and ::line
-                         (s/keys :req-un [::character-id]
+(s/def ::npc-line (s/and (s/keys :req-un [::text ::next-line-id ::character-id]
                                  :opt-un [::info-ids])
                          #(= (:kind %) :npc)))
-(s/def ::required-info-ids ::info-ids)
-(s/def ::option (s/and ::line
-                       (s/keys :opt-un [::required-info-ids])))
-(s/def ::options (s/coll-of ::line :kind vector?))
+(s/def ::info-ids (s/coll-of ::info-id :kind set?))
+
 (s/def ::player-line (s/and #(= (:kind %) :player)
                             (s/keys :req-un [::options])))
+(s/def ::options (s/coll-of ::option :kind vector?))
+(s/def ::option (s/keys :req-un [::text ::next-line-id]
+                        :opt-un [::required-info-ids]))
+(s/def ::required-info-ids ::info-ids)
 
 (s/def ::npc-or-player-line (s/and (s/keys :req [:entity/id
                                                  :entity/type]
@@ -194,5 +193,12 @@
 (def default-db
   (merge {:location-editor {:tool :background-painter
                             :painting? false
-                            :active-texture :wall}}
+                            :active-texture :wall}
+          :ui/positions {}
+          :characters {}
+          :locations {}
+          :location-connections #{}
+          :dialogues {}
+          :lines {}
+          :infos {}}
          dummy-data))
