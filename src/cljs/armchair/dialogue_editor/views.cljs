@@ -13,8 +13,6 @@
      [:header {:class "line__header"}
       [:p {:class "name"} character-name]
       [:ul {:class "states"}
-       (when initial-line?
-         [:li {:class "state"} [icon "play-circle" "This is the initial line of this dialogue"]])
        (when-not (empty? info-ids)
          [:li {:class "state"} [icon "info-circle" "This line contains infos."]])]
       [:ul {:class "actions" :on-mouse-down stop-e!}
@@ -24,6 +22,10 @@
           [icon "trash" "Delete"]])
        [:li {:class "action" :on-click #(>evt [:open-npc-line-modal id])}
         [icon "edit" "Edit"]]]]
+     (when initial-line?
+       [:div {:class "line__state"}
+        [icon "sign-out-alt"]
+        [:p "Initial Line"]])
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}
       [:p text]
