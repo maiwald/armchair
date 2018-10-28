@@ -64,7 +64,7 @@
                    options)]]))
 
 (defn line-component [line-id]
-  (let [line (<sub [:dialogue/line line-id])]
+  (let [line (<sub [:dialogue-editor/line line-id])]
     (case (:kind line)
       :npc [npc-line-component line]
       :player [player-line-component line])))
@@ -86,7 +86,7 @@
                  :end (translate-point end-pos [15 (+ 33 (/ config/line-height 2))])}]))
 
 (defn dialogue-editor [dialogue-id]
-  (if-let [{:keys [line-ids npc-connections player-connections]} (<sub [:dialogue dialogue-id])]
+  (if-let [{:keys [line-ids npc-connections player-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
     [:div {:class "full-page"}
      [:div {:class "new-item-button"}
       [slds/add-button "New Player Line" #(>evt [:create-player-line dialogue-id])]
