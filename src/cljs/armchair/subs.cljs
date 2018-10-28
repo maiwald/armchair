@@ -115,7 +115,7 @@
   :dragging-item?
   :<- [:db-dragging]
   (fn [dragging [_ position-id]]
-    (= (:position-ids dragging) #{position-id})))
+    (= (:ids dragging) #{position-id})))
 
 (reg-sub
   :connector
