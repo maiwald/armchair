@@ -1,4 +1,8 @@
 # TODO
+- dialogue state changes
+  - create new dialogue states
+  - assign dialogue changes to player options
+  - respect state changes in prototype
 - epochs, effects in the world
 - set player position
 - validation error notifications
