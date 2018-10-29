@@ -1,6 +1,7 @@
 (ns armchair.events
   (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
             [clojure.set :refer [difference]]
+            [armchair.config :as config]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
             [armchair.db :refer [default-db content-data serialize-db deserialize-db]]
@@ -55,10 +56,6 @@
   (fn [db [_ json]]
     (merge db (:payload (deserialize-db json)))))
 
-;; Resources
-
-(def default-ui-position [20 20])
-
 ;; Character CRUD
 
 (reg-event-db
@@ -99,7 +96,7 @@
   (fn [db]
     (let [id (random-uuid)]
       (-> db
-          (assoc-in [:ui/positions id] default-ui-position)
+          (assoc-in [:ui/positions id] config/default-ui-position)
           (assoc-in [:locations id] {:entity/id id
                                      :entity/type :location
                                      :dimension [[0 0] [2 2]]
@@ -130,81 +127,6 @@
           (update-in-map :dialogues location-dialogue-ids dissoc :location-id :location-position)))))
 
 ;; Line CRUD
-
-(reg-event-fx
-  :create-npc-line
-  [validate
-   record-undo]
-  (fn [{db :db} [_ dialogue-id]]
-    (let [id (random-uuid)
-          character-id (get-in db [:dialogues dialogue-id :character-id])]
-      {:db (-> db
-               (assoc-in [:ui/positions id] default-ui-position)
-               (assoc-in [:lines id] {:entity/id id
-                                      :entity/type :line
-                                      :kind :npc
-                                      :character-id character-id
-                                      :dialogue-id dialogue-id
-                                      :text nil
-                                      :next-line-id nil}))
-       :dispatch [:open-npc-line-modal id]})))
-
-(reg-event-fx
-  :create-player-line
-  [validate
-   record-undo]
-  (fn [{db :db} [_ dialogue-id]]
-    (let [id (random-uuid)]
-      {:db (-> db
-               (assoc-in [:ui/positions id] default-ui-position)
-               (assoc-in [:lines id] {:entity/id id
-                                      :entity/type :line
-                                      :kind :player
-                                      :dialogue-id dialogue-id
-                                      :options []}))
-       :dispatch [:open-player-line-modal id]})))
-
-(defn initial-line? [db line-id]
-  (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
-    (= line-id (get-in db [:dialogues dialogue-id :initial-line-id]))))
-
-(reg-event-db
-  :update-line
-  [validate
-   record-undo]
-  (fn [db [_ id field value]]
-    (assert (not (and (= field :character-id)
-                      (initial-line? db id)))
-            "Cannot modify initial line's character!")
-    (assoc-in db [:lines id field] value)))
-
-(reg-event-db
-  :delete-line
-  [validate
-   record-undo]
-  (fn [db [_ id]]
-    (assert (not (initial-line? db id))
-            "Initial lines cannot be deleted!")
-    (let [dialogue-id (get-in db [:lines id :dialogue-id])]
-      (letfn [(clear-line [line]
-                (update line :next-line-id #(if (= id %) nil %)))
-              (clear-options [line]
-                (update line :options #(mapv clear-line %)))]
-        (-> db
-          (update :lines #(map-values (fn [line]
-                                        (case (:kind line)
-                                          :npc (clear-line line)
-                                          :player (clear-options line)))
-                                      (dissoc % id)))
-          (update-in [:dialogues dialogue-id :states] dissoc id))))))
-
-(reg-event-db
-  :delete-dialogue-state
-  [validate
-   record-undo]
-  (fn [db [_ id]]
-    (let [dialogue-id (get-in db [:lines id :dialogue-id])]
-      (update-in db [:dialogues dialogue-id :states] dissoc id))))
 
 (reg-event-db
   :move-option
@@ -360,7 +282,7 @@
                                                     (select-keys modal-data [:location-id
                                                                              :character-id
                                                                              :description])))
-          (assoc-in [:ui/positions line-id] default-ui-position)
+          (assoc-in [:ui/positions line-id] config/default-ui-position)
           (assoc-in [:lines line-id] {:entity/id line-id
                                       :entity/type :line
                                       :kind :npc
