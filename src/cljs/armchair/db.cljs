@@ -75,7 +75,6 @@
 (s/def ::character-id :entity/id)
 (s/def ::dialogue-id :entity/id)
 (s/def ::line-id :entity/id)
-(s/def ::initial-line-id ::line-id)
 (s/def ::location-id :entity/id)
 (s/def ::info-id :entity/id)
 
@@ -137,10 +136,14 @@
 (s/def ::dialogue (s/keys :req [:entity/id
                                 :entity/type]
                           :req-un [::character-id
-                                   ::initial-line-id
+                                   :dialogue/initial-line-id
                                    ::location-id
                                    ::location-position]
-                          :opt-un [::description]))
+                          :opt-un [::description
+                                   :dialogue/states]))
+
+(s/def :dialogue/states (s/map-of ::line-id ::text))
+(s/def :dialogue/initial-line-id ::line-id)
 (s/def ::dialogues (s/and ::entity-map
                           (s/map-of ::dialogue-id ::dialogue)))
 

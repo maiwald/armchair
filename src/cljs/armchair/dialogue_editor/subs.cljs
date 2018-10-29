@@ -14,6 +14,7 @@
       (merge (select-keys line [:kind :text :options :info-ids])
              {:id line-id
               :initial-line? (= (:initial-line-id dialogue) line-id)
+              :state (get-in dialogue [:states line-id])
               :character-color (:color character)
               :character-name (:display-name character)}))))
 

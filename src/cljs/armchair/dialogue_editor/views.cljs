@@ -4,7 +4,7 @@
             [armchair.slds :as slds]
             [armchair.util :refer [<sub >evt stop-e! e-> e->val e->left? translate-point]]))
 
-(defn npc-line-component [{:keys [id info-ids initial-line? text character-name character-color]}]
+(defn npc-line-component [{:keys [id info-ids state initial-line? text character-name character-color]}]
   (let [connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
@@ -22,10 +22,15 @@
           [icon "trash" "Delete"]])
        [:li {:class "action" :on-click #(>evt [:open-npc-line-modal id])}
         [icon "edit" "Edit"]]]]
-     (when initial-line?
-       [:div {:class "line__state"}
-        [icon "sign-out-alt"]
-        [:p "Initial Line"]])
+     (cond
+       initial-line? [:div {:class "line__state"}
+                      [icon "sign-out-alt"]
+                      [:p "Initial Line"]]
+       (some? state) [:div {:class "line__state"}
+                      [icon "sign-out-alt"]
+                      [:p state]
+                      [:a {:on-click #(js/alert "delete state!")}
+                       [icon "times-circle"]]])
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}
       [:p text]
