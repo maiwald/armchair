@@ -34,8 +34,8 @@
        :player-connections (reduce
                              (fn [acc {start :entity/id :keys [options]}]
                                (apply conj acc (->> options
-                                                    (remove #(nil? (:next-line-id %)))
                                                     (map-indexed (fn [index {end :next-line-id}]
-                                                                   (vector start index end))))))
+                                                                   (vector start index end)))
+                                                    (remove (fn [[_ _ end]] (nil? end))))))
                              (list)
                              (lines-by-kind :player))})))
