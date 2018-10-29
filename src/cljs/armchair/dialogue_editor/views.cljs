@@ -29,8 +29,9 @@
        (some? state) [:div {:class "line__state"}
                       [icon "sign-out-alt"]
                       [:p state]
-                      [:a {:on-click #(js/alert "delete state!")}
-                       [icon "times-circle"]]])
+                      [:a {:on-mouse-down stop-e!
+                           :on-click #(>evt [:delete-dialogue-state id])}
+                       [icon "times-circle" "Delete state"]]])
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}
       [:p text]
