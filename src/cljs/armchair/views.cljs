@@ -135,6 +135,16 @@
                           :on-change #(>evt [:dialogue-creation-update :description (e->val %)])
                           :value description}]]])
 
+(defn dialogue-state-modal [{:keys [line-id description]}]
+  [slds/modal {:title "Dialogue State"
+               :confirm-handler #(>evt [:create-dialogue-state])
+               :close-handler #(>evt [:close-modal])}
+   [slds/form
+    [slds/input-text {:label "State description"
+                      :on-change #(>evt [:dialogue-state-update (e->val %)])
+                      :options (<sub [:character-options])
+                      :value description}]]])
+
 (defn npc-line-form-modal [line-id]
   (let [line (<sub [:dialogue/modal-line line-id])]
     [slds/modal {:title "NPC Line"
@@ -218,6 +228,7 @@
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
       :dialogue-creation [dialogue-creation-modal (:dialogue-creation modal)]
+      :dialogue-state    [dialogue-state-modal (:dialogue-state modal)]
       :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
       :player-line-id    [player-line-form-modal (:player-line-id modal)]
       :character-id      [character-form-modal (:character-id modal)]

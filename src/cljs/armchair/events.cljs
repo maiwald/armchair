@@ -249,10 +249,38 @@
 (reg-event-db
   :open-dialogue-creation-modal
   [validate]
-  (fn [db [_ payload]]
+  (fn [db _]
     (assert-no-open-modal db)
     (assoc-in db [:modal :dialogue-creation] {:character-id nil
                                               :description nil})))
+;; Dialogue state modal
+
+(reg-event-db
+  :open-dialogue-state-modal
+  [validate]
+  (fn [db [_ line-id]]
+    (assert-no-open-modal db)
+    (let [dialogue-id (get-in db [:lines line-id :dialogue-id])
+          description (get-in db [:dialogues dialogue-id :states line-id])]
+      (assoc-in db [:modal :dialogue-state] {:line-id line-id
+                                             :description description}))))
+
+(reg-event-db
+  :dialogue-state-update
+  [validate]
+  (fn [db [_ description]]
+    (assoc-in db [:modal :dialogue-state :description] description)))
+
+(reg-event-db
+  :create-dialogue-state
+  [validate
+   record-undo]
+  (fn [db]
+    (let [{:keys [line-id description]} (get-in db [:modal :dialogue-state])
+          dialogue-id (get-in db [:lines line-id :dialogue-id])]
+      (cond-> (dissoc db :modal)
+        (not-empty description)
+        (update-in [:dialogues dialogue-id :states] assoc line-id description)))))
 
 ;; Dialogue CRUD
 

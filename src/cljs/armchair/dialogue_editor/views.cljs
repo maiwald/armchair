@@ -16,6 +16,9 @@
        (when-not (empty? info-ids)
          [:li {:class "state"} [icon "info-circle" "This line contains infos."]])]
       [:ul {:class "actions" :on-mouse-down stop-e!}
+       (when-not (or initial-line? (some? state))
+         [:li {:class "action" :on-click #(>evt [:open-dialogue-state-modal id])}
+          [icon "sign-out-alt" "Create named state"]])
        (when-not initial-line?
          [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
                                             (>evt [:delete-line id]))}
@@ -25,10 +28,13 @@
      (cond
        initial-line? [:div {:class "line__state"}
                       [icon "sign-out-alt"]
-                      [:p "Initial Line"]]
+                      [:p {:class "description"} "Initial Line"]]
        (some? state) [:div {:class "line__state"}
                       [icon "sign-out-alt"]
-                      [:p state]
+                      [:a {:class "description"
+                           :on-mouse-down stop-e!
+                           :on-click #(>evt [:open-dialogue-state-modal id])}
+                       state]
                       [:a {:on-mouse-down stop-e!
                            :on-click #(>evt [:delete-dialogue-state id])}
                        [icon "times-circle" "Delete state"]]])

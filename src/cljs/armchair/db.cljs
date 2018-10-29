@@ -158,7 +158,11 @@
                                 ::info-id
                                 ::npc-line-id
                                 ::player-line-id
-                                ::dialogue-creation]))
+                                ::dialogue-creation
+                                ::dialogue-state]))
+
+(s/def ::dialogue-state (s/keys :req-un [::line-id]
+                                :opt-un [::description]))
 
 ;; Invariants
 
