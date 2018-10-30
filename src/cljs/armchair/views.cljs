@@ -109,8 +109,7 @@
      [:div {:class "new-item-button"}
       [slds/add-button "New" #(>evt [:location/create])]]
      [drag-canvas {:kind "location"
-                    :item-ids location-ids
-                    :item-component location-component}
+                   :nodes {location-component location-ids}}
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}

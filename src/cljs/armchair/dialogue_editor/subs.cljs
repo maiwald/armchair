@@ -27,7 +27,8 @@
     (let [dialogue (get dialogues dialogue-id)
           dialogue-lines (where-map :dialogue-id dialogue-id lines)
           lines-by-kind (group-by :kind (vals dialogue-lines))]
-      {:line-ids (keys dialogue-lines)
+      {:npc-line-ids (map :entity/id (lines-by-kind :npc))
+       :player-line-ids (map :entity/id (lines-by-kind :player))
        :npc-connections (->> (lines-by-kind :npc)
                              (remove #(nil? (:next-line-id %)))
                              (map #(vector (:entity/id %) (:next-line-id %))))
