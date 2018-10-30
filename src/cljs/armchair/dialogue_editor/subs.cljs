@@ -3,7 +3,7 @@
             [armchair.util :refer [where-map]]))
 
 (reg-sub
-  :dialogue-editor/line
+  :dialogue-editor/npc-line
   :<- [:db-lines]
   :<- [:db-dialogues]
   :<- [:db-characters]
@@ -11,12 +11,18 @@
     (let [line (get lines line-id)
           character (get characters (:character-id line))
           dialogue (get dialogues (:dialogue-id line))]
-      (merge (select-keys line [:kind :text :options :info-ids])
+      (merge (select-keys line [:text :info-ids])
              {:id line-id
               :initial-line? (= (:initial-line-id dialogue) line-id)
               :state (get-in dialogue [:states line-id])
               :character-color (:color character)
               :character-name (:display-name character)}))))
+
+(reg-sub
+  :dialogue-editor/player-line-options
+  :<- [:db-lines]
+  (fn [lines [_ line-id]]
+    (get-in lines [line-id :options])))
 
 (reg-sub
   :dialogue-editor/dialogue

@@ -10,7 +10,7 @@
                 initial-line?
                 text
                 character-name
-                character-color]} (<sub [:dialogue-editor/line line-id])
+                character-color]} (<sub [:dialogue-editor/npc-line line-id])
         connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines line-id]))
@@ -53,7 +53,7 @@
        [icon "project-diagram" "Connect"]]]]))
 
 (defn player-line-component [line-id]
-  (let [options (:options (<sub [:dialogue-editor/line line-id]))
+  (let [options (<sub [:dialogue-editor/player-line-options line-id])
         connecting? (some? (<sub [:connector]))]
     [:div {:class "line"
            :on-mouse-up (when connecting? #(>evt [:end-connecting-lines line-id]))
