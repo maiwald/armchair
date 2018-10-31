@@ -1,11 +1,12 @@
 (ns armchair.dialogue-editor.views
   (:require [armchair.components :refer [icon drag-canvas connection e->graph-cursor]]
+            [clojure.string :refer [join]]
             [armchair.config :as config]
             [armchair.slds :as slds]
             [armchair.util :refer [<sub >evt stop-e! e-> e->val e->left? translate-point]]))
 
 (defn npc-line-component [line-id]
-  (let [{:keys [info-ids
+  (let [{:keys [infos
                 state
                 initial-line?
                 text
@@ -19,17 +20,23 @@
      [:header {:class "line__header"}
       [:p {:class "name"} character-name]
       [:ul {:class "states"}
-       (when-not (empty? info-ids)
-         [:li {:class "state"} [icon "info-circle" "This line contains infos."]])]
-      [:ul {:class "actions" :on-mouse-down stop-e!}
+       (when-not (empty? infos)
+         [:li {:class "state"}
+          [icon "info-circle" (str "This line contains infos: \n"
+                                   (join "\n" infos))]])]
+      [:ul {:class "actions"
+            :on-mouse-down stop-e!}
        (when-not (or initial-line? (some? state))
-         [:li {:class "action" :on-click #(>evt [:open-dialogue-state-modal line-id])}
+         [:li {:class "action"
+               :on-click #(>evt [:open-dialogue-state-modal line-id])}
           [icon "sign-out-alt" "Create named state"]])
        (when-not initial-line?
-         [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
-                                            (>evt [:delete-line line-id]))}
+         [:li {:class "action"
+               :on-click #(when (js/confirm "Are your sure you want to delete this line?")
+                            (>evt [:delete-line line-id]))}
           [icon "trash" "Delete"]])
-       [:li {:class "action" :on-click #(>evt [:open-npc-line-modal line-id])}
+       [:li {:class "action"
+             :on-click #(>evt [:open-npc-line-modal line-id])}
         [icon "edit" "Edit"]]]]
      (cond
        initial-line? [:div {:class "line__state"}
@@ -67,15 +74,16 @@
        [:li {:class "action" :on-click #(>evt [:open-player-line-modal line-id])}
         [icon "edit" "Edit"]]]]
      [:ul {:class "line__options"}
-      (map-indexed (fn [index option]
+      (map-indexed (fn [index {:keys [text required-infos]}]
                      [:li {:key (str "line-option" line-id ":" index)
                            :class "line__text"
                            :style {:height (str config/line-height "px")}}
                       [:p
-                       (when-not (empty? (:required-info-ids option))
+                       (when-not (empty? required-infos)
                          [:span {:class "state"}
-                          [icon "lock" "This option requires information."]])
-                       (:text option)]
+                          [icon "lock" (str "This line requires infos: \n"
+                                            (join "\n" required-infos))]])
+                       text]
                       [:div {:class "action action_connect"
                              :on-mouse-down (e-> #(when (e->left? %)
                                                     (>evt [:start-connecting-lines line-id (e->graph-cursor %) index])))}

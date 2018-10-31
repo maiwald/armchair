@@ -7,22 +7,29 @@
   :<- [:db-lines]
   :<- [:db-dialogues]
   :<- [:db-characters]
-  (fn [[lines dialogues characters] [_ line-id]]
-    (let [line (get lines line-id)
-          character (get characters (:character-id line))
-          dialogue (get dialogues (:dialogue-id line))]
-      (merge (select-keys line [:text :info-ids])
-             {:id line-id
-              :initial-line? (= (:initial-line-id dialogue) line-id)
-              :state (get-in dialogue [:states line-id])
-              :character-color (:color character)
-              :character-name (:display-name character)}))))
+  :<- [:db-infos]
+  (fn [[lines dialogues characters infos] [_ line-id]]
+    (let [{:keys [text character-id dialogue-id info-ids]} (get lines line-id)
+          character (get characters character-id)
+          {:keys [initial-line-id states]} (get dialogues dialogue-id)]
+      {:id line-id
+       :text text
+       :infos (map #(get-in infos [% :description]) info-ids)
+       :initial-line? (= initial-line-id line-id)
+       :state (get states line-id)
+       :character-color (:color character)
+       :character-name (:display-name character)})))
 
 (reg-sub
   :dialogue-editor/player-line-options
   :<- [:db-lines]
-  (fn [lines [_ line-id]]
-    (get-in lines [line-id :options])))
+  :<- [:db-infos]
+  (fn [[lines infos] [_ line-id]]
+    (mapv
+      (fn [{:keys [text required-info-ids]}]
+        {:text text
+         :required-infos (map #(get-in infos [% :description]) required-info-ids)})
+      (get-in lines [line-id :options]))))
 
 (reg-sub
   :dialogue-editor/dialogue
