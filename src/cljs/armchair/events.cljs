@@ -12,6 +12,7 @@
                                    map-values
                                    where-map
                                    update-in-map
+                                   point-delta
                                    translate-point
                                    rect-contains?]]))
 
@@ -424,7 +425,7 @@
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
     (let [{:keys [cursor-start ids]} dragging
-          delta (translate-point cursor cursor-start -)]
+          delta (point-delta cursor-start cursor)]
       (-> db
           (update-in-map :ui/positions ids translate-point delta)
           (dissoc :dragging :cursor)))))

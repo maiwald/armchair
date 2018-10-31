@@ -26,16 +26,18 @@
   (and (<= x1 x x2)
        (<= y1 y y2)))
 
-(defn translate-point
-  ([point delta] (translate-point point delta +))
-  ([point delta f] (if (= delta [0 0])
-                        point
-                        (mapv f point delta))))
+(defn point-delta [start end]
+  (mapv - end start))
+
+(defn translate-point [point delta]
+  (if (= delta [0 0])
+    point
+    (mapv + point delta)))
 
 (defn rect->0
   "Normalize a point relative to a rect to a 0,0 based rect"
   [[top-left _] point]
-  (translate-point point top-left -))
+  (point-delta top-left point))
 
 (defn update-in-map
   "Updates specific map keys in a nested data structure"

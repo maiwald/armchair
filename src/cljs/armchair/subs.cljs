@@ -5,6 +5,7 @@
                                    map-keys
                                    map-values
                                    rect->0
+                                   point-delta
                                    translate-point]]))
 
 (reg-sub :db-characters #(:characters %))
@@ -83,7 +84,7 @@
   (fn [[positions {:keys [ids cursor-start]} cursor] [_ id]]
     (let [position (get positions id)]
       (if (contains? ids id)
-        (let [delta (translate-point cursor cursor-start -)]
+        (let [delta (point-delta cursor-start cursor)]
           (translate-point position delta))
         position))))
 
