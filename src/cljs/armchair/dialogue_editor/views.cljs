@@ -59,6 +59,20 @@
                                     (>evt [:start-connecting-lines line-id (e->graph-cursor %)])))}
        [icon "project-diagram" "Connect"]]]]))
 
+(defn player-line-option-component [line-id index {:keys [text required-infos]}]
+  [:li {:class "line__text"
+        :style {:height (str config/line-height "px")}}
+   [:p
+    (when-not (empty? required-infos)
+      [:span {:class "state"}
+       [icon "lock" (str "This line requires infos: \n"
+                         (join "\n" required-infos))]])
+    text]
+   [:div {:class "action action_connect"
+          :on-mouse-down (e-> #(when (e->left? %)
+                                 (>evt [:start-connecting-lines line-id (e->graph-cursor %) index])))}
+    [icon "project-diagram" "Connect"]]])
+
 (defn player-line-component [line-id]
   (let [options (<sub [:dialogue-editor/player-line-options line-id])
         connecting? (some? (<sub [:connector]))]
@@ -67,27 +81,19 @@
            :style {:width (str config/line-width "px")}}
      [:div {:class "line__header"}
       [:p {:class "name"} "Player"]
-      [:ul {:class "actions" :on-mouse-down stop-e!}
-       [:li {:class "action" :on-click #(when (js/confirm "Are your sure you want to delete this line?")
-                                          (>evt [:delete-line line-id]))}
+      [:ul {:class "actions"
+            :on-mouse-down stop-e!}
+       [:li {:class "action"
+             :on-click #(when (js/confirm "Are your sure you want to delete this line?")
+                          (>evt [:delete-line line-id]))}
         [icon "trash" "Delete"]]
-       [:li {:class "action" :on-click #(>evt [:open-player-line-modal line-id])}
+       [:li {:class "action"
+             :on-click #(>evt [:open-player-line-modal line-id])}
         [icon "edit" "Edit"]]]]
      [:ul {:class "line__options"}
-      (map-indexed (fn [index {:keys [text required-infos]}]
-                     [:li {:key (str "line-option" line-id ":" index)
-                           :class "line__text"
-                           :style {:height (str config/line-height "px")}}
-                      [:p
-                       (when-not (empty? required-infos)
-                         [:span {:class "state"}
-                          [icon "lock" (str "This line requires infos: \n"
-                                            (join "\n" required-infos))]])
-                       text]
-                      [:div {:class "action action_connect"
-                             :on-mouse-down (e-> #(when (e->left? %)
-                                                    (>evt [:start-connecting-lines line-id (e->graph-cursor %) index])))}
-                       [icon "project-diagram" "Connect"]]])
+      (map-indexed (fn [index option]
+                     ^{:key (str "line-option" line-id ":" index)}
+                     [player-line-option-component line-id index option])
                    options)]]))
 
 (defn npc-connection [start end]
