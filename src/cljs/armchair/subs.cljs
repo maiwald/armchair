@@ -6,7 +6,8 @@
                                    map-values
                                    rect->0
                                    point-delta
-                                   translate-point]]))
+                                   translate-point
+                                   transform-map]]))
 
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
@@ -39,6 +40,16 @@
                   characters))))
 
 (reg-sub
+  :dialogue/states
+  :<- [:db-dialogues]
+  (fn [dialogues]
+    (->> (vals dialogues)
+         (map (fn [{:keys [description states]}]
+                (transform-map states str #(str description ": " %))))
+         (apply merge)
+         (map (fn [[k v]] {:label v :value k})))))
+
+(reg-sub
   :dialogue/modal-line
   :<- [:db-lines]
   :<- [:db-dialogues]
@@ -47,6 +58,7 @@
       (-> line
           (assoc :initial-line? (= id (get-in dialogues [dialogue-id :initial-line-id])))
           (assoc :option-count (count (:options line)))
+          (update :state-triggers #(map str %))
           (update :info-ids #(map str %))))))
 
 (reg-sub
@@ -54,6 +66,7 @@
   :<- [:db-lines]
   (fn [lines [_ line-id index]]
     (-> (get-in lines [line-id :options index])
+        (update :state-triggers #(map str %))
         (update :required-info-ids #(map str %)))))
 
 (reg-sub

@@ -176,6 +176,15 @@
     (assoc-in db [:lines line-id :info-ids] (set info-ids))))
 
 (reg-event-db
+  :set-state-triggers
+  [validate
+   record-undo]
+  (fn [db [_ line-id states index]]
+    (case (get-in db [:lines line-id :kind])
+      :npc (assoc-in db [:lines line-id :state-triggers] (set states))
+      :player (assoc-in db [:lines line-id :options index :state-triggers] (set states)))))
+
+(reg-event-db
   :set-required-info
   [validate
    record-undo]

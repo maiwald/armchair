@@ -1,11 +1,11 @@
 (ns armchair.db
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as string]
-            [clojure.set :refer [subset?]]
+            [clojure.set :refer [union subset?]]
             [cognitect.transit :as t]
             [armchair.dummy-data :refer [dummy-data]]
             [armchair.textures :refer [background-textures texture-set]]
-            [armchair.util :refer [where-map]]))
+            [armchair.util :refer [where where-map]]))
 
 (def db-version 1)
 
@@ -112,7 +112,7 @@
 (s/def ::next-line-id (s/or :line-id (s/nilable ::line-id)))
 
 (s/def ::npc-line (s/and (s/keys :req-un [::text ::next-line-id ::character-id]
-                                 :opt-un [::info-ids])
+                                 :opt-un [::info-ids :dialogue/state-triggers])
                          #(= (:kind %) :npc)))
 (s/def ::info-ids (s/coll-of ::info-id :kind set?))
 
@@ -120,7 +120,7 @@
                             (s/keys :req-un [::options])))
 (s/def ::options (s/coll-of ::option :kind vector?))
 (s/def ::option (s/keys :req-un [::text ::next-line-id]
-                        :opt-un [::required-info-ids]))
+                        :opt-un [::required-info-ids :dialogue/state-triggers]))
 (s/def ::required-info-ids ::info-ids)
 
 (s/def ::npc-or-player-line (s/and (s/keys :req [:entity/id
@@ -143,6 +143,7 @@
                                    :dialogue/states]))
 
 (s/def :dialogue/states (s/map-of ::line-id ::text))
+(s/def :dialogue/state-triggers (s/coll-of ::line-id :kind set?))
 (s/def :dialogue/initial-line-id ::line-id)
 (s/def ::dialogues (s/and ::entity-map
                           (s/map-of ::dialogue-id ::dialogue)))
@@ -181,9 +182,33 @@
           option-target-ids (->> player-lines vals (map :options) flatten (map :next-line-id))]
       (not-any? #(contains? player-lines %) option-target-ids))))
 
+(s/def ::state-trigger-must-point-to-dialogue-state
+  (fn [{:keys [lines dialogues]}]
+    (let [states (->> (vals dialogues)
+                      (map :states)
+                      (filter not-empty)
+                      (map keys)
+                      flatten
+                      set)
+          npc-triggers (->> (vals lines)
+                            (where :kind :npc)
+                            (map :state-triggers)
+                            (filter not-empty)
+                            (apply union))
+          player-triggers (->> (vals lines)
+                               (where :kind :player)
+                               (map :options)
+                               flatten
+                               (map :state-triggers)
+                               (filter not-empty)
+                               (apply union))]
+      (and (subset? npc-triggers states)
+           (subset? player-triggers states)))))
+
 (s/def ::state (s/and ::dialogue-must-start-with-npc-line
                       ::player-options-must-not-point-to-player-line
                       ::location-connection-validation
+                      ::state-trigger-must-point-to-dialogue-state
                       (s/keys :req-un [::current-page
                                        ::characters
                                        ::dialogues

@@ -160,10 +160,14 @@
       [slds/multi-select {:label "Infos"
                           :options (clj->js (<sub [:info-options]))
                           :values (:info-ids line)
-                          :on-change #(>evt [:set-infos line-id (map uuid %)])}]]]))
+                          :on-change #(>evt [:set-infos line-id (map uuid %)])}]
+      [slds/multi-select {:label "Dialogue State Triggers"
+                          :options (clj->js (<sub [:dialogue/states]))
+                          :values (:state-triggers line)
+                          :on-change #(>evt [:set-state-triggers line-id (map uuid %)])}]]]))
 
 (defn player-line-form-modal-option [line-id index total-count]
-  (let [{:keys [text required-info-ids]} (<sub [:dialogue/player-line-option line-id index])
+  (let [{:keys [text required-info-ids state-triggers]} (<sub [:dialogue/player-line-option line-id index])
         info-options (<sub [:info-options])]
     [:div { :class "player-line-form__response"}
      [:div {:class "text"}
@@ -173,7 +177,11 @@
       [slds/multi-select {:label "Required Infos"
                           :options info-options
                           :values required-info-ids
-                          :on-change #(>evt [:set-required-info line-id index (map uuid %)])}]]
+                          :on-change #(>evt [:set-required-info line-id index (map uuid %)])}]
+      [slds/multi-select {:label "Dialogue State Triggers"
+                          :options (clj->js (<sub [:dialogue/states]))
+                          :values state-triggers
+                          :on-change #(>evt [:set-state-triggers line-id (map uuid %) index])}]]
      [:ul {:class "actions actions_vertial"}
       [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
                                          (>evt [:delete-option line-id index]))}

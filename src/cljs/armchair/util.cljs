@@ -57,6 +57,9 @@
 (defn map-keys [f m]
   (into {} (for [[k v] m] [(f k) v])))
 
+(defn transform-map [m kf vf]
+  (into {} (for [[k v] m] [(kf k) (vf v)])))
+
 (defn where
   ([property value coll]
    (filter #(= (property %) value)

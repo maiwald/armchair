@@ -54,6 +54,22 @@
             "Cannot modify initial line's character!")
     (assoc-in db [:lines id field] value)))
 
+(defn clear-dialogue-state [db id]
+  (let [dialogue-id (get-in db [:lines id :dialogue-id])]
+    (letfn [(clear-line [line]
+              (if (set? (:state-triggers line))
+                (update line :state-triggers disj id)
+                line))
+            (clear-options [line]
+              (update line :options #(mapv clear-line %)))]
+      (-> db
+        (update :lines #(map-values (fn [line]
+                                      (case (:kind line)
+                                        :npc (clear-line line)
+                                        :player (clear-options line)))
+                                    %))
+        (update-in [:dialogues dialogue-id :states] dissoc id)))))
+
 (reg-event-db
   :delete-line
   [validate
@@ -67,17 +83,17 @@
               (clear-options [line]
                 (update line :options #(mapv clear-line %)))]
         (-> db
+          (clear-dialogue-state id)
+          (update :lines dissoc id)
           (update :lines #(map-values (fn [line]
                                         (case (:kind line)
                                           :npc (clear-line line)
                                           :player (clear-options line)))
-                                      (dissoc % id)))
-          (update-in [:dialogues dialogue-id :states] dissoc id))))))
+                                      %)))))))
 
 (reg-event-db
   :delete-dialogue-state
   [validate
    record-undo]
   (fn [db [_ id]]
-    (let [dialogue-id (get-in db [:lines id :dialogue-id])]
-      (update-in db [:dialogues dialogue-id :states] dissoc id))))
+    (clear-dialogue-state db id)))

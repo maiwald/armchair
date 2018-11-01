@@ -1,6 +1,6 @@
 # TODO
 - dialogue state changes
-  - assign dialogue changes to player options
+  - delete dialogue triggers when deleting dialogue
   - respect state changes in prototype
 - epochs, effects in the world
 - set player position
