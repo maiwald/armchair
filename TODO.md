@@ -1,5 +1,6 @@
 # TODO
 - epochs, effects in the world
+- set player position
 - validation error notifications
 - information dependency invariants
 - moving camera for prototype
