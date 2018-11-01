@@ -81,6 +81,10 @@
                         property-map)
                coll)))
 
+(defn removev [v idx]
+  (vec (concat (take idx v)
+               (drop (inc idx) v))))
+
 (defn once [f]
   (let [called (atom false)]
     (fn [& args]

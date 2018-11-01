@@ -12,6 +12,7 @@
                                    map-values
                                    where-map
                                    update-in-map
+                                   removev
                                    point-delta
                                    translate-point
                                    rect-contains?]]))
@@ -163,8 +164,7 @@
   [validate
    record-undo]
   (fn [db [_ line-id index]]
-    (update-in db [:lines line-id :options] (fn [v] (vec (concat (take index v)
-                                                                 (drop (inc index) v)))))))
+    (update-in db [:lines line-id :options] #(removev % index))))
 
 (reg-event-db
   :set-infos
