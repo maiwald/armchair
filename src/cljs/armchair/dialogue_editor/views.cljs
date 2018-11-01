@@ -9,6 +9,7 @@
   (let [{:keys [infos
                 state
                 initial-line?
+                connected?
                 text
                 character-name
                 character-color]} (<sub [:dialogue-editor/npc-line line-id])
@@ -54,24 +55,35 @@
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}
       [:p text]
-      [:div {:class "action action_connect"
-             :on-mouse-down (e-> #(when (e->left? %)
-                                    (>evt [:start-connecting-lines line-id (e->graph-cursor %)])))}
-       [icon "project-diagram" "Connect"]]]]))
+      (if connected?
+        [:div {:class "action"
+               :on-mouse-down stop-e!
+               :on-click #(>evt [:dialogue-editor/disconnect-line line-id])}
+         [icon "unlink" "Connect"]]
+        [:div {:class "action action_connect"
+               :on-mouse-down (e-> #(when (e->left? %)
+                                      (>evt [:start-connecting-lines line-id (e->graph-cursor %)])))}
+         [icon "link" "Connect"]])]]))
 
-(defn player-line-option-component [line-id index {:keys [text required-infos]}]
-  [:li {:class "line__text"
-        :style {:height (str config/line-height "px")}}
-   [:p
-    (when-not (empty? required-infos)
-      [:span {:class "state"}
-       [icon "lock" (str "This line requires infos: \n"
-                         (join "\n" required-infos))]])
-    text]
-   [:div {:class "action action_connect"
-          :on-mouse-down (e-> #(when (e->left? %)
-                                 (>evt [:start-connecting-lines line-id (e->graph-cursor %) index])))}
-    [icon "project-diagram" "Connect"]]])
+(defn player-line-option-component [line-id index option]
+  (let [{:keys [text required-infos connected?]} option]
+    [:li {:class "line__text"
+          :style {:height (str config/line-height "px")}}
+     [:p
+      (when-not (empty? required-infos)
+        [:span {:class "state"}
+         [icon "lock" (str "This line requires infos: \n"
+                           (join "\n" required-infos))]])
+      text]
+     (if connected?
+       [:div {:class "action"
+              :on-mouse-down stop-e!
+              :on-click #(>evt [:dialogue-editor/disconnect-option line-id index])}
+        [icon "unlink" "Connect"]]
+       [:div {:class "action action_connect"
+              :on-mouse-down (e-> #(when (e->left? %)
+                                     (>evt [:start-connecting-lines line-id (e->graph-cursor %) index])))}
+        [icon "link" "Connect"]])]))
 
 (defn player-line-component [line-id]
   (let [options (<sub [:dialogue-editor/player-line-options line-id])

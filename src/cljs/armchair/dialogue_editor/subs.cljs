@@ -9,7 +9,7 @@
   :<- [:db-characters]
   :<- [:db-infos]
   (fn [[lines dialogues characters infos] [_ line-id]]
-    (let [{:keys [text character-id dialogue-id info-ids]} (get lines line-id)
+    (let [{:keys [text character-id dialogue-id info-ids next-line-id]} (get lines line-id)
           character (get characters character-id)
           {:keys [initial-line-id states]} (get dialogues dialogue-id)]
       {:id line-id
@@ -17,6 +17,7 @@
        :infos (map #(get-in infos [% :description]) info-ids)
        :initial-line? (= initial-line-id line-id)
        :state (get states line-id)
+       :connected? (some? next-line-id)
        :character-color (:color character)
        :character-name (:display-name character)})))
 
@@ -26,9 +27,10 @@
   :<- [:db-infos]
   (fn [[lines infos] [_ line-id]]
     (mapv
-      (fn [{:keys [text required-info-ids]}]
+      (fn [{:keys [text required-info-ids next-line-id]}]
         {:text text
-         :required-infos (map #(get-in infos [% :description]) required-info-ids)})
+         :required-infos (map #(get-in infos [% :description]) required-info-ids)
+         :connected? (some? next-line-id)})
       (get-in lines [line-id :options]))))
 
 (reg-sub

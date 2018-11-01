@@ -7,7 +7,7 @@
 - validation error notifications
 - information dependency invariants
 - moving camera for prototype
-- remove line and location connections
+- remove location connections
 - npc movement
 
 # nice things

@@ -5,8 +5,6 @@
             [armchair.undo :refer [record-undo]]
             [armchair.util :refer [map-values]]))
 
-
-
 (reg-event-fx
   :create-npc-line
   [validate
@@ -97,3 +95,17 @@
    record-undo]
   (fn [db [_ id]]
     (clear-dialogue-state db id)))
+
+(reg-event-db
+  :dialogue-editor/disconnect-line
+  [validate
+   record-undo]
+  (fn [db [_ id]]
+    (assoc-in db [:lines id :next-line-id] nil)))
+
+(reg-event-db
+  :dialogue-editor/disconnect-option
+  [validate
+   record-undo]
+  (fn [db [_ id index]]
+    (assoc-in db [:lines id :options index :next-line-id] nil)))
