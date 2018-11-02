@@ -1,6 +1,7 @@
 # TODO
 - dialogue state changes
   - delete dialogue triggers when deleting dialogue
+  - allow initial lines as state trigger?
   - respect state changes in prototype
 - epochs, effects in the world
 - set player position
