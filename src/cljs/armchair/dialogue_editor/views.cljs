@@ -8,6 +8,7 @@
 (defn npc-line-component [line-id]
   (let [{:keys [infos
                 state
+                state-triggers
                 initial-line?
                 connected?
                 text
@@ -23,8 +24,8 @@
       [:ul {:class "states"}
        (when-not (empty? infos)
          [:li {:class "state"}
-          [icon "info-circle" (str "This line contains infos: \n"
-                                   (join "\n" infos))]])]
+          [icon "info-circle" (str "This line contains infos: \n- "
+                                   (join "\n- " infos))]])]
       [:ul {:class "actions"
             :on-mouse-down stop-e!}
        (when-not (or initial-line? (some? state))
@@ -54,7 +55,12 @@
                        [icon "times-circle" "Delete state"]]])
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}
-      [:p text]
+      [:p
+       (when-not (empty? state-triggers)
+         [:span {:class "state"}
+          [icon "sign-in-alt" (str "This line triggers state changes:\n- "
+                                   (join "\n- " state-triggers))]])
+       text]
       (if connected?
         [:div {:class "action"
                :on-mouse-down stop-e!
@@ -66,14 +72,18 @@
          [icon "link" "Connect"]])]]))
 
 (defn player-line-option-component [line-id index option]
-  (let [{:keys [text required-infos connected?]} option]
+  (let [{:keys [text required-infos state-triggers connected?]} option]
     [:li {:class "line__text"
           :style {:height (str config/line-height "px")}}
      [:p
       (when-not (empty? required-infos)
         [:span {:class "state"}
-         [icon "lock" (str "This line requires infos: \n"
-                           (join "\n" required-infos))]])
+         [icon "lock" (str "This line requires infos: \n- "
+                           (join "\n- " required-infos))]])
+      (when-not (empty? state-triggers)
+        [:span {:class "state"}
+         [icon "sign-in-alt" (str "This line triggers state changes:\n- "
+                                  (join "\n- " state-triggers))]])
       text]
      (if connected?
        [:div {:class "action"
