@@ -5,7 +5,7 @@
             [cognitect.transit :as t]
             [armchair.dummy-data :refer [dummy-data]]
             [armchair.textures :refer [background-textures texture-set]]
-            [armchair.util :refer [where where-map]]))
+            [armchair.util :refer [where where-map map-values]]))
 
 (def db-version 1)
 
@@ -221,6 +221,22 @@
                                        ::dragging
                                        ::cursor
                                        ::modal])))
+
+(defn clear-dialogue-state [db line-id]
+  (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
+    (letfn [(clear-line [line]
+              (if (set? (:state-triggers line))
+                (update line :state-triggers disj line-id)
+                line))
+            (clear-options [line]
+              (update line :options #(mapv clear-line %)))]
+      (-> db
+        (update :lines #(map-values (fn [line]
+                                      (case (:kind line)
+                                        :npc (clear-line line)
+                                        :player (clear-options line)))
+                                    %))
+        (update-in [:dialogues dialogue-id :states] dissoc line-id)))))
 
 (def default-db
   (merge {:location-editor {:tool :background-painter

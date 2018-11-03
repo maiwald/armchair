@@ -4,7 +4,7 @@
             [armchair.config :as config]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
-            [armchair.db :refer [default-db content-data serialize-db deserialize-db]]
+            [armchair.db :as db :refer [default-db content-data serialize-db deserialize-db]]
             [armchair.undo :refer [record-undo]]
             [armchair.routes :refer [routes]]
             [armchair.util :refer [filter-map
@@ -335,9 +335,15 @@
   [validate
    record-undo]
   (fn [db [_ dialogue-id]]
-    (-> db
-        (update :dialogues dissoc dialogue-id)
-        (update :lines #(filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %)))))
+    (let [dialogue-states (get-in db [:dialogues dialogue-id :states])]
+      (-> (loop [db db
+                 [state-id & state-ids] (keys dialogue-states)]
+            (if (nil? state-id)
+              db
+              (recur (db/clear-dialogue-state db state-id)
+                     state-ids)))
+          (update :dialogues dissoc dialogue-id)
+          (update :lines #(filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %))))))
 
 ;; Page
 
