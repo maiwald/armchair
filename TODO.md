@@ -1,6 +1,6 @@
 # TODO
 - dialogue state changes
-  - allow only one trigger per dialogue
+  - validate only one trigger per dialogue
   - allow initial lines as state trigger?
   - respect state changes in prototype
 - epochs, effects in the world

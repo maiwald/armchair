@@ -162,7 +162,7 @@
                           :values (:info-ids line)
                           :on-change #(>evt [:set-infos line-id (map uuid %)])}]
       [slds/multi-select {:label "Dialogue State Triggers"
-                          :options (clj->js (<sub [:dialogue/states]))
+                          :options (clj->js (<sub [:dialogue/state-options line-id]))
                           :values (:state-triggers line)
                           :on-change #(>evt [:set-state-triggers line-id (map uuid %)])}]]]))
 
@@ -179,7 +179,7 @@
                           :values required-info-ids
                           :on-change #(>evt [:set-required-info line-id index (map uuid %)])}]
       [slds/multi-select {:label "Dialogue State Triggers"
-                          :options (clj->js (<sub [:dialogue/states]))
+                          :options (clj->js (<sub [:dialogue/state-options line-id index]))
                           :values state-triggers
                           :on-change #(>evt [:set-state-triggers line-id (map uuid %) index])}]]
      [:ul {:class "actions actions_vertial"}

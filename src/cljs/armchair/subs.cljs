@@ -40,14 +40,26 @@
                   characters))))
 
 (reg-sub
-  :dialogue/states
+  :dialogue/state-options
+  :<- [:db-lines]
   :<- [:db-dialogues]
-  (fn [dialogues]
-    (->> (vals dialogues)
-         (map (fn [{:keys [description states]}]
-                (transform-map states str #(str description ": " %))))
-         (apply merge)
-         (map (fn [[k v]] {:label v :value k})))))
+  (fn [[lines dialogues] [_ line-id index]]
+    (let [state-triggers (if index
+                           (get-in lines [line-id :options index :state-triggers])
+                           (get-in lines [line-id :state-triggers]))
+          used-dialogue-states (->> state-triggers
+                                    (select-keys lines)
+                                    vals
+                                    (map #(vector (:dialogue-id %) (:entity/id %)))
+                                    (into {}))]
+      (->> (vals dialogues)
+           (map (fn [{dialogue-id :entity/id :keys [description states]}]
+                  (let [s (if-let [used-line (used-dialogue-states dialogue-id)]
+                            (select-keys states [used-line])
+                            states)]
+                    (transform-map s str #(str description ": " %)))))
+           (apply merge)
+           (map (fn [[k v]] {:label v :value k}))))))
 
 (reg-sub
   :dialogue/modal-line
