@@ -205,10 +205,33 @@
       (and (subset? npc-triggers states)
            (subset? player-triggers states)))))
 
+(s/def ::lines-contain-max-one-state-triggers-per-dialogue
+  (fn [{:keys [lines]}]
+    (let [has-max-one-dialogue (fn [state-triggers]
+                                 (->> state-triggers
+                                      (select-keys lines)
+                                      vals
+                                      (group-by :dialogue-id)
+                                      vals
+                                      (every? #(= 1 (count %)))))
+          npc-triggers (->> (vals lines)
+                            (where :kind :npc)
+                            (map :state-triggers)
+                            (filter not-empty))
+          player-triggers (->> (vals lines)
+                               (where :kind :player)
+                               (map :options)
+                               flatten
+                               (map :state-triggers)
+                               (filter not-empty))]
+      (and (every? has-max-one-dialogue npc-triggers)
+           (every? has-max-one-dialogue player-triggers)))))
+
 (s/def ::state (s/and ::dialogue-must-start-with-npc-line
                       ::player-options-must-not-point-to-player-line
                       ::location-connection-validation
                       ::state-trigger-must-point-to-dialogue-state
+                      ::lines-contain-max-one-state-triggers-per-dialogue
                       (s/keys :req-un [::current-page
                                        ::characters
                                        ::dialogues
