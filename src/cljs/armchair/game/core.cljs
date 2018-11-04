@@ -280,7 +280,7 @@
                    new-position
                    (fn []
                      (let [{l :location-id p :position} (:player @state)]
-                       (if-let [new-location (get-in @data [:locations l :connection-triggers (coord->tile p)])]
+                       (if-let [new-location (get-in @data [:locations l :outbound-connections (coord->tile p)])]
                          (let [new-position (tile->coord (get-in @data [:locations new-location :inbound-connections l]))]
                            (reset! move-q #queue [])
                            (swap! state update :player merge {:location-id new-location

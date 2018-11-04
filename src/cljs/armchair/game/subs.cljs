@@ -13,12 +13,12 @@
 (s/def :game/locations (s/map-of :entity/id (s/keys :req-un [:game/dimension
                                                              :game/background
                                                              :game/walk-set
-                                                             :game/connection-triggers
+                                                             :game/outbound-connections
                                                              :game/inbound-connections
                                                              :game/npcs])))
 (s/def :game/dimension :type/rect)
 (s/def :game/walk-set (s/coll-of :type/point :kind set?))
-(s/def :game/connection-triggers (s/map-of :type/point :game/location-id))
+(s/def :game/outbound-connections (s/map-of :type/point :game/location-id))
 (s/def :game/inbound-connections (s/map-of :game/location-id :type/point))
 (s/def :game/location-id :entity/id)
 (s/def :game/position :type/point)
@@ -68,12 +68,12 @@
   (fn [[locations dialogues-by-location]]
     (map-values (fn [{:keys [dimension background connection-triggers walk-set]
                       id :entity/id}]
-                  (letfn [(normalize-tile [tile]
-                            (rect->0 dimension tile))]
+                  (let [normalize-tile (fn [tile] (rect->0 dimension tile))
+                        outbound-connections (map-keys normalize-tile connection-triggers)]
                     {:dimension dimension
                      :background (map-keys normalize-tile background)
-                     :connection-triggers (map-keys normalize-tile connection-triggers)
-                     :inbound-connections (->> connection-triggers reverse-map (map-values normalize-tile))
+                     :outbound-connections outbound-connections
+                     :inbound-connections (reverse-map outbound-connections)
                      :walk-set (set (map normalize-tile walk-set))
                      :npcs (map-keys normalize-tile (dialogues-by-location id))}))
                 locations)))
