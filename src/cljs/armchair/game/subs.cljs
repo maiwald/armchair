@@ -7,20 +7,6 @@
                                    where-map
                                    rect->0]]))
 
-(defn line-screen [lines line]
-  {:pre [(= (:kind line) :npc)]}
-  (let [next-line (get lines (:next-line-id line))]
-    {:text (:text line)
-     :info-ids (:info-ids line)
-     :options (if-let [next-line (get lines (:next-line-id line))]
-                (case (:kind next-line)
-                  :npc (vector {:text "Continue..."
-                                :next-line-id (:next-line-id next-line)})
-                  :player (:options next-line))
-                (vector {:text "Yeah..., whatever. Farewell"
-                         :next-line-id nil}))}))
-
-
 (s/def :game/data (s/keys :req-un [:game/infos :game/lines :game/locations]))
 (s/def :game/lines (s/map-of :entity/id (s/keys :req-un [:game/text :game/info-ids :game/options])))
 (s/def :game/options (s/coll-of (s/keys :req-un [:game/text :game/next-line-id]) :kind vector?))
@@ -40,6 +26,7 @@
 (s/def :game/initial-line-id :entity/id)
 (s/def :game/next-line-id (s/nilable :entity/id))
 
+
 (reg-sub
   :game/dialogues-by-location
   :<- [:db-dialogues]
@@ -54,29 +41,51 @@
                                         :initial-line-id line-id}])
                                     %))))))
 
+(reg-sub
+  :game/line-data
+  :<- [:db-lines]
+  (fn [lines]
+    (map-values (fn [line]
+                  (let [next-line (get lines (:next-line-id line))]
+                    {:text (:text line)
+                     :info-ids (:info-ids line)
+                     :options (if-let [next-line (get lines (:next-line-id line))]
+                                (case (:kind next-line)
+                                  :npc (vector {:text "Continue..."
+                                                :next-line-id (:next-line-id next-line)})
+                                  :player (:options next-line))
+                                (vector {:text "Yeah..., whatever. Farewell"
+                                         :next-line-id nil}))}))
+                (where-map :kind :npc lines))))
+
 (defn reverse-map [m]
   (into {} (map (fn [[k v]] [v k]) m)))
 
 (reg-sub
-  :game/data
+  :game/locations
   :<- [:db-locations]
   :<- [:game/dialogues-by-location]
-  :<- [:db-lines]
+  (fn [[locations dialogues-by-location]]
+    (map-values (fn [{:keys [dimension background connection-triggers walk-set]
+                      id :entity/id}]
+                  (letfn [(normalize-tile [tile]
+                            (rect->0 dimension tile))]
+                    {:dimension dimension
+                     :background (map-keys normalize-tile background)
+                     :connection-triggers (map-keys normalize-tile connection-triggers)
+                     :inbound-connections (->> connection-triggers reverse-map (map-values normalize-tile))
+                     :walk-set (set (map normalize-tile walk-set))
+                     :npcs (map-keys normalize-tile (dialogues-by-location id))}))
+                locations)))
+
+(reg-sub
+  :game/data
+  :<- [:game/locations]
+  :<- [:game/line-data]
   :<- [:db-infos]
-  (fn [[locations dialogues-by-location lines infos] _]
+  (fn [[locations line-data infos] _]
     {:post [(or (s/valid? :game/data %)
                 (s/explain :game/data %))]}
     {:infos infos
-     :lines (map-values (partial line-screen lines)
-                        (->> lines (where-map :kind :npc)))
-     :locations (map-values (fn [{:keys [dimension background connection-triggers walk-set]
-                                  id :entity/id}]
-                              (letfn [(normalize-tile [tile]
-                                        (rect->0 dimension tile))]
-                                {:dimension dimension
-                                 :background (map-keys normalize-tile background)
-                                 :connection-triggers (map-keys normalize-tile connection-triggers)
-                                 :inbound-connections (->> connection-triggers reverse-map (map-values normalize-tile))
-                                 :walk-set (set (map normalize-tile walk-set))
-                                 :npcs (map-keys normalize-tile (dialogues-by-location id))}))
-                            locations)}))
+     :lines line-data
+     :locations locations}))
