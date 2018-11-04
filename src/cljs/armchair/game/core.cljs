@@ -20,27 +20,22 @@
                     :left [-1 0]
                     :right [1 0]})
 
-(s/def ::position :type/point)
-(s/def ::direction #{:up :down :left :right})
-(s/def ::texture #(contains? texture-set %))
-(s/def ::line-id :entity/id)
-(s/def ::selected-option int?)
-
-(s/def ::interaction (s/keys :req-un [::line-id
-                                      ::selected-option]))
-
-(s/def ::infos (s/coll-of uuid? :kind set?))
-(s/def ::player (s/keys :req-un [::position ::direction ::infos]))
-
-(s/def ::background (s/map-of :type/point ::texture))
-
-(s/def ::character (s/keys :req-un [::texture]))
-(s/def ::npcs (s/map-of :type/point ::character))
-(s/def ::highlight :type/point)
-(s/def ::infos (s/coll-of :entity/id :kind set?))
 
 (s/def ::state (s/and (s/keys :req-un [::player]
                               :opt-un [::highlight ::interaction])))
+
+(s/def ::player (s/keys :req-un [:player/position
+                                 :player/direction
+                                 :player/infos]))
+(s/def :player/position :type/point)
+(s/def :player/direction #{:up :down :left :right})
+(s/def :player/infos (s/coll-of :entity/id :kind set?))
+
+(s/def ::highlight :type/point)
+
+(s/def ::interaction (s/keys :req-un [::line-id ::selected-option]))
+(s/def ::line-id :entity/id)
+(s/def ::selected-option int?)
 
 ;; Conversion Helpers
 
