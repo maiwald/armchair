@@ -186,21 +186,21 @@
   (fn [{:keys [lines dialogues]}]
     (let [states (->> (vals dialogues)
                       (map :states)
-                      (filter not-empty)
+                      (filter seq)
                       (map keys)
                       flatten
                       set)
           npc-triggers (->> (vals lines)
                             (where :kind :npc)
                             (map :state-triggers)
-                            (filter not-empty)
+                            (filter seq)
                             (apply union))
           player-triggers (->> (vals lines)
                                (where :kind :player)
                                (map :options)
                                flatten
                                (map :state-triggers)
-                               (filter not-empty)
+                               (filter seq)
                                (apply union))]
       (and (subset? npc-triggers states)
            (subset? player-triggers states)))))
@@ -217,13 +217,13 @@
           npc-triggers (->> (vals lines)
                             (where :kind :npc)
                             (map :state-triggers)
-                            (filter not-empty))
+                            (filter seq))
           player-triggers (->> (vals lines)
                                (where :kind :player)
                                (map :options)
                                flatten
                                (map :state-triggers)
-                               (filter not-empty))]
+                               (filter seq))]
       (and (every? has-max-one-dialogue npc-triggers)
            (every? has-max-one-dialogue player-triggers)))))
 
