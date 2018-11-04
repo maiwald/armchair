@@ -28,10 +28,12 @@
                                                              :game/background
                                                              :game/walk-set
                                                              :game/connection-triggers
+                                                             :game/inbound-connections
                                                              :game/npcs])))
 (s/def :game/dimension :type/rect)
 (s/def :game/walk-set (s/coll-of :type/point :kind set?))
-(s/def :game/connection-triggers (s/map-of :type/point (s/keys :req-un [:game/location-id :game/position])))
+(s/def :game/connection-triggers (s/map-of :type/point :game/location-id))
+(s/def :game/inbound-connections (s/map-of :game/location-id :type/point))
 (s/def :game/location-id :entity/id)
 (s/def :game/position :type/point)
 (s/def :game/npcs (s/map-of :type/point (s/keys :req-un [:game/npc-texture :game/initial-line-id])))
@@ -68,20 +70,13 @@
      :lines (map-values (partial line-screen lines)
                         (->> lines (where-map :kind :npc)))
      :locations (map-values (fn [{:keys [dimension background connection-triggers walk-set]
-                                  id :entity/id
-                                  :as location}]
+                                  id :entity/id}]
                               (letfn [(normalize-tile [tile]
                                         (rect->0 dimension tile))]
                                 {:dimension dimension
                                  :background (map-keys normalize-tile background)
-                                 :connection-triggers (->> connection-triggers
-                                                        (map-values (fn [target-loctation-id]
-                                                                      (let [{target-dimension :dimension
-                                                                             connection-triggers :connection-triggers} (locations target-loctation-id)
-                                                                            conn-lookup (reverse-map connection-triggers)]
-                                                                        {:location-id target-loctation-id
-                                                                         :position (rect->0 target-dimension (conn-lookup id))})))
-                                                        (map-keys normalize-tile))
+                                 :connection-triggers (map-keys normalize-tile connection-triggers)
+                                 :inbound-connections (->> connection-triggers reverse-map (map-values normalize-tile))
                                  :walk-set (set (map normalize-tile walk-set))
                                  :npcs (map-keys normalize-tile (dialogues-by-location id))}))
                             locations)}))
