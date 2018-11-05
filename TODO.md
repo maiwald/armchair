@@ -1,6 +1,4 @@
 # TODO
-- dialogue state changes
-  - respect state changes in prototype
 - epochs, effects in the world
 - set player position
 - validation error notifications
@@ -17,5 +15,4 @@
 - organize and cluster background textures
 - prevent placing npcs on taken/non-walkable tiles
 - stage direction line nodes
-- repeated response after dialogue
 - allow initial lines as state trigger?

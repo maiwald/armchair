@@ -55,16 +55,23 @@
   :game/line-data
   :<- [:db-lines]
   (fn [lines]
-    (map-values (fn [line]
-                  (merge (select-keys line [:text :info-ids :state-triggers])
-                         {:options (if-let [next-line (get lines (:next-line-id line))]
-                                     (case (:kind next-line)
-                                       :npc (vector {:text "Continue..."
-                                                     :next-line-id (:next-line-id next-line)})
-                                       :player (:options next-line))
-                                     (vector {:text "Yeah..., whatever. Farewell"
-                                              :next-line-id nil}))}))
-                (where-map :kind :npc lines))))
+    (letfn [(transform-state-triggers [triggers]
+              (into {} (map (fn [trigger]
+                              [(get-in lines [trigger :dialogue-id]) trigger])
+                            triggers)))]
+      (map-values (fn [line]
+                    (-> (select-keys line [:text :info-ids :state-triggers])
+                        (update :state-triggers transform-state-triggers)
+                        (merge {:options (if-let [next-line (get lines (:next-line-id line))]
+                                           (case (:kind next-line)
+                                             :npc (vector {:text "Continue..."
+                                                           :next-line-id (:entity/id next-line)})
+                                             :player (mapv (fn [option]
+                                                             (update option :state-triggers transform-state-triggers))
+                                                           (:options next-line)))
+                                           (vector {:text "Yeah..., whatever. Farewell"
+                                                    :next-line-id nil}))})))
+        (where-map :kind :npc lines)))))
 
 (defn reverse-map [m]
   (into {} (map (fn [[k v]] [v k]) m)))

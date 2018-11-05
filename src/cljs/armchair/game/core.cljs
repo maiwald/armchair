@@ -81,8 +81,8 @@
 (defn interaction-option-count [state]
   (count (:options (dialogue-data state))))
 
-(defn next-interaction [{{:keys [line-id selected-option]} :interaction}]
-  (get-in @data [:lines line-id :options selected-option :next-line-id]))
+(defn interaction-option [{{:keys [line-id selected-option]} :interaction}]
+  (get-in @data [:lines line-id :options selected-option]))
 
 ;; Rendering
 
@@ -205,19 +205,30 @@
 
 (defn handle-interact []
   (if (interacting? @state)
-    (let [next-interaction (next-interaction @state)]
-      (if (nil? next-interaction)
-        (swap! state dissoc :interaction)
-        (swap! state #(let [line-id (get-in % [:interaction :line-id])
-                            info-ids (get-in @data [:lines line-id :info-ids])]
-                        (cond-> (merge % {:interaction {:line-id next-interaction
-                                                        :selected-option 0}})
-                          (not (empty? info-ids)) (update-in [:player :infos] union info-ids))))))
+    (let [{next-line-id :next-line-id
+           option-state-triggers :state-triggers} (interaction-option @state)
+          new-state (update @state :dialogue-states merge option-state-triggers)]
+      (if (nil? next-line-id)
+        (reset! state (-> new-state
+                          (update :dialogue-states merge option-state-triggers)
+                          (dissoc :interaction)))
+        (reset! state (let [{{line-id :line-id} :interaction} new-state
+                            {info-ids :info-ids
+                             line-state-triggers :state-triggers} (get-in @data [:lines next-line-id])]
+                        (cond-> (assoc new-state :interaction {:line-id next-line-id
+                                                               :selected-option 0})
+                          (seq line-state-triggers) (update :dialogue-states merge line-state-triggers)
+                          (seq info-ids) (update-in [:player :infos] union info-ids))))))
     (let [l (get-in @state [:player :location-id])
           npcs (get-in @data [:locations l :npcs])]
       (if-let [dialogue-id (get-in npcs [(interaction-tile @state) :dialogue-id])]
-        (swap! state assoc :interaction {:line-id (get-in @state [:dialogue-states dialogue-id])
-                                         :selected-option 0})))))
+        (let [next-line-id (get-in @state [:dialogue-states dialogue-id])
+              {info-ids :info-ids
+               line-state-triggers :state-triggers} (get-in @data [:lines next-line-id])]
+          (reset! state (cond-> (assoc @state :interaction {:line-id next-line-id
+                                                            :selected-option 0})
+                          (seq line-state-triggers) (update :dialogue-states merge line-state-triggers)
+                          (seq info-ids) (update-in [:player :infos] union info-ids))))))))
 
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
