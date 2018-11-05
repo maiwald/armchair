@@ -34,10 +34,10 @@
                    :top (second position)}}
      [component item-id]]))
 
-(defn drag-canvas [{:keys [item-ids kind item-component]} & connection-children]
+(defn drag-canvas [{:keys [kind nodes]} & connection-children]
   (let [connecting? (some? (<sub [:connector]))
         dragging? (<sub [:dragging?])
-        mouse-down (start-dragging-handler (set item-ids))
+        mouse-down (start-dragging-handler (-> nodes vals flatten set))
         mouse-move (e-> #(when (or dragging? connecting?)
                            (>evt [:move-cursor (e->graph-cursor %)])))
         mouse-up (cond
@@ -50,7 +50,8 @@
            :on-mouse-move mouse-move
            :on-mouse-up mouse-up}
      (into [:div] connection-children)
-     (for [id item-ids]
+     (for [[item-component ids] nodes
+           id ids]
        ^{:key (str kind id)} [drag-item id item-component])]))
 
 ;; Icon

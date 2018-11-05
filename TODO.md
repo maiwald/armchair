@@ -4,7 +4,7 @@
 - validation error notifications
 - information dependency invariants
 - moving camera for prototype
-- remove line and location connections
+- remove location connections
 - npc movement
 
 # nice things
@@ -15,4 +15,7 @@
 - organize and cluster background textures
 - prevent placing npcs on taken/non-walkable tiles
 - stage direction line nodes
-- repeated response after dialogue
+
+# don't know yet
+- allow initial lines as state trigger?
+- dialogue state descriptions should probably be unique

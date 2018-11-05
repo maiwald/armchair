@@ -1,9 +1,10 @@
 (ns armchair.events
   (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
             [clojure.set :refer [difference]]
+            [armchair.config :as config]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
-            [armchair.db :refer [default-db content-data serialize-db deserialize-db]]
+            [armchair.db :as db :refer [default-db content-data serialize-db deserialize-db]]
             [armchair.undo :refer [record-undo]]
             [armchair.routes :refer [routes]]
             [armchair.util :refer [filter-map
@@ -11,6 +12,8 @@
                                    map-values
                                    where-map
                                    update-in-map
+                                   removev
+                                   point-delta
                                    translate-point
                                    rect-contains?]]))
 
@@ -55,10 +58,6 @@
   (fn [db [_ json]]
     (merge db (:payload (deserialize-db json)))))
 
-;; Resources
-
-(def default-ui-position [20 20])
-
 ;; Character CRUD
 
 (reg-event-db
@@ -99,7 +98,7 @@
   (fn [db]
     (let [id (random-uuid)]
       (-> db
-          (assoc-in [:ui/positions id] default-ui-position)
+          (assoc-in [:ui/positions id] config/default-ui-position)
           (assoc-in [:locations id] {:entity/id id
                                      :entity/type :location
                                      :dimension [[0 0] [2 2]]
@@ -130,70 +129,6 @@
           (update-in-map :dialogues location-dialogue-ids dissoc :location-id :location-position)))))
 
 ;; Line CRUD
-
-(reg-event-fx
-  :create-npc-line
-  [validate
-   record-undo]
-  (fn [{db :db} [_ dialogue-id]]
-    (let [id (random-uuid)
-          character-id (get-in db [:dialogues dialogue-id :character-id])]
-      {:db (-> db
-               (assoc-in [:ui/positions id] default-ui-position)
-               (assoc-in [:lines id] {:entity/id id
-                                      :entity/type :line
-                                      :kind :npc
-                                      :character-id character-id
-                                      :dialogue-id dialogue-id
-                                      :text nil
-                                      :next-line-id nil}))
-       :dispatch [:open-npc-line-modal id]})))
-
-(reg-event-fx
-  :create-player-line
-  [validate
-   record-undo]
-  (fn [{db :db} [_ dialogue-id]]
-    (let [id (random-uuid)]
-      {:db (-> db
-               (assoc-in [:ui/positions id] default-ui-position)
-               (assoc-in [:lines id] {:entity/id id
-                                      :entity/type :line
-                                      :kind :player
-                                      :dialogue-id dialogue-id
-                                      :options []}))
-       :dispatch [:open-player-line-modal id]})))
-
-(defn initial-line? [db line-id]
-  (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
-    (= line-id (get-in db [:dialogues dialogue-id :initial-line-id]))))
-
-(reg-event-db
-  :update-line
-  [validate
-   record-undo]
-  (fn [db [_ id field value]]
-    (assert (not (and (= field :character-id)
-                      (initial-line? db id)))
-            "Cannot modify initial line's character!")
-    (assoc-in db [:lines id field] value)))
-
-(reg-event-db
-  :delete-line
-  [validate
-   record-undo]
-  (fn [db [_ id]]
-    (assert (not (initial-line? db id))
-            "Initial lines cannot be deleted!")
-    (letfn [(clear-line [line]
-              (update line :next-line-id #(if (= id %) nil %)))
-            (clear-options [line]
-              (update line :options #(mapv clear-line %)))]
-      (update db :lines #(map-values (fn [line]
-                                       (case (:kind line)
-                                         :npc (clear-line line)
-                                         :player (clear-options line)))
-                                     (dissoc % id))))))
 
 (reg-event-db
   :move-option
@@ -229,8 +164,7 @@
   [validate
    record-undo]
   (fn [db [_ line-id index]]
-    (update-in db [:lines line-id :options] (fn [v] (vec (concat (take index v)
-                                                                 (drop (inc index) v)))))))
+    (update-in db [:lines line-id :options] #(removev % index))))
 
 (reg-event-db
   :set-infos
@@ -240,6 +174,15 @@
     (assert (= :npc (get-in db [:lines line-id :kind]))
             "Infos can only be set on NPC lines!")
     (assoc-in db [:lines line-id :info-ids] (set info-ids))))
+
+(reg-event-db
+  :set-state-triggers
+  [validate
+   record-undo]
+  (fn [db [_ line-id states index]]
+    (case (get-in db [:lines line-id :kind])
+      :npc (assoc-in db [:lines line-id :state-triggers] (set states))
+      :player (assoc-in db [:lines line-id :options index :state-triggers] (set states)))))
 
 (reg-event-db
   :set-required-info
@@ -316,10 +259,38 @@
 (reg-event-db
   :open-dialogue-creation-modal
   [validate]
-  (fn [db [_ payload]]
+  (fn [db _]
     (assert-no-open-modal db)
     (assoc-in db [:modal :dialogue-creation] {:character-id nil
                                               :description nil})))
+;; Dialogue state modal
+
+(reg-event-db
+  :open-dialogue-state-modal
+  [validate]
+  (fn [db [_ line-id]]
+    (assert-no-open-modal db)
+    (let [dialogue-id (get-in db [:lines line-id :dialogue-id])
+          description (get-in db [:dialogues dialogue-id :states line-id])]
+      (assoc-in db [:modal :dialogue-state] {:line-id line-id
+                                             :description description}))))
+
+(reg-event-db
+  :dialogue-state-update
+  [validate]
+  (fn [db [_ description]]
+    (assoc-in db [:modal :dialogue-state :description] description)))
+
+(reg-event-db
+  :create-dialogue-state
+  [validate
+   record-undo]
+  (fn [db]
+    (let [{:keys [line-id description]} (get-in db [:modal :dialogue-state])
+          dialogue-id (get-in db [:lines line-id :dialogue-id])]
+      (cond-> (dissoc db :modal)
+        (not-empty description)
+        (update-in [:dialogues dialogue-id :states] assoc line-id description)))))
 
 ;; Dialogue CRUD
 
@@ -349,7 +320,7 @@
                                                     (select-keys modal-data [:location-id
                                                                              :character-id
                                                                              :description])))
-          (assoc-in [:ui/positions line-id] default-ui-position)
+          (assoc-in [:ui/positions line-id] config/default-ui-position)
           (assoc-in [:lines line-id] {:entity/id line-id
                                       :entity/type :line
                                       :kind :npc
@@ -364,9 +335,15 @@
   [validate
    record-undo]
   (fn [db [_ dialogue-id]]
-    (-> db
-        (update :dialogues dissoc dialogue-id)
-        (update :lines #(filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %)))))
+    (let [dialogue-states (get-in db [:dialogues dialogue-id :states])]
+      (-> (loop [db db
+                 [state-id & state-ids] (keys dialogue-states)]
+            (if (nil? state-id)
+              db
+              (recur (db/clear-dialogue-state db state-id)
+                     state-ids)))
+          (update :dialogues dissoc dialogue-id)
+          (update :lines #(filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %))))))
 
 ;; Page
 
@@ -463,7 +440,7 @@
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
     (let [{:keys [cursor-start ids]} dragging
-          delta (translate-point cursor cursor-start -)]
+          delta (point-delta cursor-start cursor)]
       (-> db
           (update-in-map :ui/positions ids translate-point delta)
           (dissoc :dragging :cursor)))))

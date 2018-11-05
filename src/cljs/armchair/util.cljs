@@ -26,16 +26,18 @@
   (and (<= x1 x x2)
        (<= y1 y y2)))
 
-(defn translate-point
-  ([point delta] (translate-point point delta +))
-  ([point delta f] (if (= delta [0 0])
-                        point
-                        (mapv f point delta))))
+(defn point-delta [start end]
+  (mapv - end start))
+
+(defn translate-point [point delta]
+  (if (= delta [0 0])
+    point
+    (mapv + point delta)))
 
 (defn rect->0
   "Normalize a point relative to a rect to a 0,0 based rect"
   [[top-left _] point]
-  (translate-point point top-left -))
+  (point-delta top-left point))
 
 (defn update-in-map
   "Updates specific map keys in a nested data structure"
@@ -54,6 +56,9 @@
 
 (defn map-keys [f m]
   (into {} (for [[k v] m] [(f k) v])))
+
+(defn transform-map [m kf vf]
+  (into {} (for [[k v] m] [(kf k) (vf v)])))
 
 (defn where
   ([property value coll]
@@ -78,6 +83,10 @@
    (filter-map #(every? (fn [[p v]] (= (p %) v))
                         property-map)
                coll)))
+
+(defn removev [v idx]
+  (vec (concat (take idx v)
+               (drop (inc idx) v))))
 
 (defn once [f]
   (let [called (atom false)]

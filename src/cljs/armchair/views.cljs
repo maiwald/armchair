@@ -109,8 +109,7 @@
      [:div {:class "new-item-button"}
       [slds/add-button "New" #(>evt [:location/create])]]
      [drag-canvas {:kind "location"
-                    :item-ids location-ids
-                    :item-component location-component}
+                   :nodes {location-component location-ids}}
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
@@ -135,6 +134,16 @@
                           :on-change #(>evt [:dialogue-creation-update :description (e->val %)])
                           :value description}]]])
 
+(defn dialogue-state-modal [{:keys [line-id description]}]
+  [slds/modal {:title "Dialogue State"
+               :confirm-handler #(>evt [:create-dialogue-state])
+               :close-handler #(>evt [:close-modal])}
+   [slds/form
+    [slds/input-text {:label "State description"
+                      :on-change #(>evt [:dialogue-state-update (e->val %)])
+                      :options (<sub [:character-options])
+                      :value description}]]])
+
 (defn npc-line-form-modal [line-id]
   (let [line (<sub [:dialogue/modal-line line-id])]
     [slds/modal {:title "NPC Line"
@@ -151,10 +160,14 @@
       [slds/multi-select {:label "Infos"
                           :options (clj->js (<sub [:info-options]))
                           :values (:info-ids line)
-                          :on-change #(>evt [:set-infos line-id (map uuid %)])}]]]))
+                          :on-change #(>evt [:set-infos line-id (map uuid %)])}]
+      [slds/multi-select {:label "Dialogue State Triggers"
+                          :options (clj->js (<sub [:dialogue/state-options line-id]))
+                          :values (:state-triggers line)
+                          :on-change #(>evt [:set-state-triggers line-id (map uuid %)])}]]]))
 
 (defn player-line-form-modal-option [line-id index total-count]
-  (let [{:keys [text required-info-ids]} (<sub [:dialogue/player-line-option line-id index])
+  (let [{:keys [text required-info-ids state-triggers]} (<sub [:dialogue/player-line-option line-id index])
         info-options (<sub [:info-options])]
     [:div { :class "player-line-form__response"}
      [:div {:class "text"}
@@ -164,7 +177,11 @@
       [slds/multi-select {:label "Required Infos"
                           :options info-options
                           :values required-info-ids
-                          :on-change #(>evt [:set-required-info line-id index (map uuid %)])}]]
+                          :on-change #(>evt [:set-required-info line-id index (map uuid %)])}]
+      [slds/multi-select {:label "Dialogue State Triggers"
+                          :options (clj->js (<sub [:dialogue/state-options line-id index]))
+                          :values state-triggers
+                          :on-change #(>evt [:set-state-triggers line-id (map uuid %) index])}]]
      [:ul {:class "actions actions_vertial"}
       [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
                                          (>evt [:delete-option line-id index]))}
@@ -218,6 +235,7 @@
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
       :dialogue-creation [dialogue-creation-modal (:dialogue-creation modal)]
+      :dialogue-state    [dialogue-state-modal (:dialogue-state modal)]
       :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
       :player-line-id    [player-line-form-modal (:player-line-id modal)]
       :character-id      [character-form-modal (:character-id modal)]

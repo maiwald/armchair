@@ -5,7 +5,9 @@
                                    map-keys
                                    map-values
                                    rect->0
-                                   translate-point]]))
+                                   point-delta
+                                   translate-point
+                                   transform-map]]))
 
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
@@ -38,6 +40,28 @@
                   characters))))
 
 (reg-sub
+  :dialogue/state-options
+  :<- [:db-lines]
+  :<- [:db-dialogues]
+  (fn [[lines dialogues] [_ line-id index]]
+    (let [state-triggers (if index
+                           (get-in lines [line-id :options index :state-triggers])
+                           (get-in lines [line-id :state-triggers]))
+          used-dialogue-states (->> state-triggers
+                                    (select-keys lines)
+                                    vals
+                                    (map #(vector (:dialogue-id %) (:entity/id %)))
+                                    (into {}))]
+      (->> (vals dialogues)
+           (map (fn [{dialogue-id :entity/id :keys [description states]}]
+                  (let [s (if-let [used-line (used-dialogue-states dialogue-id)]
+                            (select-keys states [used-line])
+                            states)]
+                    (transform-map s str #(str description ": " %)))))
+           (apply merge)
+           (map (fn [[k v]] {:label v :value k}))))))
+
+(reg-sub
   :dialogue/modal-line
   :<- [:db-lines]
   :<- [:db-dialogues]
@@ -46,6 +70,7 @@
       (-> line
           (assoc :initial-line? (= id (get-in dialogues [dialogue-id :initial-line-id])))
           (assoc :option-count (count (:options line)))
+          (update :state-triggers #(map str %))
           (update :info-ids #(map str %))))))
 
 (reg-sub
@@ -53,6 +78,7 @@
   :<- [:db-lines]
   (fn [lines [_ line-id index]]
     (-> (get-in lines [line-id :options index])
+        (update :state-triggers #(map str %))
         (update :required-info-ids #(map str %)))))
 
 (reg-sub
@@ -83,7 +109,7 @@
   (fn [[positions {:keys [ids cursor-start]} cursor] [_ id]]
     (let [position (get positions id)]
       (if (contains? ids id)
-        (let [delta (translate-point cursor cursor-start -)]
+        (let [delta (point-delta cursor-start cursor)]
           (translate-point position delta))
         position))))
 
@@ -115,7 +141,7 @@
   :dragging-item?
   :<- [:db-dragging]
   (fn [dragging [_ position-id]]
-    (= (:position-ids dragging) #{position-id})))
+    (= (:ids dragging) #{position-id})))
 
 (reg-sub
   :connector
@@ -142,43 +168,6 @@
                            :texture (:texture character)
                            :location (merge {:id location-id} location))))
                 dialogues)))
-
-(reg-sub
-  :dialogue
-  :<- [:db-lines]
-  :<- [:db-dialogues]
-  :<- [:db-characters]
-  (fn [[lines dialogues characters positions] [_ dialogue-id]]
-    (let [dialogue (get dialogues dialogue-id)
-          dialogue-lines (where-map :dialogue-id dialogue-id lines)
-          lines-by-kind (group-by :kind (vals dialogue-lines))]
-      {:line-ids (keys dialogue-lines)
-       :npc-connections (->> (lines-by-kind :npc)
-                             (remove #(nil? (:next-line-id %)))
-                             (map #(vector (:entity/id %) (:next-line-id %))))
-       :player-connections (reduce
-                             (fn [acc {start :entity/id :keys [options]}]
-                               (apply conj acc (->> options
-                                                    (remove #(nil? (:next-line-id %)))
-                                                    (map-indexed (fn [index {end :next-line-id}]
-                                                                   (vector start index end))))))
-                             (list)
-                             (lines-by-kind :player))})))
-
-(reg-sub
-  :dialogue/line
-  :<- [:db-lines]
-  :<- [:db-dialogues]
-  :<- [:db-characters]
-  (fn [[lines dialogues characters] [_ line-id]]
-    (let [line (get lines line-id)
-          character (get characters (:character-id line))
-          dialogue (get dialogues (:dialogue-id line))]
-      (merge (select-keys line [:kind :text :options :info-ids])
-             {:id line-id
-              :initial-line? (= (:initial-line-id dialogue) line-id)
-              :character-color (:color character)
-              :character-name (:display-name character)}))))
 
 (reg-sub
   :location-options
