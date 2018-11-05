@@ -21,7 +21,7 @@
                     :right [1 0]})
 
 
-(s/def ::state (s/and (s/keys :req-un [::player]
+(s/def ::state (s/and (s/keys :req-un [::player ::dialogue-states]
                               :opt-un [::highlight ::interaction])))
 
 (s/def ::player (s/keys :req-un [:player/position
@@ -30,6 +30,8 @@
 (s/def :player/position :type/point)
 (s/def :player/direction #{:up :down :left :right})
 (s/def :player/infos (s/coll-of :entity/id :kind set?))
+
+(s/def ::dialogue-states (s/map-of :entity/id :entity/id))
 
 (s/def ::highlight :type/point)
 
@@ -52,12 +54,6 @@
 
 (def state (atom nil))
 (def data (atom nil))
-
-(def initial-game-state
-  {:player {:location-id #uuid "121fb127-fbc8-44b9-ba62-2ca2517b6995"
-            :position (tile->coord [8 12])
-            :direction :right
-            :infos #{}}})
 
 (defn ^boolean walkable? [tile]
   (let [{l :location-id} (:player @state)
@@ -111,7 +107,7 @@
   (draw-texture ctx :player player))
 
 (defn draw-npcs [ctx npcs]
-  (doseq [[tile {texture :npc-texture}] npcs]
+  (doseq [[tile {texture :texture}] npcs]
     (draw-texture ctx texture (tile->coord tile))))
 
 (defn draw-highlight [ctx highlight-coord]
@@ -218,9 +214,9 @@
                                                         :selected-option 0}})
                           (not (empty? info-ids)) (update-in [:player :infos] union info-ids))))))
     (let [l (get-in @state [:player :location-id])
-          location (get-in @data [:locations l])]
-      (if-let [{line-id :initial-line-id} ((:npcs location) (interaction-tile @state))]
-        (swap! state assoc :interaction {:line-id line-id
+          npcs (get-in @data [:locations l :npcs])]
+      (if-let [dialogue-id (get-in npcs [(interaction-tile @state) :dialogue-id])]
+        (swap! state assoc :interaction {:line-id (get-in @state [:dialogue-states dialogue-id])
                                          :selected-option 0})))))
 
 (defn start-input-loop [channel]
@@ -287,7 +283,9 @@
 ;; Game Loop
 
 (defn start-game [background-context entity-context game-data]
-  (reset! state initial-game-state)
+  (reset! state (update-in (:initial-state game-data)
+                           [:player :position]
+                           tile->coord))
   (reset! data game-data)
   (reset! move-q #queue [])
   (reset! ctx entity-context)
