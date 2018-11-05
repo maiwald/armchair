@@ -15,4 +15,7 @@
 - organize and cluster background textures
 - prevent placing npcs on taken/non-walkable tiles
 - stage direction line nodes
+
+# don't know yet
 - allow initial lines as state trigger?
+- dialogue state descriptions should probably be unique
