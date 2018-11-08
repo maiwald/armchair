@@ -23,21 +23,23 @@
 (defn dialogue-management []
   (let [dialogues (<sub [:dialogue-list])]
     [slds/resource-page "Dialogues"
-     {:columns [:location :texture :character :description :actions]
+     {:columns [:texture :character :description :location :actions]
       :collection (vals dialogues)
       :cell-views {:character (fn [{:keys [id display-name]}]
                                 [:a {:on-click #(>evt [:open-character-modal id])}
                                  display-name])
                    :texture (fn [texture]
                               [:img {:src (texture-path texture)}])
+                   :description (fn [description {id :id}]
+                                  [:a {:on-click #(>navigate :dialogue-edit :id id)}
+                                   description])
                    :location (fn [{:keys [id display-name]}]
                                [:a {:on-click #(>navigate :location-edit :id id)}
                                 display-name])
                    :actions (fn [_ {id :id}]
                               [:div {:class "slds-text-align_right"}
                                [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this dialogue?")
-                                                                             (>evt [:delete-dialogue id]))}]
-                               [slds/symbol-button "edit" {:on-click #(>navigate :dialogue-edit :id id)}]])}
+                                                                             (>evt [:delete-dialogue id]))}]])}
       :new-resource #(>evt [:open-dialogue-creation-modal])}]))
 
 (defn character-management []
