@@ -1,4 +1,5 @@
 # TODO
+- merge npc and dialogue conceptually
 - set player position
 - location editor focus
 - group characters by dialogue in overview
