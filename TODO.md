@@ -1,13 +1,17 @@
 # TODO
-- epochs, effects in the world
 - set player position
+- location editor focus
+- group characters by dialogue in overview
+- remove location connections
 - validation error notifications
 - information dependency invariants
 - moving camera for prototype
-- remove location connections
-- npc movement
+- location versions with directed connections
+- zoom... gotta have zoom
 
 # nice things
+- redesign dialogue screen
+- open modal for name when creating a new map
 - enable double click for editing lines
 - paint walk-set
 - make modal changes apply on submit
