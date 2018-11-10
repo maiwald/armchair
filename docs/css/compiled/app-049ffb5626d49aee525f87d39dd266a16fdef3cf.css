@@ -180,12 +180,15 @@
   flex: 1;
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   margin: 7px; }
   .location__characters li {
     justify-content: flex-start;
     margin: 0;
-    margin-right: 7px; }
+    margin-right: 7px;
+    margin-bottom: 3px; }
     .location__characters li a {
+      white-space: nowrap;
       font-family: "Helvetica";
       font-size: 0.8rem;
       padding: 1px 7px;
