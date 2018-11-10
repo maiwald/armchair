@@ -23,16 +23,16 @@
 (defn dialogue-management []
   (let [dialogues (<sub [:dialogue-list])]
     [slds/resource-page "Dialogues"
-     {:columns [:texture :character :description :location :actions]
+     {:columns [:texture :character :synopsis :location :actions]
       :collection (vals dialogues)
       :cell-views {:character (fn [{:keys [id display-name]}]
                                 [:a {:on-click #(>evt [:open-character-modal id])}
                                  display-name])
                    :texture (fn [texture]
                               [:img {:src (texture-path texture)}])
-                   :description (fn [description {id :id}]
-                                  [:a {:on-click #(>navigate :dialogue-edit :id id)}
-                                   description])
+                   :synopsis (fn [synopsis {id :id}]
+                                [:a {:on-click #(>navigate :dialogue-edit :id id)}
+                                 synopsis])
                    :location (fn [{:keys [id display-name]}]
                                [:a {:on-click #(>navigate :location-edit :id id)}
                                 display-name])

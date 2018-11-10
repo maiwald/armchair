@@ -159,14 +159,14 @@
   :<- [:db-locations]
   :<- [:db-characters]
   (fn [[dialogues locations characters]]
-    (map-values (fn [{id :entity/id :keys [character-id location-id] :as dialogue}]
+    (map-values (fn [{id :entity/id :keys [description character-id location-id]}]
                   (let [character (characters character-id)
                         location (locations location-id)]
-                    (assoc dialogue
-                           :id id
-                           :character (merge {:id character-id} character)
-                           :texture (:texture character)
-                           :location (merge {:id location-id} location))))
+                    {:id id
+                     :synopsis description
+                     :character (merge {:id character-id} character)
+                     :texture (:texture character)
+                     :location (merge {:id location-id} location)}))
                 dialogues)))
 
 (reg-sub
