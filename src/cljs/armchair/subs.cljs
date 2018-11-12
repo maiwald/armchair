@@ -2,6 +2,7 @@
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
             [armchair.util :refer [filter-map
                                    where-map
+                                   where
                                    map-keys
                                    map-values
                                    rect->0
@@ -31,6 +32,7 @@
   :<- [:db-lines]
   (fn [[characters lines] _]
     (let [line-counts (->> (vals lines)
+                           (where :kind :npc)
                            (group-by :character-id)
                            (map-values count))]
       (map-values (fn [{id :entity/id :as character}]

@@ -1,6 +1,7 @@
 (ns armchair.events
   (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
             [clojure.set :refer [difference]]
+            [clojure.string :refer [blank?]]
             [armchair.config :as config]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
@@ -61,18 +62,6 @@
 ;; Character CRUD
 
 (reg-event-db
-  :create-character
-  [validate
-   record-undo]
-  (fn [db]
-    (let [id (random-uuid)
-          new-character {:entity/id id
-                         :entity/type :character
-                         :color "black"
-                         :display-name (str "Character #" id)}]
-      (assoc-in db [:characters id] new-character))))
-
-(reg-event-db
   :delete-character
   [validate
    record-undo]
@@ -83,13 +72,6 @@
       (cond-> db
         (zero? line-count)
         (update :characters dissoc id)))))
-
-(reg-event-db
-  :update-character
-  [validate
-   record-undo]
-  (fn [db [_ id field value]]
-    (assoc-in db [:characters id field] value)))
 
 (reg-event-db
   :location/create
@@ -228,12 +210,52 @@
   (assert (not (contains? db :modal))
           "Attempting to open a modal while modal is open!"))
 
+
+(defn assert-character-modal [db]
+  (assert (contains? (:modal db) :character-form)
+          "No dialogue creation initiated. Cannot set value!"))
+
 (reg-event-db
   :open-character-modal
   [validate]
-  (fn [db [_ payload]]
+  (fn [db [_ id]]
     (assert-no-open-modal db)
-    (assoc-in db [:modal :character-id] payload)))
+    (if-let [{:keys [display-name color texture]} (get-in db [:characters id])]
+      (assoc-in db [:modal :character-form] {:id id
+                                             :display-name display-name
+                                             :texture texture
+                                             :color color})
+      (assoc-in db [:modal :character-form] {:display-name ""
+                                             :texture nil
+                                             :color "black"}))))
+
+(reg-event-db
+  :character-form/update
+  [validate
+   record-undo]
+  (fn [db [_ field value]]
+    (assert-character-modal db)
+    (assoc-in db [:modal :character-form field] value)))
+
+(reg-event-db
+  :character-form/save
+  [validate
+   record-undo]
+  (fn [db]
+    (assert-character-modal db)
+    (let [{:keys [id display-name texture color]} (get-in db [:modal :character-form])
+          id (or id (random-uuid))]
+      ;; this needs a way of presenting validation errors in the form
+      (if (or (blank? display-name)
+              (blank? (name texture))) ;; this should probably be sanitized somewhere else
+        db
+        (-> db
+          (assoc-in [:characters id] {:entity/id id
+                                      :entity/type :character
+                                      :display-name display-name
+                                      :texture texture
+                                      :color color})
+          (dissoc :modal))))))
 
 (reg-event-db
   :open-info-modal
@@ -310,6 +332,7 @@
   [validate
    record-undo]
   (fn [db]
+    (assert-dialogue-creation-modal db)
     (let [dialogue-id (random-uuid)
           line-id (random-uuid)
           modal-data (get-in db [:modal :dialogue-creation])]

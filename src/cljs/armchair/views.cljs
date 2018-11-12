@@ -56,7 +56,7 @@
                                  [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this character?")
                                                                                (>evt [:delete-character id]))}])
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}
-      :new-resource #(>evt [:create-character])}]))
+      :new-resource #(>evt [:open-character-modal])}]))
 
 (defn info-management []
   (let [infos (<sub [:info-list])]
@@ -206,22 +206,30 @@
          [player-line-form-modal-option line-id index option-count])
        [slds/add-button "New Option" #(>evt [:add-option line-id])]]]]))
 
-(defn character-form-modal [character-id]
-  (let [character (<sub [:character character-id])
-        update-handler (fn [field] #(>evt [:update-character character-id field (e->val %)]))]
-    [slds/modal {:title (:display-name character)
-                 :close-handler #(>evt [:close-modal])}
+(defn character-form-modal [{:keys [id display-name color texture]}]
+  (let [update-handler (fn [field] #(>evt [:character-form/update field (e->val %)]))]
+    [slds/modal {:title "Character"
+                 :close-handler #(>evt [:close-modal])
+                 :confirm-handler #(>evt [:character-form/save])}
      [slds/form
-      [slds/input-text {:label "Name"
+      [slds/input-text {:label "Name *"
                         :on-change (update-handler :display-name)
-                        :value (:display-name character)}]
+                        :value display-name}]
       [slds/input-text {:label "Color"
                         :on-change (update-handler :color)
-                        :value (:color character)}]
-      [slds/input-select {:label "Avatar"
+                        :value color}]
+      [:div {:class "color-picker"}
+       (for [c config/color-grid]
+         [:div {:key (str "color-picker-color:" c)
+                :class ["color-picker__color"
+                        (when (= c color) "color-picker__color_selected")]
+                :on-click #(>evt [:character-form/update :color c])
+                :style {:background-color c}}])]
+      [slds/input-select {:label "Avatar *"
                           :options (mapv #(vector % %) character-textures)
-                          :value (:texture character)
-                          :on-change #(>evt [:update-character character-id :texture (keyword (e->val %))])}]]]))
+                          :value texture
+                          :on-change #(>evt [:character-form/update :texture (keyword (e->val %))])}]
+      [:img {:src (texture-path texture)}]]]))
 
 (defn info-form-modal [info-id]
   (let [info (<sub [:info info-id])
@@ -240,7 +248,7 @@
       :dialogue-state    [dialogue-state-modal (:dialogue-state modal)]
       :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
       :player-line-id    [player-line-form-modal (:player-line-id modal)]
-      :character-id      [character-form-modal (:character-id modal)]
+      :character-form    [character-form-modal (:character-form modal)]
       :info-id           [info-form-modal (:info-id modal)])))
 
 ;; Root

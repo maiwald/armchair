@@ -443,3 +443,20 @@ $gray: #888
   i.fas
     margin: 0 -4px
     width: 16px
+
+.color-picker
+  margin: 5px
+  display: grid
+  grid-gap: 5px
+  grid-template-columns: repeat(13, auto)
+  justify-content: space-between
+
+
+  &__color
+    border: 1px solid black
+    width: 20px
+    height: 20px
+
+    &_selected
+      border: 2px solid white
+      box-shadow: 0px 0px 0px 3px rgba(0, 0, 0, .8)
