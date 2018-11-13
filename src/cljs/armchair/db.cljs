@@ -152,19 +152,20 @@
 
 (s/def ::npc-line-id ::line-id)
 (s/def ::player-line-id ::line-id)
-(s/def ::dialogue-creation (s/keys :req-un [::character-id]
-                                   :opt-un [::description]))
-
 (s/def ::modal (s/keys :opt-un [:modal/character-form
+                                :modal/dialogue-creation
                                 ::info-id
                                 ::npc-line-id
                                 ::player-line-id
-                                ::dialogue-creation
                                 ::dialogue-state]))
 
 (s/def :modal/character-form
   (s/keys :req-un [::display-name ::color ::texture]
           :opt-un [:entity/id]))
+
+(s/def :modal/dialogue-creation
+  (s/keys :req-un [::character-id ::description]
+          :opt-un [::location-id ::location-position]))
 
 (s/def ::dialogue-state (s/keys :req-un [::line-id]
                                 :opt-un [::description]))

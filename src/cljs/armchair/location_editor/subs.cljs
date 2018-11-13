@@ -31,7 +31,8 @@
          (map (fn [dialogue]
                 (let [character (characters (:character-id dialogue))]
                   [(:location-position dialogue)
-                   (merge {:id (:entity/id dialogue)}
+                   (merge {:id (:entity/id character)
+                           :dialogue-id (:entity/id dialogue)}
                           (select-keys character [:texture :display-name]))])))
          (into {}))))
 
@@ -40,11 +41,12 @@
   :<- [:db-characters]
   :<- [:db-dialogues]
   (fn [[characters dialogues] _]
-    (->>  dialogues
-         (filter-map #(not (contains? % :location-id)))
-         (map-values (fn [dialogue]
-                       (let [character (characters (:character-id dialogue))]
-                         (select-keys character [:texture :display-name])))))))
+    (let [placed-characters (->> (vals dialogues)
+                                 (filter #(contains? % :location-id))
+                                 (reduce #(conj %1 (:character-id %2)) #{}))]
+      (filter-map #(not (contains? placed-characters (:entity/id %)))
+                  characters))))
+
 (reg-sub
   :location-editor/connected-locations
   :<- [:db-locations]

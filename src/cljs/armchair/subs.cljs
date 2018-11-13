@@ -128,6 +128,19 @@
     (map-values :display-name characters)))
 
 (reg-sub
+  :dialogue-creation/character-options
+  :<- [:db-characters]
+  :<- [:db-dialogues]
+  (fn [[characters dialogues] _]
+    (let [with-dialogue (reduce
+                          #(conj %1 (:character-id %2))
+                          #{}
+                          (vals dialogues))]
+      (->> characters
+           (filter-map #(not (contains? with-dialogue (:entity/id %))))
+           (map-values :display-name)))))
+
+(reg-sub
   :character
   :<- [:db-characters]
   (fn [characters [_ character-id]]

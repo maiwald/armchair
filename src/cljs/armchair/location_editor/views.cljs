@@ -53,27 +53,27 @@
 
 (defn location-editor-sidebar-npcs [location-id]
   (let [available-npcs (<sub [:location-editor/available-npcs location-id])
-        dnd-dialogue-id (:dialogue-id (<sub [:dnd-payload]))]
+        dnd-character-id (:character-id (<sub [:dnd-payload]))]
     [slds/label "Available Characters"
      [:ul {:class "tile-list"}
-      (for [[dialogue-id {:keys [display-name texture]}] available-npcs]
+      (for [[character-id {:keys [display-name texture]}] available-npcs]
         [:li {:key (str "character-select" display-name)
               :class "tile-list__item"
               :draggable true
               :on-drag-start (fn [e]
                                (set-dnd-texture! e)
-                               (>evt [:location-editor/start-entity-drag {:dialogue-id dialogue-id}]))}
+                               (>evt [:location-editor/start-entity-drag {:character-id character-id}]))}
          [dnd-texture texture]
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
                          :height (str config/tile-size "px")}}
            [:img {:title display-name :src (texture-path texture)}]]
          [:span {:class "tile-list__item__label"} display-name]])
-      (when (and (some? dnd-dialogue-id)
-                 (not (contains? available-npcs dnd-dialogue-id)))
+      (when (and (some? dnd-character-id)
+                 (not (contains? available-npcs dnd-character-id)))
         [:li {:class "tile-list__item tile-list__item_dropzone"
               :on-drag-over stop-e!
-              :on-drop #(>evt [:location-editor/remove-dialogue dnd-dialogue-id])}
+              :on-drop #(>evt [:location-editor/remove-dialogue dnd-character-id])}
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
                          :height (str config/tile-size "px")}}
@@ -189,21 +189,21 @@
        :npcs-select
        [:div
         (do-some-tiles dimension npcs "npc-select"
-                       (fn [tile {:keys [id texture display-name]}]
+                       (fn [tile {:keys [id dialogue-id texture display-name]}]
                          [:div {:class "interactor interactor_draggable"
                                 :title display-name
                                 :draggable true
-                                :on-click #(>navigate :dialogue-edit :id id)
+                                :on-click #(>navigate :dialogue-edit :id dialogue-id)
                                 :on-drag-start (fn [e]
                                                  (set-dnd-texture! e)
-                                                 (>evt [:location-editor/start-entity-drag {:dialogue-id id}]))}
+                                                 (>evt [:location-editor/start-entity-drag {:character-id id}]))}
                           [dnd-texture texture]]))
-        (when-let [dialogue-id (:dialogue-id dnd-payload)]
+        (when-let [character-id (:character-id dnd-payload)]
           (do-all-tiles dimension "dropzone"
                         (fn [tile]
                           [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
                                  :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
-                                 :on-drop #(>evt [:location-editor/move-dialogue location-id dialogue-id tile])}])))]
+                                 :on-drop #(>evt [:location-editor/move-character location-id character-id tile])}])))]
        :connection-select
        [:div
         (do-some-tiles dimension connection-triggers "connection-select"

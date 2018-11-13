@@ -335,21 +335,20 @@
     (assert-dialogue-creation-modal db)
     (let [dialogue-id (random-uuid)
           line-id (random-uuid)
-          {:keys [character-id description]} (get-in db [:modal :dialogue-creation])]
-      (if (or (blank? character-id)
-              (blank? description))
+          modal-data (get-in db [:modal :dialogue-creation])]
+      (if (or (blank? (:character-id modal-data))
+              (blank? (:description modal-data)))
         db
         (-> db
-            (assoc-in [:dialogues dialogue-id] {:entity/id dialogue-id
-                                                :entity/type :dialogue
-                                                :initial-line-id line-id
-                                                :character-id character-id
-                                                :description description})
+            (assoc-in [:dialogues dialogue-id] (merge modal-data
+                                                      {:entity/id dialogue-id
+                                                       :entity/type :dialogue
+                                                       :initial-line-id line-id}))
             (assoc-in [:ui/positions line-id] config/default-ui-position)
             (assoc-in [:lines line-id] {:entity/id line-id
                                         :entity/type :line
                                         :kind :npc
-                                        :character-id character-id
+                                        :character-id (:character-id modal-data)
                                         :dialogue-id dialogue-id
                                         :text nil
                                         :next-line-id nil})

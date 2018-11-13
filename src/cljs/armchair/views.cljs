@@ -128,11 +128,11 @@
                :confirm-handler #(>evt [:create-dialogue])
                :close-handler #(>evt [:close-modal])}
    [slds/form
-    [slds/input-select {:label "Character"
+    [slds/input-select {:label "Character *"
                         :on-change #(>evt [:dialogue-creation-update :character-id (uuid (e->val %))])
-                        :options (<sub [:character-options])
+                        :options (<sub [:dialogue-creation/character-options])
                         :value character-id}]
-    [slds/input-textarea {:label "Description"
+    [slds/input-textarea {:label "Synopsis *"
                           :on-change #(>evt [:dialogue-creation-update :description (e->val %)])
                           :value description}]]])
 

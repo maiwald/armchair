@@ -48,26 +48,42 @@
     (dissoc db :dnd-payload)))
 
 (reg-event-db
-  :location-editor/move-dialogue
+  :location-editor/move-character
   [validate
    record-undo]
-  (fn [db [_ location-id dialogue-id to]]
-    (-> db
-        (dissoc :dnd-payload)
-        (update :location-editor dissoc :highlight)
-        (update-in [:dialogues dialogue-id]
+  (fn [db [_ location-id character-id to]]
+    (let [new-db (-> db
+                     (dissoc :dnd-payload)
+                     (update :location-editor dissoc :highlight))
+          dialogue-lookup (->> (:dialogues db)
+                               vals
+                               (reduce (fn [acc {d-id :entity/id
+                                                 c-id :character-id}]
+                                         (assoc acc c-id d-id))))]
+      (if-let [dialogue-id (get dialogue-lookup character-id)]
+        (update-in new-db [:dialogues dialogue-id]
                    assoc
                    :location-id location-id
-                   :location-position to))))
+                   :location-position to)
+        (assoc-in new-db [:modal :dialogue-creation]
+                  {:character-id character-id
+                   :location-id location-id
+                   :location-position to})))))
 
 (reg-event-db
-  :location-editor/remove-dialogue
+  :location-editor/remove-character
   [validate
    record-undo]
-  (fn [db [_ dialogue-id]]
-    (-> db
-        (dissoc :dnd-payload)
-        (update-in [:dialogues dialogue-id] dissoc :location-id :location-position))))
+  (fn [db [_ character-id]]
+    (let [dialogue-lookup (->> (:dialogues db)
+                               vals
+                               (reduce (fn [acc {d-id :entity/id
+                                                 c-id :character-id}]
+                                         (assoc acc c-id d-id))))]
+      (-> db
+          (dissoc :dnd-payload)
+          (update-in [:dialogues (dialogue-lookup character-id)]
+                     dissoc :location-id :location-position)))))
 
 (reg-event-db
   :location-editor/move-trigger
