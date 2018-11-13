@@ -1,6 +1,7 @@
 (ns armchair.location-editor.views
   (:require [armchair.slds :as slds]
             [armchair.config :as config]
+            [armchair.routes :refer [>navigate]]
             [armchair.util :refer [<sub >evt stop-e! e-> e->val rect->0 rect-width rect-height once]]
             [armchair.textures :refer [texture-path background-textures]]))
 
@@ -192,6 +193,7 @@
                          [:div {:class "interactor interactor_draggable"
                                 :title display-name
                                 :draggable true
+                                :on-click #(>navigate :dialogue-edit :id id)
                                 :on-drag-start (fn [e]
                                                  (set-dnd-texture! e)
                                                  (>evt [:location-editor/start-entity-drag {:dialogue-id id}]))}
