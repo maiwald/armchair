@@ -5,7 +5,7 @@ Armchair will be an Editor for games with branching dialogue.
 I have rather intricate plans for what I want to to with dialogue in a little
 game I am working on that an off-the-shelf editor was not an option. Let's see where that goes ;)
 
-Anyway, feel free to play around with what it can do so far: https://maiwald.github.io/armchair
+Anyway, feel free to play around with what it can do so far: https://my-armchair.com/alpha
 
 ## Development Mode
 
