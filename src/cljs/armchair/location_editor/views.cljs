@@ -54,7 +54,7 @@
 (defn location-editor-sidebar-npcs [location-id]
   (let [available-npcs (<sub [:location-editor/available-npcs location-id])
         dnd-dialogue-id (:dialogue-id (<sub [:dnd-payload]))]
-    [slds/label "Available NPCs"
+    [slds/label "Available Characters"
      [:ul {:class "tile-list"}
       (for [[dialogue-id {:keys [display-name texture]}] available-npcs]
         [:li {:key (str "character-select" display-name)
@@ -105,7 +105,7 @@
                                :options [[:background-painter [icon "layer-group" "Background"]]
                                          [:resize [icon "arrows-alt" "Resize"]]
                                          [:collision [icon "walking" "Collision"]]
-                                         [:npcs-select [icon "user" "NPCs"]]
+                                         [:npcs-select [icon "user" "Characters"]]
                                          [:connection-select [icon "external-link-alt" "Connections"]]]
                                :active tool
                                :on-change #(>evt [:location-editor/set-tool %])}]
