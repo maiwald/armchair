@@ -2,6 +2,7 @@
   (:require [clojure.core.async :refer [put!]]
             [reagent.core :as r]
             [armchair.util :refer [<sub relative-cursor]]
+            [armchair.components :refer [icon]]
             [armchair.game.core :refer [start-game end-game]]))
 
 (defn game-canvas [game-data]
@@ -37,7 +38,8 @@
        (fn []
          [:div {:id "game"}
           [:div {:class "canvas-container"
-                 :style {:width (str 800 "px")}}
+                 :style {:width (str 800 "px")
+                         :height (str 450 "px")}}
            [:canvas {:height 450
                      :width 800
                      :ref (fn [el] (reset! background-canvas el))}]
@@ -46,4 +48,18 @@
                      :on-mouse-out #(put! @game-input [:cursor-position nil])
                      :height 450
                      :width 800
-                     :ref (fn [el] (reset! entity-canvas el))}]]])})))
+                     :ref (fn [el] (reset! entity-canvas el))}]]
+          [:div {:class "help"}
+           [:p
+             "Use "
+             [:span [icon "arrow-left" "Arrow Left"]] " "
+             [:span [icon "arrow-up" "Arrow Up"]] " "
+             [:span [icon "arrow-down" "Arrow Down"]] " "
+             [:span [icon "arrow-right" "Arrow Right"]] " "
+             "or "
+             [:span "w"] " "
+             [:span "a"] " "
+             [:span "s"] " "
+             [:span "d"] " "
+             "for movement and selection. "]
+           [:p "Use " [:span "space"] " to interact."]]])})))
