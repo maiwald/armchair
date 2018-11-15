@@ -1,5 +1,6 @@
 /*.log
 /target
+/build
 /*-init.clj
 /resources/public/js/compiled
 /resources/public/css/compiled
