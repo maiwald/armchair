@@ -73,7 +73,7 @@
                  (not (contains? available-npcs dnd-character-id)))
         [:li {:class "tile-list__item tile-list__item_dropzone"
               :on-drag-over stop-e!
-              :on-drop #(>evt [:location-editor/remove-dialogue dnd-character-id])}
+              :on-drop #(>evt [:location-editor/remove-character dnd-character-id])}
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
                          :height (str config/tile-size "px")}}
