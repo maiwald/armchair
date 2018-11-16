@@ -238,6 +238,7 @@
                       ::state-trigger-must-point-to-dialogue-state
                       ::lines-contain-max-one-state-triggers-per-dialogue
                       (s/keys :req-un [::current-page
+                                       ::player
                                        ::characters
                                        ::dialogues
                                        ::lines
@@ -249,6 +250,9 @@
                                        ::dragging
                                        ::cursor
                                        ::modal])))
+
+(s/def ::player (s/keys :req-un [::location-id
+                                 ::location-position]))
 
 (defn clear-dialogue-state [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]

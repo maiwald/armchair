@@ -48,6 +48,17 @@
     (dissoc db :dnd-payload)))
 
 (reg-event-db
+  :location-editor/move-player
+  [validate
+   record-undo]
+  (fn [db [_ location-id position]]
+    (-> db
+       (dissoc :dnd-payload)
+       (update :location-editor dissoc :highlight)
+       (assoc :player {:location-id location-id
+                       :location-position position}))))
+
+(reg-event-db
   :location-editor/move-character
   [validate
    record-undo]

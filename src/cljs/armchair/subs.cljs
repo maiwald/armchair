@@ -15,6 +15,7 @@
 (reg-sub :db-infos #(:infos %))
 (reg-sub :db-locations #(:locations %))
 (reg-sub :db-dialogues #(:dialogues %))
+(reg-sub :db-player #(:player %))
 
 (reg-sub :db-location-connections #(:location-connections %))
 

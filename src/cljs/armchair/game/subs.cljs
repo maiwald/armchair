@@ -77,6 +77,15 @@
   (into {} (map (fn [[k v]] [v k]) m)))
 
 (reg-sub
+  :game/player-data
+  :<- [:db-player]
+  :<- [:db-locations]
+  (fn [[{:keys [location-id location-position]} locations]]
+    (let [dimension (get-in locations [location-id :dimension])]
+      {:location-id location-id
+       :position (rect->0 dimension location-position)})))
+
+(reg-sub
   :game/locations
   :<- [:db-locations]
   :<- [:game/npcs-by-location]
@@ -95,18 +104,16 @@
 
 (reg-sub
   :game/data
+  :<- [:game/player-data]
   :<- [:game/locations]
   :<- [:game/line-data]
   :<- [:db-dialogues]
   :<- [:db-infos]
-  (fn [[locations line-data dialogues infos] _]
+  (fn [[player-data locations line-data dialogues infos] _]
     {:post [(or (s/valid? :game/data %)
                 (s/explain :game/data %))]}
     {:infos infos
      :lines line-data
      :locations locations
      :initial-state {:dialogue-states (map-values :initial-line-id dialogues)
-                     :player {:location-id #uuid "121fb127-fbc8-44b9-ba62-2ca2517b6995"
-                              :position [8 12]
-                              :direction :right
-                              :infos #{}}}}))
+                     :player (merge player-data {:direction :right :infos #{}})}}))

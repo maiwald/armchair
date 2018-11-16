@@ -12,6 +12,11 @@
                   :active-texture])))
 
 (reg-sub
+  :location-editor/player-position
+  (fn [{{:keys [location-id location-position]} :player} [_ current-location]]
+    (when (= location-id current-location) location-position)))
+
+(reg-sub
   :location-editor/location
   :<- [:db-locations]
   :<- [:db-characters]

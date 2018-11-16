@@ -54,31 +54,45 @@
 (defn location-editor-sidebar-npcs [location-id]
   (let [available-npcs (<sub [:location-editor/available-npcs location-id])
         dnd-character-id (:character-id (<sub [:dnd-payload]))]
-    [slds/label "Available Characters"
-     [:ul {:class "tile-list"}
-      (for [[character-id {:keys [display-name texture]}] available-npcs]
-        [:li {:key (str "character-select" display-name)
-              :class "tile-list__item"
+    [:div
+      [slds/label "Player"
+       [:ul {:class "tile-list"}
+        [:li {:class "tile-list__item"
               :draggable true
               :on-drag-start (fn [e]
                                (set-dnd-texture! e)
-                               (>evt [:location-editor/start-entity-drag {:character-id character-id}]))}
-         [dnd-texture texture]
+                               (>evt [:location-editor/start-entity-drag :player]))}
+         [dnd-texture :player]
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
                          :height (str config/tile-size "px")}}
-           [:img {:title display-name :src (texture-path texture)}]]
-         [:span {:class "tile-list__item__label"} display-name]])
-      (when (and (some? dnd-character-id)
-                 (not (contains? available-npcs dnd-character-id)))
-        [:li {:class "tile-list__item tile-list__item_dropzone"
-              :on-drag-over stop-e!
-              :on-drop #(>evt [:location-editor/remove-character dnd-character-id])}
-         [:span {:class "tile-list__item__image"
-                 :style {:width (str config/tile-size "px")
-                         :height (str config/tile-size "px")}}
-          [icon "trash" "Drop here to remove."]]
-         [:span {:class "tile-list__item__label"} "Drop here to remove."]])]]))
+           [:img {:title "Player" :src (texture-path :player)}]]
+         [:span {:class "tile-list__item__label"} "Player"]]]]
+      [slds/label "Available Characters"
+       [:ul {:class "tile-list"}
+        (for [[character-id {:keys [display-name texture]}] available-npcs]
+          [:li {:key (str "character-select" display-name)
+                :class "tile-list__item"
+                :draggable true
+                :on-drag-start (fn [e]
+                                 (set-dnd-texture! e)
+                                 (>evt [:location-editor/start-entity-drag {:character-id character-id}]))}
+           [dnd-texture texture]
+           [:span {:class "tile-list__item__image"
+                   :style {:width (str config/tile-size "px")
+                           :height (str config/tile-size "px")}}
+             [:img {:title display-name :src (texture-path texture)}]]
+           [:span {:class "tile-list__item__label"} display-name]])
+        (when (and (some? dnd-character-id)
+                   (not (contains? available-npcs dnd-character-id)))
+          [:li {:class "tile-list__item tile-list__item_dropzone"
+                :on-drag-over stop-e!
+                :on-drop #(>evt [:location-editor/remove-character dnd-character-id])}
+           [:span {:class "tile-list__item__image"
+                   :style {:width (str config/tile-size "px")
+                           :height (str config/tile-size "px")}}
+            [icon "trash" "Drop here to remove."]]
+           [:span {:class "tile-list__item__label"} "Drop here to remove."]])]]]))
 
 (defn location-editor-sidebar-connections [location-id]
   [slds/label "Assigned Connections"
@@ -105,7 +119,7 @@
                                :options [[:background-painter [icon "layer-group" "Background"]]
                                          [:resize [icon "arrows-alt" "Resize"]]
                                          [:collision [icon "walking" "Collision"]]
-                                         [:npcs-select [icon "user" "Characters"]]
+                                         [:npcs-select [icon "users" "Characters"]]
                                          [:connection-select [icon "external-link-alt" "Connections"]]]
                                :active tool
                                :on-change #(>evt [:location-editor/set-tool %])}]
@@ -145,6 +159,12 @@
             :style (apply tile-style (rect->0 rect tile))}
       (f tile item)])])
 
+(defn player-layer [rect position]
+  (do-some-tiles rect {position :player} "player"
+                 (fn []
+                   [:img {:src (texture-path :player)
+                          :title "Player"}])))
+
 (defn npc-layer [rect npcs]
   (do-some-tiles rect npcs "npc"
                  (fn [tile {:keys [display-name texture]}]
@@ -161,13 +181,15 @@
   (let [{:keys [dimension background walk-set connection-triggers]} (<sub [:location-editor/location location-id])
         npcs (<sub [:location-editor/npcs location-id])
         {:keys [tool highlight painting?]} (<sub [:location-editor/ui])
-        dnd-payload (<sub [:dnd-payload])]
+        dnd-payload (<sub [:dnd-payload])
+        player-position (<sub [:location-editor/player-position location-id])]
     [:div {:class "level"
            :on-mouse-leave #(>evt [:location-editor/unset-highlight])
            :style {:width (str (* config/tile-size (rect-width dimension)) "px")
                    :height (str (* config/tile-size (rect-height dimension)) "px")}}
      [background-tiles dimension background]
      [npc-layer dimension npcs]
+     (when player-position [player-layer dimension player-position])
      [conntection-trigger-layer dimension connection-triggers]
 
      (case tool
@@ -188,8 +210,18 @@
                               :on-click #(>evt [:location-editor/flip-walkable location-id tile])}]))
        :npcs-select
        [:div
+        (when player-position
+          (do-some-tiles dimension {player-position :player} "player-select"
+                       (fn []
+                         [:div {:class "interactor interactor_draggable"
+                                :title "Player"
+                                :draggable true
+                                :on-drag-start (fn [e]
+                                                 (set-dnd-texture! e)
+                                                 (>evt [:location-editor/start-entity-drag :player]))}
+                          [dnd-texture :player]])))
         (do-some-tiles dimension npcs "npc-select"
-                       (fn [tile {:keys [id dialogue-id texture display-name]}]
+                       (fn [_ {:keys [id dialogue-id texture display-name]}]
                          [:div {:class "interactor interactor_draggable"
                                 :title display-name
                                 :draggable true
@@ -203,7 +235,13 @@
                         (fn [tile]
                           [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
                                  :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
-                                 :on-drop #(>evt [:location-editor/move-character location-id character-id tile])}])))]
+                                 :on-drop #(>evt [:location-editor/move-character location-id character-id tile])}])))
+        (when (= dnd-payload :player)
+          (do-all-tiles dimension "dropzone"
+                        (fn [tile]
+                          [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
+                                 :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
+                                 :on-drop #(>evt [:location-editor/move-player location-id tile])}])))]
        :connection-select
        [:div
         (do-some-tiles dimension connection-triggers "connection-select"

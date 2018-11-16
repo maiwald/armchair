@@ -1,5 +1,4 @@
 # TODO
-- set player position
 - location editor focus
 - group characters by dialogue in overview
 - remove location connections
