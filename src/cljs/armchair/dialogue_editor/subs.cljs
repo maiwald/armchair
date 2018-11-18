@@ -7,8 +7,8 @@
   :<- [:db-dialogues]
   (fn [dialogues]
     (->> (vals dialogues)
-         (map (fn [{:keys [states description]}]
-                (map-values #(str description ": " %) states)))
+         (map (fn [{:keys [states synopsis]}]
+                (map-values #(str synopsis ": " %) states)))
          (apply merge))))
 
 (reg-sub
@@ -23,8 +23,8 @@
           character (get characters character-id)
           {:keys [initial-line-id states]} (get dialogues dialogue-id)
           dialogue-states (->> (vals dialogues)
-                               (map (fn [{:keys [states description]}]
-                                      (map-values #(str description ": " %) states)))
+                               (map (fn [{:keys [states synopsis]}]
+                                      (map-values #(str synopsis ": " %) states)))
                                (apply merge))]
       {:id line-id
        :text text

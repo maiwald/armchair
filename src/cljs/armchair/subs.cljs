@@ -56,11 +56,11 @@
                                     (map #(vector (:dialogue-id %) (:entity/id %)))
                                     (into {}))]
       (->> (vals dialogues)
-           (map (fn [{dialogue-id :entity/id :keys [description states]}]
+           (map (fn [{dialogue-id :entity/id :keys [synopsis states]}]
                   (let [s (if-let [used-line (used-dialogue-states dialogue-id)]
                             (select-keys states [used-line])
                             states)]
-                    (transform-map s str #(str description ": " %)))))
+                    (transform-map s str #(str synopsis ": " %)))))
            (apply merge)
            (map (fn [[k v]] {:label v :value k}))))))
 
