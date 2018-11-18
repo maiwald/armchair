@@ -198,6 +198,13 @@
             :style (apply tile-style (rect->0 rect tile))}
       (f tile)])])
 
+(defn dropzone [{:keys [dimension highlight on-drop]}]
+  (do-all-tiles dimension "dropzone"
+                (fn [tile]
+                  [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
+                         :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
+                         :on-drop #(on-drop tile)}])))
+
 (defn background-tiles [rect background]
   (do-all-tiles rect "background"
                 (fn [tile]
@@ -265,14 +272,14 @@
        [:div
         (when player-position
           (do-some-tiles dimension {player-position :player} "player-select"
-                       (fn []
-                         [:div {:class "interactor interactor_draggable"
-                                :title "Player"
-                                :draggable true
-                                :on-drag-start (fn [e]
-                                                 (set-dnd-texture! e)
-                                                 (>evt [:location-editor/start-entity-drag :player]))}
-                          [dnd-texture :player]])))
+                         (fn []
+                           [:div {:class "interactor interactor_draggable"
+                                  :title "Player"
+                                  :draggable true
+                                  :on-drag-start (fn [e]
+                                                   (set-dnd-texture! e)
+                                                   (>evt [:location-editor/start-entity-drag :player]))}
+                            [dnd-texture :player]])))
         (do-some-tiles dimension npcs "npc-select"
                        (fn [_ {:keys [id dialogue-id texture display-name]}]
                          [:div {:class "interactor interactor_draggable"
@@ -284,17 +291,15 @@
                                                  (>evt [:location-editor/start-entity-drag {:character-id id}]))}
                           [dnd-texture texture]]))
         (when-let [character-id (:character-id dnd-payload)]
-          (do-all-tiles dimension "dropzone"
-                        (fn [tile]
-                          [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-                                 :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
-                                 :on-drop #(>evt [:location-editor/move-character location-id character-id tile])}])))
+          [dropzone {:dimension dimension
+                     :highlight highlight
+                     :on-drop #(>evt [:location-editor/move-character location-id character-id %])}])
+
         (when (= dnd-payload :player)
-          (do-all-tiles dimension "dropzone"
-                        (fn [tile]
-                          [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-                                 :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
-                                 :on-drop #(>evt [:location-editor/move-player location-id tile])}])))]
+          [dropzone {:dimension dimension
+                     :highlight highlight
+                     :on-drop #(>evt [:location-editor/move-player location-id %])}])]
+
        :connection-select
        [:div
         (do-some-tiles dimension connection-triggers "connection-select"
@@ -307,11 +312,9 @@
                                                  (>evt [:location-editor/start-entity-drag {:connection-trigger id}]))}
                           [dnd-texture :exit]]))
         (when-let [target (:connection-trigger dnd-payload)]
-          (do-all-tiles dimension "dropzone"
-                        (fn [tile]
-                          [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-                                 :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
-                                 :on-drop #(>evt [:location-editor/move-trigger location-id target tile])}])))]
+          [dropzone {:dimension dimension
+                     :highlight highlight
+                     :on-drop #(>evt [:location-editor/move-trigger location-id target %])}])]
        nil)]))
 
 (defn location-editor [location-id]
