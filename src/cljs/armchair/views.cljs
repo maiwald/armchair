@@ -123,7 +123,7 @@
 
 ;; Modals
 
-(defn dialogue-creation-modal [{:keys [character-id description]}]
+(defn dialogue-creation-modal [{:keys [character-id synopsis]}]
   [slds/modal {:title "Create Dialogue"
                :confirm-handler #(>evt [:create-dialogue])
                :close-handler #(>evt [:close-modal])}
@@ -133,8 +133,8 @@
                         :options (<sub [:dialogue-creation/character-options])
                         :value character-id}]
     [slds/input-textarea {:label "Synopsis *"
-                          :on-change #(>evt [:dialogue-creation-update :description (e->val %)])
-                          :value description}]]])
+                          :on-change #(>evt [:dialogue-creation-update :synopsis (e->val %)])
+                          :value synopsis}]]])
 
 (defn dialogue-state-modal [{:keys [line-id description]}]
   [slds/modal {:title "Dialogue State"

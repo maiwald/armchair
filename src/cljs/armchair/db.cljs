@@ -7,10 +7,36 @@
             [armchair.textures :refer [background-textures texture-set]]
             [armchair.util :refer [where where-map map-values]]))
 
-(def db-version 1)
+(def db-version 2)
+
+(def migrations
+  "Map of migrations. Key is the version we are coming from."
+  {1 (fn [db]
+       (-> db
+           (assoc :player {:location-id (-> db :locations keys first)
+                           :location-position [0 0]})
+           (update :dialogues (fn [ds]
+                                (map-values
+                                  (fn [d]
+                                    (-> d
+                                        (assoc :synopsis (:description d))
+                                        (dissoc :description)))
+                                  ds)))))})
+
+(defn migrate [{:keys [version payload]}]
+  (assert (<= version db-version)
+          (str "Save file version is invalid: " version ", current: " db-version))
+  (loop [version version
+         payload payload]
+    (if (= version db-version)
+      payload
+      (recur
+        (inc version)
+        ((get migrations version) payload)))))
 
 (defn content-data [db]
   (let [content-keys [:ui/positions
+                      :player
                       :infos
                       :locations
                       :characters
@@ -139,7 +165,7 @@
                                    :dialogue/initial-line-id
                                    ::location-id
                                    ::location-position]
-                          :opt-un [::description
+                          :opt-un [::synopsis
                                    :dialogue/states]))
 
 (s/def :dialogue/states (s/map-of ::line-id ::text))
@@ -164,7 +190,7 @@
           :opt-un [:entity/id]))
 
 (s/def :modal/dialogue-creation
-  (s/keys :req-un [::character-id ::description]
+  (s/keys :req-un [::character-id ::synopsis]
           :opt-un [::location-id ::location-position]))
 
 (s/def ::dialogue-state (s/keys :req-un [::line-id]

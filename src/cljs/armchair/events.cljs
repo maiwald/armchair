@@ -5,7 +5,11 @@
             [armchair.config :as config]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
-            [armchair.db :as db :refer [default-db content-data serialize-db deserialize-db]]
+            [armchair.db :as db :refer [default-db
+                                        content-data
+                                        serialize-db
+                                        deserialize-db
+                                        migrate]]
             [armchair.undo :refer [record-undo]]
             [armchair.routes :refer [routes]]
             [armchair.util :refer [filter-map
@@ -57,7 +61,7 @@
   [validate
    record-undo]
   (fn [db [_ json]]
-    (merge db (:payload (deserialize-db json)))))
+    (merge db (migrate (deserialize-db json)))))
 
 ;; Character CRUD
 
@@ -284,7 +288,7 @@
   (fn [db _]
     (assert-no-open-modal db)
     (assoc-in db [:modal :dialogue-creation] {:character-id nil
-                                              :description nil})))
+                                              :synopsis nil})))
 ;; Dialogue state modal
 
 (reg-event-db
@@ -337,7 +341,7 @@
           line-id (random-uuid)
           modal-data (get-in db [:modal :dialogue-creation])]
       (if (or (blank? (:character-id modal-data))
-              (blank? (:description modal-data)))
+              (blank? (:synopsis modal-data)))
         db
         (-> db
             (assoc-in [:dialogues dialogue-id] (merge modal-data
