@@ -70,7 +70,8 @@
                                vals
                                (reduce (fn [acc {d-id :entity/id
                                                  c-id :character-id}]
-                                         (assoc acc c-id d-id))))]
+                                         (assoc acc c-id d-id))
+                                       {}))]
       (if-let [dialogue-id (get dialogue-lookup character-id)]
         (update-in new-db [:dialogues dialogue-id]
                    assoc
@@ -90,7 +91,8 @@
                                vals
                                (reduce (fn [acc {d-id :entity/id
                                                  c-id :character-id}]
-                                         (assoc acc c-id d-id))))]
+                                         (assoc acc c-id d-id))
+                                       {}))]
       (-> db
           (dissoc :dnd-payload)
           (update-in [:dialogues (dialogue-lookup character-id)]
