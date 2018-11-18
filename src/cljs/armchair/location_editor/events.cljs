@@ -24,6 +24,12 @@
     (assoc-in db [:location-editor :active-texture] texture)))
 
 (reg-event-db
+  :location-editor/set-active-walk-state
+  [validate]
+  (fn [db [_ value]]
+    (assoc-in db [:location-editor :active-walk-state] value)))
+
+(reg-event-db
   :location-editor/set-highlight
   [validate]
   (fn [db [_ tile]]
@@ -119,14 +125,12 @@
       (assoc-in db [:locations location-id :background tile] active-texture))))
 
 (reg-event-db
-  :location-editor/flip-walkable
+  :location-editor/set-walkable
   [validate
    record-undo]
   (fn [db [_ location-id tile]]
-    (update-in db [:locations location-id :walk-set] (fn [walk-set]
-                                                       (if (contains? walk-set tile)
-                                                         (disj walk-set tile)
-                                                         (conj walk-set tile))))))
+    (let [add (get-in db [:location-editor :active-walk-state])]
+      (update-in db [:locations location-id :walk-set] (if add conj disj) tile))))
 
 (reg-event-db
   :location-editor/resize-smaller

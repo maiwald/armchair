@@ -58,7 +58,7 @@
                             :left (px x)}}]))]))))
 
 (defn location-editor-sidebar-paint [location-id]
-  (let [{active-texture :active-texture} (<sub [:location-editor/ui])]
+  (let [{:keys [active-texture]} (<sub [:location-editor/ui])]
     [slds/label "Background Textures"
      [:ul {:class "tile-grid"}
       (for [texture background-textures]
@@ -68,6 +68,22 @@
                       (when (= texture active-texture) "tile-grid__item_active")]}
          [:a {:on-click #(>evt [:location-editor/set-active-texture texture])}
           [:img {:src (texture-path texture)}]]])]]))
+
+(defn location-editor-sidebar-collision [location-id]
+  (let [{:keys [active-walk-state]} (<sub [:location-editor/ui])]
+    [slds/label "Collision State"
+     [:ul {:class "tile-grid"}
+      (for [walk-state (list true false)]
+        [:li {:key (str "walk-state-select:" walk-state)
+              :title (if walk-state "walkable" "not walkable")
+              :class ["tile-grid__item"
+                      (when (= walk-state active-walk-state) "tile-grid__item_active")]}
+         [:a {:on-click #(>evt [:location-editor/set-active-walk-state walk-state])
+              :style {:height (px config/tile-size)
+                      :width (px config/tile-size)
+                      :background-color (if walk-state
+                                          "rgba(0, 255, 0, .2"
+                                          "rgba(255, 0, 0, .2")}}]])]]))
 
 (defn location-editor-sidebar-resize [location-id]
   [slds/label "Resize level"
@@ -161,6 +177,7 @@
      (case tool
        :background-painter [location-editor-sidebar-paint location-id]
        :resize [location-editor-sidebar-resize location-id]
+       :collision [location-editor-sidebar-collision location-id]
        :npcs-select [location-editor-sidebar-npcs location-id]
        :connection-select [location-editor-sidebar-connections location-id]
        nil)]))
@@ -234,13 +251,16 @@
          :on-paint #(>evt [:location-editor/paint location-id %])}]
 
        :collision
-       (do-all-tiles dimension "walkable-area"
-                     (fn [tile]
-                       [:div {:class ["interactor"
-                                      (if (contains? walk-set tile)
-                                        "interactor_walkable"
-                                        "interactor_not-walkable")]
-                              :on-click #(>evt [:location-editor/flip-walkable location-id tile])}]))
+       [:div
+         (do-all-tiles dimension "walkable-area"
+                       (fn [tile]
+                         [:div {:class ["interactor"
+                                        (if (contains? walk-set tile)
+                                          "interactor_walkable"
+                                          "interactor_not-walkable")]}]))
+         [tile-paint-canvas
+          {:dimension dimension
+           :on-paint #(>evt [:location-editor/set-walkable location-id %])}]]
        :npcs-select
        [:div
         (when player-position

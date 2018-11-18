@@ -8,6 +8,7 @@
     (select-keys (:location-editor db)
                  [:highlight
                   :tool
+                  :active-walk-state
                   :active-texture])))
 
 (reg-sub

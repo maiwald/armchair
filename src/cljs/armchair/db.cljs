@@ -90,7 +90,9 @@
                 :connection-select})
 (s/def ::highlight :type/point)
 (s/def ::active-texture ::texture)
+(s/def ::active-walk-state boolean?)
 (s/def ::location-editor (s/keys :req-un [::tool
+                                          ::active-walk-state
                                           ::active-texture]
                                  :opt-un [::highlight]))
 
@@ -296,6 +298,7 @@
 
 (def default-db
   (merge {:location-editor {:tool :background-painter
+                            :active-walk-state true
                             :active-texture :wall}
           :ui/positions {}
           :characters {}
