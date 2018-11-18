@@ -7,6 +7,9 @@
             [armchair.config :refer [tile-size]]
             [armchair.textures :refer [texture-set load-textures]]
             [armchair.util :refer [map-values
+                                   tile->coord
+                                   coord->tile
+                                   normalize-to-tile
                                    rect-width
                                    rect-height
                                    translate-point]]))
@@ -38,17 +41,6 @@
 (s/def ::interaction (s/keys :req-un [::line-id ::selected-option]))
 (s/def ::line-id :entity/id)
 (s/def ::selected-option int?)
-
-;; Conversion Helpers
-
-(defn tile->coord [[tx ty]]
-  [(* tile-size tx) (* tile-size ty)])
-
-(defn coord->tile [[cx cy]]
-  [(quot cx tile-size) (quot cy tile-size)])
-
-(defn normalize-to-tile [coord]
-  (-> coord coord->tile tile->coord))
 
 ;; State
 

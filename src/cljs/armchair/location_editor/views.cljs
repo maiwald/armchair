@@ -2,7 +2,7 @@
   (:require [armchair.slds :as slds]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
-            [armchair.util :refer [<sub >evt stop-e! e-> e->val rect->0 rect-width rect-height once]]
+            [armchair.util :refer [<sub >evt stop-e! e-> e->val rect->0 rect-width rect-height once coord->tile translate-point relative-cursor]]
             [armchair.textures :refer [texture-path background-textures]]))
 
 (defn icon [glyph title]
@@ -21,6 +21,26 @@
   (let [offset (/ config/tile-size 2)
         image (.querySelector (.-currentTarget e) ".dnd-texture img")]
     (.setDragImage (.-dataTransfer e) image offset offset)))
+
+(defn tile-paint-canvas [{:keys [on-paint]
+                          [delta _] :dimension}]
+  (let [state (atom nil)]
+    (letfn [(start-painting [] (reset! state #{}))
+            (stop-painting [] (reset! state nil))
+            (paint [e]
+              (let [tile (-> (relative-cursor e (.-currentTarget e))
+                             coord->tile
+                             (translate-point delta))]
+                (when (and (some? @state)
+                           (not (contains? @state tile)))
+                  (swap! state conj tile)
+                  (on-paint tile))))]
+      (fn []
+        [:div {:class "level-layer"
+               :on-mouse-down #(do (start-painting)
+                                   (paint %))
+               :on-mouse-move paint
+               :on-mouse-up stop-painting}]))))
 
 (defn location-editor-sidebar-paint [location-id]
   (let [{active-texture :active-texture} (<sub [:location-editor/ui])]
@@ -116,8 +136,8 @@
                        :on-change #(>evt [:location-editor/update-name location-id (e->val %)])
                        :value display-name}]
      [slds/radio-button-group {:label "Tools"
-                               :options [[:background-painter [icon "layer-group" "Background"]]
-                                         [:resize [icon "arrows-alt" "Resize"]]
+                               :options [[:background-painter [icon "paint-roller" "Background"]]
+                                         [:resize [icon "expand" "Resize"]]
                                          [:collision [icon "walking" "Collision"]]
                                          [:npcs-select [icon "users" "Characters"]]
                                          [:connection-select [icon "external-link-alt" "Connections"]]]
@@ -194,12 +214,10 @@
 
      (case tool
        :background-painter
-       (do-all-tiles dimension "paint"
-                     (fn [tile]
-                       [:div {:class "interactor interactor_paint"
-                              :on-mouse-down (e-> #(>evt [:location-editor/start-painting location-id tile]))
-                              :on-mouse-over (e-> #(when painting? (>evt [:location-editor/paint location-id tile])))
-                              :on-mouse-up (e-> #(when painting? (>evt [:location-editor/stop-painting])))}]))
+       [tile-paint-canvas
+        {:dimension dimension
+         :on-paint #(>evt [:location-editor/start-painting location-id %])}]
+
        :collision
        (do-all-tiles dimension "walkable-area"
                      (fn [tile]

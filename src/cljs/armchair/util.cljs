@@ -1,6 +1,7 @@
 (ns armchair.util
   (:require [clojure.set :refer [intersection]]
-            [re-frame.core :as re-frame]))
+            [re-frame.core :as re-frame]
+            [armchair.config :refer [tile-size]]))
 
 (defn upload-json! [callback]
   (let [file-input (doto (js/document.createElement "input")
@@ -15,6 +16,17 @@
           #(if-let [content (.-result file-reader)]
              (callback content)))
     (.click file-input)))
+
+;; Conversion Helpers
+
+(defn tile->coord [[tx ty]]
+  [(* tile-size tx) (* tile-size ty)])
+
+(defn coord->tile [[cx cy]]
+  [(quot cx tile-size) (quot cy tile-size)])
+
+(defn normalize-to-tile [coord]
+  (-> coord coord->tile tile->coord))
 
 (defn rect-width [[[x1 _] [x2 _]]]
   (inc (- x2 x1)))
