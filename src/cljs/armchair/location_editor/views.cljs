@@ -1,8 +1,9 @@
 (ns armchair.location-editor.views
-  (:require [armchair.slds :as slds]
+  (:require [reagent.core :as r]
+            [armchair.slds :as slds]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
-            [armchair.util :refer [<sub >evt stop-e! e-> e->val rect->0 rect-width rect-height once coord->tile translate-point relative-cursor]]
+            [armchair.util :refer [px <sub >evt stop-e! e-> e->val rect->0 rect-width rect-height once tile->coord coord->tile translate-point relative-cursor]]
             [armchair.textures :refer [texture-path background-textures]]))
 
 (defn icon [glyph title]
@@ -24,23 +25,37 @@
 
 (defn tile-paint-canvas [{:keys [on-paint]
                           [delta _] :dimension}]
-  (let [state (atom nil)]
-    (letfn [(start-painting [] (reset! state #{}))
-            (stop-painting [] (reset! state nil))
+  (let [painted-tiles (r/atom nil)
+        current-tile (r/atom nil)]
+    (letfn [(get-tile [e] (-> (relative-cursor e (.-currentTarget e))
+                              coord->tile
+                              (translate-point delta)))
+            (set-current-tile [e] (reset! current-tile (get-tile e)))
+            (clear-current-tile [] (reset! current-tile nil))
+            (start-painting [] (reset! painted-tiles #{}))
+            (stop-painting [] (reset! painted-tiles nil))
             (paint [e]
-              (let [tile (-> (relative-cursor e (.-currentTarget e))
-                             coord->tile
-                             (translate-point delta))]
-                (when (and (some? @state)
-                           (not (contains? @state tile)))
-                  (swap! state conj tile)
+              (let [tile (get-tile e)]
+                (when (and (some? @painted-tiles)
+                           (not (contains? @painted-tiles tile)))
+                  (swap! painted-tiles conj tile)
                   (on-paint tile))))]
       (fn []
         [:div {:class "level-layer"
+               :on-mouse-enter set-current-tile
+               :on-mouse-leave clear-current-tile
                :on-mouse-down #(do (start-painting)
                                    (paint %))
-               :on-mouse-move paint
-               :on-mouse-up stop-painting}]))))
+               :on-mouse-move #(do (set-current-tile %)
+                                   (paint %))
+               :on-mouse-up stop-painting}
+         (when-let [tile @current-tile]
+           (let [[x y] (tile->coord tile)]
+             [:div {:class "interactor interactor_paint"
+                    :style {:height (px config/tile-size)
+                            :width (px config/tile-size)
+                            :top (px y)
+                            :left (px x)}}]))]))))
 
 (defn location-editor-sidebar-paint [location-id]
   (let [{active-texture :active-texture} (<sub [:location-editor/ui])]
@@ -216,7 +231,7 @@
        :background-painter
        [tile-paint-canvas
         {:dimension dimension
-         :on-paint #(>evt [:location-editor/start-painting location-id %])}]
+         :on-paint #(>evt [:location-editor/paint location-id %])}]
 
        :collision
        (do-all-tiles dimension "walkable-area"

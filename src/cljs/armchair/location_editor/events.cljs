@@ -111,29 +111,12 @@
                                                                  (assoc new-db to target))))))
 
 (reg-event-db
-  :location-editor/start-painting
-  [validate
-   record-undo]
-  (fn [db [_ location-id tile]]
-    (let [texture (get-in db [:location-editor :active-texture])]
-      (-> db
-          (assoc-in [:location-editor :painting?] true)
-          (assoc-in [:locations location-id :background tile] texture)))))
-
-(reg-event-db
   :location-editor/paint
   [validate
    record-undo]
   (fn [db [_ location-id tile]]
-    (let [{:keys [painting? active-texture]} (:location-editor db)]
-      (cond-> db
-        painting? (assoc-in [:locations location-id :background tile] active-texture)))))
-
-(reg-event-db
-  :location-editor/stop-painting
-  [validate]
-  (fn [db]
-    (assoc-in db [:location-editor :painting?] false)))
+    (let [{:keys [active-texture]} (:location-editor db)]
+      (assoc-in db [:locations location-id :background tile] active-texture))))
 
 (reg-event-db
   :location-editor/flip-walkable

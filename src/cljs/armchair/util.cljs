@@ -3,6 +3,9 @@
             [re-frame.core :as re-frame]
             [armchair.config :refer [tile-size]]))
 
+(defn px [val]
+  (str val "px"))
+
 (defn upload-json! [callback]
   (let [file-input (doto (js/document.createElement "input")
                      (.setAttribute "type" "file")

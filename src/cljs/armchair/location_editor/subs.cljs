@@ -7,7 +7,6 @@
   (fn [db]
     (select-keys (:location-editor db)
                  [:highlight
-                  :painting?
                   :tool
                   :active-texture])))
 

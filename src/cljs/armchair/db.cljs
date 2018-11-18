@@ -83,7 +83,6 @@
 
 ;; Location Editor
 
-(s/def ::painting? boolean?)
 (s/def ::tool #{:npcs-select
                 :resize
                 :collision
@@ -92,7 +91,6 @@
 (s/def ::highlight :type/point)
 (s/def ::active-texture ::texture)
 (s/def ::location-editor (s/keys :req-un [::tool
-                                          ::painting?
                                           ::active-texture]
                                  :opt-un [::highlight]))
 
@@ -298,7 +296,6 @@
 
 (def default-db
   (merge {:location-editor {:tool :background-painter
-                            :painting? false
                             :active-texture :wall}
           :ui/positions {}
           :characters {}
