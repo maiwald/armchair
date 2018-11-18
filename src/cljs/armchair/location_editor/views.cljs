@@ -1,8 +1,9 @@
 (ns armchair.location-editor.views
-  (:require [armchair.slds :as slds]
+  (:require [reagent.core :as r]
+            [armchair.slds :as slds]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
-            [armchair.util :refer [<sub >evt stop-e! e-> e->val rect->0 rect-width rect-height once]]
+            [armchair.util :refer [px <sub >evt stop-e! e-> e->val rect->0 rect-width rect-height once tile->coord coord->tile translate-point relative-cursor]]
             [armchair.textures :refer [texture-path background-textures]]))
 
 (defn icon [glyph title]
@@ -22,8 +23,42 @@
         image (.querySelector (.-currentTarget e) ".dnd-texture img")]
     (.setDragImage (.-dataTransfer e) image offset offset)))
 
+(defn tile-paint-canvas [{:keys [on-paint]
+                          [delta _] :dimension}]
+  (let [painted-tiles (r/atom nil)
+        current-tile (r/atom nil)]
+    (letfn [(get-tile [e] (-> (relative-cursor e (.-currentTarget e))
+                              coord->tile
+                              (translate-point delta)))
+            (set-current-tile [e] (reset! current-tile (get-tile e)))
+            (clear-current-tile [] (reset! current-tile nil))
+            (start-painting [] (reset! painted-tiles #{}))
+            (stop-painting [] (reset! painted-tiles nil))
+            (paint [e]
+              (let [tile (get-tile e)]
+                (when (and (some? @painted-tiles)
+                           (not (contains? @painted-tiles tile)))
+                  (swap! painted-tiles conj tile)
+                  (on-paint tile))))]
+      (fn []
+        [:div {:class "level-layer"
+               :on-mouse-enter set-current-tile
+               :on-mouse-leave clear-current-tile
+               :on-mouse-down #(do (start-painting)
+                                   (paint %))
+               :on-mouse-move #(do (set-current-tile %)
+                                   (paint %))
+               :on-mouse-up stop-painting}
+         (when-let [tile @current-tile]
+           (let [[x y] (tile->coord tile)]
+             [:div {:class "interactor interactor_paint"
+                    :style {:height (px config/tile-size)
+                            :width (px config/tile-size)
+                            :top (px y)
+                            :left (px x)}}]))]))))
+
 (defn location-editor-sidebar-paint [location-id]
-  (let [{active-texture :active-texture} (<sub [:location-editor/ui])]
+  (let [{:keys [active-texture]} (<sub [:location-editor/ui])]
     [slds/label "Background Textures"
      [:ul {:class "tile-grid"}
       (for [texture background-textures]
@@ -33,6 +68,22 @@
                       (when (= texture active-texture) "tile-grid__item_active")]}
          [:a {:on-click #(>evt [:location-editor/set-active-texture texture])}
           [:img {:src (texture-path texture)}]]])]]))
+
+(defn location-editor-sidebar-collision [location-id]
+  (let [{:keys [active-walk-state]} (<sub [:location-editor/ui])]
+    [slds/label "Collision State"
+     [:ul {:class "tile-grid"}
+      (for [walk-state (list true false)]
+        [:li {:key (str "walk-state-select:" walk-state)
+              :title (if walk-state "walkable" "not walkable")
+              :class ["tile-grid__item"
+                      (when (= walk-state active-walk-state) "tile-grid__item_active")]}
+         [:a {:on-click #(>evt [:location-editor/set-active-walk-state walk-state])
+              :style {:height (px config/tile-size)
+                      :width (px config/tile-size)
+                      :background-color (if walk-state
+                                          "rgba(0, 255, 0, .2"
+                                          "rgba(255, 0, 0, .2")}}]])]]))
 
 (defn location-editor-sidebar-resize [location-id]
   [slds/label "Resize level"
@@ -116,8 +167,8 @@
                        :on-change #(>evt [:location-editor/update-name location-id (e->val %)])
                        :value display-name}]
      [slds/radio-button-group {:label "Tools"
-                               :options [[:background-painter [icon "layer-group" "Background"]]
-                                         [:resize [icon "arrows-alt" "Resize"]]
+                               :options [[:background-painter [icon "paint-roller" "Background"]]
+                                         [:resize [icon "expand" "Resize"]]
                                          [:collision [icon "walking" "Collision"]]
                                          [:npcs-select [icon "users" "Characters"]]
                                          [:connection-select [icon "external-link-alt" "Connections"]]]
@@ -126,6 +177,7 @@
      (case tool
        :background-painter [location-editor-sidebar-paint location-id]
        :resize [location-editor-sidebar-resize location-id]
+       :collision [location-editor-sidebar-collision location-id]
        :npcs-select [location-editor-sidebar-npcs location-id]
        :connection-select [location-editor-sidebar-connections location-id]
        nil)]))
@@ -145,6 +197,13 @@
             :class "level-layer__tile"
             :style (apply tile-style (rect->0 rect tile))}
       (f tile)])])
+
+(defn dropzone [{:keys [dimension highlight on-drop]}]
+  (do-all-tiles dimension "dropzone"
+                (fn [tile]
+                  [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
+                         :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
+                         :on-drop #(on-drop tile)}])))
 
 (defn background-tiles [rect background]
   (do-all-tiles rect "background"
@@ -194,32 +253,23 @@
 
      (case tool
        :background-painter
-       (do-all-tiles dimension "paint"
-                     (fn [tile]
-                       [:div {:class "interactor interactor_paint"
-                              :on-mouse-down (e-> #(>evt [:location-editor/start-painting location-id tile]))
-                              :on-mouse-over (e-> #(when painting? (>evt [:location-editor/paint location-id tile])))
-                              :on-mouse-up (e-> #(when painting? (>evt [:location-editor/stop-painting])))}]))
+       [tile-paint-canvas
+        {:dimension dimension
+         :on-paint #(>evt [:location-editor/paint location-id %])}]
+
        :collision
-       (do-all-tiles dimension "walkable-area"
-                     (fn [tile]
-                       [:div {:class ["interactor"
-                                      (if (contains? walk-set tile)
-                                        "interactor_walkable"
-                                        "interactor_not-walkable")]
-                              :on-click #(>evt [:location-editor/flip-walkable location-id tile])}]))
+       [:div
+         (do-all-tiles dimension "walkable-area"
+                       (fn [tile]
+                         [:div {:class ["interactor"
+                                        (if (contains? walk-set tile)
+                                          "interactor_walkable"
+                                          "interactor_not-walkable")]}]))
+         [tile-paint-canvas
+          {:dimension dimension
+           :on-paint #(>evt [:location-editor/set-walkable location-id %])}]]
        :npcs-select
        [:div
-        (when player-position
-          (do-some-tiles dimension {player-position :player} "player-select"
-                       (fn []
-                         [:div {:class "interactor interactor_draggable"
-                                :title "Player"
-                                :draggable true
-                                :on-drag-start (fn [e]
-                                                 (set-dnd-texture! e)
-                                                 (>evt [:location-editor/start-entity-drag :player]))}
-                          [dnd-texture :player]])))
         (do-some-tiles dimension npcs "npc-select"
                        (fn [_ {:keys [id dialogue-id texture display-name]}]
                          [:div {:class "interactor interactor_draggable"
@@ -231,17 +281,15 @@
                                                  (>evt [:location-editor/start-entity-drag {:character-id id}]))}
                           [dnd-texture texture]]))
         (when-let [character-id (:character-id dnd-payload)]
-          (do-all-tiles dimension "dropzone"
-                        (fn [tile]
-                          [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-                                 :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
-                                 :on-drop #(>evt [:location-editor/move-character location-id character-id tile])}])))
+          [dropzone {:dimension dimension
+                     :highlight highlight
+                     :on-drop #(>evt [:location-editor/move-character location-id character-id %])}])
+
         (when (= dnd-payload :player)
-          (do-all-tiles dimension "dropzone"
-                        (fn [tile]
-                          [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-                                 :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
-                                 :on-drop #(>evt [:location-editor/move-player location-id tile])}])))]
+          [dropzone {:dimension dimension
+                     :highlight highlight
+                     :on-drop #(>evt [:location-editor/move-player location-id %])}])]
+
        :connection-select
        [:div
         (do-some-tiles dimension connection-triggers "connection-select"
@@ -254,11 +302,9 @@
                                                  (>evt [:location-editor/start-entity-drag {:connection-trigger id}]))}
                           [dnd-texture :exit]]))
         (when-let [target (:connection-trigger dnd-payload)]
-          (do-all-tiles dimension "dropzone"
-                        (fn [tile]
-                          [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-                                 :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
-                                 :on-drop #(>evt [:location-editor/move-trigger location-id target tile])}])))]
+          [dropzone {:dimension dimension
+                     :highlight highlight
+                     :on-drop #(>evt [:location-editor/move-trigger location-id target %])}])]
        nil)]))
 
 (defn location-editor [location-id]

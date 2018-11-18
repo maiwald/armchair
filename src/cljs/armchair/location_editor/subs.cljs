@@ -7,8 +7,8 @@
   (fn [db]
     (select-keys (:location-editor db)
                  [:highlight
-                  :painting?
                   :tool
+                  :active-walk-state
                   :active-texture])))
 
 (reg-sub
