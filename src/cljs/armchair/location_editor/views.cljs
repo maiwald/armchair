@@ -270,16 +270,6 @@
            :on-paint #(>evt [:location-editor/set-walkable location-id %])}]]
        :npcs-select
        [:div
-        (when player-position
-          (do-some-tiles dimension {player-position :player} "player-select"
-                         (fn []
-                           [:div {:class "interactor interactor_draggable"
-                                  :title "Player"
-                                  :draggable true
-                                  :on-drag-start (fn [e]
-                                                   (set-dnd-texture! e)
-                                                   (>evt [:location-editor/start-entity-drag :player]))}
-                            [dnd-texture :player]])))
         (do-some-tiles dimension npcs "npc-select"
                        (fn [_ {:keys [id dialogue-id texture display-name]}]
                          [:div {:class "interactor interactor_draggable"
