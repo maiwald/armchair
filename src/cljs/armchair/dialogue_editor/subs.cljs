@@ -57,19 +57,19 @@
   :<- [:db-dialogues]
   :<- [:db-characters]
   (fn [[lines dialogues characters positions] [_ dialogue-id]]
-    (let [dialogue (get dialogues dialogue-id)
-          dialogue-lines (where-map :dialogue-id dialogue-id lines)
-          lines-by-kind (group-by :kind (vals dialogue-lines))]
-      {:npc-line-ids (map :entity/id (lines-by-kind :npc))
-       :player-line-ids (map :entity/id (lines-by-kind :player))
-       :npc-connections (->> (lines-by-kind :npc)
-                             (remove #(nil? (:next-line-id %)))
-                             (map #(vector (:entity/id %) (:next-line-id %))))
-       :player-connections (reduce
-                             (fn [acc {start :entity/id :keys [options]}]
-                               (apply conj acc (->> options
-                                                    (map-indexed (fn [index {end :next-line-id}]
-                                                                   (vector start index end)))
-                                                    (remove (fn [[_ _ end]] (nil? end))))))
-                             (list)
-                             (lines-by-kind :player))})))
+    (if-let [dialogue (get dialogues dialogue-id)]
+      (let [dialogue-lines (where-map :dialogue-id dialogue-id lines)
+            lines-by-kind (group-by :kind (vals dialogue-lines))]
+        {:npc-line-ids (map :entity/id (lines-by-kind :npc))
+         :player-line-ids (map :entity/id (lines-by-kind :player))
+         :npc-connections (->> (lines-by-kind :npc)
+                               (remove #(nil? (:next-line-id %)))
+                               (map #(vector (:entity/id %) (:next-line-id %))))
+         :player-connections (reduce
+                               (fn [acc {start :entity/id :keys [options]}]
+                                 (apply conj acc (->> options
+                                                      (map-indexed (fn [index {end :next-line-id}]
+                                                                     (vector start index end)))
+                                                      (remove (fn [[_ _ end]] (nil? end))))))
+                               (list)
+                               (lines-by-kind :player))}))))

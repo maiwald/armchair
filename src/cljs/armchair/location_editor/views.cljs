@@ -147,7 +147,8 @@
                   :style {:width (str config/tile-size "px")
                           :height (str config/tile-size "px")}}
            [icon "trash" "Drop here to remove."]]
-          [:span {:class "tile-list__item__label"} "Drop here to remove."]])]]]))
+          [:span {:class "tile-list__item__label"} "Drop here to remove."]])]
+      (if (empty? available-npcs) "All Characters are placed in locations.")]]))
 
 (defn sidebar-connections [location-id]
   [slds/label "Assigned Connections"
@@ -309,9 +310,11 @@
        nil)]))
 
 (defn location-editor [location-id]
-  [:div {:class "location-editor"
-         :on-drag-end #(>evt [:location-editor/stop-entity-drag])}
-   [:div {:class "location-editor__sidebar"}
-    [sidebar location-id]]
-   [:div {:class "location-editor__canvas"}
-    [canvas location-id]]])
+  (if (<sub [:location-editor/location-exists? location-id])
+    [:div {:class "location-editor"
+           :on-drag-end #(>evt [:location-editor/stop-entity-drag])}
+     [:div {:class "location-editor__sidebar"}
+      [sidebar location-id]]
+     [:div {:class "location-editor__canvas"}
+      [canvas location-id]]]
+    "Location not found."))

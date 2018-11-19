@@ -17,6 +17,12 @@
     (when (= location-id current-location) location-position)))
 
 (reg-sub
+  :location-editor/location-exists?
+  :<- [:db-locations]
+  (fn [locations [_ location-id]]
+    (contains? locations location-id)))
+
+(reg-sub
   :location-editor/location
   :<- [:db-locations]
   :<- [:db-characters]

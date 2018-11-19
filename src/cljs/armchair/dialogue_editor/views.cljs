@@ -154,4 +154,4 @@
        (for [[start index end] player-connections]
          ^{:key (str "response-connection:" start ":" index "->" end)}
          [player-connection start index end])]]]
-    [:span "No dialogue selected!"]))
+    [:span "Dialogue not found."]))

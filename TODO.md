@@ -9,7 +9,6 @@
 - zoom... gotta have zoom
 
 # nice things
-- show not-found messages (eg. after loading a save file)
 - stage direction line nodes
 - open modal for name when creating a new location
 - redesign dialogue screen
