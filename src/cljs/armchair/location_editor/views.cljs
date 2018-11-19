@@ -55,7 +55,13 @@
                             :top (px y)
                             :left (px x)}}]))]))))
 
-(defn location-editor-sidebar-paint [location-id]
+(defn sidebar-info [location-id]
+  (let [{:keys [display-name]} (<sub [:location-editor/location location-id])]
+    [slds/input-text {:label "Name"
+                      :on-change #(>evt [:location-editor/update-name location-id (e->val %)])
+                      :value display-name}]))
+
+(defn sidebar-paint [location-id]
   (let [{:keys [active-texture]} (<sub [:location-editor/ui])]
     [slds/label "Background Textures"
      [:ul {:class "tile-grid"}
@@ -67,7 +73,7 @@
          [:a {:on-click #(>evt [:location-editor/set-active-texture texture])}
           [:img {:src (texture-path texture)}]]])]]))
 
-(defn location-editor-sidebar-collision [location-id]
+(defn sidebar-collision [location-id]
   (let [{:keys [active-walk-state]} (<sub [:location-editor/ui])]
     [slds/label "Collision State"
      [:ul {:class "tile-grid"}
@@ -83,7 +89,7 @@
                                           "rgba(0, 255, 0, .2"
                                           "rgba(255, 0, 0, .2")}}]])]]))
 
-(defn location-editor-sidebar-resize [location-id]
+(defn sidebar-resize [location-id]
   [slds/label "Resize level"
    [:div {:class "resize-container"}
     [:div {:class "resize-container__reference"}
@@ -100,50 +106,50 @@
       [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [icon "arrow-left" "shrink"]]
       [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [icon "arrow-right" "extend"]]]]]])
 
-(defn location-editor-sidebar-npcs [location-id]
+(defn sidebar-npcs [location-id]
   (let [available-npcs (<sub [:location-editor/available-npcs location-id])
         dnd-character-id (:character-id (<sub [:dnd-payload]))]
     [:div
-      [slds/label "Player"
-       [:ul {:class "tile-list"}
-        [:li {:class "tile-list__item"
-              :draggable true
-              :on-drag-start (fn [e]
-                               (set-dnd-texture! e)
-                               (>evt [:location-editor/start-entity-drag :player]))}
-         [dnd-texture :player]
-         [:span {:class "tile-list__item__image"
-                 :style {:width (str config/tile-size "px")
-                         :height (str config/tile-size "px")}}
-           [:img {:title "Player" :src (texture-path :player)}]]
-         [:span {:class "tile-list__item__label"} "Player"]]]]
-      [slds/label "Available Characters"
-       [:ul {:class "tile-list"}
-        (for [[character-id {:keys [display-name texture]}] available-npcs]
-          [:li {:key (str "character-select" display-name)
-                :class "tile-list__item"
-                :draggable true
-                :on-drag-start (fn [e]
-                                 (set-dnd-texture! e)
-                                 (>evt [:location-editor/start-entity-drag {:character-id character-id}]))}
-           [dnd-texture texture]
-           [:span {:class "tile-list__item__image"
-                   :style {:width (str config/tile-size "px")
-                           :height (str config/tile-size "px")}}
-             [:img {:title display-name :src (texture-path texture)}]]
-           [:span {:class "tile-list__item__label"} display-name]])
-        (when (and (some? dnd-character-id)
-                   (not (contains? available-npcs dnd-character-id)))
-          [:li {:class "tile-list__item tile-list__item_dropzone"
-                :on-drag-over stop-e!
-                :on-drop #(>evt [:location-editor/remove-character dnd-character-id])}
-           [:span {:class "tile-list__item__image"
-                   :style {:width (str config/tile-size "px")
-                           :height (str config/tile-size "px")}}
-            [icon "trash" "Drop here to remove."]]
-           [:span {:class "tile-list__item__label"} "Drop here to remove."]])]]]))
+     [slds/label "Player"
+      [:ul {:class "tile-list"}
+       [:li {:class "tile-list__item"
+             :draggable true
+             :on-drag-start (fn [e]
+                              (set-dnd-texture! e)
+                              (>evt [:location-editor/start-entity-drag :player]))}
+        [dnd-texture :player]
+        [:span {:class "tile-list__item__image"
+                :style {:width (str config/tile-size "px")
+                        :height (str config/tile-size "px")}}
+         [:img {:title "Player" :src (texture-path :player)}]]
+        [:span {:class "tile-list__item__label"} "Player"]]]]
+     [slds/label "Available Characters"
+      [:ul {:class "tile-list"}
+       (for [[character-id {:keys [display-name texture]}] available-npcs]
+         [:li {:key (str "character-select" display-name)
+               :class "tile-list__item"
+               :draggable true
+               :on-drag-start (fn [e]
+                                (set-dnd-texture! e)
+                                (>evt [:location-editor/start-entity-drag {:character-id character-id}]))}
+          [dnd-texture texture]
+          [:span {:class "tile-list__item__image"
+                  :style {:width (str config/tile-size "px")
+                          :height (str config/tile-size "px")}}
+           [:img {:title display-name :src (texture-path texture)}]]
+          [:span {:class "tile-list__item__label"} display-name]])
+       (when (and (some? dnd-character-id)
+                  (not (contains? available-npcs dnd-character-id)))
+         [:li {:class "tile-list__item tile-list__item_dropzone"
+               :on-drag-over stop-e!
+               :on-drop #(>evt [:location-editor/remove-character dnd-character-id])}
+          [:span {:class "tile-list__item__image"
+                  :style {:width (str config/tile-size "px")
+                          :height (str config/tile-size "px")}}
+           [icon "trash" "Drop here to remove."]]
+          [:span {:class "tile-list__item__label"} "Drop here to remove."]])]]]))
 
-(defn location-editor-sidebar-connections [location-id]
+(defn sidebar-connections [location-id]
   [slds/label "Assigned Connections"
    [:ul {:class "tile-list"}
     (for [[target-loctation-id {:keys [display-name]}] (<sub [:location-editor/connected-locations location-id])]
@@ -157,15 +163,11 @@
        [:img {:title display-name :src (texture-path :exit)}]
        [:span display-name]])]])
 
-(defn location-editor-sidebar [location-id]
-  (let [{:keys [display-name]} (<sub [:location-editor/location location-id])
-        {:keys [tool]} (<sub [:location-editor/ui])]
+(defn sidebar [location-id]
+  (let [{:keys [tool]} (<sub [:location-editor/ui])]
     [slds/form
-     [slds/input-text {:label "Name"
-                       :on-change #(>evt [:location-editor/update-name location-id (e->val %)])
-                       :value display-name}]
-     [slds/radio-button-group {:label "Tools"
-                               :options [[:background-painter [icon "paint-roller" "Background"]]
+     [slds/radio-button-group {:options [[:info [icon "info" "Info"]]
+                                         [:background-painter [icon "paint-roller" "Background"]]
                                          [:resize [icon "expand" "Resize"]]
                                          [:collision [icon "walking" "Collision"]]
                                          [:npcs-select [icon "users" "Characters"]]
@@ -173,11 +175,12 @@
                                :active tool
                                :on-change #(>evt [:location-editor/set-tool %])}]
      (case tool
-       :background-painter [location-editor-sidebar-paint location-id]
-       :resize [location-editor-sidebar-resize location-id]
-       :collision [location-editor-sidebar-collision location-id]
-       :npcs-select [location-editor-sidebar-npcs location-id]
-       :connection-select [location-editor-sidebar-connections location-id]
+       :info [sidebar-info location-id]
+       :background-painter [sidebar-paint location-id]
+       :resize [sidebar-resize location-id]
+       :collision [sidebar-collision location-id]
+       :npcs-select [sidebar-npcs location-id]
+       :connection-select [sidebar-connections location-id]
        nil)]))
 
 (defn tile-style [x y]
@@ -234,7 +237,7 @@
                    [:img {:src (texture-path :exit)
                           :title (str "to " display-name)}])))
 
-(defn location-editor-canvas [location-id]
+(defn canvas [location-id]
   (let [{:keys [dimension background walk-set connection-triggers]} (<sub [:location-editor/location location-id])
         npcs (<sub [:location-editor/npcs location-id])
         {:keys [tool highlight painting?]} (<sub [:location-editor/ui])
@@ -257,15 +260,15 @@
 
        :collision
        [:div
-         (do-all-tiles dimension "walkable-area"
-                       (fn [tile]
-                         [:div {:class ["interactor"
-                                        (if (contains? walk-set tile)
-                                          "interactor_walkable"
-                                          "interactor_not-walkable")]}]))
-         [tile-paint-canvas
-          {:dimension dimension
-           :on-paint #(>evt [:location-editor/set-walkable location-id %])}]]
+        (do-all-tiles dimension "walkable-area"
+                      (fn [tile]
+                        [:div {:class ["interactor"
+                                       (if (contains? walk-set tile)
+                                         "interactor_walkable"
+                                         "interactor_not-walkable")]}]))
+        [tile-paint-canvas
+         {:dimension dimension
+          :on-paint #(>evt [:location-editor/set-walkable location-id %])}]]
        :npcs-select
        [:div
         (do-some-tiles dimension npcs "npc-select"
@@ -309,6 +312,6 @@
   [:div {:class "location-editor"
          :on-drag-end #(>evt [:location-editor/stop-entity-drag])}
    [:div {:class "location-editor__sidebar"}
-    [location-editor-sidebar location-id]]
+    [sidebar location-id]]
    [:div {:class "location-editor__canvas"}
-    [location-editor-canvas location-id]]])
+    [canvas location-id]]])

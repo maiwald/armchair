@@ -83,7 +83,8 @@
 
 ;; Location Editor
 
-(s/def ::tool #{:npcs-select
+(s/def ::tool #{:info
+                :npcs-select
                 :resize
                 :collision
                 :background-painter
@@ -297,9 +298,9 @@
         (update-in [:dialogues dialogue-id :states] dissoc line-id)))))
 
 (def default-db
-  (merge {:location-editor {:tool :background-painter
+  (merge {:location-editor {:tool :info
                             :active-walk-state true
-                            :active-texture :wall}
+                            :active-texture (first background-textures)}
           :ui/positions {}
           :characters {}
           :locations {}

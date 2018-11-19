@@ -73,9 +73,9 @@
 (defn radio-button-group [{:keys [label options active on-change]}]
   (let [id (gensym "radio-button-group")]
     [:fieldset {:class "slds-form-element"}
-     [:legend {:class ["slds-form-element__legend"
-                       "slds-form-element__label"]}
-      label]
+     (when label
+       [:legend {:class ["slds-form-element__legend"
+                         "slds-form-element__label"]} label])
      [:div {:class "slds-form-element__control"}
       [:div {:class "slds-radio_button-group"}
        (for [[option option-label & attrs] options]
