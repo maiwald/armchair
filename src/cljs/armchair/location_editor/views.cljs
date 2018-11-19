@@ -27,15 +27,13 @@
                           [delta _] :dimension}]
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
-    (letfn [(get-tile [e] (-> (relative-cursor e (.-currentTarget e))
-                              coord->tile
-                              (translate-point delta)))
+    (letfn [(get-tile [e] (coord->tile (relative-cursor e (.-currentTarget e))))
             (set-current-tile [e] (reset! current-tile (get-tile e)))
             (clear-current-tile [] (reset! current-tile nil))
             (start-painting [] (reset! painted-tiles #{}))
             (stop-painting [] (reset! painted-tiles nil))
             (paint [e]
-              (let [tile (get-tile e)]
+              (let [tile (translate-point (get-tile e) delta)]
                 (when (and (some? @painted-tiles)
                            (not (contains? @painted-tiles tile)))
                   (swap! painted-tiles conj tile)
