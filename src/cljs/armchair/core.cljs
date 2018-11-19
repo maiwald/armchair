@@ -38,5 +38,6 @@
         (when (.-ctrlKey e)
           (condp = (.-code e)
             "KeyZ" (>evt [:undo])
-            "KeyY" (>evt [:redo])))))
+            "KeyY" (>evt [:redo])
+            nil))))
 
