@@ -2,7 +2,7 @@
 - location editor focus
 - group characters by dialogue in overview
 - remove location connections
-- validation error notifications
+- validation error notifications and form states
 - information dependency invariants
 - moving camera for prototype
 - location versions with directed connections

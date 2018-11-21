@@ -248,18 +248,16 @@
   (fn [db]
     (assert-character-modal db)
     (let [{:keys [id display-name texture color]} (get-in db [:modal :character-form])
-          id (or id (random-uuid))]
-      ;; this needs a way of presenting validation errors in the form
-      (if (or (blank? display-name)
-              (blank? (name texture))) ;; this should probably be sanitized somewhere else
-        db
-        (-> db
-          (assoc-in [:characters id] {:entity/id id
-                                      :entity/type :character
-                                      :display-name display-name
-                                      :texture texture
-                                      :color color})
-          (dissoc :modal))))))
+          id (or id (random-uuid))
+          character {:entity/id id
+                     :entity/type :character
+                     :display-name display-name
+                     :texture texture
+                     :color color}]
+      (cond-> db
+        (s/valid? :armchair.db/character character)
+        (-> (assoc-in [:characters id] character)
+            (dissoc :modal))))))
 
 (reg-event-db
   :open-info-modal

@@ -212,7 +212,7 @@
                  :close-handler #(>evt [:close-modal])
                  :confirm-handler #(>evt [:character-form/save])}
      [slds/form
-      [slds/input-text {:label "Name *"
+      [slds/input-text {:label "Name"
                         :on-change (update-handler :display-name)
                         :value display-name}]
       [slds/input-text {:label "Color"
@@ -225,7 +225,7 @@
                         (when (= c color) "color-picker__color_selected")]
                 :on-click #(>evt [:character-form/update :color c])
                 :style {:background-color c}}])]
-      [slds/input-select {:label "Avatar *"
+      [slds/input-select {:label "Avatar"
                           :options (mapv #(vector % %) character-textures)
                           :value texture
                           :on-change #(>evt [:character-form/update :texture (keyword (e->val %))])}]

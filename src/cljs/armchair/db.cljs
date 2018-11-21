@@ -165,9 +165,9 @@
                           :req-un [::character-id
                                    :dialogue/initial-line-id
                                    ::location-id
-                                   ::location-position]
-                          :opt-un [::synopsis
-                                   :dialogue/states]))
+                                   ::location-position
+                                   ::synopsis]
+                          :opt-un [:dialogue/states]))
 
 (s/def :dialogue/states (s/map-of ::line-id ::text))
 (s/def :dialogue/state-triggers (s/coll-of ::line-id :kind set?))
