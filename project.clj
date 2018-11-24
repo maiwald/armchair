@@ -37,9 +37,9 @@
      :source-paths ["src/cljs"]
      :figwheel     {:on-jsload "armchair.core/mount-root"}
      :compiler     {:main                 armchair.core
-                    :output-to            "resources/public/js/compiled/app.js"
-                    :output-dir           "resources/public/js/compiled/out"
-                    :asset-path           "js/compiled/out"
+                    :output-to            "resources/public/compiled/js/app.js"
+                    :output-dir           "resources/public/compiled/js/out"
+                    :asset-path           "compiled/js/out"
                     :source-map-timestamp true
                     :preloads             [devtools.preload day8.re-frame-10x.preload]
                     :closure-defines      {"re_frame.trace.trace_enabled_QMARK_" true}
@@ -50,7 +50,7 @@
     {:id           "min"
      :source-paths ["src/cljs"]
      :compiler     {:main            armchair.core
-                    :output-to       "build/js/compiled/app.js"
+                    :output-to       "build/compiled/js/app.js"
                     :optimizations   :advanced
                     :closure-defines {goog.DEBUG false}
                     :pretty-print    false}}]})

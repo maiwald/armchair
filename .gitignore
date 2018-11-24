@@ -2,8 +2,7 @@
 /target
 /build
 /*-init.clj
-/resources/public/js/compiled
-/resources/public/css/compiled
+/resources/public/compiled
 out
 .rebel_readline_history
 .lein-repl-history
@@ -12,3 +11,4 @@ out
 .sass-cache
 .cljs_nashorn_repl/
 nashorn_code_cache
+.env

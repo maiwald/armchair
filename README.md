@@ -18,7 +18,7 @@ lein figwheel dev
 Also start a sass watcher
 
 ```bash
-sass --watch src/sass:resources/public/css/compiled
+sass --watch src/sass:resources/public/compiled/css
 ```
 
 Wait a bit, then browse to [http://localhost:3449](http://localhost:3449).
