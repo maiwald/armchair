@@ -3,7 +3,7 @@
             [armchair.slds :as slds]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
-            [armchair.util :refer [px <sub >evt stop-e! e-> e->val rect->0 rect-width rect-height once tile->coord coord->tile translate-point relative-cursor]]
+            [armchair.util :refer [px <sub >evt stop-e! e-> e->val rect->0 rect-width rect-height tile->coord coord->tile translate-point relative-cursor]]
             [armchair.textures :refer [texture-path background-textures]]))
 
 (defn icon [glyph title]
@@ -116,6 +116,7 @@
              :draggable true
              :on-drag-start (fn [e]
                               (set-dnd-texture! e)
+                              (.setData (.-dataTransfer e) "text/plain" ":player")
                               (>evt [:location-editor/start-entity-drag :player]))}
         [dnd-texture :player]
         [:span {:class "tile-list__item__image"
@@ -131,6 +132,7 @@
                :draggable true
                :on-drag-start (fn [e]
                                 (set-dnd-texture! e)
+                                (.setData (.-dataTransfer e) "text/plain" display-name)
                                 (>evt [:location-editor/start-entity-drag {:character-id character-id}]))}
           [dnd-texture texture]
           [:span {:class "tile-list__item__image"
@@ -142,7 +144,7 @@
                   (not (contains? available-npcs dnd-character-id)))
          [:li {:class "tile-list__item tile-list__item_dropzone"
                :on-drag-over stop-e!
-               :on-drop #(>evt [:location-editor/remove-character dnd-character-id])}
+               :on-drop (e-> #(>evt [:location-editor/remove-character dnd-character-id]))}
           [:span {:class "tile-list__item__image"
                   :style {:width (str config/tile-size "px")
                           :height (str config/tile-size "px")}}
@@ -159,6 +161,7 @@
             :draggable true
             :on-drag-start (fn [e]
                              (set-dnd-texture! e)
+                             (.setData (.-dataTransfer e) "text/plain" display-name)
                              (>evt [:location-editor/start-entity-drag {:connection-trigger target-loctation-id}]))}
        [dnd-texture :exit]
        [:img {:title display-name :src (texture-path :exit)}]
@@ -204,8 +207,9 @@
   (do-all-tiles dimension "dropzone"
                 (fn [tile]
                   [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-                         :on-drag-over (e-> (once #(>evt [:location-editor/set-highlight tile])))
-                         :on-drop #(on-drop tile)}])))
+                         :on-drag-over stop-e!
+                         :on-drag-enter (e-> #(>evt [:location-editor/set-highlight tile]))
+                         :on-drop (e-> #(on-drop tile))}])))
 
 (defn background-tiles [rect background]
   (do-all-tiles rect "background"
@@ -280,6 +284,7 @@
                                 :on-click #(>navigate :dialogue-edit :id dialogue-id)
                                 :on-drag-start (fn [e]
                                                  (set-dnd-texture! e)
+                                                 (.setData (.-dataTransfer e) "text/plain" display-name)
                                                  (>evt [:location-editor/start-entity-drag {:character-id id}]))}
                           [dnd-texture texture]]))
         (when-let [character-id (:character-id dnd-payload)]
@@ -301,6 +306,7 @@
                                 :draggable true
                                 :on-drag-start (fn [e]
                                                  (set-dnd-texture! e)
+                                                 (.setData (.-dataTransfer e) "text/plain" display-name)
                                                  (>evt [:location-editor/start-entity-drag {:connection-trigger id}]))}
                           [dnd-texture :exit]]))
         (when-let [target (:connection-trigger dnd-payload)]

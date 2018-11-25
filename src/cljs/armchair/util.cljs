@@ -103,13 +103,6 @@
   (vec (concat (take idx v)
                (drop (inc idx) v))))
 
-(defn once [f]
-  (let [called (atom false)]
-    (fn [& args]
-      (when-not @called
-        (reset! called true)
-        (apply f args)))))
-
 (defn log [& args]
   (apply js/console.log args)
   (first args))
