@@ -107,7 +107,7 @@
 
 (defn location-management []
   (let [{:keys [location-ids connections]} (<sub [:location-map])]
-    [:div {:class "full-page"}
+    [:div {:class "content-wrapper"}
      [:div {:class "new-item-button"}
       [slds/add-button "New" #(>evt [:location/create])]]
      [drag-canvas {:kind "location"

@@ -12,17 +12,20 @@ $gray: #888
   display: flex
   flex-direction: column
 
-  #content
+  #content, .content-wrapper
     display: flex
     position: relative
+    flex-direction: column
     flex-grow: 1
 
-    & > *
-      flex-grow: 1
+.breadcrumb
+  position: absolute
+  height: 20px
 
 .graph
-  +fill-container
+  flex-grow: 1
   overflow: hidden
+  position: relative
 
   &_is-dragging, &_is-dragging *, &_is-connecting, &_is-connecting *
     cursor: -moz-grabbing !important
@@ -88,15 +91,11 @@ $gray: #888
     cursor: -webkit-grab
     cursor: grab
 
-.full-page
-  +fill-container
-  background-color: white
-
-  .new-item-button
-    z-index: 3
-    position: absolute
-    top: 20px
-    right: 20px
+.new-item-button
+  z-index: 3
+  position: absolute
+  top: 20px
+  right: 20px
 
 .line, .location
   display: flex
@@ -409,39 +408,35 @@ $gray: #888
     position: absolute
 
 #game
-  display: flex
-  justify-content: flex-start
-  align-items: center
-  flex-direction: column
-  padding: 40px
+  align-self: center
+  margin: 40px 0 10px
 
-  .canvas-container
-    & > canvas
-      position: absolute
+  canvas
+    position: absolute
 
-  .help
-    p
-      margin-top: 10px
-      text-align: center
+#game-help
+  p
+    margin-top: 10px
+    text-align: center
 
-    span
-      display: inline-block
-      border: 1px solid #dcdcdc
-      padding: 4px 10px 3px
-      box-shadow: inset 0px 1px 0px 0px #ffffff
-      background: -webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ededed), color-stop(1, #dfdfdf) )
-      background: -moz-linear-gradient( center top, #ededed 5%, #dfdfdf 100% )
-      border-radius: 4px
-      color: #777777
-      font-family: arial
-      font-size: .8rem
-      font-weight: bold
-      font-style: normal
-      line-height: 1rem
-      text-decoration: none
-      text-transform: uppercase
-      text-align: center
-      text-shadow: 1px 1px 0px #ffffff
+  span
+    display: inline-block
+    border: 1px solid #dcdcdc
+    padding: 4px 10px 3px
+    box-shadow: inset 0px 1px 0px 0px #ffffff
+    background: -webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ededed), color-stop(1, #dfdfdf) )
+    background: -moz-linear-gradient( center top, #ededed 5%, #dfdfdf 100% )
+    border-radius: 4px
+    color: #777777
+    font-family: arial
+    font-size: .8rem
+    font-weight: bold
+    font-style: normal
+    line-height: 1rem
+    text-decoration: none
+    text-transform: uppercase
+    text-align: center
+    text-shadow: 1px 1px 0px #ffffff
 
 #global-options
   position: absolute

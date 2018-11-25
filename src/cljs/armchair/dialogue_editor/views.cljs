@@ -136,7 +136,7 @@
 
 (defn dialogue-editor [dialogue-id]
   (if-let [{:keys [npc-line-ids player-line-ids npc-connections player-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
-    [:div {:class "full-page"}
+    [:div {:class "content-wrapper"}
      [:div {:class "new-item-button"}
       [slds/add-button "New Player Line" #(>evt [:create-player-line dialogue-id])]
       [slds/add-button "New NPC Line" #(>evt [:create-npc-line dialogue-id])]]

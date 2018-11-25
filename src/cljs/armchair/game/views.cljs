@@ -36,8 +36,8 @@
 
        :reagent-render
        (fn []
-         [:div {:id "game"}
-          [:div {:class "canvas-container"
+         [:div {:class "content-wrapper"}
+          [:div {:id "game"
                  :style {:width (str 800 "px")
                          :height (str 450 "px")}}
            [:canvas {:height 450
@@ -49,7 +49,7 @@
                      :height 450
                      :width 800
                      :ref (fn [el] (reset! entity-canvas el))}]]
-          [:div {:class "help"}
+          [:div {:id "game-help"}
            [:p
              "Use "
              [:span [icon "arrow-left" "Arrow Left"]] " "
