@@ -205,9 +205,6 @@
   (fn [db [_ id text]]
     (assoc-in db [:infos id :description] text)))
 
-;; Location Editor
-
-
 ;; Modal
 
 (defn assert-no-open-modal [db]
@@ -224,14 +221,15 @@
   [validate]
   (fn [db [_ id]]
     (assert-no-open-modal db)
-    (if-let [{:keys [display-name color texture]} (get-in db [:characters id])]
-      (assoc-in db [:modal :character-form] {:id id
-                                             :display-name display-name
-                                             :texture texture
-                                             :color color})
-      (assoc-in db [:modal :character-form] {:display-name ""
-                                             :texture nil
-                                             :color "black"}))))
+    (assoc-in db [:modal :character-form]
+      (if-let [{:keys [display-name color texture]} (get-in db [:characters id])]
+        {:id id
+         :display-name display-name
+         :texture texture
+         :color color}
+        {:display-name ""
+         :texture nil
+         :color (rand-nth config/color-grid)}))))
 
 (reg-event-db
   :character-form/update
