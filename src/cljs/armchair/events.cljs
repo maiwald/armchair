@@ -311,10 +311,15 @@
       (assoc-in db [:modal :dialogue-state] {:line-id line-id
                                              :description description}))))
 
+(defn assert-dialogue-state-modal [db]
+  (assert (contains? (:modal db) :dialogue-state)
+          "No dialogue state modal open. Cannot set value!"))
+
 (reg-event-db
   :dialogue-state-update
   [validate]
   (fn [db [_ description]]
+    (assert-dialogue-state-modal db)
     (assoc-in db [:modal :dialogue-state :description] description)))
 
 (reg-event-db
@@ -322,6 +327,7 @@
   [validate
    record-undo]
   (fn [db]
+    (assert-dialogue-state-modal db)
     (let [{:keys [line-id description]} (get-in db [:modal :dialogue-state])
           dialogue-id (get-in db [:lines line-id :dialogue-id])]
       (cond-> (dissoc db :modal)
