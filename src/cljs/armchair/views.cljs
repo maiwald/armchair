@@ -77,16 +77,16 @@
            :on-mouse-up (when connecting? #(>evt [:end-connecting-locations location-id]))
            :style {:width (str config/line-width "px")}}
      [:div {:class "location__header"}
-      [:p {:class "name"} display-name]
+      [:p {:class "name"}
+       [:a {:on-click #(>navigate :location-edit :id location-id)
+            :on-mouse-down stop-e!}
+           display-name]]
       [:ul {:class "actions"
             :on-mouse-down stop-e!}
        [:li {:class "action"
              :on-click #(when (js/confirm "Are you sure you want to delete this location?")
                           (>evt [:delete-location location-id]))}
         [icon "trash" "Delete"]]
-       [:li {:class "action"
-             :on-click #(>navigate :location-edit :id location-id)}
-        [icon "edit" "Edit"]]
        [:li {:class "action action_connect"
              :on-mouse-down (e-> #(when (e->left? %)
                                     (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
