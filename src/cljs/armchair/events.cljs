@@ -182,28 +182,11 @@
 ;; Info CRUD
 
 (reg-event-db
-  :create-info
-  [validate
-   record-undo]
-  (fn [db]
-    (let [id (random-uuid)]
-      (update db :infos assoc id {:entity/id id
-                                  :entity/type :info
-                                  :text ""}))))
-
-(reg-event-db
   :delete-info
   [validate
    record-undo]
   (fn [db [_ id]]
     (update db :infos dissoc id)))
-
-(reg-event-db
-  :update-info
-  [validate
-   record-undo]
-  (fn [db [_ id text]]
-    (assoc-in db [:infos id :description] text)))
 
 ;; Modal
 
@@ -260,9 +243,40 @@
 (reg-event-db
   :open-info-modal
   [validate]
-  (fn [db [_ payload]]
+  (fn [db [_ id]]
     (assert-no-open-modal db)
-    (assoc-in db [:modal :info-id] payload)))
+    (assoc-in db [:modal :info-form]
+      (if-let [{:keys [description]} (get-in db [:infos id])]
+        {:id id :description description}
+        {:id nil :description ""}))))
+
+
+(defn assert-info-form-modal [db]
+  (assert (contains? (:modal db) :info-form)
+          "No Info form modal present. Cannot set value!"))
+
+(reg-event-db
+  :save-info
+  [validate
+   record-undo]
+  (fn [db]
+    (assert-info-form-modal db)
+    (let [{:keys [id description]} (get-in db [:modal :info-form])
+          id (or id (random-uuid))
+          info {:entity/id id
+                :entity/type :info
+                :description description}]
+      (cond-> db
+        (s/valid? :armchair.db/info info)
+        (-> (assoc-in [:infos id] info)
+            (dissoc :modal))))))
+
+(reg-event-db
+  :update-info
+  [validate]
+  (fn [db [_ text]]
+    (assert-info-form-modal db)
+    (assoc-in db [:modal :info-form :description] text)))
 
 (reg-event-db
   :open-npc-line-modal

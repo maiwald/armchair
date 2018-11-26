@@ -107,6 +107,7 @@
 
 (s/def ::display-name ::text)
 (s/def ::color ::text)
+(s/def ::description ::text)
 
 (s/def ::dimension :type/rect)
 (s/def ::background (s/map-of :type/point ::texture))
@@ -181,10 +182,14 @@
 (s/def ::player-line-id ::line-id)
 (s/def ::modal (s/keys :opt-un [:modal/character-form
                                 :modal/dialogue-creation
-                                ::info-id
+                                :modal/info-form
                                 ::npc-line-id
                                 ::player-line-id
                                 ::dialogue-state]))
+
+(s/def :modal/info-form
+  (s/keys :req-un [::description]
+          :opt-un [:entity/id]))
 
 (s/def :modal/character-form
   (s/keys :req-un [::display-name ::color ::texture]

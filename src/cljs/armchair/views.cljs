@@ -68,7 +68,7 @@
                                [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this info?")
                                                                              (>evt [:delete-info id]))}]
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-info-modal id])}]])}
-      :new-resource #(>evt [:create-info])}]))
+      :new-resource #(>evt [:open-info-modal])}]))
 
 (defn location-component [location-id]
   (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])
@@ -206,7 +206,7 @@
          [player-line-form-modal-option line-id index option-count])
        [slds/add-button "New Option" #(>evt [:add-option line-id])]]]]))
 
-(defn character-form-modal [{:keys [id display-name color texture]}]
+(defn character-form-modal [{:keys [display-name color texture]}]
   (let [update-handler (fn [field] #(>evt [:character-form/update field (e->val %)]))]
     [slds/modal {:title "Character"
                  :close-handler #(>evt [:close-modal])
@@ -231,15 +231,15 @@
                           :on-change #(>evt [:character-form/update :texture (keyword (e->val %))])}]
       [:img {:src (texture-path texture)}]]]))
 
-(defn info-form-modal [info-id]
-  (let [info (<sub [:info info-id])
-        update-description #(>evt [:update-info info-id (e->val %)])]
-    [slds/modal {:title (:description info)
-                 :close-handler #(>evt [:close-modal])}
+(defn info-form-modal [{:keys [description]}]
+  (let [update-description #(>evt [:update-info (e->val %)])]
+    [slds/modal {:title "Info"
+                 :close-handler #(>evt [:close-modal])
+                 :confirm-handler #(>evt [:save-info])}
      [slds/form
       [slds/input-text {:label "Description"
                         :on-change update-description
-                        :value (:description info)}]]]))
+                        :value description}]]]))
 
 (defn modal []
   (if-let [modal (<sub [:modal])]
@@ -249,7 +249,7 @@
       :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
       :player-line-id    [player-line-form-modal (:player-line-id modal)]
       :character-form    [character-form-modal (:character-form modal)]
-      :info-id           [info-form-modal (:info-id modal)])))
+      :info-form         [info-form-modal (:info-form modal)])))
 
 ;; Root
 
