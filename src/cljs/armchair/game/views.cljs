@@ -16,7 +16,7 @@
                                            ("ArrowRight" "KeyD" "KeyL") (put! @game-input [:move :right])
                                            ("ArrowDown" "KeyS" "KeyJ") (put! @game-input [:move :down])
                                            ("ArrowLeft" "KeyA" "KeyH") (put! @game-input [:move :left])
-                                           "Space" (put! @game-input [:interact])
+                                           ("Space" "Enter") (put! @game-input [:interact])
                                            nil)]
                          (.preventDefault e)))]
     (r/create-class
@@ -61,5 +61,10 @@
              [:span "a"] " "
              [:span "s"] " "
              [:span "d"] " "
-             "for movement and selection. "]
-           [:p "Use " [:span "space"] " to interact."]]])})))
+             "for movement and selection."]
+           [:p
+            "Use "
+            [:span "Space"]
+            " or "
+            [:span "Enter"]
+            " to interact."]]])})))
