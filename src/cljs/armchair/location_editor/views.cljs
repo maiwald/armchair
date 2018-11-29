@@ -304,6 +304,7 @@
                          [:div {:class "interactor interactor_draggable"
                                 :title (str "to " display-name)
                                 :draggable true
+                                :on-click #(>navigate :location-edit :id id)
                                 :on-drag-start (fn [e]
                                                  (set-dnd-texture! e)
                                                  (.setData (.-dataTransfer e) "text/plain" display-name)
