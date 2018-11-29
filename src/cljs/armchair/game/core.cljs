@@ -280,7 +280,7 @@
                            (swap! state update :player merge {:location-id new-location
                                                               :position new-position}))
                          (put! channel true)))))
-                 (when-not (empty? (swap! move-q pop)) (put! channel true)))))
+                 (when (seq (swap! move-q pop)) (put! channel true)))))
            (recur (<! channel))))
 
 ;; Game Loop

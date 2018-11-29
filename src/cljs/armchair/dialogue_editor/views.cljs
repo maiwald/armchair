@@ -22,7 +22,7 @@
      [:header {:class "line__header"}
       [:p {:class "name"} character-name]
       [:ul {:class "states"}
-       (when-not (empty? infos)
+       (when (seq infos)
          [:li {:class "state"}
           [icon "info-circle" (str "This line contains infos: \n- "
                                    (join "\n- " infos))]])]
@@ -56,7 +56,7 @@
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}
       [:p
-       (when-not (empty? state-triggers)
+       (when (seq state-triggers)
          [:span {:class "state"}
           [icon "sign-in-alt" (str "This line triggers state changes:\n- "
                                    (join "\n- " state-triggers))]])
@@ -76,11 +76,11 @@
     [:li {:class "line__text"
           :style {:height (str config/line-height "px")}}
      [:p
-      (when-not (empty? required-infos)
+      (when (seq required-infos)
         [:span {:class "state"}
          [icon "lock" (str "This line requires infos: \n- "
                            (join "\n- " required-infos))]])
-      (when-not (empty? state-triggers)
+      (when (seq state-triggers)
         [:span {:class "state"}
          [icon "sign-in-alt" (str "This line triggers state changes:\n- "
                                   (join "\n- " state-triggers))]])
