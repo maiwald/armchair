@@ -33,7 +33,6 @@
   :location-editor/set-highlight
   [validate]
   (fn [db [_ tile]]
-    (js/console.log "set highlight")
     (assoc-in db [:location-editor :highlight] tile)))
 
 (reg-event-db
