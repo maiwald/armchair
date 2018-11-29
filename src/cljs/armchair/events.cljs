@@ -77,22 +77,6 @@
         (zero? line-count)
         (update :characters dissoc id)))))
 
-(reg-event-db
-  :location/create
-  [validate
-   record-undo]
-  (fn [db]
-    (let [id (random-uuid)]
-      (-> db
-          (assoc-in [:ui/positions id] config/default-ui-position)
-          (assoc-in [:locations id] {:entity/id id
-                                     :entity/type :location
-                                     :dimension [[0 0] [2 2]]
-                                     :background {}
-                                     :walk-set #{}
-                                     :connection-triggers {}
-                                     :display-name "New Location"})))))
-
 ;; Location CRUD
 
 (reg-event-db
@@ -239,6 +223,43 @@
         (s/valid? :armchair.db/character character)
         (-> (assoc-in [:characters id] character)
             (dissoc :modal))))))
+
+(reg-event-db
+  :open-location-creation
+  [validate]
+  (fn [db]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :location-creation] "")))
+
+(defn assert-location-creation-modal [db]
+  (assert (contains? (:modal db) :location-creation)
+          "No Location creation modal present. Cannot create!"))
+
+(reg-event-db
+  :update-location-creation-name
+  [validate]
+  (fn [db [_ display-name]]
+    (assert-location-creation-modal db)
+    (assoc-in db [:modal :location-creation] display-name)))
+
+(reg-event-db
+  :create-location
+  [validate
+   record-undo]
+  (fn [db]
+    (assert-location-creation-modal db)
+    (let [id (random-uuid)
+          display-name (get-in db [:modal :location-creation])]
+      (-> db
+          (dissoc :modal)
+          (assoc-in [:ui/positions id] config/default-ui-position)
+          (assoc-in [:locations id] {:entity/id id
+                                     :entity/type :location
+                                     :dimension [[0 0] [2 2]]
+                                     :background {}
+                                     :walk-set #{}
+                                     :connection-triggers {}
+                                     :display-name display-name})))))
 
 (reg-event-db
   :open-info-modal

@@ -182,10 +182,13 @@
 (s/def ::player-line-id ::line-id)
 (s/def ::modal (s/keys :opt-un [:modal/character-form
                                 :modal/dialogue-creation
+                                :modal/location-creation
                                 :modal/info-form
                                 ::npc-line-id
                                 ::player-line-id
                                 ::dialogue-state]))
+
+(s/def :modal/location-creation ::display-name)
 
 (s/def :modal/info-form
   (s/keys :req-un [::description]

@@ -109,7 +109,7 @@
   (let [{:keys [location-ids connections]} (<sub [:location-map])]
     [:div {:class "content-wrapper"}
      [:div {:class "new-item-button"}
-      [slds/add-button "New" #(>evt [:location/create])]]
+      [slds/add-button "New" #(>evt [:open-location-creation])]]
      [drag-canvas {:kind "location"
                    :nodes {location-component location-ids}}
       [:svg {:class "graph__connection-container" :version "1.1"
@@ -241,6 +241,16 @@
                         :on-change update-description
                         :value description}]]]))
 
+(defn location-creation-modal [display-name]
+  (let [update-name #(>evt [:update-location-creation-name (e->val %)])]
+    [slds/modal {:title "Create Location"
+                 :close-handler #(>evt [:close-modal])
+                 :confirm-handler #(>evt [:create-location])}
+     [slds/form
+      [slds/input-text {:label "Name"
+                        :on-change update-name
+                        :value display-name}]]]))
+
 (defn modal []
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
@@ -249,7 +259,8 @@
       :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
       :player-line-id    [player-line-form-modal (:player-line-id modal)]
       :character-form    [character-form-modal (:character-form modal)]
-      :info-form         [info-form-modal (:info-form modal)])))
+      :info-form         [info-form-modal (:info-form modal)]
+      :location-creation [location-creation-modal (:location-creation modal)])))
 
 ;; Root
 
