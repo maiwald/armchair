@@ -14,7 +14,6 @@
 - stage direction dialogue nodes
 - separate moving viewport from moving dialogue node positions
 - open modal for name when creating a new location
-- redesign dialogue screen
 - enable double click for editing lines
 - make modal changes apply on submit
 - copy and paste for background texture sets

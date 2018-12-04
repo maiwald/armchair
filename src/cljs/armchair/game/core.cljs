@@ -126,7 +126,7 @@
 
 (defn draw-dialogue-box [ctx {:keys [text options selected-option]}]
   (let [w 600
-        h 360
+        h 300
         x (/ (- (c/width ctx) w) 2)
         y (/ (- (c/height ctx) h) 2)]
     (c/save! ctx)
@@ -136,18 +136,17 @@
     (c/stroke-rect! ctx [x y] w h)
 
     (c/set-fill-style! ctx "rgb(0, 0, 0)")
-    (c/set-font! ctx "40px serif")
     (c/set-baseline! ctx "top")
-    (c/draw-text! ctx "Dialogue!" (translate-point [x y] [20 20]))
-    (c/set-font! ctx "18px serif")
-    (c/draw-textbox! ctx text (translate-point [x y] [20 70]) (- w 40) 230)
+    (c/set-font! ctx "23px serif")
+    (c/draw-textbox! ctx text (translate-point [x y] [20 20]) (- w 40) 150)
 
+    (c/set-font! ctx "18px serif")
     (c/set-baseline! ctx "middle")
     (doseq [[idx option] (map-indexed vector options)]
       (let [w (- w 40)
-            h 24
+            h 30
             offset 6
-            coord (translate-point [x y] [20 (+ 220 (* idx (+ offset h)))])]
+            coord (translate-point [x y] [20 (+ 170 (* idx (+ offset h)))])]
         (c/set-fill-style! ctx "rgba(0, 0, 0, .2)")
         (c/fill-rect! ctx coord w h)
 
@@ -158,7 +157,7 @@
         (c/stroke-rect! ctx coord w h)
 
         (c/set-fill-style! ctx "rgb(0, 0, 0)")
-        (c/draw-text! ctx option (translate-point coord [2 (/ h 2)]))))
+        (c/draw-text! ctx option (translate-point coord [7 (/ h 2)]))))
     (c/restore! ctx)))
 
 (defn render [view-state]
