@@ -19,4 +19,5 @@
 (defn >navigate [& args]
   (let [url (apply path-for (into [routes] args))]
     (js/history.pushState #js{} "" (str "#" url))
-    (dispatch [:show-page url])))
+    (dispatch [:show-page url])
+    nil))

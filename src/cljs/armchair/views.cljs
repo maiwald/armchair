@@ -1,7 +1,8 @@
 (ns armchair.views
   (:require [clojure.spec.alpha :as s]
+            [reagent.core :as r]
             [armchair.slds :as slds]
-            [armchair.components :refer [icon drag-canvas connection e->graph-cursor]]
+            [armchair.components :as c :refer [icon drag-canvas connection e->graph-cursor]]
             [armchair.location-editor.views :refer [location-editor]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
             [armchair.util :refer [<sub
@@ -262,6 +263,76 @@
       :info-form         [info-form-modal (:info-form modal)]
       :location-creation [location-creation-modal (:location-creation modal)])))
 
+;; New Navigation WIP
+
+(defn new-nav []
+  (let [dropdown-open? (r/atom false)]
+    (fn []
+      (let [{page-name :handler
+             page-params :route-params} (match-route routes (<sub [:current-page]))
+             select (fn [resource]
+                      (>navigate resource)
+                      (swap! dropdown-open? not))]
+        [:header {:id "global-header"}
+         [:div.logo "Armchair"]
+         [:nav
+          [:ul.main
+           [:li {:class (when (= page-name :game) "is-active")}
+            [:a {:on-click #(>navigate :game)} "Play"]]
+           [:li {:class (when (= page-name :locations) "is-active")}
+            [:a {:on-click #(>navigate :locations)} "Edit"]]]
+          (into [:ol.breadcrumb]
+            (let [{:keys [location dialogue]} (<sub [:breadcrumb])]
+             [
+               (when-let [{:keys [id display-name]} location]
+                 [:li.breadcrumb__item
+                  [:a {:on-click #(>navigate :location-edit :id id)}
+                   [:span.breadcrumb__item__type "Location"]
+                   [:span.breadcrumb__item__title display-name]]])
+               (when-let [{:keys [id character-name synopsis]} dialogue]
+                 [:li.breadcrumb__item
+                  [:a {:on-click #(>navigate :dialogue-edit :id id)}
+                   [:span.breadcrumb__item__type "Dialogue"]
+                   [:span.breadcrumb__item__title
+                    (str character-name ": " synopsis)]]])]))
+          [:div.resources
+             [:a.resources__title {:on-click (fn [] (swap! dropdown-open? not))}
+              [:span.breadcrumb__item__type
+               (when (contains? #{:dialogues :characters :infos} page-name)
+                 "Resources")]
+              [:span.breadcrumb__item__title
+               (condp = page-name
+                :dialogues "Dialogues"
+                :characters "Characters"
+                :infos "Infos"
+                "Resources")]
+              [icon "caret-down"]]
+           (when @dropdown-open?
+             [:ul.resources__dropdown-list
+              [:li [:a {:on-click #(select :dialogues)} "Dialogues"]]
+              [:li [:a {:on-click #(select :characters)} "Characters"]]
+              [:li [:a {:on-click #(select :infos)} "Infos"]]])]
+          [:ul.functions
+           [:li
+            (if (<sub [:can-undo?])
+              [:a {:on-click #(>evt [:undo])} [icon "undo"] "undo"]
+              [:span {:class "disabled"} [icon "undo"] "undo"])]
+           [:li
+            (if (<sub [:can-redo?])
+              [:a {:on-click #(>evt [:redo])} [icon "redo"] "redo"]
+              [:span {:class "disabled"} [icon "redo"] "redo"])]
+           [:li
+            [:a {:on-click #(>evt [:download-state])}
+             [icon "download"] "save to file"]]
+           [:li
+            [:a {:on-click #(upload-json! (fn [json] (>evt [:upload-state json])))}
+             [icon "upload"] "load from file"]]
+           [:li
+            (if config/debug?
+              [:a {:on-click #(>evt [:reset-db])} "reset"]
+              [:a {:href "https://github.com/maiwald/armchair"
+                   :target "_blank"} [icon "code-branch"] "source"])]]]]))))
+
 ;; Root
 
 (defn root []
@@ -269,28 +340,7 @@
          page-params :route-params} (match-route routes (<sub [:current-page]))]
     [:div {:id "page"}
      [modal]
-     [:div {:id "global-options"}
-      (if (<sub [:can-undo?])
-        [:a {:on-click #(>evt [:undo])} [icon "undo"] "undo"]
-        [:span {:class "disabled"} [icon "undo"] "undo"])
-      (if (<sub [:can-redo?])
-        [:a {:on-click #(>evt [:redo])} [icon "redo"] "redo"]
-        [:span {:class "disabled"} [icon "redo"] "redo"])
-      [:a {:on-click #(>evt [:download-state])} [icon "download"] "save to file"]
-      [:a {:on-click #(upload-json! (fn [json] (>evt [:upload-state json])))}
-       [icon "upload"] "load from file"]
-      (if config/debug?
-        [:a {:on-click #(>evt [:reset-db])} "reset"]
-        [:a {:href "https://github.com/maiwald/armchair"
-             :target "_blank"} [icon "code-branch"] "source"])]
-     [:div {:id "navigation"}
-      [slds/global-navigation {:links (array-map :game "Game"
-                                                 :locations "Locations"
-                                                 :dialogues "Dialogues"
-                                                 :characters "Characters"
-                                                 :infos "Infos")
-                               :current-page page-name
-                               :click-handler #(>navigate %)}]]
+     [new-nav]
      [:div {:id "content"}
       (case page-name
         :game          [game-canvas]

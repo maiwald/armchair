@@ -1,5 +1,4 @@
 # TODO
-- breadcrumb
 - refactor infos to dialogue switches: booleans, enums
 - refactor triggers into separate dialogue nodes
 - group characters by dialogue in overview
@@ -19,3 +18,4 @@
 - copy and paste for background texture sets
 - organize and cluster background textures
 - prevent placing npcs on taken/non-walkable tiles
+- show previous line's content in line form

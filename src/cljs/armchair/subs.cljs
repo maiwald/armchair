@@ -1,5 +1,7 @@
 (ns armchair.subs
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
+            [armchair.routes :refer [routes]]
+            [bidi.bidi :refer [match-route]]
             [armchair.util :refer [filter-map
                                    where-map
                                    where
@@ -214,3 +216,31 @@
                                   :npc-name (:display-name character)
                                   :npc-color (:color character)}))
                              location-dialogues)))))
+
+(reg-sub
+  :breadcrumb
+  :<- [:current-page]
+  :<- [:db-locations]
+  :<- [:db-dialogues]
+  :<- [:db-characters]
+  (fn [[current-page locations dialogues characters]]
+    (let [{page-name :handler
+           page-params :route-params}
+          (match-route routes current-page)
+          id (:id page-params)]
+      (js/console.log page-name)
+      (condp = page-name
+        :location-edit {:location {:id (uuid id)
+                                   :display-name
+                                   (get-in locations [(uuid id) :display-name])}}
+        :dialogue-edit (let [{:keys [character-id location-id synopsis]}
+                             (get dialogues (uuid id))
+                             character-name
+                             (get-in characters [character-id :display-name])]
+                         {:location {:id location-id
+                                     :display-name
+                                     (get-in locations [location-id :display-name])}
+                          :dialogue {:id (uuid id)
+                                     :character-name character-name
+                                     :synopsis synopsis}})
+        nil))))

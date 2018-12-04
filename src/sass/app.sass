@@ -435,25 +435,6 @@ $gray: #888
     text-shadow: 1px 1px 0px #ffffff
 
 #global-options
-  position: absolute
-  right: 0
-  top: 0
-  margin: 10px
-  z-index: 1000
-  display: flex
-  user-select: none
-
-  a, span
-    display: flex
-    justify-content: center
-    align-items: center
-    margin-left: 20px
-
-    i
-      margin-right: 4px
-
-  span.disabled
-    color: grey
 
 .slds-radio_button
   i.fas
@@ -467,7 +448,6 @@ $gray: #888
   grid-template-columns: repeat(13, auto)
   justify-content: space-between
 
-
   &__color
     border: 1px solid black
     width: 20px
@@ -476,3 +456,158 @@ $gray: #888
     &_selected
       border: 2px solid white
       box-shadow: 0px 0px 0px 3px rgba(0, 0, 0, .8)
+
+header#global-header
+  $height: 50px
+  $border-color: #1589ee
+  $highlight-color: rgba(21, 137, 238, .1)
+
+  display: flex
+  flex-direction: row
+  align-items: stretch
+  height: $height
+  min-height: $height
+  border-bottom: 3px solid $border-color
+  font-family: Verdana, sans-serif
+
+  .logo
+    display: flex
+    align-items: center
+    font-size: 1.1rem
+    padding: 0 20px
+
+  nav
+    display: flex
+    flex-grow: 1
+    flex-direction: row
+
+    li
+      font-size: .8rem
+
+    ul.main, ol.breadcrumb
+      display: flex
+
+      li
+        display: flex
+        position: relative
+        align-items: stretch
+
+        & a:hover
+          background: $highlight-color
+
+        &.is-active a
+          background: $highlight-color
+
+          &::before
+            content: ''
+            height: 3px
+            display: block
+            background: $border-color
+            position: absolute
+            bottom: 0
+            left: -1px
+            right: -1px
+
+        a
+          display: flex
+          align-content: center
+          align-items: center
+          padding: 0 .75rem
+          color: #000
+          text-decoration: none
+
+    ol.breadcrumb
+      flex-grow: 1
+
+      li.breadcrumb__item
+        position: relative
+
+        a
+          .breadcrumb__item__type
+            position: absolute
+            top: 2px
+            color: #aaa
+            font-size: .6rem
+
+        &::before
+          display: flex
+          align-self: center
+          color: grey
+          content: ">"
+
+    .resources
+      width: 120px
+      display: flex
+      position: relative
+      user-select: none
+      align-items: stretch
+
+      a
+        display: flex
+        width: 100%
+        padding: 0 .75rem
+        align-items: center
+        color: #000
+
+        .breadcrumb__item__type
+          position: absolute
+          top: 2px
+          color: #aaa
+          font-size: .6rem
+
+        .breadcrumb__item__title
+          flex-grow: 1
+
+        &:hover
+          background: $highlight-color
+          text-decoration: none
+
+        i
+          margin-left: .4rem
+
+      &__dropdown-list
+        z-index: 999
+        position: absolute
+        justify-content: stretch
+        align-items: stretch
+        background: white
+        border: 1px solid $highlight-color
+        border-radius: 5px
+        box-shadow: 1px 1px 0 0 rgba(0, 0, 0, .2)
+        left: 0
+        top: $height
+
+        li
+          display: flex
+          align-items: stretch
+          justify-content: stretch
+          border-bottom: 1px solid lightgrey
+
+          &:last-child
+            border-bottom: 0
+
+          a
+            width: 100%
+            min-width: 120px
+            padding: .5rem .75rem
+
+            &:hover
+              background: $highlight-color
+
+    ul.functions
+      margin: 10px
+      border-left: 1px solid lightgrey
+      display: flex
+      user-select: none
+
+      li
+        display: flex
+        justify-content: center
+        align-items: center
+        margin-left: 20px
+
+        i
+          margin-right: 4px
+
+      span.disabled
+        color: grey

@@ -1,5 +1,6 @@
 (ns armchair.components
-  (:require [armchair.util :refer [>evt <sub e-> e->left? relative-cursor]]))
+  (:require [reagent.core :as r]
+            [armchair.util :refer [>evt <sub e-> e->left? relative-cursor]]))
 
 ;; Drag & Drop
 
@@ -59,3 +60,28 @@
 (defn icon [glyph title]
   [:i {:class (str "fas fa-" glyph)
        :title title}])
+
+;; Dropdown
+
+(defn dropdown [title items]
+  (let [^boolean open (r/atom false)
+        toggle-fn (fn []
+                    (swap! open not)
+                    nil)
+        item-click-fn (fn [handler]
+                        (fn []
+                          (reset! open false)
+                          (handler)
+                          nil))]
+    (fn [title items]
+      [:div.dropdown
+       [:div.dropdown__button
+        [:div.dropdown__button__title title]
+        [:div.dropdown__button__toggle
+         [:a {:on-click toggle-fn} [icon "caret-down"]]]]
+       (when @open
+         [:ul.dropdown__menu
+          (for [{:keys [title on-click]} items]
+            [:li {:key (str "breadcrump" title)
+                  :on-click (item-click-fn on-click)}
+             title])])])))
