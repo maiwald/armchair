@@ -150,7 +150,8 @@
                           :height (str config/tile-size "px")}}
            [icon "trash" "Drop here to remove."]]
           [:span {:class "tile-list__item__label"} "Drop here to remove."]])]
-      (if (empty? available-npcs) "All Characters are placed in locations.")]]))
+      (if (empty? available-npcs) "All Characters are placed in locations.")]
+     [:a {:on-click #(>evt [:open-character-modal])} "Create Character"]]))
 
 (defn sidebar-connections [location-id]
   [slds/label "Assigned Connections"
