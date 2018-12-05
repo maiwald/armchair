@@ -263,9 +263,9 @@
       :info-form         [info-form-modal (:info-form modal)]
       :location-creation [location-creation-modal (:location-creation modal)])))
 
-;; New Navigation WIP
+;; Navigation
 
-(defn new-nav []
+(defn navigation []
   (let [dropdown-open? (r/atom false)]
     (fn []
       (let [{page-name :handler
@@ -280,7 +280,8 @@
            [:li {:class (when (= page-name :game) "is-active")}
             [:a {:on-click #(>navigate :game)} "Play"]]
            [:li {:class (when (= page-name :locations) "is-active")}
-            [:a {:on-click #(>navigate :locations)} "Edit"]]]
+            [:a {:on-click #(>navigate :locations)}
+             (if (= page-name :game) "Edit" "Locations")]]]
           (into [:ol.breadcrumb]
             (let [{:keys [location dialogue]} (<sub [:breadcrumb])]
              [
@@ -340,7 +341,7 @@
          page-params :route-params} (match-route routes (<sub [:current-page]))]
     [:div {:id "page"}
      [modal]
-     [new-nav]
+     [navigation]
      [:div {:id "content"}
       (case page-name
         :game          [game-canvas]

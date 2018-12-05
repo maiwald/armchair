@@ -225,22 +225,20 @@
   :<- [:db-characters]
   (fn [[current-page locations dialogues characters]]
     (let [{page-name :handler
-           page-params :route-params}
-          (match-route routes current-page)
-          id (:id page-params)]
-      (js/console.log page-name)
+           page-params :route-params} (match-route routes current-page)
+          id (when (:id page-params) (uuid (:id page-params)))]
       (condp = page-name
-        :location-edit {:location {:id (uuid id)
+        :location-edit {:location {:id id
                                    :display-name
-                                   (get-in locations [(uuid id) :display-name])}}
+                                   (get-in locations [id :display-name])}}
         :dialogue-edit (let [{:keys [character-id location-id synopsis]}
-                             (get dialogues (uuid id))
+                             (get dialogues id)
                              character-name
                              (get-in characters [character-id :display-name])]
                          {:location {:id location-id
                                      :display-name
                                      (get-in locations [location-id :display-name])}
-                          :dialogue {:id (uuid id)
+                          :dialogue {:id id
                                      :character-name character-name
                                      :synopsis synopsis}})
         nil))))

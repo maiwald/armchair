@@ -106,20 +106,6 @@
                      :ignoreCase true
                      :value values}]]]))
 
-(defn global-navigation [{:keys [links current-page click-handler]}]
-  [:div {:class "slds-context-bar"}
-   [:div {:class "slds-context-bar__primary"}
-    [:div {:class "slds-context-bar__item slds-no-hover"}
-     [:span {:class "slds-context-bar__label-action slds-context-bar__app-name"} "Armchair"]]
-    [:nav {:class "slds-context-bar__secondary"}
-     [:ul {:class "slds-grid"}
-      (for [[id label] links]
-        [:li {:key (str "nav-" label)
-              :class (str "slds-context-bar__item"
-                          (when (= id current-page) " slds-is-active"))}
-         [:a {:class "slds-context-bar__label-action"
-              :on-click #(click-handler id)} label]])]]]])
-
 (defn badge [value color]
   [:span {:class "slds-badge"
           :style {:color "#fff"
