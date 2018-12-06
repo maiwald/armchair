@@ -485,73 +485,52 @@ header#global-header
     li
       font-size: .8rem
 
-    ul.main, ol.breadcrumb
+    .navigation-container
       display: flex
 
-      li
-        display: flex
-        position: relative
-        align-items: stretch
-
-        & a:hover
-          background: $highlight-color
-
-        &.is-active a
-          background: $highlight-color
-
-        a
-          display: flex
-          align-content: center
-          align-items: center
-          padding: 0 .75rem
-          color: #555
-          text-decoration: none
-
-    ol.breadcrumb
-      flex-grow: 1
-
-      li.breadcrumb__item
-        position: relative
-
-        a
-          .breadcrumb__item__type
-            position: absolute
-            top: 4px
-            color: #aaa
-            font-size: .6rem
-
-        &::before
-          display: flex
-          align-self: center
-          color: grey
-          content: ">"
-
-    .resources
-      width: 120px
+    .navigation__item
       display: flex
       position: relative
-      user-select: none
       align-items: stretch
+      user-select: none
+
+      & > a:hover
+        background: $highlight-color
+
+      &.is-active > a
+        background: $highlight-color
 
       a
         display: flex
-        width: 100%
-        padding: 0 .75rem
+        align-content: center
         align-items: center
+        padding: 0 .75rem
         color: #555
+        text-decoration: none
 
-        .breadcrumb__item__type
+        .navigation__item__type
           position: absolute
           top: 4px
           color: #aaa
           font-size: .6rem
 
-        .breadcrumb__item__title
+        .navigation__item__title
           flex-grow: 1
 
-        &:hover
-          background: $highlight-color
-          text-decoration: none
+    ol.breadcrumb
+      flex-grow: 1
+
+      li::before
+        display: flex
+        align-self: center
+        color: grey
+        content: ">"
+
+    .resources
+      width: 120px
+
+      a
+        width: 100%
 
         i
           margin-left: .4rem

@@ -276,34 +276,37 @@
         [:header {:id "global-header"}
          [:div.logo "Armchair"]
          [:nav
-          [:ul.main
-           [:li {:class (when (= page-name :game) "is-active")}
+          [:ul.main.navigation-container
+           [:li {:class ["navigation__item"
+                         (when (= page-name :game) "is-active")]}
             [:a {:on-click #(>navigate :game)} "Play"]]
-           [:li {:class (when (= page-name :locations) "is-active")}
+           [:li {:class ["navigation__item"
+                         (when (= page-name :locations) "is-active")]}
             [:a {:on-click #(>navigate :locations)}
              (if (= page-name :game) "Edit" "Locations")]]]
-          (into [:ol.breadcrumb]
+          (into [:ol.breadcrumb.navigation-container]
                 (let [{:keys [location dialogue]} (<sub [:breadcrumb])]
                   [
                    (when-let [{:keys [id display-name]} location]
-                     [:li.breadcrumb__item
+                     [:li.navigation__item
                       {:class (when (= :location-edit page-name) "is-active")}
                       [:a {:on-click #(>navigate :location-edit :id id)}
-                       [:span.breadcrumb__item__type "Location"]
-                       [:span.breadcrumb__item__title display-name]]])
+                       [:span.navigation__item__type "Location"]
+                       [:span.navigation__item__title display-name]]])
                    (when-let [{:keys [id character-name synopsis]} dialogue]
-                     [:li.breadcrumb__item
+                     [:li.navigation__item
                       {:class (when (= :dialogue-edit page-name) "is-active")}
                       [:a {:on-click #(>navigate :dialogue-edit :id id)}
-                       [:span.breadcrumb__item__type "Dialogue"]
-                       [:span.breadcrumb__item__title
+                       [:span.navigation__item__type "Dialogue"]
+                       [:span.navigation__item__title
                         (str character-name ": " synopsis)]]])]))
           (let [active? (contains? #{:dialogues :characters :infos} page-name)]
-            [:div.resources {:class (when active? "is-active")}
+            [:div.resources {:class ["navigation__item"
+                                     (when active? "is-active")]}
              [:a.resources__title {:on-click (fn [] (swap! dropdown-open? not))}
-              [:span.breadcrumb__item__type
+              [:span.navigation__item__type
                (when active? "Resources")]
-              [:span.breadcrumb__item__title
+              [:span.navigation__item__title
                (condp = page-name
                  :dialogues "Dialogues"
                  :characters "Characters"
