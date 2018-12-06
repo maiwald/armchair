@@ -270,9 +270,9 @@
     (fn []
       (let [{page-name :handler
              page-params :route-params} (match-route routes (<sub [:current-page]))
-             select (fn [resource]
-                      (>navigate resource)
-                      (swap! dropdown-open? not))]
+            select (fn [resource]
+                     (>navigate resource)
+                     (swap! dropdown-open? not))]
         [:header {:id "global-header"}
          [:div.logo "Armchair"]
          [:nav
@@ -283,36 +283,38 @@
             [:a {:on-click #(>navigate :locations)}
              (if (= page-name :game) "Edit" "Locations")]]]
           (into [:ol.breadcrumb]
-            (let [{:keys [location dialogue]} (<sub [:breadcrumb])]
-             [
-               (when-let [{:keys [id display-name]} location]
-                 [:li.breadcrumb__item
-                  [:a {:on-click #(>navigate :location-edit :id id)}
-                   [:span.breadcrumb__item__type "Location"]
-                   [:span.breadcrumb__item__title display-name]]])
-               (when-let [{:keys [id character-name synopsis]} dialogue]
-                 [:li.breadcrumb__item
-                  [:a {:on-click #(>navigate :dialogue-edit :id id)}
-                   [:span.breadcrumb__item__type "Dialogue"]
-                   [:span.breadcrumb__item__title
-                    (str character-name ": " synopsis)]]])]))
-          [:div.resources
+                (let [{:keys [location dialogue]} (<sub [:breadcrumb])]
+                  [
+                   (when-let [{:keys [id display-name]} location]
+                     [:li.breadcrumb__item
+                      {:class (when (= :location-edit page-name) "is-active")}
+                      [:a {:on-click #(>navigate :location-edit :id id)}
+                       [:span.breadcrumb__item__type "Location"]
+                       [:span.breadcrumb__item__title display-name]]])
+                   (when-let [{:keys [id character-name synopsis]} dialogue]
+                     [:li.breadcrumb__item
+                      {:class (when (= :dialogue-edit page-name) "is-active")}
+                      [:a {:on-click #(>navigate :dialogue-edit :id id)}
+                       [:span.breadcrumb__item__type "Dialogue"]
+                       [:span.breadcrumb__item__title
+                        (str character-name ": " synopsis)]]])]))
+          (let [active? (contains? #{:dialogues :characters :infos} page-name)]
+            [:div.resources {:class (when active? "is-active")}
              [:a.resources__title {:on-click (fn [] (swap! dropdown-open? not))}
               [:span.breadcrumb__item__type
-               (when (contains? #{:dialogues :characters :infos} page-name)
-                 "Resources")]
+               (when active? "Resources")]
               [:span.breadcrumb__item__title
                (condp = page-name
-                :dialogues "Dialogues"
-                :characters "Characters"
-                :infos "Infos"
-                "Resources")]
+                 :dialogues "Dialogues"
+                 :characters "Characters"
+                 :infos "Infos"
+                 "Resources")]
               [icon "caret-down"]]
-           (when @dropdown-open?
-             [:ul.resources__dropdown-list
-              [:li [:a {:on-click #(select :dialogues)} "Dialogues"]]
-              [:li [:a {:on-click #(select :characters)} "Characters"]]
-              [:li [:a {:on-click #(select :infos)} "Infos"]]])]
+             (when @dropdown-open?
+               [:ul.resources__dropdown-list
+                [:li [:a {:on-click #(select :dialogues)} "Dialogues"]]
+                [:li [:a {:on-click #(select :characters)} "Characters"]]
+                [:li [:a {:on-click #(select :infos)} "Infos"]]])])
           [:ul.functions
            [:li
             (if (<sub [:can-undo?])
