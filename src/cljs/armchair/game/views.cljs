@@ -39,14 +39,14 @@
          [:div {:class "content-wrapper"}
           [:div {:id "game"
                  :style {:width (str 800 "px")
-                         :height (str 450 "px")}}
-           [:canvas {:height 450
+                         :height (str 448 "px")}}
+           [:canvas {:height 448
                      :width 800
                      :ref (fn [el] (reset! background-canvas el))}]
            [:canvas {:on-mouse-move #(let [c (relative-cursor % @entity-canvas)]
                                        (put! @game-input [:cursor-position c]))
                      :on-mouse-out #(put! @game-input [:cursor-position nil])
-                     :height 450
+                     :height 448
                      :width 800
                      :ref (fn [el] (reset! entity-canvas el))}]]
           [:div {:id "game-help"}
