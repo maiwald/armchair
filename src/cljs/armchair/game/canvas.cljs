@@ -18,8 +18,11 @@
     (draw-image! ctx image [(- offset) (- offset)])
     (restore! ctx)))
 
-(defn stroke-rect! [ctx [x y] w h]
-  (.strokeRect ctx x y w h))
+(defn stroke-rect!
+  ([ctx [left top] [right bottom]]
+   (stroke-rect! ctx [left top] (- right left) (- bottom top)))
+  ([ctx [x y] w h]
+   (.strokeRect ctx x y w h)))
 
 (defn set-stroke-style! [ctx value]
   (set! (.-strokeStyle ctx) value))

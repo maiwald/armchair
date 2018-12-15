@@ -80,6 +80,12 @@
 (def ctx (atom nil))
 (def texture-atlas (atom nil))
 
+(defn tile-visible? [camera [x y]]
+  (rect-intersects?
+    camera
+    [(tile->coord [x y])
+     (tile->coord [(inc x) (inc y)])]))
+
 (defn draw-texture [ctx texture coord]
   (when @texture-atlas
     (c/draw-image! ctx (get @texture-atlas texture (@texture-atlas :missing_texture)) coord)))
@@ -88,21 +94,19 @@
   (when @texture-atlas
     (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
 
-(defn draw-background [ctx dimension background camera-rect]
+(defn draw-background [ctx dimension background camera]
   (doseq [x (range (rect-width dimension))
           y (range (rect-height dimension))
-          :when (rect-intersects? camera-rect [(tile->coord [x y])
-                                               (tile->coord [(inc x) (inc y)])])
+          :when (tile-visible? camera [x y])
           :let [texture (get background [x y])]]
     (draw-texture ctx texture (tile->coord [x y]))))
 
 (defn draw-player [ctx player]
   (draw-texture ctx :player player))
 
-(defn draw-npcs [ctx npcs camera-rect]
+(defn draw-npcs [ctx npcs camera]
   (doseq [[tile {texture :texture}] npcs]
-    (when (rect-intersects? camera-rect [(tile->coord tile)
-                                         (tile->coord (translate-point tile [1 1]))])
+    (when (tile-visible? camera tile)
       (draw-texture ctx texture (tile->coord tile)))))
 
 ; (defn draw-highlight [ctx highlight-coord]
@@ -163,25 +167,25 @@
         (c/draw-text! ctx option (translate-point coord [7 (/ h 2)]))))
     (c/restore! ctx)))
 
-(defn draw-camera [[[left top] [right bottom]]]
+(defn draw-camera [[left-top right-bottom]]
   (when @ctx
     (c/stroke-rect! @ctx
-                    [left top]
-                    (- right left)
-                    (- bottom top))))
+                    left-top
+                    right-bottom)))
 
 (defn render [view-state]
   (when @ctx
     (let [l (get-in view-state [:player :location-id])
+          camera (:camera view-state)
           {:keys [npcs dimension background]} (get-in @data [:locations l])]
       (c/clear! @ctx)
-      (draw-background @ctx dimension background (:camera view-state))
+      (draw-background @ctx dimension background camera)
       (draw-player @ctx (get-in view-state [:player :position]))
-      (draw-npcs @ctx npcs (:camera view-state))
+      (draw-npcs @ctx npcs camera)
       (draw-direction-indicator @ctx view-state)
       (when (interacting? view-state)
         (draw-dialogue-box @ctx (dialogue-data view-state)))
-      (draw-camera (:camera view-state)))))
+      (draw-camera camera))))
 
 ;; Input Handlers
 
@@ -246,20 +250,20 @@
 (defn animation-done? [start now]
   (< (+ start tile-move-time) now))
 
-(defn camera-rect [player-position]
+;; state updates and view state
+
+(defn camera-rect [player-coord]
   (let [h 9
         w 15
         camera-delta [(* (quot w -2) tile-size)
                       (* (quot h -2) tile-size)]
         left-top (translate-point
-                   (tile->coord player-position)
-                   camera-delta
-                   [-1 -1])
+                   player-coord
+                   camera-delta)
         right-bottom (translate-point
-                       (tile->coord player-position)
+                       player-coord
                        (mapv - camera-delta)
-                       [(+ 2 tile-size)
-                        (+ 2 tile-size)])]
+                       [tile-size tile-size])]
     [left-top right-bottom]))
 
 (defn update-state-animation [state now]
@@ -301,17 +305,17 @@
       (update-state-movement now)))
 
 (defn view-state [state now]
-  (-> state
-      (update-in [:player :position]
-                 (fn [player-tile]
-                   (let [player-coord (tile->coord player-tile)]
-                     (if-let [{:keys [start destination]} (:animation state)]
-                       (animated-position start
-                                          player-coord
-                                          (tile->coord destination)
-                                          now)
-                       player-coord))))
-      (assoc :camera (camera-rect (get-in state [:player :position])))))
+  (as-> state s
+    (update-in s [:player :position]
+               (fn [player-tile]
+                 (let [player-coord (tile->coord player-tile)]
+                   (if-let [{:keys [start destination]} (:animation state)]
+                     (animated-position start
+                                        player-coord
+                                        (tile->coord destination)
+                                        now)
+                     player-coord))))
+    (assoc s :camera (camera-rect (get-in s [:player :position])))))
 
 ;; Game Loop
 
