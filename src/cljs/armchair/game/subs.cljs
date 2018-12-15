@@ -5,8 +5,7 @@
             [armchair.util :refer [map-keys
                                    map-values
                                    filter-map
-                                   where-map
-                                   rect->0]]))
+                                   where-map]]))
 
 (s/def :game/data (s/keys :req-un [:game/infos
                                    :game/lines
@@ -83,7 +82,7 @@
   (fn [[{:keys [location-id location-position]} locations]]
     (let [dimension (get-in locations [location-id :dimension])]
       {:location-id location-id
-       :position (rect->0 dimension location-position)})))
+       :position location-position})))
 
 (reg-sub
   :game/locations
@@ -92,14 +91,12 @@
   (fn [[locations npcs-by-location]]
     (map-values (fn [{:keys [dimension background connection-triggers walk-set]
                       id :entity/id}]
-                  (let [normalize-tile (fn [tile] (rect->0 dimension tile))
-                        outbound-connections (map-keys normalize-tile connection-triggers)]
-                    {:dimension dimension
-                     :background (map-keys normalize-tile background)
-                     :outbound-connections outbound-connections
-                     :inbound-connections (reverse-map outbound-connections)
-                     :walk-set (set (map normalize-tile walk-set))
-                     :npcs (map-keys normalize-tile (npcs-by-location id))}))
+                  {:dimension dimension
+                   :background background
+                   :outbound-connections connection-triggers
+                   :inbound-connections (reverse-map connection-triggers)
+                   :walk-set walk-set
+                   :npcs (npcs-by-location id)})
                 locations)))
 
 (reg-sub

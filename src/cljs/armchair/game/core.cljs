@@ -94,9 +94,9 @@
   (when @texture-atlas
     (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
 
-(defn draw-background [ctx dimension background camera]
-  (doseq [x (range (rect-width dimension))
-          y (range (rect-height dimension))
+(defn draw-background [ctx [[left top] [right bottom]] background camera]
+  (doseq [x (range left (inc right))
+          y (range top (inc bottom))
           :when (tile-visible? camera [x y])
           :let [texture (get background [x y])]]
     (draw-texture ctx texture (tile->coord [x y]))))

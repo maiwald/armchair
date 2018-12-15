@@ -7,7 +7,6 @@
                                    where
                                    map-keys
                                    map-values
-                                   rect->0
                                    point-delta
                                    translate-point
                                    transform-map]]))
