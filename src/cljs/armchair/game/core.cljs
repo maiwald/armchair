@@ -12,6 +12,7 @@
                                    normalize-to-tile
                                    rect-width
                                    rect-height
+                                   rect-intersects?
                                    translate-point]]))
 
 ;; Definitions
@@ -25,7 +26,7 @@
 
 
 (s/def ::state (s/and (s/keys :req-un [::player ::dialogue-states]
-                              :opt-un [::highlight ::interaction ::animation])))
+                              :opt-un [::interaction ::animation])))
 
 (s/def ::player (s/keys :req-un [:player/position
                                  :player/direction
@@ -35,8 +36,6 @@
 (s/def :player/infos (s/coll-of :entity/id :kind set?))
 
 (s/def ::dialogue-states (s/map-of :entity/id :entity/id))
-
-(s/def ::highlight :type/point)
 
 (s/def ::interaction (s/keys :req-un [::line-id ::selected-option]))
 (s/def ::line-id :entity/id)
@@ -89,36 +88,40 @@
   (when @texture-atlas
     (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
 
-(defn draw-background [ctx dimension background]
+(defn draw-background [ctx dimension background camera-rect]
   (doseq [x (range (rect-width dimension))
           y (range (rect-height dimension))
+          :when (rect-intersects? camera-rect [(tile->coord [x y])
+                                               (tile->coord [(inc x) (inc y)])])
           :let [texture (get background [x y])]]
     (draw-texture ctx texture (tile->coord [x y]))))
 
 (defn draw-player [ctx player]
   (draw-texture ctx :player player))
 
-(defn draw-npcs [ctx npcs]
+(defn draw-npcs [ctx npcs camera-rect]
   (doseq [[tile {texture :texture}] npcs]
-    (draw-texture ctx texture (tile->coord tile))))
+    (when (rect-intersects? camera-rect [(tile->coord tile)
+                                         (tile->coord (translate-point tile [1 1]))])
+      (draw-texture ctx texture (tile->coord tile)))))
 
-(defn draw-highlight [ctx highlight-coord]
-  (c/save! ctx)
-  (c/set-stroke-style! ctx "rgb(255, 255, 0)")
-  (c/set-line-width! ctx "2")
-  (c/stroke-rect! ctx highlight-coord tile-size tile-size)
-  (c/restore! ctx))
+; (defn draw-highlight [ctx highlight-coord]
+;   (c/save! ctx)
+;   (c/set-stroke-style! ctx "rgb(255, 255, 0)")
+;   (c/set-line-width! ctx "2")
+;   (c/stroke-rect! ctx highlight-coord tile-size tile-size)
+;   (c/restore! ctx))
 
-(defn draw-path [ctx {:keys [highlight] {:keys [position]} :player}]
-  (if highlight
-    (doseq [path-tile (path/a-star
-                        walkable?
-                        (coord->tile position)
-                        (coord->tile highlight))]
-      (c/save! ctx)
-      (c/set-fill-style! ctx "rgba(255, 255, 0, .2)")
-      (c/fill-rect! ctx (tile->coord path-tile) tile-size tile-size)
-      (c/restore! ctx))))
+; (defn draw-path [ctx {:keys [highlight] {:keys [position]} :player}]
+;   (if highlight
+;     (doseq [path-tile (path/a-star
+;                         walkable?
+;                         (coord->tile position)
+;                         (coord->tile highlight))]
+;       (c/save! ctx)
+;       (c/set-fill-style! ctx "rgba(255, 255, 0, .2)")
+;       (c/fill-rect! ctx (tile->coord path-tile) tile-size tile-size)
+;       (c/restore! ctx))))
 
 (defn draw-direction-indicator [ctx {{:keys [position direction]} :player}]
   (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
@@ -160,23 +163,25 @@
         (c/draw-text! ctx option (translate-point coord [7 (/ h 2)]))))
     (c/restore! ctx)))
 
+(defn draw-camera [[[left top] [right bottom]]]
+  (when @ctx
+    (c/stroke-rect! @ctx
+                    [left top]
+                    (- right left)
+                    (- bottom top))))
+
 (defn render [view-state]
   (when @ctx
     (let [l (get-in view-state [:player :location-id])
           {:keys [npcs dimension background]} (get-in @data [:locations l])]
       (c/clear! @ctx)
-      (draw-background @ctx dimension background)
-      (when-not (interacting? view-state)
-        (draw-path @ctx view-state))
+      (draw-background @ctx dimension background (:camera view-state))
       (draw-player @ctx (get-in view-state [:player :position]))
-      (draw-npcs @ctx npcs)
-      (when (and (not (interacting? view-state))
-                 (contains? view-state :highlight))
-        (draw-highlight @ctx (:highlight view-state)))
+      (draw-npcs @ctx npcs (:camera view-state))
       (draw-direction-indicator @ctx view-state)
       (when (interacting? view-state)
         (draw-dialogue-box @ctx (dialogue-data view-state)))
-      (draw-camera (get-in view-state [:player :position])))))
+      (draw-camera (:camera view-state)))))
 
 ;; Input Handlers
 
@@ -190,11 +195,6 @@
         :down (swap! state update-in [:interaction :selected-option] #(mod (inc %) option-count))
         :else))
     (swap! move-q conj direction)))
-
-(defn handle-cursor [coord]
-  (if coord
-    (swap! state assoc :highlight (normalize-to-tile coord))
-    (swap! state dissoc :highlight)))
 
 (defn handle-interact []
   (if (interacting? @state)
@@ -226,7 +226,6 @@
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
            (let [handler (case cmd
-                           :cursor-position handle-cursor
                            :move handle-move
                            :interact handle-interact)]
              (handler payload)
@@ -247,6 +246,21 @@
 (defn animation-done? [start now]
   (< (+ start tile-move-time) now))
 
+(defn camera-rect [player-position]
+  (let [h 9
+        w 15
+        camera-delta [(* (quot w -2) tile-size)
+                      (* (quot h -2) tile-size)]
+        left-top (translate-point
+                   (tile->coord player-position)
+                   camera-delta
+                   [-1 -1])
+        right-bottom (translate-point
+                       (tile->coord player-position)
+                       (mapv - camera-delta)
+                       [(+ 2 tile-size)
+                        (+ 2 tile-size)])]
+    [left-top right-bottom]))
 
 (defn update-state-animation [state now]
   (if-let [{:keys [start destination]} (:animation state)]

@@ -48,10 +48,7 @@
           [:div {:id "game"
                  :style {:width (str 800 "px")
                          :height (str 448 "px")}}
-           [:canvas {:on-mouse-move #(let [c (relative-cursor % @canvas)]
-                                       (put! @game-input [:cursor-position c]))
-                     :on-mouse-out #(put! @game-input [:cursor-position nil])
-                     :height 448
+           [:canvas {:height 448
                      :width 800
                      :ref (fn [el] (reset! canvas el))}]]
           [:div {:id "game-help"}
