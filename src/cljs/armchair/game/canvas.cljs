@@ -4,6 +4,16 @@
 (defn save! [ctx] (.save ctx))
 (defn restore! [ctx] (.restore ctx))
 
+(defn set-transform! [ctx a b c d e f]
+  (.setTransform ctx
+                 a b c
+                 d e f))
+
+(defn reset-transform! [ctx]
+  (.setTransform ctx
+                 1 0 0
+                 1 0 0))
+
 (defn height [ctx] (.-height (.-canvas ctx)))
 (defn width [ctx] (.-width (.-canvas ctx)))
 

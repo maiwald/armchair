@@ -176,16 +176,24 @@
 (defn render [view-state]
   (when @ctx
     (let [l (get-in view-state [:player :location-id])
-          camera (:camera view-state)
+          [[left top] :as camera] (:camera view-state)
           {:keys [npcs dimension background]} (get-in @data [:locations l])]
       (c/clear! @ctx)
+      (c/set-fill-style! @ctx "rgb(0, 0, 0)")
+      (c/fill-rect! @ctx [0 0] (c/width @ctx) (c/height @ctx))
+      (let [a (/ (c/width @ctx) (rect-width camera))
+            d (/ (c/height @ctx) (rect-height camera))
+            e (* a (- left))
+            f (* d (- top))]
+        (c/set-transform! @ctx a 0 0 d e f))
       (draw-background @ctx dimension background camera)
       (draw-player @ctx (get-in view-state [:player :position]))
       (draw-npcs @ctx npcs camera)
       (draw-direction-indicator @ctx view-state)
+      (c/reset-transform! @ctx)
       (when (interacting? view-state)
-        (draw-dialogue-box @ctx (dialogue-data view-state)))
-      (draw-camera camera))))
+        (draw-dialogue-box @ctx (dialogue-data view-state))))))
+
 
 ;; Input Handlers
 
