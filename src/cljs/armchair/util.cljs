@@ -41,13 +41,18 @@
   (and (<= x1 x x2)
        (<= y1 y y2)))
 
+(defn rect-intersects? [[[left1 top1] [right1 bottom1]]
+                        [[left2 top2] [right2 bottom2]]]
+  (and (<= left1 right2)
+       (<= left2 right1)
+       (<= top1 bottom2)
+       (<= top2 bottom1)))
+
 (defn point-delta [start end]
   (mapv - end start))
 
-(defn translate-point [point delta]
-  (if (= delta [0 0])
-    point
-    (mapv + point delta)))
+(defn translate-point [point & deltas]
+  (apply mapv + point deltas))
 
 (defn rect->0
   "Normalize a point relative to a rect to a 0,0 based rect"

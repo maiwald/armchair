@@ -12,6 +12,7 @@
                                    normalize-to-tile
                                    rect-width
                                    rect-height
+                                   rect-intersects?
                                    translate-point]]))
 
 ;; Definitions
@@ -25,7 +26,7 @@
 
 
 (s/def ::state (s/and (s/keys :req-un [::player ::dialogue-states]
-                              :opt-un [::highlight ::interaction])))
+                              :opt-un [::interaction ::animation])))
 
 (s/def ::player (s/keys :req-un [:player/position
                                  :player/direction
@@ -36,9 +37,9 @@
 
 (s/def ::dialogue-states (s/map-of :entity/id :entity/id))
 
-(s/def ::highlight :type/point)
-
 (s/def ::interaction (s/keys :req-un [::line-id ::selected-option]))
+(s/def ::animation (s/keys :req-un [::start ::destination]))
+
 (s/def ::line-id :entity/id)
 (s/def ::selected-option int?)
 
@@ -55,7 +56,7 @@
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
   (translate-point
-    (coord->tile position)
+    position
     (direction-map direction)))
 
 (defn dialogue-data [{{:keys [line-id selected-option]} :interaction
@@ -81,6 +82,12 @@
 (def ctx (atom nil))
 (def texture-atlas (atom nil))
 
+(defn tile-visible? [camera [x y]]
+  (rect-intersects?
+    camera
+    [(tile->coord [x y])
+     (tile->coord [(inc x) (inc y)])]))
+
 (defn draw-texture [ctx texture coord]
   (when @texture-atlas
     (c/draw-image! ctx (get @texture-atlas texture (@texture-atlas :missing_texture)) coord)))
@@ -89,36 +96,38 @@
   (when @texture-atlas
     (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
 
-(defn draw-background [ctx dimension background]
-  (doseq [x (range (rect-width dimension))
-          y (range (rect-height dimension))
+(defn draw-background [ctx [[left top] [right bottom]] background camera]
+  (doseq [x (range left (inc right))
+          y (range top (inc bottom))
+          :when (tile-visible? camera [x y])
           :let [texture (get background [x y])]]
     (draw-texture ctx texture (tile->coord [x y]))))
 
 (defn draw-player [ctx player]
   (draw-texture ctx :player player))
 
-(defn draw-npcs [ctx npcs]
+(defn draw-npcs [ctx npcs camera]
   (doseq [[tile {texture :texture}] npcs]
-    (draw-texture ctx texture (tile->coord tile))))
+    (when (tile-visible? camera tile)
+      (draw-texture ctx texture (tile->coord tile)))))
 
-(defn draw-highlight [ctx highlight-coord]
-  (c/save! ctx)
-  (c/set-stroke-style! ctx "rgb(255, 255, 0)")
-  (c/set-line-width! ctx "2")
-  (c/stroke-rect! ctx highlight-coord tile-size tile-size)
-  (c/restore! ctx))
+; (defn draw-highlight [ctx highlight-coord]
+;   (c/save! ctx)
+;   (c/set-stroke-style! ctx "rgb(255, 255, 0)")
+;   (c/set-line-width! ctx "2")
+;   (c/stroke-rect! ctx highlight-coord tile-size tile-size)
+;   (c/restore! ctx))
 
-(defn draw-path [ctx {:keys [highlight] {:keys [position]} :player}]
-  (if highlight
-    (doseq [path-tile (path/a-star
-                        walkable?
-                        (coord->tile position)
-                        (coord->tile highlight))]
-      (c/save! ctx)
-      (c/set-fill-style! ctx "rgba(255, 255, 0, .2)")
-      (c/fill-rect! ctx (tile->coord path-tile) tile-size tile-size)
-      (c/restore! ctx))))
+; (defn draw-path [ctx {:keys [highlight] {:keys [position]} :player}]
+;   (if highlight
+;     (doseq [path-tile (path/a-star
+;                         walkable?
+;                         (coord->tile position)
+;                         (coord->tile highlight))]
+;       (c/save! ctx)
+;       (c/set-fill-style! ctx "rgba(255, 255, 0, .2)")
+;       (c/fill-rect! ctx (tile->coord path-tile) tile-size tile-size)
+;       (c/restore! ctx))))
 
 (defn draw-direction-indicator [ctx {{:keys [position direction]} :player}]
   (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
@@ -160,21 +169,33 @@
         (c/draw-text! ctx option (translate-point coord [7 (/ h 2)]))))
     (c/restore! ctx)))
 
+(defn draw-camera [[left-top right-bottom]]
+  (when @ctx
+    (c/stroke-rect! @ctx
+                    left-top
+                    right-bottom)))
+
 (defn render [view-state]
   (when @ctx
-    (let [l (get-in @state [:player :location-id])
-          location (get-in @data [:locations l])]
+    (let [l (get-in view-state [:player :location-id])
+          [[left top] :as camera] (:camera view-state)
+          {:keys [npcs dimension background]} (get-in @data [:locations l])]
       (c/clear! @ctx)
-      (when-not (interacting? @state)
-        (draw-path @ctx @state))
+      (c/set-fill-style! @ctx "rgb(0, 0, 0)")
+      (c/fill-rect! @ctx [0 0] (c/width @ctx) (c/height @ctx))
+      (let [a (/ (c/width @ctx) (rect-width camera))
+            d (/ (c/height @ctx) (rect-height camera))
+            e (* a (- left))
+            f (* d (- top))]
+        (c/set-transform! @ctx a 0 0 d e f))
+      (draw-background @ctx dimension background camera)
       (draw-player @ctx (get-in view-state [:player :position]))
-      (draw-npcs @ctx (:npcs location))
-      (when (and (not (interacting? @state))
-                 (contains? @state :highlight))
-        (draw-highlight @ctx (:highlight @state)))
+      (draw-npcs @ctx npcs camera)
       (draw-direction-indicator @ctx view-state)
-      (when (interacting? @state)
-        (draw-dialogue-box @ctx (dialogue-data @state))))))
+      (c/reset-transform! @ctx)
+      (when (interacting? view-state)
+        (draw-dialogue-box @ctx (dialogue-data view-state))))))
+
 
 ;; Input Handlers
 
@@ -188,11 +209,6 @@
         :down (swap! state update-in [:interaction :selected-option] #(mod (inc %) option-count))
         :else))
     (swap! move-q conj direction)))
-
-(defn handle-cursor [coord]
-  (if coord
-    (swap! state assoc :highlight (normalize-to-tile coord))
-    (swap! state dissoc :highlight)))
 
 (defn handle-interact []
   (if (interacting? @state)
@@ -224,7 +240,6 @@
 (defn start-input-loop [channel]
   (go-loop [[cmd payload] (<! channel)]
            (let [handler (case cmd
-                           :cursor-position handle-cursor
                            :move handle-move
                            :interact handle-interact)]
              (handler payload)
@@ -234,102 +249,116 @@
 
 (defn round [x] (.round js/Math x))
 
-(defn animated-position [start duration [fx fy] [tx ty] now]
+(defn animated-position [start [fx fy] [tx ty] now]
   (let [passed (- now start)
-        pct (/ passed duration)
+        pct (/ passed tile-move-time)
         transform (fn [f t] (+ f (round (* pct (- t f)))))]
     (if (< pct 1)
       [(transform fx tx) (transform fy ty)]
       [tx ty])))
 
-(defn animation-done? [start duration now]
-  (< (+ start duration) now))
+(defn animation-done? [start now]
+  (< (+ start tile-move-time) now))
 
-(defn animate-move [destination-tile done-fn]
-  (let [destination (tile->coord destination-tile)
-        start (* time-factor (.now js/performance))
-        from (get-in @state [:player :position])
-        duration tile-move-time]
-    (js/requestAnimationFrame
-      (fn animate []
-        (let [now (* time-factor (.now js/performance))]
-          (if-not (animation-done? start duration now)
-            (do
-              (render (update-in @state [:player :position] #(animated-position start duration from destination now)))
-              (js/requestAnimationFrame animate))
-            (do
-              (swap! state assoc-in [:player :position] destination)
-              (swap! move-q pop)
-              (done-fn))))))))
+;; state updates and view state
 
-(defn start-move-loop [channel]
-  (go-loop [_ (<! channel)]
-           (when-let [direction (first @move-q)]
-             (swap! state assoc-in [:player :direction] direction)
-             (let [new-position (translate-point (coord->tile (get-in @state [:player :position]))
-                                                 (direction-map direction))]
-               (if (walkable? new-position)
-                 (animate-move
-                   new-position
-                   (fn []
-                     (let [{l :location-id p :position} (:player @state)]
-                       (if-let [new-location (get-in @data [:locations l :outbound-connections (coord->tile p)])]
-                         (let [new-position (tile->coord (get-in @data [:locations new-location :inbound-connections l]))]
-                           (reset! move-q #queue [])
-                           (swap! state update :player merge {:location-id new-location
-                                                              :position new-position}))
-                         (put! channel true)))))
-                 (when (seq (swap! move-q pop)) (put! channel true)))))
-           (recur (<! channel))))
+(defn camera-rect [player-coord]
+  (let [h 9
+        w 15
+        camera-delta [(* (quot w -2) tile-size)
+                      (* (quot h -2) tile-size)]
+        left-top (translate-point
+                   player-coord
+                   camera-delta)
+        right-bottom (translate-point
+                       player-coord
+                       (mapv - camera-delta)
+                       [tile-size tile-size])]
+    [left-top right-bottom]))
+
+(defn update-state-animation [state now]
+  (if-let [{:keys [start destination]} (:animation state)]
+    (if (animation-done? start now)
+      (let [new-state (dissoc state :animation)
+            location-id (get-in state [:player :location-id])]
+        (if-let [new-location-id (get-in @data [:locations
+                                                location-id
+                                                :outbound-connections
+                                                destination])]
+          (let [new-position (get-in @data [:locations
+                                            new-location-id
+                                            :inbound-connections
+                                            location-id])]
+            (reset! move-q #queue [])
+            (update new-state :player merge {:location-id new-location-id
+                                             :position new-position}))
+          (assoc-in new-state [:player :position] destination)))
+      state)
+    state))
+
+(defn update-state-movement [state now]
+  (if (not (contains? state :animation))
+    (if-let [direction (peek @move-q)]
+      (let [new-position (translate-point (get-in state [:player :position])
+                                          (direction-map direction))]
+        (swap! move-q pop)
+        (cond-> (assoc-in state [:player :direction] direction)
+          (walkable? new-position)
+          (assoc :animation {:start now
+                             :destination new-position})))
+      state)
+    state))
+
+(defn update-state [state now]
+  (-> state
+      (update-state-animation now)
+      (update-state-movement now)))
+
+(defn view-state [state now]
+  (as-> state s
+    (update-in s [:player :position]
+               (fn [player-tile]
+                 (let [player-coord (tile->coord player-tile)]
+                   (if-let [{:keys [start destination]} (:animation state)]
+                     (animated-position start
+                                        player-coord
+                                        (tile->coord destination)
+                                        now)
+                     player-coord))))
+    (assoc s :camera (camera-rect (get-in s [:player :position])))))
 
 ;; Game Loop
 
-(defn start-game [background-context entity-context game-data]
-  (reset! state (update-in (:initial-state game-data)
-                           [:player :position]
-                           tile->coord))
+(def quit (atom false))
+
+(defn start-game [context game-data]
+  (reset! state (:initial-state game-data))
   (reset! data game-data)
+  (reset! ctx context)
   (reset! move-q #queue [])
-  (reset! ctx entity-context)
+  (reset! quit false)
   (let [input-chan (chan)
-        move-chan (chan (sliding-buffer 1))]
-    (add-watch state
-               :state-update
-               (fn [_ _ old-state new-state]
-                 (when (not= old-state new-state)
-                   (when-not (s/valid? ::state new-state)
-                     (js/console.log (s/explain ::state new-state)))
-                   (when (not= (get-in old-state [:player :location-id])
-                               (get-in new-state [:player :location-id]))
-                     (c/clear! background-context)
-                     (let [l (get-in @state [:player :location-id])
-                           {:keys [dimension background]} (get-in @data [:locations l])]
-                       (draw-background background-context dimension background)))
-
-                   (js/requestAnimationFrame #(render new-state)))))
-    (add-watch move-q
-               :animation-update
-               (fn [_ _ old-state new-state]
-                 (when (and (empty? old-state)
-                            (some? new-state))
-                   (put! move-chan true))))
-    (load-textures (fn [loaded-atlas]
-                     (reset! texture-atlas loaded-atlas)
-
-                     (c/clear! background-context)
-                     (let [l (get-in @state [:player :location-id])
-                           {:keys [dimension background]} (get-in @data [:locations l])]
-                       (draw-background background-context dimension background))
-
-                     (start-input-loop input-chan)
-                     (start-move-loop move-chan)
-
-                     (js/requestAnimationFrame #(render @state))))
+        prev-view-state (atom nil)]
+    (load-textures
+      (fn [loaded-atlas]
+        (reset! texture-atlas loaded-atlas)
+        (start-input-loop input-chan)
+        (js/requestAnimationFrame
+          (fn game-loop []
+            (let [now (* time-factor (.now js/performance))
+                  new-state (swap! state #(update-state % now))
+                  view-state (view-state new-state now)]
+              (when-not (s/valid? ::state new-state)
+                (s/explain ::state new-state))
+              (when-not (= @prev-view-state view-state)
+                (reset! prev-view-state view-state)
+                (render view-state))
+              (when-not @quit
+                (js/requestAnimationFrame game-loop)))))))
     input-chan))
 
 (defn end-game []
-  (remove-watch state :state-update)
-  (remove-watch move-q :animation-update)
+  (reset! quit true)
   (reset! state nil)
   (reset! data nil)
   (reset! move-q nil)

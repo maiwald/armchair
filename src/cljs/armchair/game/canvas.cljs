@@ -4,6 +4,16 @@
 (defn save! [ctx] (.save ctx))
 (defn restore! [ctx] (.restore ctx))
 
+(defn set-transform! [ctx a b c d e f]
+  (.setTransform ctx
+                 a b c
+                 d e f))
+
+(defn reset-transform! [ctx]
+  (.setTransform ctx
+                 1 0 0
+                 1 0 0))
+
 (defn height [ctx] (.-height (.-canvas ctx)))
 (defn width [ctx] (.-width (.-canvas ctx)))
 
@@ -18,8 +28,11 @@
     (draw-image! ctx image [(- offset) (- offset)])
     (restore! ctx)))
 
-(defn stroke-rect! [ctx [x y] w h]
-  (.strokeRect ctx x y w h))
+(defn stroke-rect!
+  ([ctx [left top] [right bottom]]
+   (stroke-rect! ctx [left top] (- right left) (- bottom top)))
+  ([ctx [x y] w h]
+   (.strokeRect ctx x y w h)))
 
 (defn set-stroke-style! [ctx value]
   (set! (.-strokeStyle ctx) value))
