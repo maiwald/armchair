@@ -38,6 +38,8 @@
 (s/def ::dialogue-states (s/map-of :entity/id :entity/id))
 
 (s/def ::interaction (s/keys :req-un [::line-id ::selected-option]))
+(s/def ::animation (s/keys :req-un [::start ::destination]))
+
 (s/def ::line-id :entity/id)
 (s/def ::selected-option int?)
 
@@ -346,6 +348,8 @@
             (let [now (* time-factor (.now js/performance))
                   new-state (swap! state #(update-state % now))
                   view-state (view-state new-state now)]
+              (when-not (s/valid? ::state new-state)
+                (s/explain ::state new-state))
               (when-not (= @prev-view-state view-state)
                 (reset! prev-view-state view-state)
                 (render view-state))

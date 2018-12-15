@@ -30,7 +30,7 @@
 (s/def :game/inbound-connections (s/map-of :game/location-id :type/point))
 (s/def :game/location-id :entity/id)
 (s/def :game/position :type/point)
-(s/def :game/npcs (s/map-of :type/point (s/keys :req-un [:game/texture :game/dialogue-id])))
+(s/def :game/npcs (s/nilable (s/map-of :type/point (s/keys :req-un [:game/texture :game/dialogue-id]))))
 (s/def :game/dialogue-id :entity/id)
 (s/def :game/texture (fn [t] (contains? (set character-textures) t)))
 (s/def :game/next-line-id (s/nilable :entity/id))
