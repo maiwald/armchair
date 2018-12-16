@@ -249,17 +249,9 @@ $gray: #888
 
   &__sidebar
     width: 300px
+    min-width: 300px
     padding: 10px
     background: rgba(230, 230, 230, .8)
-
-  &__canvas
-    display: flex
-    justify-content: center
-    flex-grow: 1
-
-  .level
-    position: relative
-    margin: 40px
 
   .resize-container
     display: flex
@@ -316,6 +308,25 @@ $gray: #888
 
     &_bottom
       bottom: -$offset
+
+  &__canvas
+    position: relative
+    flex-grow: 1
+
+  .level-wrap
+    display: flex
+    justify-content: center
+    align-items: center
+    overflow: scroll
+    position: absolute
+    top: 40px
+    right: 40px
+    bottom: 40px
+    left: 40px
+    overflow: auto
+
+  .level
+    position: relative
 
   .level-layer
     position: absolute
