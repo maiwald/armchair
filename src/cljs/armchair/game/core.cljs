@@ -1,5 +1,11 @@
 (ns armchair.game.core
-  (:require [clojure.core.async :refer [chan sliding-buffer put! go-loop <!]]
+  (:require [clojure.core.async :refer [<!
+                                        chan
+                                        close!
+                                        go-loop
+                                        put!
+                                        poll!
+                                        sliding-buffer]]
             [clojure.spec.alpha :as s]
             [clojure.set :refer [subset? union]]
             [armchair.game.canvas :as c]
@@ -238,12 +244,13 @@
                           (seq info-ids) (update-in [:player :infos] union info-ids))))))))
 
 (defn start-input-loop [channel]
-  (go-loop [[cmd payload] (<! channel)]
-           (let [handler (case cmd
-                           :move handle-move
-                           :interact handle-interact)]
-             (handler payload)
-             (recur (<! channel)))))
+  (go-loop [[command payload :as message] (<! channel)]
+           (when message
+             (let [handler (case command
+                             :move handle-move
+                             :interact handle-interact)]
+               (handler payload)
+               (recur (<! channel))))))
 
 ;; Animations
 
@@ -329,15 +336,13 @@
 
 ;; Game Loop
 
-(def quit (atom false))
-
 (defn start-game [context game-data]
   (reset! state (:initial-state game-data))
   (reset! data game-data)
   (reset! ctx context)
   (reset! move-q #queue [])
-  (reset! quit false)
   (let [input-chan (chan)
+        quit-chan (chan)
         prev-view-state (atom nil)]
     (load-textures
       (fn [loaded-atlas]
@@ -353,13 +358,17 @@
               (when-not (= @prev-view-state view-state)
                 (reset! prev-view-state view-state)
                 (render view-state))
-              (when-not @quit
-                (js/requestAnimationFrame game-loop)))))))
-    input-chan))
+              (if-not (poll! quit-chan)
+                (js/requestAnimationFrame game-loop)
+                (do
+                  (reset! state nil)
+                  (reset! data nil)
+                  (reset! move-q nil)
+                  (reset! ctx nil))))))))
+    {:input input-chan
+     :quit quit-chan}))
 
-(defn end-game []
-  (reset! quit true)
-  (reset! state nil)
-  (reset! data nil)
-  (reset! move-q nil)
-  (reset! ctx nil))
+(defn end-game [{:keys [input quit]}]
+  (put! quit true)
+  (close! quit)
+  (close! input))

@@ -8,23 +8,23 @@
 (defn game-canvas [game-data]
   (let [game-data (<sub [:game/data])
         canvas (atom nil)
-        game-input (atom nil)
+        game-handle (atom nil)
         key-listener (fn [e]
                        (when-let [action (case (.-code e)
                                            ("ArrowUp" "KeyW" "KeyK")
-                                           (put! @game-input [:move :up])
+                                           (put! (:input @game-handle) [:move :up])
 
                                            ("ArrowRight" "KeyD" "KeyL")
-                                           (put! @game-input [:move :right])
+                                           (put! (:input @game-handle) [:move :right])
 
                                            ("ArrowDown" "KeyS" "KeyJ")
-                                           (put! @game-input [:move :down])
+                                           (put! (:input @game-handle) [:move :down])
 
                                            ("ArrowLeft" "KeyA" "KeyH")
-                                           (put! @game-input [:move :left])
+                                           (put! (:input @game-handle) [:move :left])
 
                                            ("Space" "Enter")
-                                           (put! @game-input [:interact])
+                                           (put! (:input @game-handle) [:interact])
 
                                            nil)]
                          (.preventDefault e)))]
@@ -32,15 +32,15 @@
       {:display-name "game-canvas"
        :component-did-mount
        (fn []
-         (reset! game-input (start-game
-                              (.getContext @canvas "2d")
-                              game-data))
+         (reset! game-handle (start-game
+                               (.getContext @canvas "2d")
+                               game-data))
          (.addEventListener js/document "keydown" key-listener))
 
        :component-will-unmount
        (fn []
          (.removeEventListener js/document "keydown" key-listener)
-         (end-game))
+         (end-game @game-handle))
 
        :reagent-render
        (fn []
