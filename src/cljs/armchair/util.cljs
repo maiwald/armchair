@@ -43,10 +43,10 @@
 
 (defn rect-intersects? [[[left1 top1] [right1 bottom1]]
                         [[left2 top2] [right2 bottom2]]]
-  (and (< left1 right2)
-       (< left2 right1)
-       (< top1 bottom2)
-       (< top2 bottom1)))
+  (and (<= left1 right2)
+       (<= left2 right1)
+       (<= top1 bottom2)
+       (<= top2 bottom1)))
 
 (defn point-delta [start end]
   (mapv - end start))
