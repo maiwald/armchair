@@ -1,15 +1,17 @@
 # TODO
-- refactor infos to dialogue switches: booleans, enums
 - refactor triggers into separate dialogue nodes
-- movement behaviour when holding and releasing arrow key
-- group characters by dialogue in overview
-- remove location connections
+- refactor infos to dialogue switches: booleans, enums
+- directed location connections
 - validation error notifications and form states
 - information dependency invariants
-- location versions with directed connections
-- zoom... gotta have zoom
+- texture sprite support
+- (multiple?) decorative textures
+- sprite animations
+- zoom in dialogue editor
 
 # nice things
+- change default collision to walkable
+- movement behaviour when holding and releasing arrow key
 - stage direction dialogue nodes
 - separate moving viewport from moving dialogue node positions
 - enable double click for editing lines
