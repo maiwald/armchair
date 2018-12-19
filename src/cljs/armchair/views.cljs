@@ -185,7 +185,7 @@
                           :options (clj->js (<sub [:dialogue/state-options line-id index]))
                           :values state-triggers
                           :on-change #(>evt [:set-state-triggers line-id (map uuid %) index])}]]
-     [:ul {:class "actions actions_vertial"}
+     [:ul {:class "actions actions_vertical"}
       [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
                                          (>evt [:delete-option line-id index]))}
        [icon "trash" "Delete"]]
@@ -333,11 +333,11 @@
            [:li
             [:a {:on-click #(upload-json! (fn [json] (>evt [:upload-state json])))}
              [icon "upload"] "load from file"]]
-           [:li
-            (if config/debug?
-              [:a {:on-click #(>evt [:reset-db])} "reset"]
-              [:a {:href "https://github.com/maiwald/armchair"
-                   :target "_blank"} [icon "code-branch"] "source"])]]]]))))
+           (when config/debug?
+             [:li [:a {:on-click #(>evt [:reset-db])} "reset"]])
+           (when-not config/debug?
+             [:li [:a {:href "https://github.com/maiwald/armchair"}]
+              :target "_blank" [icon "code-branch"] "source"])]]]))))
 
 ;; Root
 

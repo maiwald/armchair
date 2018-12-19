@@ -31,7 +31,7 @@
        (when-not (or initial-line? (some? state))
          [:li {:class "action"
                :on-click #(>evt [:open-dialogue-state-modal line-id])}
-          [icon "sign-out-alt" "Create named state"]])
+          [icon "tag" "Create named state"]])
        (when-not initial-line?
          [:li {:class "action"
                :on-click #(when (js/confirm "Are your sure you want to delete this line?")
@@ -42,10 +42,10 @@
         [icon "edit" "Edit"]]]]
      (cond
        initial-line? [:div {:class "line__state"}
-                      [icon "sign-out-alt"]
+                      [icon "tag"]
                       [:p {:class "description"} "Initial Line"]]
        (some? state) [:div {:class "line__state"}
-                      [icon "sign-out-alt"]
+                      [icon "tag"]
                       [:a {:class "description"
                            :on-mouse-down stop-e!
                            :on-click #(>evt [:open-dialogue-state-modal line-id])}
