@@ -71,6 +71,9 @@
         (recur (update-in m (conj path-ks k) wrapped-f)
                ks)))))
 
+(defn reverse-map [m]
+  (into {} (map (fn [[k v]] [v k]) m)))
+
 (defn map-values [f m]
   (into {} (for [[k v] m] [k (f v)])))
 

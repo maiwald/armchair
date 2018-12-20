@@ -4,6 +4,7 @@
             [armchair.textures :refer [character-textures]]
             [armchair.util :refer [map-keys
                                    map-values
+                                   reverse-map
                                    filter-map
                                    where-map]]))
 
@@ -71,9 +72,6 @@
                                            (vector {:text "Yeah..., whatever. Farewell"
                                                     :next-line-id nil}))})))
         (where-map :kind :npc lines)))))
-
-(defn reverse-map [m]
-  (into {} (map (fn [[k v]] [v k]) m)))
 
 (reg-sub
   :game/player-data
