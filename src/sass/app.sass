@@ -177,7 +177,7 @@ $gray: #888
     &:last-child
       border-bottom: none
 
-    p
+    p, ul
       flex-grow: 1
       overflow-y: auto
       font-family: "Helvetica"
@@ -597,3 +597,22 @@ header#global-header
 
       span.disabled
         color: grey
+
+.triggers
+  li
+    margin-bottom: 10px
+
+    &:last-child
+      margin: 0
+
+  &__switch-name
+    display: block
+    color: #aaa
+    font-size: .7rem
+    line-height: 1rem
+    margin-bottom: 2px
+
+  &__switch-value
+    width: 100%
+    font-size: .9rem
+    box-sizing: border-box

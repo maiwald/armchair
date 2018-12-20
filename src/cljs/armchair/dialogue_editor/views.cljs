@@ -118,6 +118,37 @@
                      [player-line-option-component line-id index option])
                    options)]]))
 
+(defn trigger-component [trigger-id]
+  (let [connecting? (some? (<sub [:connector]))
+        connected? false]
+    [:div.line {:on-mouse-up (when connecting? #(>evt [:end-connecting-lines trigger-id]))
+                :style {:width (str config/line-width "px")}}
+     [:div.line__header
+      [:p.name "Trigger"]]
+     [:div.line__text
+      [:ul.triggers
+       [:li
+        [:span.triggers__switch-name "Hugo: Hugo's Dialogue with some very long title that definitely wraps."]
+        [:select.triggers__switch-value
+         {:on-mouse-down stop-e!}
+         [:option "Initial Line"]
+         [:option "Hugo is annoyed"]]]
+       [:li
+        [:span.triggers__switch-name "Switch 1"]
+        [:select.triggers__switch-value
+         {:on-mouse-down stop-e!}
+         [:option "Some Value"]
+         [:option "Some Other Value"]]]]
+      (if connected?
+        [:div {:class "action"
+               :on-mouse-down stop-e!
+               :on-click #(>evt [:dialogue-editor/disconnect-trigger trigger-id])}
+         [icon "unlink" "Connect"]]
+        [:div {:class "action action_connect"
+               :on-mouse-down (e-> #(when (e->left? %)
+                                      (>evt [:start-connecting-lines trigger-id (e->graph-cursor %)])))}
+         [icon "link" "Connect"]])]]))
+
 (defn npc-connection [start end]
   (let [start-pos (<sub [:ui/position start])
         end-pos (<sub [:ui/position end])]
@@ -142,7 +173,8 @@
       [slds/add-button "New NPC Line" #(>evt [:create-npc-line dialogue-id])]]
      [drag-canvas {:kind "line"
                    :nodes {npc-line-component npc-line-ids
-                           player-line-component player-line-ids}}
+                           player-line-component player-line-ids
+                           trigger-component [1]}}
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
