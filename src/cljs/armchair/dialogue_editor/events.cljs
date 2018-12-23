@@ -60,18 +60,18 @@
   (fn [db [_ id]]
     (assert (not (initial-line? db id))
             "Initial lines cannot be deleted!")
-    (let [dialogue-id (get-in db [:lines id :dialogue-id])]
+    (let [{:keys [dialogue-id options]} (get-in db [:lines id])]
       (letfn [(clear-line [line]
-                (update line :next-line-id #(if (= id %) nil %)))
-              (clear-options [line]
-                (update line :options #(mapv clear-line %)))]
+                (update line :next-line-id #(if (= id %) nil %)))]
         (-> db
           (db/clear-dialogue-state id)
           (update :lines dissoc id)
+          (update :player-options #(apply dissoc % options))
+          (update :player-options #(map-values clear-line %))
           (update :lines #(map-values (fn [line]
                                         (case (:kind line)
                                           :npc (clear-line line)
-                                          :player (clear-options line)))
+                                          :player line))
                                       %)))))))
 
 (reg-event-db
@@ -93,4 +93,5 @@
   [validate
    record-undo]
   (fn [db [_ id index]]
-    (assoc-in db [:lines id :options index :next-line-id] nil)))
+    (let [option-id (get-in db [:lines id :options index])]
+      (assoc-in db [:player-options option-id :next-line-id] nil))))

@@ -119,22 +119,31 @@
   [validate
    record-undo]
   (fn [db [_ line-id]]
-    (update-in db [:lines line-id :options] conj {:text ""
-                                                  :next-line-id nil})))
+    (let [option-id (random-uuid)]
+      (-> db
+        (update-in [:lines line-id :options] conj option-id)
+        (assoc-in [:player-options option-id] {:entity/id option-id
+                                               :entity/type :player-option
+                                               :text ""
+                                               :next-line-id nil})))))
 
 (reg-event-db
   :update-option
   [validate
    record-undo]
   (fn [db [_ line-id index text]]
-    (assoc-in db [:lines line-id :options index :text] text)))
+    (let [option-id (get-in db [:lines line-id :options index])]
+      (assoc-in db [:player-options option-id :text] text))))
 
 (reg-event-db
   :delete-option
   [validate
    record-undo]
   (fn [db [_ line-id index]]
-    (update-in db [:lines line-id :options] #(removev % index))))
+    (let [option-id (get-in db [:lines line-id :options index])]
+      (-> db
+        (update-in [:lines line-id :options] #(removev % index))
+        (update :player-options dissoc option-id)))))
 
 (reg-event-db
   :set-infos
@@ -152,7 +161,8 @@
   (fn [db [_ line-id states index]]
     (case (get-in db [:lines line-id :kind])
       :npc (assoc-in db [:lines line-id :state-triggers] (set states))
-      :player (assoc-in db [:lines line-id :options index :state-triggers] (set states)))))
+      :player (let [option-id (get-in db [:lines line-id :options index])]
+                (assoc-in db [:player-options option-id :state-triggers] (set states))))))
 
 (reg-event-db
   :set-required-info
@@ -161,7 +171,8 @@
   (fn [db [_ line-id index info-ids]]
     (assert (= :player (get-in db [:lines line-id :kind]))
             "Required infos can only be set on player options!")
-    (assoc-in db [:lines line-id :options index :required-info-ids] (set info-ids))))
+    (let [option-id (get-in db [:lines line-id :options index])]
+      (assoc-in db [:player-options option-id :required-info-ids] (set info-ids)))))
 
 ;; Info CRUD
 
@@ -452,9 +463,9 @@
   (fn [db [_ end-id]]
     (assert (s/valid? :armchair.db/connecting-lines (:connecting db))
             "Attempting to end connecting with missing or invalid state!")
-    (let [start-id (get-in db [:connecting :line-id])
-          id-path (if-let [index (get-in db [:connecting :index])]
-                    [:lines start-id :options index :next-line-id]
+    (let [{start-id :line-id index :index} (:connecting db)
+          id-path (if-let [option-id (get-in db [:lines start-id :options index])]
+                    [:player-options option-id :next-line-id]
                     [:lines start-id :next-line-id])]
       (cond-> (dissoc db :connecting :cursor)
         (not= start-id end-id) (assoc-in id-path end-id)))))

@@ -39,24 +39,27 @@
 (reg-sub
   :dialogue-editor/player-line-options
   :<- [:db-lines]
+  :<- [:db-player-options]
   :<- [:db-infos]
   :<- [:dialogue-editor/dialogue-states]
-  (fn [[lines infos dialogue-states] [_ line-id]]
+  (fn [[lines player-options infos dialogue-states] [_ line-id]]
     (let [{:keys [options dialogue-id]} (lines line-id)]
       (mapv
-        (fn [{:keys [text required-info-ids state-triggers next-line-id]}]
-          {:text text
-           :required-infos (map #(get-in infos [% :description]) required-info-ids)
-           :state-triggers (vals (select-keys dialogue-states state-triggers))
-           :connected? (some? next-line-id)})
+        (fn [option-id]
+          (let [{:keys [text required-info-ids state-triggers next-line-id]} (player-options option-id)]
+            {:text text
+             :required-infos (map #(get-in infos [% :description]) required-info-ids)
+             :state-triggers (vals (select-keys dialogue-states state-triggers))
+             :connected? (some? next-line-id)}))
         options))))
 
 (reg-sub
   :dialogue-editor/dialogue
   :<- [:db-lines]
+  :<- [:db-player-options]
   :<- [:db-dialogues]
   :<- [:db-characters]
-  (fn [[lines dialogues characters positions] [_ dialogue-id]]
+  (fn [[lines player-options dialogues characters positions] [_ dialogue-id]]
     (if-let [dialogue (get dialogues dialogue-id)]
       (let [dialogue-lines (where-map :dialogue-id dialogue-id lines)
             lines-by-kind (group-by :kind (vals dialogue-lines))]
@@ -68,8 +71,10 @@
          :player-connections (reduce
                                (fn [acc {start :entity/id :keys [options]}]
                                  (apply conj acc (->> options
-                                                      (map-indexed (fn [index {end :next-line-id}]
-                                                                     (vector start index end)))
+                                                      (map-indexed (fn [index option-id]
+                                                                     (vector start
+                                                                             index
+                                                                             (get-in player-options [option-id :next-line-id]))))
                                                       (remove (fn [[_ _ end]] (nil? end))))))
                                (list)
                                (lines-by-kind :player))}))))

@@ -17,6 +17,7 @@
 (reg-sub :db-locations #(:locations %))
 (reg-sub :db-dialogues #(:dialogues %))
 (reg-sub :db-player #(:player %))
+(reg-sub :db-player-options #(:player-options %))
 
 (reg-sub :db-location-connections #(:location-connections %))
 
@@ -46,10 +47,11 @@
 (reg-sub
   :dialogue/state-options
   :<- [:db-lines]
+  :<- [:db-player-options]
   :<- [:db-dialogues]
-  (fn [[lines dialogues] [_ line-id index]]
-    (let [state-triggers (if index
-                           (get-in lines [line-id :options index :state-triggers])
+  (fn [[lines options dialogues] [_ line-id index]]
+    (let [state-triggers (if-let [option-id (get-in lines [line-id :options index])]
+                           (get-in options [option-id :state-triggers])
                            (get-in lines [line-id :state-triggers]))
           used-dialogue-states (->> state-triggers
                                     (select-keys lines)
@@ -80,10 +82,12 @@
 (reg-sub
   :dialogue/player-line-option
   :<- [:db-lines]
-  (fn [lines [_ line-id index]]
-    (-> (get-in lines [line-id :options index])
-        (update :state-triggers #(map str %))
-        (update :required-info-ids #(map str %)))))
+  :<- [:db-player-options]
+  (fn [[lines options] [_ line-id index]]
+    (let [option-id (get-in lines [line-id :options index])]
+      (-> (options option-id)
+          (update :state-triggers #(map str %))
+          (update :required-info-ids #(map str %))))))
 
 (reg-sub
   :info-list

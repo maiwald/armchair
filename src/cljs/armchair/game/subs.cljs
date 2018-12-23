@@ -54,7 +54,8 @@
 (reg-sub
   :game/line-data
   :<- [:db-lines]
-  (fn [lines]
+  :<- [:db-player-options]
+  (fn [[lines player-options]]
     (letfn [(transform-state-triggers [triggers]
               (into {} (map (fn [trigger]
                               [(get-in lines [trigger :dialogue-id]) trigger])
@@ -68,7 +69,7 @@
                                                            :next-line-id (:entity/id next-line)})
                                              :player (mapv (fn [option]
                                                              (update option :state-triggers transform-state-triggers))
-                                                           (:options next-line)))
+                                                           (mapv player-options (:options next-line))))
                                            (vector {:text "Yeah..., whatever. Farewell"
                                                     :next-line-id nil}))})))
         (where-map :kind :npc lines)))))
