@@ -145,44 +145,6 @@
         (update-in [:lines line-id :options] #(removev % index))
         (update :player-options dissoc option-id)))))
 
-(reg-event-db
-  :set-infos
-  [validate
-   record-undo]
-  (fn [db [_ line-id info-ids]]
-    (assert (= :npc (get-in db [:lines line-id :kind]))
-            "Infos can only be set on NPC lines!")
-    (assoc-in db [:lines line-id :info-ids] (set info-ids))))
-
-(reg-event-db
-  :set-state-triggers
-  [validate
-   record-undo]
-  (fn [db [_ line-id states index]]
-    (case (get-in db [:lines line-id :kind])
-      :npc (assoc-in db [:lines line-id :state-triggers] (set states))
-      :player (let [option-id (get-in db [:lines line-id :options index])]
-                (assoc-in db [:player-options option-id :state-triggers] (set states))))))
-
-(reg-event-db
-  :set-required-info
-  [validate
-   record-undo]
-  (fn [db [_ line-id index info-ids]]
-    (assert (= :player (get-in db [:lines line-id :kind]))
-            "Required infos can only be set on player options!")
-    (let [option-id (get-in db [:lines line-id :options index])]
-      (assoc-in db [:player-options option-id :required-info-ids] (set info-ids)))))
-
-;; Info CRUD
-
-(reg-event-db
-  :delete-info
-  [validate
-   record-undo]
-  (fn [db [_ id]]
-    (update db :infos dissoc id)))
-
 ;; Modal
 
 (defn assert-no-open-modal [db]
@@ -272,44 +234,6 @@
                                      :walk-set #{}
                                      :connection-triggers {}
                                      :display-name display-name})))))
-
-(reg-event-db
-  :open-info-modal
-  [validate]
-  (fn [db [_ id]]
-    (assert-no-open-modal db)
-    (assoc-in db [:modal :info-form]
-      (if-let [{:keys [description]} (get-in db [:infos id])]
-        {:id id :description description}
-        {:id nil :description ""}))))
-
-
-(defn assert-info-form-modal [db]
-  (assert (contains? (:modal db) :info-form)
-          "No Info form modal present. Cannot set value!"))
-
-(reg-event-db
-  :save-info
-  [validate
-   record-undo]
-  (fn [db]
-    (assert-info-form-modal db)
-    (let [{:keys [id description]} (get-in db [:modal :info-form])
-          id (or id (random-uuid))
-          info {:entity/id id
-                :entity/type :info
-                :description description}]
-      (cond-> db
-        (s/valid? :armchair.db/info info)
-        (-> (assoc-in [:infos id] info)
-            (dissoc :modal))))))
-
-(reg-event-db
-  :update-info
-  [validate]
-  (fn [db [_ text]]
-    (assert-info-form-modal db)
-    (assoc-in db [:modal :info-form :description] text)))
 
 (reg-event-db
   :open-npc-line-modal

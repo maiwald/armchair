@@ -8,17 +8,13 @@
                                    filter-map
                                    where-map]]))
 
-(s/def :game/data (s/keys :req-un [:game/infos
-                                   :game/lines
+(s/def :game/data (s/keys :req-un [:game/lines
                                    :game/locations
                                    :game/initial-state]))
 (s/def :game/initial-state :armchair.game.core/state)
-(s/def :game/lines (s/map-of :entity/id (s/keys :req-un [:game/text :game/options]
-                                                :opt-un [:game/info-ids :game/state-triggers])))
-(s/def :game/options (s/coll-of (s/keys :req-un [:game/text :game/next-line-id]
-                                        :opt-un [:game/state-triggers])
+(s/def :game/lines (s/map-of :entity/id (s/keys :req-un [:game/text :game/options])))
+(s/def :game/options (s/coll-of (s/keys :req-un [:game/text :game/next-line-id])
                                 :kind vector?))
-(s/def :game/state-triggers (s/map-of :entity/id :entity/id))
 (s/def :game/locations (s/map-of :entity/id (s/keys :req-un [:game/dimension
                                                              :game/background
                                                              :game/walk-set
@@ -56,23 +52,16 @@
   :<- [:db-lines]
   :<- [:db-player-options]
   (fn [[lines player-options]]
-    (letfn [(transform-state-triggers [triggers]
-              (into {} (map (fn [trigger]
-                              [(get-in lines [trigger :dialogue-id]) trigger])
-                            triggers)))]
-      (map-values (fn [line]
-                    (-> (select-keys line [:text :info-ids :state-triggers])
-                        (update :state-triggers transform-state-triggers)
-                        (merge {:options (if-let [next-line (get lines (:next-line-id line))]
-                                           (case (:kind next-line)
-                                             :npc (vector {:text "Continue..."
-                                                           :next-line-id (:entity/id next-line)})
-                                             :player (mapv (fn [option]
-                                                             (update option :state-triggers transform-state-triggers))
-                                                           (mapv player-options (:options next-line))))
-                                           (vector {:text "Yeah..., whatever. Farewell"
-                                                    :next-line-id nil}))})))
-        (where-map :kind :npc lines)))))
+    (map-values (fn [line]
+                  (-> (select-keys line [:text])
+                      (merge {:options (if-let [next-line (get lines (:next-line-id line))]
+                                         (case (:kind next-line)
+                                           :npc (vector {:text "Continue..."
+                                                         :next-line-id (:entity/id next-line)})
+                                           :player (mapv player-options (:options next-line)))
+                                         (vector {:text "Yeah..., whatever. Farewell"
+                                                  :next-line-id nil}))})))
+      (where-map :kind :npc lines))))
 
 (reg-sub
   :game/player-data
@@ -104,12 +93,10 @@
   :<- [:game/locations]
   :<- [:game/line-data]
   :<- [:db-dialogues]
-  :<- [:db-infos]
-  (fn [[player-data locations line-data dialogues infos] _]
+  (fn [[player-data locations line-data dialogues] _]
     {:post [(or (s/valid? :game/data %)
                 (s/explain :game/data %))]}
-    {:infos infos
-     :lines line-data
+    {:lines line-data
      :locations locations
      :initial-state {:dialogue-states (map-values :initial-line-id dialogues)
-                     :player (merge player-data {:direction :right :infos #{}})}}))
+                     :player (merge player-data {:direction :right})}}))

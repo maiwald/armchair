@@ -5,9 +5,15 @@
             [cognitect.transit :as t]
             [armchair.dummy-data :refer [dummy-data]]
             [armchair.textures :refer [background-textures texture-set]]
-            [armchair.util :refer [where where-map map-values]]))
+            [armchair.config :as config]
+            [armchair.util :refer [where
+                                   filter-map
+                                   where-map
+                                   map-values
+                                   update-in-map
+                                   translate-point]]))
 
-(def db-version 3)
+(def db-version 4)
 
 (def migrations
   "Map of migrations. Key is the version we are coming from."
@@ -22,6 +28,7 @@
                                         (assoc :synopsis (:description d))
                                         (dissoc :description)))
                                   ds)))))
+
    2 (fn [db]
        "Extract player options from lines"
        (let [player-lines (where-map :kind :player (:lines db))]
@@ -35,7 +42,22 @@
                          (update :player-options merge (zipmap option-ids new-options))
                          (assoc-in [:lines line-id :options] option-ids))))
                  db
-                 player-lines)))})
+                 player-lines)))
+
+   3 (fn [db]
+       "Remove inline state trigger and information concepts"
+       (-> db
+           (dissoc :infos)
+           (update :lines
+                   (fn [lines]
+                     (map-values
+                       #(dissoc % :state-triggers :info-ids)
+                       lines)))
+           (update :player-options
+                   (fn [player-options]
+                     (map-values
+                       #(dissoc % :state-triggers :required-info-ids)
+                       player-options)))))})
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)
@@ -51,7 +73,6 @@
 (defn content-data [db]
   (let [content-keys [:ui/positions
                       :player
-                      :infos
                       :locations
                       :characters
                       :dialogues
@@ -72,7 +93,7 @@
 ;; Types
 
 (s/def :entity/id uuid?)
-(s/def :entity/type #{:location :character :line :info :dialogue :player-option})
+(s/def :entity/type #{:location :character :line :dialogue :player-option})
 (s/def ::text #(not (string/blank? %)))
 (s/def :type/point (s/tuple integer? integer?))
 (s/def :type/rect (s/and (s/tuple :type/point :type/point)
@@ -118,7 +139,6 @@
 (s/def ::dialogue-id :entity/id)
 (s/def ::line-id :entity/id)
 (s/def ::location-id :entity/id)
-(s/def ::info-id :entity/id)
 (s/def ::player-option-id :entity/id)
 
 (s/def ::display-name ::text)
@@ -146,19 +166,12 @@
 (s/def ::characters (s/and ::entity-map
                            (s/map-of ::character-id ::character)))
 
-(s/def ::info (s/keys :req [:entity/id :entity/type]
-                      :req-un [::description]))
-(s/def ::infos (s/and ::entity-map
-                      (s/map-of ::info-id ::info)))
-
 ;; Dialogue & Lines
 
 (s/def ::next-line-id (s/or :line-id (s/nilable ::line-id)))
 
-(s/def ::npc-line (s/and (s/keys :req-un [::text ::next-line-id ::character-id]
-                                 :opt-un [::info-ids :dialogue/state-triggers])
+(s/def ::npc-line (s/and (s/keys :req-un [::text ::next-line-id ::character-id])
                          #(= (:kind %) :npc)))
-(s/def ::info-ids (s/coll-of ::info-id :kind set?))
 
 (s/def ::player-line (s/and #(= (:kind %) :player)
                             (s/keys :req-un [::options])))
@@ -168,15 +181,19 @@
                                (s/map-of ::player-option-id ::player-option)))
 
 (s/def ::player-option (s/keys :req [:entity/id :entity/type]
-                               :req-un [::text ::next-line-id]
-                               :opt-un [::required-info-ids :dialogue/state-triggers]))
-(s/def ::required-info-ids ::info-ids)
+                               :req-un [::text ::next-line-id]))
+
+(s/def ::trigger-node (s/and (s/keys :req-un [::next-line-id ::triggers])
+                             #(= (:kind %) :trigger)))
+(s/def ::triggers (s/coll-of ::trigger))
+(s/def ::trigger (s/keys :req-un [::kind ::trigger-id ::trigger-value]))
 
 (s/def ::npc-or-player-line (s/and (s/keys :req [:entity/id
                                                  :entity/type]
                                            :req-un [::dialogue-id])
                                    (s/or :npc ::npc-line
-                                         :player ::player-line)))
+                                         :player ::player-line
+                                         :trigger ::trigger-node)))
 
 (s/def ::lines (s/and ::entity-map
                       (s/map-of ::line-id ::npc-or-player-line)))
@@ -192,7 +209,6 @@
                           :opt-un [:dialogue/states]))
 
 (s/def :dialogue/states (s/map-of ::line-id ::text))
-(s/def :dialogue/state-triggers (s/coll-of ::line-id :kind set?))
 (s/def :dialogue/initial-line-id ::line-id)
 (s/def ::dialogues (s/and ::entity-map
                           (s/map-of ::dialogue-id ::dialogue)))
@@ -204,16 +220,11 @@
 (s/def ::modal (s/keys :opt-un [:modal/character-form
                                 :modal/dialogue-creation
                                 :modal/location-creation
-                                :modal/info-form
                                 ::npc-line-id
                                 ::player-line-id
                                 ::dialogue-state]))
 
 (s/def :modal/location-creation ::display-name)
-
-(s/def :modal/info-form
-  (s/keys :req-un [::description]
-          :opt-un [:entity/id]))
 
 (s/def :modal/character-form
   (s/keys :req-un [::display-name ::color ::texture]
@@ -243,57 +254,15 @@
           option-target-ids (map :next-line-id (vals options))]
       (not-any? #(contains? player-lines %) option-target-ids))))
 
-(s/def ::state-trigger-must-point-to-dialogue-state
-  (fn [{:keys [lines dialogues player-options]}]
-    (let [states (->> (vals dialogues)
-                      (map :states)
-                      (filter seq)
-                      (map keys)
-                      flatten
-                      set)
-          npc-triggers (->> (vals lines)
-                            (where :kind :npc)
-                            (map :state-triggers)
-                            (filter seq)
-                            (apply union))
-          player-triggers (->> (vals player-options)
-                               (map :state-triggers)
-                               (filter seq)
-                               (apply union))]
-      (and (subset? npc-triggers states)
-           (subset? player-triggers states)))))
-
-(s/def ::lines-contain-max-one-state-triggers-per-dialogue
-  (fn [{:keys [lines player-options]}]
-    (let [has-max-one-dialogue (fn [state-triggers]
-                                 (->> state-triggers
-                                      (select-keys lines)
-                                      vals
-                                      (group-by :dialogue-id)
-                                      vals
-                                      (every? #(= 1 (count %)))))
-          npc-triggers (->> (vals lines)
-                            (where :kind :npc)
-                            (map :state-triggers)
-                            (filter seq))
-          player-triggers (->> (vals player-options)
-                               (map :state-triggers)
-                               (filter seq))]
-      (and (every? has-max-one-dialogue npc-triggers)
-           (every? has-max-one-dialogue player-triggers)))))
-
 (s/def ::state (s/and ::dialogue-must-start-with-npc-line
                       ::player-options-must-not-point-to-player-line
                       ::location-connection-validation
-                      ::state-trigger-must-point-to-dialogue-state
-                      ::lines-contain-max-one-state-triggers-per-dialogue
                       (s/keys :req-un [::current-page
                                        ::player
                                        ::characters
                                        ::dialogues
                                        ::player-options
                                        ::lines
-                                       ::infos
                                        ::location-editor
                                        ::locations
                                        ::location-connections]
@@ -307,18 +276,7 @@
 
 (defn clear-dialogue-state [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
-    (letfn [(clear-line [line]
-              (if (set? (:state-triggers line))
-                (update line :state-triggers disj line-id)
-                line))]
-      (-> db
-        (update :lines #(map-values (fn [line]
-                                      (case (:kind line)
-                                        :npc (clear-line line)
-                                        :player line))
-                                    %))
-        (update :player-options #(map-values clear-line %))
-        (update-in [:dialogues dialogue-id :states] dissoc line-id)))))
+    (update-in db [:dialogues dialogue-id :states] dissoc line-id)))
 
 (def default-db
   (merge {:location-editor {:tool :info
@@ -329,6 +287,7 @@
           :locations {}
           :location-connections #{}
           :dialogues {}
-          :lines {}
-          :infos {}}
-         ((get migrations 2) dummy-data)))
+          :lines {}}
+         (->> dummy-data
+              ((migrations 2))
+              ((migrations 3)))))

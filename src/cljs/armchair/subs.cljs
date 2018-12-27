@@ -13,7 +13,6 @@
 
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
-(reg-sub :db-infos #(:infos %))
 (reg-sub :db-locations #(:locations %))
 (reg-sub :db-dialogues #(:dialogues %))
 (reg-sub :db-player #(:player %))
@@ -45,29 +44,6 @@
                   characters))))
 
 (reg-sub
-  :dialogue/state-options
-  :<- [:db-lines]
-  :<- [:db-player-options]
-  :<- [:db-dialogues]
-  (fn [[lines options dialogues] [_ line-id index]]
-    (let [state-triggers (if-let [option-id (get-in lines [line-id :options index])]
-                           (get-in options [option-id :state-triggers])
-                           (get-in lines [line-id :state-triggers]))
-          used-dialogue-states (->> state-triggers
-                                    (select-keys lines)
-                                    vals
-                                    (map #(vector (:dialogue-id %) (:entity/id %)))
-                                    (into {}))]
-      (->> (vals dialogues)
-           (map (fn [{dialogue-id :entity/id :keys [synopsis states]}]
-                  (let [s (if-let [used-line (used-dialogue-states dialogue-id)]
-                            (select-keys states [used-line])
-                            states)]
-                    (transform-map s str #(str synopsis ": " %)))))
-           (apply merge)
-           (map (fn [[k v]] {:label v :value k}))))))
-
-(reg-sub
   :dialogue/modal-line
   :<- [:db-lines]
   :<- [:db-dialogues]
@@ -75,9 +51,7 @@
     (when-let [{id :entity/id :keys [dialogue-id] :as line} (get lines line-id)]
       (-> line
           (assoc :initial-line? (= id (get-in dialogues [dialogue-id :initial-line-id])))
-          (assoc :option-count (count (:options line)))
-          (update :state-triggers #(map str %))
-          (update :info-ids #(map str %))))))
+          (assoc :option-count (count (:options line)))))))
 
 (reg-sub
   :dialogue/player-line-option
@@ -85,24 +59,7 @@
   :<- [:db-player-options]
   (fn [[lines options] [_ line-id index]]
     (let [option-id (get-in lines [line-id :options index])]
-      (-> (options option-id)
-          (update :state-triggers #(map str %))
-          (update :required-info-ids #(map str %))))))
-
-(reg-sub
-  :info-list
-  :<- [:db-infos]
-  (fn [infos] (map-values (fn [{id :entity/id :as info}]
-                            (assoc info :id id))
-                          infos)))
-
-(reg-sub
-  :info-options
-  :<- [:db-infos]
-  (fn [infos]
-    (map (fn [info] {:label (:description info)
-                     :value (str (:entity/id info))})
-         (vals infos))))
+      (get-in options [option-id :text]))))
 
 (reg-sub
   :ui/positions
@@ -120,12 +77,6 @@
         (let [delta (point-delta cursor-start cursor)]
           (translate-point position delta))
         position))))
-
-(reg-sub
-  :info
-  :<- [:db-infos]
-  (fn [infos [_ info-id]]
-    (infos info-id)))
 
 (reg-sub
   :character-options

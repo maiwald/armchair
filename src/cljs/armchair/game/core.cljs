@@ -34,11 +34,9 @@
                               :opt-un [::interaction ::animation])))
 
 (s/def ::player (s/keys :req-un [:player/position
-                                 :player/direction
-                                 :player/infos]))
+                                 :player/direction]))
 (s/def :player/position :type/point)
 (s/def :player/direction #{:up :down :left :right})
-(s/def :player/infos (s/coll-of :entity/id :kind set?))
 
 (s/def ::dialogue-states (s/map-of :entity/id :entity/id))
 
@@ -64,12 +62,10 @@
     position
     (direction-map direction)))
 
-(defn dialogue-data [{{:keys [line-id selected-option]} :interaction
-                      {player-infos :infos} :player}]
+(defn dialogue-data [{{:keys [line-id selected-option]} :interaction}]
   (let [line (get-in @data [:lines line-id])]
     {:text (:text line)
      :options (->> (:options line)
-                   (filterv #(subset? (:required-info-ids %) player-infos))
                    (map :text))
      :selected-option selected-option}))
 
@@ -224,30 +220,19 @@
 
 (defn handle-interact []
   (if (interacting? @state)
-    (let [{next-line-id :next-line-id
-           option-state-triggers :state-triggers} (interaction-option @state)
-          new-state (update @state :dialogue-states merge option-state-triggers)]
+    (let [{next-line-id :next-line-id} (interaction-option @state)]
       (if (nil? next-line-id)
-        (reset! state (-> new-state
-                          (update :dialogue-states merge option-state-triggers)
+        (reset! state (-> @state
                           (dissoc :interaction)))
-        (reset! state (let [{{line-id :line-id} :interaction} new-state
-                            {info-ids :info-ids
-                             line-state-triggers :state-triggers} (get-in @data [:lines next-line-id])]
-                        (cond-> (assoc new-state :interaction {:line-id next-line-id
-                                                               :selected-option 0})
-                          (seq line-state-triggers) (update :dialogue-states merge line-state-triggers)
-                          (seq info-ids) (update-in [:player :infos] union info-ids))))))
+        (reset! state (let [{{line-id :line-id} :interaction} @state]
+                        (assoc @state :interaction {:line-id next-line-id
+                                                    :selected-option 0})))))
     (let [l (get-in @state [:player :location-id])
           npcs (get-in @data [:locations l :npcs])]
       (if-let [dialogue-id (get-in npcs [(interaction-tile @state) :dialogue-id])]
-        (let [next-line-id (get-in @state [:dialogue-states dialogue-id])
-              {info-ids :info-ids
-               line-state-triggers :state-triggers} (get-in @data [:lines next-line-id])]
-          (reset! state (cond-> (assoc @state :interaction {:line-id next-line-id
-                                                            :selected-option 0})
-                          (seq line-state-triggers) (update :dialogue-states merge line-state-triggers)
-                          (seq info-ids) (update-in [:player :infos] union info-ids))))))))
+        (let [next-line-id (get-in @state [:dialogue-states dialogue-id])]
+          (reset! state (assoc @state :interaction {:line-id next-line-id
+                                                    :selected-option 0})))))))
 
 (defn start-input-loop [channel]
   (go-loop [[command payload :as message] (<! channel)]

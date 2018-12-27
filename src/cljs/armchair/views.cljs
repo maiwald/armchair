@@ -59,18 +59,6 @@
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}
       :new-resource #(>evt [:open-character-modal])}]))
 
-(defn info-management []
-  (let [infos (<sub [:info-list])]
-    [slds/resource-page "Infos"
-     {:columns [:description :actions]
-      :collection (vals infos)
-      :cell-views {:actions (fn [_ {id :id}]
-                              [:div {:class "slds-text-align_right"}
-                               [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this info?")
-                                                                             (>evt [:delete-info id]))}]
-                               [slds/symbol-button "edit" {:on-click #(>evt [:open-info-modal id])}]])}
-      :new-resource #(>evt [:open-info-modal])}]))
-
 (defn location-component [location-id]
   (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])
         connecting? (some? (<sub [:connector]))]
@@ -159,32 +147,15 @@
                           :value (:character-id line)}]
       [slds/input-textarea {:label "Text"
                             :on-change #(>evt [:update-line line-id :text (e->val %)])
-                            :value (:text line)}]
-      [slds/multi-select {:label "Infos"
-                          :options (clj->js (<sub [:info-options]))
-                          :values (:info-ids line)
-                          :on-change #(>evt [:set-infos line-id (map uuid %)])}]
-      [slds/multi-select {:label "Dialogue State Triggers"
-                          :options (clj->js (<sub [:dialogue/state-options line-id]))
-                          :values (:state-triggers line)
-                          :on-change #(>evt [:set-state-triggers line-id (map uuid %)])}]]]))
+                            :value (:text line)}]]]))
 
 (defn player-line-form-modal-option [line-id index total-count]
-  (let [{:keys [text required-info-ids state-triggers]} (<sub [:dialogue/player-line-option line-id index])
-        info-options (<sub [:info-options])]
-    [:div { :class "player-line-form__response"}
+  (let [text (<sub [:dialogue/player-line-option line-id index])]
+    [:div {:class "player-line-form__response"}
      [:div {:class "text"}
       [slds/input-textarea {:label (str "Response " (inc index))
                             :on-change #(>evt [:update-option line-id index (e->val %)])
-                            :value text}]
-      [slds/multi-select {:label "Required Infos"
-                          :options info-options
-                          :values required-info-ids
-                          :on-change #(>evt [:set-required-info line-id index (map uuid %)])}]
-      [slds/multi-select {:label "Dialogue State Triggers"
-                          :options (clj->js (<sub [:dialogue/state-options line-id index]))
-                          :values state-triggers
-                          :on-change #(>evt [:set-state-triggers line-id (map uuid %) index])}]]
+                            :value text}]]
      [:ul {:class "actions actions_vertical"}
       [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
                                          (>evt [:delete-option line-id index]))}
@@ -232,16 +203,6 @@
                           :on-change #(>evt [:character-form/update :texture (keyword (e->val %))])}]
       [:img {:src (texture-path texture)}]]]))
 
-(defn info-form-modal [{:keys [description]}]
-  (let [update-description #(>evt [:update-info (e->val %)])]
-    [slds/modal {:title "Info"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [:save-info])}
-     [slds/form
-      [slds/input-text {:label "Description"
-                        :on-change update-description
-                        :value description}]]]))
-
 (defn location-creation-modal [display-name]
   (let [update-name #(>evt [:update-location-creation-name (e->val %)])]
     [slds/modal {:title "Create Location"
@@ -260,7 +221,6 @@
       :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
       :player-line-id    [player-line-form-modal (:player-line-id modal)]
       :character-form    [character-form-modal (:character-form modal)]
-      :info-form         [info-form-modal (:info-form modal)]
       :location-creation [location-creation-modal (:location-creation modal)])))
 
 ;; Navigation
@@ -300,7 +260,7 @@
                        [:span.navigation__item__type "Dialogue"]
                        [:span.navigation__item__title
                         (str character-name ": " synopsis)]]])]))
-          (let [active? (contains? #{:dialogues :characters :infos} page-name)]
+          (let [active? (contains? #{:dialogues :characters} page-name)]
             [:div.resources {:class ["navigation__item"
                                      (when active? "is-active")]}
              [:a.resources__title {:on-click (fn [] (swap! dropdown-open? not))}
@@ -310,14 +270,12 @@
                (condp = page-name
                  :dialogues "Dialogues"
                  :characters "Characters"
-                 :infos "Infos"
                  "Resources")]
               [icon "caret-down"]]
              (when @dropdown-open?
                [:ul.resources__dropdown-list
                 [:li [:a {:on-click #(select :dialogues)} "Dialogues"]]
-                [:li [:a {:on-click #(select :characters)} "Characters"]]
-                [:li [:a {:on-click #(select :infos)} "Infos"]]])])
+                [:li [:a {:on-click #(select :characters)} "Characters"]]])])
           [:ul.functions
            [:li
             (if (<sub [:can-undo?])
@@ -355,5 +313,4 @@
         :dialogues     [dialogue-management]
         :dialogue-edit [dialogue-editor (uuid (:id page-params))]
         :characters    [character-management]
-        :infos         [info-management]
         [:div "Page not found"])]]))
