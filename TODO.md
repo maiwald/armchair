@@ -1,6 +1,7 @@
 # TODO
 - refactor triggers into separate dialogue nodes
 - refactor infos to dialogue switches: booleans, enums
+- local storage
 - directed location connections
 - trees! (multiple texture layers)
 - validation error notifications and form states

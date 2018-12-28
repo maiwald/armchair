@@ -41,3 +41,4 @@ All graphic assets are taken from [opengameart.org](https://opengameart.org)
 - https://opengameart.org/content/lpc-adobe-building-set
 - https://opengameart.org/content/lpc-tile-atlas2
 - https://opengameart.org/content/rpg-tiles-cobble-stone-paths-town-objects
+- https://opengameart.org/content/basic-map-32x32-by-silver-iv
