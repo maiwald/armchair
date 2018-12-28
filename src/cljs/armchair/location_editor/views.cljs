@@ -151,7 +151,8 @@
            [icon "trash" "Drop here to remove."]]
           [:span {:class "tile-list__item__label"} "Drop here to remove."]])]
       (if (empty? available-npcs) "All Characters are placed in locations.")]
-     [:a {:on-click #(>evt [:open-character-modal])} "Create Character"]]))
+     [:div.button
+       [slds/add-button "Create Character" #(>evt [:open-character-modal])]]]))
 
 (defn sidebar-connections [location-id]
   [slds/label "Assigned Connections"

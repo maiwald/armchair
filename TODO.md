@@ -2,6 +2,7 @@
 - refactor triggers into separate dialogue nodes
 - refactor infos to dialogue switches: booleans, enums
 - directed location connections
+- trees! (multiple texture layers)
 - validation error notifications and form states
 - information dependency invariants
 - texture sprite support
@@ -10,6 +11,7 @@
 - zoom in dialogue editor
 
 # nice things
+- wrap dialogue option text in game
 - change default collision to walkable
 - movement behaviour when holding and releasing arrow key
 - stage direction dialogue nodes
