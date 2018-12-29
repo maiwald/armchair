@@ -58,24 +58,25 @@
 (defn text-width [ctx text]
   (.-width (.measureText ctx text)))
 
-(defn draw-textbox! [ctx text [x y] w h]
+(defn draw-textbox! [ctx text [x y] w]
   (let [line-height (* 1.2 (js/parseInt (.-font ctx)))
         words (clojure.string/split text " ")]
     (loop [index 0
            line (first words)
            remaining (rest words)]
       (if (empty? remaining)
-        (draw-text! ctx line [x (+ y (* index line-height))])
+        (do
+          (draw-text! ctx line [x (+ y (* index line-height))])
+          (* (inc index) line-height))
         (let [currentWord (first remaining)
               nextLine (str line " " currentWord)
               line-y (+ y (* index line-height))]
           (assert (> w (text-width ctx line))
                   "Text is too wide for given container!")
-          (when (>= h (+ line-height (* index line-height)))
-            (if (>= (text-width ctx nextLine) w)
-              (do (draw-text! ctx line [x line-y])
-                  (recur (inc index) currentWord (rest remaining)))
-              (recur index (str line " " currentWord) (rest remaining)))))))))
+          (if (>= (text-width ctx nextLine) w)
+            (do (draw-text! ctx line [x line-y])
+                (recur (inc index) currentWord (rest remaining)))
+            (recur index (str line " " currentWord) (rest remaining))))))))
 
 (defn clear! [ctx]
   (.clearRect ctx 0 0 (width ctx) (height ctx)))

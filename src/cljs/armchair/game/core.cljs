@@ -153,26 +153,33 @@
     (c/set-fill-style! ctx "rgb(0, 0, 0)")
     (c/set-baseline! ctx "top")
     (c/set-font! ctx "23px serif")
-    (c/draw-textbox! ctx text (translate-point [x y] [20 20]) (- w 40) 150)
-
-    (c/set-font! ctx "18px serif")
-    (c/set-baseline! ctx "middle")
-    (doseq [[idx option] (map-indexed vector options)]
+    (let [offset (c/draw-textbox! ctx text (translate-point [x y] [20 20]) (- w 40))]
+      (c/set-font! ctx "18px serif")
       (let [w (- w 40)
-            h 30
-            offset 6
-            coord (translate-point [x y] [20 (+ 170 (* idx (+ offset h)))])]
-        (c/set-fill-style! ctx "rgba(0, 0, 0, .2)")
-        (c/fill-rect! ctx coord w h)
+            padding 6
+            spacing 6]
+        (loop [idx 0
+               y (+ y 40 offset)
+               options options]
+          (if-let [option (first options)]
+            (do
+              (c/set-fill-style! ctx "rgb(0, 0, 0)")
+              (if (= selected-option idx)
+                (c/set-stroke-style! ctx "rgb(255, 0, 0)")
+                (c/set-stroke-style! ctx "rgb(0, 0, 0)"))
+              (let [coord (translate-point [x y] [20 0])
+                    height (+ padding (c/draw-textbox! ctx option (translate-point coord [7 padding]) w))]
+                (if (= selected-option idx)
+                  (c/set-fill-style! ctx "rgba(0, 0, 0, .1)")
+                  (c/set-fill-style! ctx "rgba(0, 0, 0, 0)"))
+                (c/fill-rect! ctx coord w height)
 
-        (if (= selected-option idx)
-          (c/set-stroke-style! ctx "rgb(255, 0, 0)")
-          (c/set-stroke-style! ctx "rgb(0, 0, 0)"))
-        (c/set-line-width! ctx "1")
-        (c/stroke-rect! ctx coord w h)
+                (c/set-line-width! ctx "1")
+                (c/stroke-rect! ctx coord w height)
 
-        (c/set-fill-style! ctx "rgb(0, 0, 0)")
-        (c/draw-text! ctx option (translate-point coord [7 (/ h 2)]))))
+                (recur (inc idx)
+                       (+ y height spacing)
+                       (rest options))))))))
     (c/restore! ctx)))
 
 (defn draw-camera [[left-top right-bottom]]
