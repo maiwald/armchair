@@ -4,7 +4,6 @@
                                         close!
                                         go-loop
                                         put!
-                                        poll!
                                         sliding-buffer]]
             [clojure.spec.alpha :as s]
             [clojure.set :refer [subset? union]]
@@ -349,7 +348,7 @@
   (reset! ctx context)
   (reset! move-q #queue [])
   (let [input-chan (chan)
-        quit-chan (chan)
+        quit (atom false)
         prev-view-state (atom nil)]
     (load-textures
       (fn [loaded-atlas]
@@ -365,17 +364,15 @@
               (when-not (= @prev-view-state view-state)
                 (reset! prev-view-state view-state)
                 (render view-state))
-              (if-not (poll! quit-chan)
-                (js/requestAnimationFrame game-loop)
-                (do
-                  (reset! state nil)
-                  (reset! data nil)
-                  (reset! move-q nil)
-                  (reset! ctx nil))))))))
+              (if-not @quit
+                (js/requestAnimationFrame game-loop)))))))
     {:input input-chan
-     :quit quit-chan}))
+     :quit quit}))
 
 (defn end-game [{:keys [input quit]}]
-  (put! quit true)
-  (close! quit)
-  (close! input))
+  (reset! quit true)
+  (close! input)
+  (reset! state nil)
+  (reset! data nil)
+  (reset! move-q nil)
+  (reset! ctx nil))
