@@ -1,5 +1,5 @@
 (defproject armchair "0.1.0-SNAPSHOT"
-  :dependencies [[org.clojure/clojure "1.9.0"]
+  :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/clojurescript "1.10.439"]
                  [reagent "0.8.1"]
                  [re-frame "0.10.6"]
@@ -7,7 +7,7 @@
                  [cljsjs/react-select "1.2.1-1"]
                  [cljsjs/filesaverjs "1.3.3-0"]
                  [com.cognitect/transit-cljs "0.8.256"]
-                 [bidi "2.1.4"]]
+                 [bidi "2.1.5"]]
 
   :plugins [[lein-cljsbuild "1.1.5"]]
 
@@ -23,10 +23,10 @@
   :profiles
   {:dev
    {:dependencies [[binaryage/devtools "0.9.10"]
-                   [figwheel-sidecar "0.5.17"]
+                   [figwheel-sidecar "0.5.18"]
                    [cider/piggieback "0.3.10"]
-                   [day8.re-frame/re-frame-10x "0.3.3-react16"]]
-    :plugins      [[lein-figwheel "0.5.17"]
+                   [day8.re-frame/re-frame-10x "0.3.6-react16"]]
+    :plugins      [[lein-figwheel "0.5.18"]
                    [lein-ancient "0.6.15"]]
     :source-paths ["src/cljs" "dev"]
     :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}}}
