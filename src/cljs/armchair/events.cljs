@@ -220,7 +220,8 @@
                      :texture texture
                      :color color}]
       (cond-> db
-        (s/valid? :armchair.db/character character)
+        (and (s/valid? :armchair.db/character character)
+             (some? texture))
         (-> (assoc-in [:characters id] character)
             (dissoc :modal))))))
 
