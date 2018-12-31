@@ -45,7 +45,7 @@
         {:npc-line-ids (map :entity/id (lines-by-kind :npc))
          :player-line-ids (map :entity/id (lines-by-kind :player))
          :npc-connections (->> (lines-by-kind :npc)
-                               (remove #(nil? (:next-line-id %)))
+                               (filter #(some? (:next-line-id %)))
                                (map #(vector (:entity/id %) (:next-line-id %))))
          :player-connections (reduce
                                (fn [acc {start :entity/id :keys [options]}]
@@ -54,6 +54,6 @@
                                                                      (vector start
                                                                              index
                                                                              (get-in player-options [option-id :next-line-id]))))
-                                                      (remove (fn [[_ _ end]] (nil? end))))))
+                                                      (filter (fn [[_ _ end]] (some? end))))))
                                (list)
                                (lines-by-kind :player))}))))

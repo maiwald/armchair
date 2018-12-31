@@ -369,32 +369,6 @@
     (assoc db :cursor cursor)))
 
 (reg-event-db
-  :start-connecting-lines
-  [validate]
-  (fn [db [_ line-id cursor index]]
-    (assert (not (contains? db :connecting))
-            "Attempting to start connecting lines while already in progress!")
-    (assoc db
-           :connecting (cond-> {:cursor-start cursor
-                                :line-id line-id}
-                         (some? index) (assoc :index index))
-           :cursor cursor)))
-
-(reg-event-db
-  :end-connecting-lines
-  [validate
-   record-undo]
-  (fn [db [_ end-id]]
-    (assert (s/valid? :armchair.db/connecting-lines (:connecting db))
-            "Attempting to end connecting with missing or invalid state!")
-    (let [{start-id :line-id index :index} (:connecting db)
-          id-path (if-let [option-id (get-in db [:lines start-id :options index])]
-                    [:player-options option-id :next-line-id]
-                    [:lines start-id :next-line-id])]
-      (cond-> (dissoc db :connecting :cursor)
-        (not= start-id end-id) (assoc-in id-path end-id)))))
-
-(reg-event-db
   :start-connecting-locations
   [validate]
   (fn [db [_ location-id cursor]]
