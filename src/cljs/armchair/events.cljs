@@ -154,7 +154,7 @@
 
 (defn assert-character-modal [db]
   (assert (contains? (:modal db) :character-form)
-          "No dialogue creation initiated. Cannot set value!"))
+          "No character creation initiated. Cannot set value!"))
 
 (reg-event-db
   :open-character-modal
