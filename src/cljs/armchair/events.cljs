@@ -168,7 +168,6 @@
          :texture texture
          :color color}
         {:display-name ""
-         :texture nil
          :color (rand-nth config/color-grid)}))))
 
 (reg-event-db
