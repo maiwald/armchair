@@ -45,7 +45,7 @@
                            :on-click #(>evt [:open-dialogue-state-modal line-id])}
                        state]
                       [:a {:on-mouse-down stop-e!
-                           :on-click #(>evt [:delete-dialogue-state line-id])}
+                           :on-click #(>evt [:dialogue-editor/delete-dialogue-state line-id])}
                        [icon "times-circle" "Delete state"]]])
      [:div {:class "line__text"
             :style {:height (str config/line-height "px")}}
@@ -98,21 +98,34 @@
                      [player-line-option-component line-id index option])
                    options)]]))
 
+(defn trigger-component [trigger-node-id trigger-id]
+  (let [{:keys [switch-id switch-name switch-value]} (<sub [:dialogue-editor/trigger trigger-id])]
+    [:li
+     [:a {:on-mouse-down stop-e!
+          :on-click #(>navigate :dialogue-edit :id switch-id)}
+      [:span.triggers__switch-name switch-name]
+      [:span.triggers__switch-value switch-value]]
+     [:a {:on-mouse-down stop-e!
+          :on-click #(>evt [:dialogue-editor/delete-trigger trigger-node-id trigger-id])}
+      [icon "times-circle"]]]))
+
 (defn trigger-node-component [id]
   (let [connecting? (some? (<sub [:connector]))
-        {:keys [triggers connected?]} (<sub [:dialogue-editor/trigger-node id])]
+        {:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
     [:div.line {:on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
                 :style {:width (str config/line-width "px")}}
      [:div.line__header
-      [:p.name "Triggers"]]
+      [:p.name "Triggers"]
+      [:ul.actions {:on-mouse-down stop-e!}
+       [:li {:class "action"
+             :on-click #(when (js/confirm "Are your sure you want to delete this trigger node")
+                          (>evt [:dialogue-editor/delete-trigger-node id]))}
+        [icon "trash" "Delete"]]]]
      [:div.line__text
       [:ul.triggers
-       (for [{:keys [switch-kind switch-id switch-name switch-value]} triggers]
-         [:li {:key (str "trigger-" id "-" switch-id)}
-          [:a {:on-mouse-down stop-e!
-               :on-click #(>navigate :dialogue-edit :id switch-id)}
-           [:span.triggers__switch-name switch-name]
-           [:span.triggers__switch-value switch-value]]])]
+       (for [trigger-id trigger-ids]
+         ^{:key (str "trigger" trigger-id)}
+         [trigger-component id trigger-id])]
       (if connected?
         [:div {:class "action"
                :on-mouse-down stop-e!

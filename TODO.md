@@ -1,8 +1,6 @@
 # TODO
 - refactor triggers into separate dialogue nodes
-  - deleting triggers and trigger nodes
   - add "info" switches
-  - account for deleting states
   - clean up migration
   - consolidate graph node css
   - move modal stuff into its own namespace

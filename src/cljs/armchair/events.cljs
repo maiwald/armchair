@@ -121,11 +121,11 @@
   (fn [db [_ line-id]]
     (let [option-id (random-uuid)]
       (-> db
-        (update-in [:lines line-id :options] conj option-id)
-        (assoc-in [:player-options option-id] {:entity/id option-id
-                                               :entity/type :player-option
-                                               :text ""
-                                               :next-line-id nil})))))
+          (update-in [:lines line-id :options] conj option-id)
+          (assoc-in [:player-options option-id] {:entity/id option-id
+                                                 :entity/type :player-option
+                                                 :text ""
+                                                 :next-line-id nil})))))
 
 (reg-event-db
   :update-option
@@ -142,8 +142,8 @@
   (fn [db [_ line-id index]]
     (let [option-id (get-in db [:lines line-id :options index])]
       (-> db
-        (update-in [:lines line-id :options] #(removev % index))
-        (update :player-options dissoc option-id)))))
+          (update-in [:lines line-id :options] #(removev % index))
+          (update :player-options dissoc option-id)))))
 
 ;; Modal
 
@@ -162,7 +162,7 @@
     (assert-no-open-modal db)
     (assoc-in db [:modal :trigger-creation]
               {:trigger-node-id node-id
-               :kind :dialogue-state})))
+               :switch-kind :dialogue-state})))
 
 (reg-event-db
   :modal/update-trigger-kind
@@ -171,8 +171,8 @@
     (assert-trigger-modal db)
     (update-in db [:modal :trigger-creation]
                (fn [t] (-> t
-                           (assoc :kind kind)
-                           (dissoc :id :value))))))
+                           (assoc :switch-kind kind)
+                           (dissoc :switch-id :switch-value))))))
 
 (reg-event-db
   :modal/update-trigger-switch-id
@@ -181,28 +181,35 @@
     (assert-trigger-modal db)
     (update-in db [:modal :trigger-creation]
                (fn [t] (-> t
-                           (assoc :id id)
-                           (dissoc :value))))))
-
-(reg-event-db
-  :modal/save-trigger
-  [validate]
-  (fn [db]
-    (assert-trigger-modal db)
-    (let [{:keys [trigger-node-id kind id value]} (get-in db [:modal :trigger-creation])
-          trigger {:kind kind :id id :value value}]
-
-      (cond-> db
-        (s/valid? :armchair.db/trigger trigger)
-        (-> (update-in [:lines trigger-node-id :triggers] conj trigger)
-            (dissoc :modal))))))
+                           (assoc :switch-id id)
+                           (dissoc :switch-value))))))
 
 (reg-event-db
   :modal/update-trigger-value
   [validate]
   (fn [db [_ value]]
     (assert-trigger-modal db)
-    (assoc-in db [:modal :trigger-creation :value] value)))
+    (assoc-in db [:modal :trigger-creation :switch-value] value)))
+
+(reg-event-db
+  :modal/save-trigger
+  [validate
+   record-undo]
+  (fn [db]
+    (assert-trigger-modal db)
+    (let [trigger-id (random-uuid)
+          {:keys [trigger-node-id switch-kind switch-id switch-value]} (get-in db [:modal :trigger-creation])
+          trigger {:entity/id trigger-id
+                   :entity/type :trigger
+                   :switch-kind switch-kind
+                   :switch-id switch-id
+                   :switch-value switch-value}]
+      (cond-> db
+        (s/valid? :armchair.db/trigger trigger)
+        (-> (update-in [:lines trigger-node-id :trigger-ids]
+                       (fn [ts] (conj (vec ts) trigger-id)))
+            (assoc-in [:triggers trigger-id] trigger)
+            (dissoc :modal))))))
 
 (reg-event-db
   :open-character-modal

@@ -33,18 +33,23 @@
         options))))
 
 (reg-sub
+  :dialogue-editor/trigger
+  :<- [:db-triggers]
+  :<- [:db-dialogues]
+  (fn [[triggers dialogues] [_ trigger-id]]
+    (let [{:keys [kind switch-id switch-value]} (triggers trigger-id)]
+      {:switch-kind kind
+       :switch-id switch-id
+       :switch-name (get-in dialogues [switch-id :synopsis])
+       :switch-value (get-in dialogues [switch-id :states switch-value] "Initial Line")})))
+
+(reg-sub
   :dialogue-editor/trigger-node
   :<- [:db-lines]
-  :<- [:db-dialogues]
-  (fn [[lines dialogues] [_ trigger-id]]
-    (let [{:keys [next-line-id triggers]} (lines trigger-id)]
+  (fn [lines [_ trigger-id]]
+    (let [{:keys [next-line-id trigger-ids]} (lines trigger-id)]
       {:connected? (some? next-line-id)
-       :triggers (map (fn [{:keys [kind id value]}]
-                        {:switch-kind kind
-                         :switch-id id
-                         :switch-name (get-in dialogues [id :synopsis])
-                         :switch-value (get-in dialogues [id :states value] "Initial Line")})
-                      triggers)})))
+       :trigger-ids trigger-ids})))
 
 (reg-sub
   :dialogue-editor/dialogue

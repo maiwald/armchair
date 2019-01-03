@@ -17,6 +17,7 @@
 (reg-sub :db-dialogues #(:dialogues %))
 (reg-sub :db-player #(:player %))
 (reg-sub :db-player-options #(:player-options %))
+(reg-sub :db-triggers #(:triggers %))
 
 (reg-sub :db-location-connections #(:location-connections %))
 
@@ -64,10 +65,13 @@
 (reg-sub
   :trigger-creation-options
   :<- [:modal]
+  :<- [:db-triggers]
   :<- [:db-dialogues]
   :<- [:db-lines]
-  (fn [[{{:keys [trigger-node-id kind id]} :trigger-creation} dialogues lines]]
-    (let [used-switches (set (map :id (get-in lines [trigger-node-id :triggers])))]
+  (fn [[{{:keys [trigger-node-id switch-id]} :trigger-creation} triggers dialogues lines]]
+    (let [used-switches (->> (get-in lines [trigger-node-id :trigger-ids])
+                             (map (fn [trigger-id] (get-in triggers [trigger-id :switch-id])))
+                             set)]
       {:kind-options [[:dialogue-state "Dialogue State"]
                       [:switch "Switch"]]
        :switch-options (->> dialogues
@@ -75,8 +79,10 @@
                                           (and (not (contains? used-switches id))
                                                (seq states))))
                             (map-values :synopsis))
-       :value-options (when id (let [{:keys [states initital-line-id]} (dialogues id)]
-                                 (conj (seq states) [initital-line-id "Initial Line"])))})))
+       :value-options (when switch-id
+                        (let [{:keys [states initital-line-id]} (dialogues switch-id)]
+                          (conj (seq states)
+                                [initital-line-id "Initial Line"])))})))
 
 (reg-sub
   :ui/positions

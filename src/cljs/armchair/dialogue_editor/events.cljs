@@ -54,6 +54,27 @@
                                  :dialogue-id dialogue-id
                                  :next-line-id nil})))))
 
+(reg-event-db
+  :dialogue-editor/delete-trigger
+  [validate
+   record-undo]
+  (fn [db [_ trigger-node-id trigger-id]]
+    (-> db
+        (update :triggers dissoc trigger-id)
+        (update-in [:lines trigger-node-id :trigger-ids]
+                   (fn [ts]
+                     (vec (remove #(= trigger-id %) ts)))))))
+
+(reg-event-db
+  :dialogue-editor/delete-trigger-node
+  [validate
+   record-undo]
+  (fn [db [_ trigger-node-id]]
+    (let [trigger-ids (get-in db [:lines trigger-node-id :trigger-ids])]
+      (-> db
+          (update :triggers #(apply dissoc % trigger-ids))
+          (update :lines dissoc trigger-node-id)))))
+
 (defn initial-line? [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
     (= line-id (get-in db [:dialogues dialogue-id :initial-line-id]))))
@@ -90,7 +111,7 @@
                                       %)))))))
 
 (reg-event-db
-  :delete-dialogue-state
+  :dialogue-editor/delete-dialogue-state
   [validate
    record-undo]
   (fn [db [_ id]]

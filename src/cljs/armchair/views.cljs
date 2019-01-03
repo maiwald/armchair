@@ -213,7 +213,7 @@
                         :on-change update-name
                         :value display-name}]]]))
 
-(defn trigger-creation-modal [{:keys [kind id value]}]
+(defn trigger-creation-modal [{:keys [switch-kind switch-id switch-value]}]
   (let [{:keys [kind-options
                 switch-options
                 value-options]} (<sub [:trigger-creation-options])]
@@ -222,19 +222,19 @@
                  :confirm-handler #(>evt [:modal/save-trigger])}
        [slds/form
         [slds/radio-button-group {:options kind-options
-                                  :active kind
+                                  :active switch-kind
                                   :on-change #(>evt [:modal/update-trigger-kind %])}]
-        [slds/input-select {:label (case kind
+        [slds/input-select {:label (case switch-kind
                                      :dialogue-state "Dialogue"
                                      :switch "Switch")
                             :options switch-options
-                            :value id
-                            :disabled (nil? kind)
+                            :value switch-id
+                            :disabled (nil? switch-kind)
                             :on-change #(>evt [:modal/update-trigger-switch-id (uuid (e->val %))])}]
         [slds/input-select {:label "Value"
                             :options value-options
-                            :value value
-                            :disabled (nil? id)
+                            :value switch-value
+                            :disabled (nil? switch-id)
                             :on-change #(>evt [:modal/update-trigger-value (uuid (e->val %))])}]]]))
 
 (defn modal []

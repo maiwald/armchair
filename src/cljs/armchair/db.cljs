@@ -78,7 +78,8 @@
                       :dialogues
                       :player-options
                       :location-connections
-                      :lines]]
+                      :lines
+                      :triggers]]
     (select-keys db content-keys)))
 
 (defn serialize-db [db]
@@ -93,7 +94,7 @@
 ;; Types
 
 (s/def :entity/id uuid?)
-(s/def :entity/type #{:location :character :line :dialogue :player-option})
+(s/def :entity/type #{:location :character :line :dialogue :player-option :trigger})
 (s/def ::text #(not (string/blank? %)))
 (s/def :type/point (s/tuple integer? integer?))
 (s/def :type/rect (s/and (s/tuple :type/point :type/point)
@@ -140,6 +141,7 @@
 (s/def ::line-id :entity/id)
 (s/def ::location-id :entity/id)
 (s/def ::player-option-id :entity/id)
+(s/def ::trigger-id :entity/id)
 
 (s/def ::display-name ::text)
 (s/def ::color ::text)
@@ -170,10 +172,10 @@
 
 (s/def ::next-line-id (s/or :line-id (s/nilable ::line-id)))
 
-(s/def ::npc-line (s/and (s/keys :req-un [::text
+(s/def ::npc-line (s/and #(= (:kind %) :npc)
+                         (s/keys :req-un [::text
                                           ::next-line-id
-                                          ::character-id])
-                         #(= (:kind %) :npc)))
+                                          ::character-id])))
 
 (s/def ::player-line (s/and #(= (:kind %) :player)
                             (s/keys :req-un [::options])))
@@ -185,16 +187,22 @@
 (s/def ::player-option (s/keys :req [:entity/id :entity/type]
                                :req-un [::text ::next-line-id]))
 
-(s/def ::trigger-node (s/and (s/keys :req-un [::triggers ::next-line-id])
-                             #(= (:kind %) :trigger)))
-(s/def ::triggers (s/coll-of ::trigger))
 
-(s/def :trigger/kind #{:dialogue-state})
-(s/def :trigger/id :entity/id)
-(s/def :trigger/value :entity/id)
-(s/def ::trigger (s/keys :req-un [:trigger/kind
-                                  :trigger/id
-                                  :trigger/value]))
+(s/def ::trigger-node (s/and #(= (:kind %) :trigger)
+                             (s/keys :req-un [::trigger-ids ::next-line-id])))
+(s/def ::trigger-ids (s/coll-of ::trigger-id :kind vector?))
+
+(s/def ::triggers (s/and ::entity-map
+                         (s/map-of ::trigger-id ::trigger)))
+
+(s/def :trigger/switch-kind #{:dialogue-state})
+(s/def :trigger/switch-id :entity/id)
+(s/def :trigger/switch-value :entity/id)
+(s/def ::trigger (s/keys :req [:entity/id
+                               :entity/type]
+                         :req-un [:trigger/switch-kind
+                                  :trigger/switch-id
+                                  :trigger/switch-value]))
 
 (s/def :dialogue-node/kind #{:npc :player :trigger})
 (s/def ::npc-or-player-line (s/and (s/keys :req [:entity/id
@@ -230,7 +238,7 @@
 (s/def ::modal (s/keys :opt-un [:modal/character-form
                                 :modal/dialogue-creation
                                 :modal/location-creation
-                                :modal/trigger-creation-modal
+                                :modal/trigger-creation
                                 ::npc-line-id
                                 ::player-line-id
                                 ::dialogue-state]))
@@ -245,11 +253,11 @@
   (s/keys :req-un [::character-id ::synopsis]
           :opt-un [::location-id ::location-position]))
 
-(s/def :modal/trigger-creation-modal
+(s/def :modal/trigger-creation
   (s/keys :req-un [::trigger-node-id
-                   :trigger/id
-                   :trigger/kind
-                   :trigger/value]))
+                   :trigger/switch-id
+                   :trigger/switch-kind
+                   :trigger/switch-value]))
 
 (s/def ::dialogue-state (s/keys :req-un [::line-id]
                                 :opt-un [::description]))
@@ -280,6 +288,7 @@
                                        ::dialogues
                                        ::player-options
                                        ::lines
+                                       ::triggers
                                        ::location-editor
                                        ::locations
                                        ::location-connections]
@@ -292,8 +301,24 @@
                                  ::location-position]))
 
 (defn clear-dialogue-state [db line-id]
-  (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
-    (update-in db [:dialogues dialogue-id :states] dissoc line-id)))
+  (let [dialogue-id (get-in db [:lines line-id :dialogue-id])
+        trigger-ids (->> (:triggers db)
+                         (filter-map (fn [{v :switch-value kind :kind}]
+                                       (and (= kind :dialogue-state)
+                                            (= v line-id))))
+                         keys
+                         set)]
+    (-> db
+        (update :lines (fn [lines]
+                         (map-values (fn [l]
+                                       (if (contains? l :trigger-ids)
+                                         (update l :trigger-ids
+                                                 (fn [ids]
+                                                   (vec (remove #(contains? trigger-ids %) ids))))
+                                         l))
+                                     lines)))
+        (update-in [:dialogues dialogue-id :states] dissoc line-id)
+        (update :triggers #(apply dissoc % trigger-ids)))))
 
 (def default-db
   (merge {:location-editor {:tool :info
@@ -304,7 +329,8 @@
           :locations {}
           :location-connections #{}
           :dialogues {}
-          :lines {}}
+          :lines {}
+          :triggers {}}
          (->> dummy-data
               ((migrations 2))
               ((migrations 3)))))
