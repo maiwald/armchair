@@ -40,6 +40,20 @@
                                       :options []}))
        :dispatch [:open-player-line-modal id]})))
 
+(reg-event-db
+  :create-trigger-node
+  [validate
+   record-undo]
+  (fn [db [_ dialogue-id]]
+    (let [id (random-uuid)]
+      (-> db
+          (assoc-in [:ui/positions id] config/default-ui-position)
+          (assoc-in [:lines id] {:entity/id id
+                                 :entity/type :line
+                                 :kind :trigger
+                                 :dialogue-id dialogue-id
+                                 :next-line-id nil})))))
+
 (defn initial-line? [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
     (= line-id (get-in db [:dialogues dialogue-id :initial-line-id]))))

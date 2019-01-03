@@ -213,6 +213,30 @@
                         :on-change update-name
                         :value display-name}]]]))
 
+(defn trigger-creation-modal [{:keys [kind id value]}]
+  (let [{:keys [kind-options
+                switch-options
+                value-options]} (<sub [:trigger-creation-options])]
+    [slds/modal {:title "Add Trigger"
+                 :close-handler #(>evt [:close-modal])
+                 :confirm-handler #(>evt [:modal/save-trigger])}
+       [slds/form
+        [slds/radio-button-group {:options kind-options
+                                  :active kind
+                                  :on-change #(>evt [:modal/update-trigger-kind %])}]
+        [slds/input-select {:label (case kind
+                                     :dialogue-state "Dialogue"
+                                     :switch "Switch")
+                            :options switch-options
+                            :value id
+                            :disabled (nil? kind)
+                            :on-change #(>evt [:modal/update-trigger-switch-id (uuid (e->val %))])}]
+        [slds/input-select {:label "Value"
+                            :options value-options
+                            :value value
+                            :disabled (nil? id)
+                            :on-change #(>evt [:modal/update-trigger-value (uuid (e->val %))])}]]]))
+
 (defn modal []
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
@@ -221,7 +245,8 @@
       :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
       :player-line-id    [player-line-form-modal (:player-line-id modal)]
       :character-form    [character-form-modal (:character-form modal)]
-      :location-creation [location-creation-modal (:location-creation modal)])))
+      :location-creation [location-creation-modal (:location-creation modal)]
+      :trigger-creation  [trigger-creation-modal (:trigger-creation modal)])))
 
 ;; Navigation
 

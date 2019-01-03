@@ -1,6 +1,11 @@
 # TODO
 - refactor triggers into separate dialogue nodes
-- refactor infos to dialogue switches: booleans, enums
+  - deleting triggers and trigger nodes
+  - add "info" switches
+  - account for deleting states
+  - clean up migration
+  - consolidate graph node css
+  - move modal stuff into its own namespace
 - local storage
 - directed location connections
 - trees! (multiple texture layers)

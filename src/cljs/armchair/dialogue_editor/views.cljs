@@ -1,6 +1,7 @@
 (ns armchair.dialogue-editor.views
   (:require [armchair.components :refer [icon drag-canvas connection e->graph-cursor]]
             [clojure.string :refer [join]]
+            [armchair.routes :refer [>navigate]]
             [armchair.config :as config]
             [armchair.slds :as slds]
             [armchair.util :refer [<sub >evt stop-e! e-> e->val e->left? translate-point]]))
@@ -97,45 +98,44 @@
                      [player-line-option-component line-id index option])
                    options)]]))
 
-(defn trigger-component [trigger-id]
+(defn trigger-node-component [id]
   (let [connecting? (some? (<sub [:connector]))
-        connected? false]
-    [:div.line {:on-mouse-up (when connecting? #(>evt [:end-connecting-lines trigger-id]))
+        {:keys [triggers connected?]} (<sub [:dialogue-editor/trigger-node id])]
+    [:div.line {:on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
                 :style {:width (str config/line-width "px")}}
      [:div.line__header
-      [:p.name "Trigger"]]
+      [:p.name "Triggers"]]
      [:div.line__text
       [:ul.triggers
-       [:li
-        [:span.triggers__switch-name "Hugo: Hugo's Dialogue with some very long title that definitely wraps."]
-        [:select.triggers__switch-value
-         {:on-mouse-down stop-e!}
-         [:option "Initial Line"]
-         [:option "Hugo is annoyed"]]]
-       [:li
-        [:span.triggers__switch-name "Switch 1"]
-        [:select.triggers__switch-value
-         {:on-mouse-down stop-e!}
-         [:option "Some Value"]
-         [:option "Some Other Value"]]]]
+       (for [{:keys [switch-kind switch-id switch-name switch-value]} triggers]
+         [:li {:key (str "trigger-" id "-" switch-id)}
+          [:a {:on-mouse-down stop-e!
+               :on-click #(>navigate :dialogue-edit :id switch-id)}
+           [:span.triggers__switch-name switch-name]
+           [:span.triggers__switch-value switch-value]]])]
       (if connected?
         [:div {:class "action"
                :on-mouse-down stop-e!
-               :on-click #(>evt [:dialogue-editor/disconnect-trigger trigger-id])}
+               :on-click #(>evt [:dialogue-editor/disconnect-line id])}
          [icon "unlink" "Connect"]]
         [:div {:class "action action_connect"
                :on-mouse-down (e-> #(when (e->left? %)
-                                      (>evt [:start-connecting-lines trigger-id (e->graph-cursor %)])))}
-         [icon "link" "Connect"]])]]))
+                                      (>evt [:start-connecting-lines id (e->graph-cursor %)])))}
+         [icon "link" "Connect"]])]
+     [:div.line__footer
+      [:a
+       {:on-click #(>evt [:modal/open-trigger-creation id])
+        :on-mouse-down stop-e!}
+       [icon "plus"] " Add Trigger"]]]))
 
-(defn npc-connection [start end]
+(defn line-connection [start end]
   (let [start-pos (<sub [:ui/position start])
         end-pos (<sub [:ui/position end])]
     [connection {:start (translate-point start-pos [(- config/line-width 15)
                                                     (+ 33 (/ config/line-height 2))])
                  :end (translate-point end-pos [15 (+ 33 (/ config/line-height 2))])}]))
 
-(defn player-connection [start index end]
+(defn option-connection [start index end]
   (let [start-pos (<sub [:ui/position start])
         end-pos (<sub [:ui/position end])]
     [connection {:start (translate-point start-pos [(- config/line-width 15)
@@ -145,24 +145,29 @@
                  :end (translate-point end-pos [15 (+ 33 (/ config/line-height 2))])}]))
 
 (defn dialogue-editor [dialogue-id]
-  (if-let [{:keys [npc-line-ids player-line-ids npc-connections player-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
+  (if-let [{:keys [npc-line-ids
+                   player-line-ids
+                   trigger-node-ids
+                   line-connections
+                   option-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
     [:div {:class "content-wrapper"}
      [:div {:class "new-item-button"}
       [slds/add-button "New Player Line" #(>evt [:create-player-line dialogue-id])]
-      [slds/add-button "New NPC Line" #(>evt [:create-npc-line dialogue-id])]]
+      [slds/add-button "New NPC Line" #(>evt [:create-npc-line dialogue-id])]
+      [slds/add-button "New Trigger Node" #(>evt [:create-trigger-node dialogue-id])]]
      [drag-canvas {:kind "line"
                    :nodes {npc-line-component npc-line-ids
                            player-line-component player-line-ids
-                           trigger-component [1]}}
+                           trigger-node-component trigger-node-ids}}
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
        (when-let [connector (<sub [:connector])]
          [connection connector])
-       (for [[start end] npc-connections]
+       (for [[start end] line-connections]
          ^{:key (str "line-connection:" start "->" end)}
-         [npc-connection start end])
-       (for [[start index end] player-connections]
+         [line-connection start end])
+       (for [[start index end] option-connections]
          ^{:key (str "response-connection:" start ":" index "->" end)}
-         [player-connection start index end])]]]
+         [option-connection start index end])]]]
     [:span "Dialogue not found."]))

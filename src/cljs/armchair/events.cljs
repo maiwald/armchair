@@ -151,10 +151,58 @@
   (assert (not (contains? db :modal))
           "Attempting to open a modal while modal is open!"))
 
+(defn assert-trigger-modal [db]
+  (assert (contains? (:modal db) :trigger-creation)
+          "No trigger creation initiated. Cannot set value!"))
 
-(defn assert-character-modal [db]
-  (assert (contains? (:modal db) :character-form)
-          "No character creation initiated. Cannot set value!"))
+(reg-event-db
+  :modal/open-trigger-creation
+  [validate]
+  (fn [db [_ node-id]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :trigger-creation]
+              {:trigger-node-id node-id
+               :kind :dialogue-state})))
+
+(reg-event-db
+  :modal/update-trigger-kind
+  [validate]
+  (fn [db [_ kind]]
+    (assert-trigger-modal db)
+    (update-in db [:modal :trigger-creation]
+               (fn [t] (-> t
+                           (assoc :kind kind)
+                           (dissoc :id :value))))))
+
+(reg-event-db
+  :modal/update-trigger-switch-id
+  [validate]
+  (fn [db [_ id]]
+    (assert-trigger-modal db)
+    (update-in db [:modal :trigger-creation]
+               (fn [t] (-> t
+                           (assoc :id id)
+                           (dissoc :value))))))
+
+(reg-event-db
+  :modal/save-trigger
+  [validate]
+  (fn [db]
+    (assert-trigger-modal db)
+    (let [{:keys [trigger-node-id kind id value]} (get-in db [:modal :trigger-creation])
+          trigger {:kind kind :id id :value value}]
+
+      (cond-> db
+        (s/valid? :armchair.db/trigger trigger)
+        (-> (update-in [:lines trigger-node-id :triggers] conj trigger)
+            (dissoc :modal))))))
+
+(reg-event-db
+  :modal/update-trigger-value
+  [validate]
+  (fn [db [_ value]]
+    (assert-trigger-modal db)
+    (assoc-in db [:modal :trigger-creation :value] value)))
 
 (reg-event-db
   :open-character-modal
@@ -169,6 +217,10 @@
          :color color}
         {:display-name ""
          :color (rand-nth config/color-grid)}))))
+
+(defn assert-character-modal [db]
+  (assert (contains? (:modal db) :character-form)
+          "No character creation initiated. Cannot set value!"))
 
 (reg-event-db
   :character-form/update

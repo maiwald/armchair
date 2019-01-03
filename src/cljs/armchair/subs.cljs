@@ -62,6 +62,23 @@
       (get-in options [option-id :text]))))
 
 (reg-sub
+  :trigger-creation-options
+  :<- [:modal]
+  :<- [:db-dialogues]
+  :<- [:db-lines]
+  (fn [[{{:keys [trigger-node-id kind id]} :trigger-creation} dialogues lines]]
+    (let [used-switches (set (map :id (get-in lines [trigger-node-id :triggers])))]
+      {:kind-options [[:dialogue-state "Dialogue State"]
+                      [:switch "Switch"]]
+       :switch-options (->> dialogues
+                            (filter-map (fn [{states :states id :entity/id}]
+                                          (and (not (contains? used-switches id))
+                                               (seq states))))
+                            (map-values :synopsis))
+       :value-options (when id (let [{:keys [states initital-line-id]} (dialogues id)]
+                                 (conj (seq states) [initital-line-id "Initial Line"])))})))
+
+(reg-sub
   :ui/positions
   (fn [db]
     (:ui/positions db)))

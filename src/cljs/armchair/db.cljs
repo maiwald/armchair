@@ -170,7 +170,9 @@
 
 (s/def ::next-line-id (s/or :line-id (s/nilable ::line-id)))
 
-(s/def ::npc-line (s/and (s/keys :req-un [::text ::next-line-id ::character-id])
+(s/def ::npc-line (s/and (s/keys :req-un [::text
+                                          ::next-line-id
+                                          ::character-id])
                          #(= (:kind %) :npc)))
 
 (s/def ::player-line (s/and #(= (:kind %) :player)
@@ -183,14 +185,22 @@
 (s/def ::player-option (s/keys :req [:entity/id :entity/type]
                                :req-un [::text ::next-line-id]))
 
-(s/def ::trigger-node (s/and (s/keys :req-un [::next-line-id ::triggers])
+(s/def ::trigger-node (s/and (s/keys :req-un [::triggers ::next-line-id])
                              #(= (:kind %) :trigger)))
 (s/def ::triggers (s/coll-of ::trigger))
-(s/def ::trigger (s/keys :req-un [::kind ::trigger-id ::trigger-value]))
 
+(s/def :trigger/kind #{:dialogue-state})
+(s/def :trigger/id :entity/id)
+(s/def :trigger/value :entity/id)
+(s/def ::trigger (s/keys :req-un [:trigger/kind
+                                  :trigger/id
+                                  :trigger/value]))
+
+(s/def :dialogue-node/kind #{:npc :player :trigger})
 (s/def ::npc-or-player-line (s/and (s/keys :req [:entity/id
                                                  :entity/type]
-                                           :req-un [::dialogue-id])
+                                           :req-un [::dialogue-id
+                                                    :dialogue-node/kind])
                                    (s/or :npc ::npc-line
                                          :player ::player-line
                                          :trigger ::trigger-node)))
@@ -220,6 +230,7 @@
 (s/def ::modal (s/keys :opt-un [:modal/character-form
                                 :modal/dialogue-creation
                                 :modal/location-creation
+                                :modal/trigger-creation-modal
                                 ::npc-line-id
                                 ::player-line-id
                                 ::dialogue-state]))
@@ -233,6 +244,12 @@
 (s/def :modal/dialogue-creation
   (s/keys :req-un [::character-id ::synopsis]
           :opt-un [::location-id ::location-position]))
+
+(s/def :modal/trigger-creation-modal
+  (s/keys :req-un [::trigger-node-id
+                   :trigger/id
+                   :trigger/kind
+                   :trigger/value]))
 
 (s/def ::dialogue-state (s/keys :req-un [::line-id]
                                 :opt-un [::description]))

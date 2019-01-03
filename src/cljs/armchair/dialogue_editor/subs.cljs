@@ -33,6 +33,20 @@
         options))))
 
 (reg-sub
+  :dialogue-editor/trigger-node
+  :<- [:db-lines]
+  :<- [:db-dialogues]
+  (fn [[lines dialogues] [_ trigger-id]]
+    (let [{:keys [next-line-id triggers]} (lines trigger-id)]
+      {:connected? (some? next-line-id)
+       :triggers (map (fn [{:keys [kind id value]}]
+                        {:switch-kind kind
+                         :switch-id id
+                         :switch-name (get-in dialogues [id :synopsis])
+                         :switch-value (get-in dialogues [id :states value] "Initial Line")})
+                      triggers)})))
+
+(reg-sub
   :dialogue-editor/dialogue
   :<- [:db-lines]
   :<- [:db-player-options]
@@ -44,10 +58,12 @@
             lines-by-kind (group-by :kind (vals dialogue-lines))]
         {:npc-line-ids (map :entity/id (lines-by-kind :npc))
          :player-line-ids (map :entity/id (lines-by-kind :player))
-         :npc-connections (->> (lines-by-kind :npc)
-                               (filter #(some? (:next-line-id %)))
-                               (map #(vector (:entity/id %) (:next-line-id %))))
-         :player-connections (reduce
+         :trigger-node-ids (map :entity/id (lines-by-kind :trigger))
+         :line-connections (->> (concat (lines-by-kind :npc)
+                                        (lines-by-kind :trigger))
+                                (filter #(some? (:next-line-id %)))
+                                (map #(vector (:entity/id %) (:next-line-id %))))
+         :option-connections (reduce
                                (fn [acc {start :entity/id :keys [options]}]
                                  (apply conj acc (->> options
                                                       (map-indexed (fn [index option-id]
