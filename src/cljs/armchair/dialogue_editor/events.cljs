@@ -5,7 +5,7 @@
             [armchair.config :as config]
             [armchair.events :refer [validate]]
             [armchair.undo :refer [record-undo]]
-            [armchair.util :refer [map-values]]))
+            [armchair.util :as u]))
 
 (reg-event-fx
   :create-npc-line
@@ -103,12 +103,11 @@
           (db/clear-dialogue-state id)
           (update :lines dissoc id)
           (update :player-options #(apply dissoc % options))
-          (update :player-options #(map-values clear-line %))
-          (update :lines #(map-values (fn [line]
-                                        (case (:kind line)
-                                          :npc (clear-line line)
-                                          :player line))
-                                      %)))))))
+          (u/update-values :player-options clear-line)
+          (u/update-values :lines (fn [line]
+                                    (case (:kind line)
+                                      :npc (clear-line line)
+                                      :player line))))))))
 
 (reg-event-db
   :dialogue-editor/delete-dialogue-state

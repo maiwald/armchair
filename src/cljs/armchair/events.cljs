@@ -12,15 +12,7 @@
                                         migrate]]
             [armchair.undo :refer [record-undo]]
             [armchair.routes :refer [routes]]
-            [armchair.util :refer [filter-map
-                                   filter-keys
-                                   map-values
-                                   where-map
-                                   update-in-map
-                                   removev
-                                   point-delta
-                                   translate-point
-                                   rect-contains?]]))
+            [armchair.util :as u]))
 
 (def validate
   (after (fn [db]
@@ -71,7 +63,7 @@
    record-undo]
   (fn [db [_ id]]
     (let [line-count (->> (:lines db)
-                          (filter-map #(= (:character-id %) id))
+                          (u/filter-map #(= (:character-id %) id))
                           count)]
       (cond-> db
         (zero? line-count)
@@ -87,16 +79,16 @@
     (let [location-connections (filter #(contains? % id)
                                        (:location-connections db))
           location-dialogue-ids (->> (:dialogues db)
-                                     (where-map :location-id id)
+                                     (u/where-map :location-id id)
                                      keys)
           connected-location-ids (->> (:locations db)
-                                      (filter-map #(contains? (-> % :connection-triggers vals set) id))
+                                      (u/filter-map #(contains? (-> % :connection-triggers vals set) id))
                                       keys)]
       (-> db
           (update :locations dissoc id)
           (update :location-connections difference location-connections)
-          (update-in-map :locations connected-location-ids update :connection-triggers (fn [cts] (filter-map #(not= id %) cts)))
-          (update-in-map :dialogues location-dialogue-ids dissoc :location-id :location-position)))))
+          (u/update-in-map :locations connected-location-ids update :connection-triggers (fn [cts] (u/filter-map #(not= id %) cts)))
+          (u/update-in-map :dialogues location-dialogue-ids dissoc :location-id :location-position)))))
 
 ;; Line CRUD
 
@@ -142,7 +134,7 @@
   (fn [db [_ line-id index]]
     (let [option-id (get-in db [:lines line-id :options index])]
       (-> db
-          (update-in [:lines line-id :options] #(removev % index))
+          (update-in [:lines line-id :options] #(u/removev % index))
           (update :player-options dissoc option-id)))))
 
 ;; Modal
@@ -402,7 +394,7 @@
               (recur (db/clear-dialogue-state db state-id)
                      state-ids)))
           (update :dialogues dissoc dialogue-id)
-          (update :lines #(filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %))))))
+          (update :lines #(u/filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %))))))
 
 ;; Page
 
@@ -473,7 +465,7 @@
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
     (let [{:keys [cursor-start ids]} dragging
-          delta (point-delta cursor-start cursor)]
+          delta (u/point-delta cursor-start cursor)]
       (-> db
-          (update-in-map :ui/positions ids translate-point delta)
+          (u/update-in-map :ui/positions ids u/translate-point delta)
           (dissoc :dragging :cursor)))))

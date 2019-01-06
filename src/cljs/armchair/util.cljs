@@ -83,6 +83,12 @@
 (defn transform-map [m kf vf]
   (into {} (for [[k v] m] [(kf k) (vf v)])))
 
+(defn update-values-in [m path f]
+  (update-in m path #(map-values f %)))
+
+(defn update-values [m k f]
+  (update m k #(map-values f %)))
+
 (defn where
   ([property value coll]
    (filter #(= (property %) value)

@@ -11,14 +11,7 @@
             [armchair.game.pathfinding :as path]
             [armchair.config :refer [tile-size]]
             [armchair.textures :refer [texture-set load-textures]]
-            [armchair.util :refer [map-values
-                                   tile->coord
-                                   coord->tile
-                                   normalize-to-tile
-                                   rect-width
-                                   rect-height
-                                   rect-intersects?
-                                   translate-point]]))
+            [armchair.util :as u]))
 
 ;; Definitions
 
@@ -58,7 +51,7 @@
          (not (contains? npcs tile)))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
-  (translate-point
+  (u/translate-point
     position
     (direction-map direction)))
 
@@ -84,10 +77,10 @@
 (def texture-atlas (atom nil))
 
 (defn tile-visible? [camera [x y]]
-  (rect-intersects?
+  (u/rect-intersects?
     camera
-    [(tile->coord [x y])
-     (tile->coord [(inc x) (inc y)])]))
+    [(u/tile->coord [x y])
+     (u/tile->coord [(inc x) (inc y)])]))
 
 (defn draw-texture [ctx texture coord]
   (when @texture-atlas
@@ -102,7 +95,7 @@
           y (range top (inc bottom))
           :when (tile-visible? camera [x y])
           :let [texture (get background [x y])]]
-    (draw-texture ctx texture (tile->coord [x y]))))
+    (draw-texture ctx texture (u/tile->coord [x y]))))
 
 (defn draw-player [ctx player]
   (draw-texture ctx :player player))
@@ -110,7 +103,7 @@
 (defn draw-npcs [ctx npcs camera]
   (doseq [[tile {texture :texture}] npcs]
     (when (tile-visible? camera tile)
-      (draw-texture ctx texture (tile->coord tile)))))
+      (draw-texture ctx texture (u/tile->coord tile)))))
 
 ; (defn draw-highlight [ctx highlight-coord]
 ;   (c/save! ctx)
@@ -123,11 +116,11 @@
 ;   (if highlight
 ;     (doseq [path-tile (path/a-star
 ;                         walkable?
-;                         (coord->tile position)
-;                         (coord->tile highlight))]
+;                         (u/coord->tile position)
+;                         (u/coord->tile highlight))]
 ;       (c/save! ctx)
 ;       (c/set-fill-style! ctx "rgba(255, 255, 0, .2)")
-;       (c/fill-rect! ctx (tile->coord path-tile) tile-size tile-size)
+;       (c/fill-rect! ctx (u/tile->coord path-tile) tile-size tile-size)
 ;       (c/restore! ctx))))
 
 (defn draw-direction-indicator [ctx {{:keys [position direction]} :player}]
@@ -148,7 +141,7 @@
     (c/set-fill-style! ctx "rgb(0, 0, 0)")
     (c/set-baseline! ctx "top")
     (c/set-font! ctx "23px serif")
-    (let [offset (c/draw-textbox! ctx text (translate-point [x y] [20 20]) (- w 40))]
+    (let [offset (c/draw-textbox! ctx text (u/translate-point [x y] [20 20]) (- w 40))]
       (c/set-font! ctx "18px serif")
       (let [w (- w 40)
             padding 6
@@ -162,8 +155,8 @@
               (if (= selected-option idx)
                 (c/set-stroke-style! ctx "rgb(255, 0, 0)")
                 (c/set-stroke-style! ctx "rgb(0, 0, 0)"))
-              (let [coord (translate-point [x y] [20 0])
-                    height (+ padding (c/draw-textbox! ctx option (translate-point coord [7 padding]) w))]
+              (let [coord (u/translate-point [x y] [20 0])
+                    height (+ padding (c/draw-textbox! ctx option (u/translate-point coord [7 padding]) w))]
                 (if (= selected-option idx)
                   (c/set-fill-style! ctx "rgba(0, 0, 0, .1)")
                   (c/set-fill-style! ctx "rgba(0, 0, 0, 0)"))
@@ -191,8 +184,8 @@
       (c/clear! @ctx)
       (c/set-fill-style! @ctx "rgb(0, 0, 0)")
       (c/fill-rect! @ctx [0 0] (c/width @ctx) (c/height @ctx))
-      (let [a (/ (c/width @ctx) (rect-width camera))
-            d (/ (c/height @ctx) (rect-height camera))
+      (let [a (/ (c/width @ctx) (u/rect-width camera))
+            d (/ (c/height @ctx) (u/rect-height camera))
             e (* a (- left))
             f (* d (- top))]
         (c/set-transform! @ctx a 0 0 d e f))
@@ -265,10 +258,10 @@
         w 15
         camera-delta [(* (quot w -2) tile-size)
                       (* (quot h -2) tile-size)]
-        left-top (translate-point
+        left-top (u/translate-point
                    player-coord
                    camera-delta)
-        right-bottom (translate-point
+        right-bottom (u/translate-point
                        player-coord
                        (mapv - camera-delta)
                        [tile-size tile-size])]
@@ -297,7 +290,7 @@
 (defn update-state-movement [state now]
   (if (not (contains? state :animation))
     (if-let [direction (peek @move-q)]
-      (let [new-position (translate-point (get-in state [:player :position])
+      (let [new-position (u/translate-point (get-in state [:player :position])
                                           (direction-map direction))]
         (swap! move-q pop)
         (cond-> (assoc-in state [:player :direction] direction)
@@ -316,11 +309,11 @@
   (as-> state s
     (update-in s [:player :position]
                (fn [player-tile]
-                 (let [player-coord (tile->coord player-tile)]
+                 (let [player-coord (u/tile->coord player-tile)]
                    (if-let [{:keys [start destination]} (:animation state)]
                      (animated-position start
                                         player-coord
-                                        (tile->coord destination)
+                                        (u/tile->coord destination)
                                         now)
                      player-coord))))
     (assoc s :camera (camera-rect (get-in s [:player :position])))))

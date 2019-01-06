@@ -6,12 +6,7 @@
             [armchair.dummy-data :refer [dummy-data]]
             [armchair.textures :refer [background-textures texture-set]]
             [armchair.config :as config]
-            [armchair.util :refer [where
-                                   filter-map
-                                   where-map
-                                   map-values
-                                   update-in-map
-                                   translate-point]]))
+            [armchair.util :as u]))
 
 (def db-version 4)
 
@@ -21,17 +16,15 @@
        (-> db
            (assoc :player {:location-id (-> db :locations keys first)
                            :location-position [0 0]})
-           (update :dialogues (fn [ds]
-                                (map-values
-                                  (fn [d]
-                                    (-> d
-                                        (assoc :synopsis (:description d))
-                                        (dissoc :description)))
-                                  ds)))))
+           (u/update-values :dialogues
+                            (fn [d]
+                              (-> d
+                                  (assoc :synopsis (:description d))
+                                  (dissoc :description))))))
 
    2 (fn [db]
        "Extract player options from lines"
-       (let [player-lines (where-map :kind :player (:lines db))]
+       (let [player-lines (u/where-map :kind :player (:lines db))]
          (reduce (fn [new-db [line-id {:keys [options] :as line}]]
                    (let [new-options (mapv #(assoc %
                                                    :entity/id (random-uuid)
@@ -48,16 +41,10 @@
        "Remove inline state trigger and information concepts"
        (-> db
            (dissoc :infos)
-           (update :lines
-                   (fn [lines]
-                     (map-values
-                       #(dissoc % :state-triggers :info-ids)
-                       lines)))
-           (update :player-options
-                   (fn [player-options]
-                     (map-values
-                       #(dissoc % :state-triggers :required-info-ids)
-                       player-options)))))})
+           (u/update-values :lines
+                            #(dissoc % :state-triggers :info-ids))
+           (u/update-values :player-options
+                            #(dissoc % :state-triggers :required-info-ids))))})
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)
@@ -275,7 +262,7 @@
 
 (s/def ::player-options-must-not-point-to-player-line
   (fn [{options :player-options lines :lines}]
-    (let [player-lines (->> lines (where-map :kind :player))
+    (let [player-lines (->> lines (u/where-map :kind :player))
           option-target-ids (map :next-line-id (vals options))]
       (not-any? #(contains? player-lines %) option-target-ids))))
 
@@ -303,20 +290,19 @@
 (defn clear-dialogue-state [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])
         trigger-ids (->> (:triggers db)
-                         (filter-map (fn [{v :switch-value kind :kind}]
-                                       (and (= kind :dialogue-state)
-                                            (= v line-id))))
+                         (u/filter-map (fn [{v :switch-value kind :kind}]
+                                         (and (= kind :dialogue-state)
+                                              (= v line-id))))
                          keys
                          set)]
     (-> db
-        (update :lines (fn [lines]
-                         (map-values (fn [l]
-                                       (if (contains? l :trigger-ids)
-                                         (update l :trigger-ids
-                                                 (fn [ids]
-                                                   (vec (remove #(contains? trigger-ids %) ids))))
-                                         l))
-                                     lines)))
+        (u/update-values :lines
+                         (fn [l]
+                           (cond-> l
+                             (contains? l :trigger-ids)
+                             (update :trigger-ids
+                                     (fn [ids]
+                                       (filterv #(not (contains? trigger-ids %)) ids))))))
         (update-in [:dialogues dialogue-id :states] dissoc line-id)
         (update :triggers #(apply dissoc % trigger-ids)))))
 

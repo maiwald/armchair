@@ -1,6 +1,6 @@
 (ns armchair.dialogue-editor.subs
   (:require [re-frame.core :refer [reg-sub]]
-            [armchair.util :refer [where-map map-values]]))
+            [armchair.util :as u]))
 
 (reg-sub
   :dialogue-editor/npc-line
@@ -59,7 +59,7 @@
   :<- [:db-characters]
   (fn [[lines player-options dialogues characters positions] [_ dialogue-id]]
     (if-let [dialogue (get dialogues dialogue-id)]
-      (let [dialogue-lines (where-map :dialogue-id dialogue-id lines)
+      (let [dialogue-lines (u/where-map :dialogue-id dialogue-id lines)
             lines-by-kind (group-by :kind (vals dialogue-lines))]
         {:npc-line-ids (map :entity/id (lines-by-kind :npc))
          :player-line-ids (map :entity/id (lines-by-kind :player))

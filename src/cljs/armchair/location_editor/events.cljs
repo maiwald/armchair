@@ -2,7 +2,7 @@
   (:require [re-frame.core :refer [reg-event-db]]
             [armchair.events :refer [validate]]
             [armchair.undo :refer [record-undo]]
-            [armchair.util :refer [translate-point rect-contains? filter-keys filter-map]]))
+            [armchair.util :as u]))
 
 (reg-event-db
   :location-editor/update-name
@@ -113,7 +113,7 @@
         (dissoc :dnd-payload)
         (update :location-editor dissoc :highlight)
         (update-in [:locations location :connection-triggers] #(as-> % new-db
-                                                                 (filter-map (fn [v] (not= v target)) new-db)
+                                                                 (u/filter-map (fn [v] (not= v target)) new-db)
                                                                  (assoc new-db to target))))))
 
 (reg-event-db
@@ -143,9 +143,9 @@
                                       :right [1 [-1 0]]
                                       :down [1 [0 -1]])
           new-dimension (update (get-in db [:locations location-id :dimension])
-                                shift-index translate-point shift-delta)
-          in-bounds? (partial rect-contains? new-dimension)
-          remove-oob (fn [coll] (filter-keys in-bounds? coll))]
+                                shift-index u/translate-point shift-delta)
+          in-bounds? (partial u/rect-contains? new-dimension)
+          remove-oob (fn [coll] (u/filter-keys in-bounds? coll))]
       (update-in db [:locations location-id]
                  (fn [location]
                    (-> location
@@ -169,4 +169,4 @@
                      location-id
                      :dimension
                      shift-index]
-                 translate-point shift-delta))))
+                 u/translate-point shift-delta))))

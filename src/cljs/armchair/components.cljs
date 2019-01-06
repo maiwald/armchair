@@ -1,13 +1,13 @@
 (ns armchair.components
   (:require [reagent.core :as r]
-            [armchair.util :refer [>evt <sub e-> e->left? relative-cursor]]))
+            [armchair.util :as u :refer [>evt <sub e-> e->left?]]))
 
 ;; Drag & Drop
 
 (defn e->graph-cursor [e]
-  (relative-cursor e (-> js/document
-                         (.getElementsByClassName "graph")
-                         (aget 0))))
+  (u/relative-cursor e (-> js/document
+                           (.getElementsByClassName "graph")
+                           (aget 0))))
 
 (defn start-dragging-handler [ids]
   (e-> (fn [e]

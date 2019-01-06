@@ -2,14 +2,7 @@
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
             [armchair.routes :refer [routes]]
             [bidi.bidi :refer [match-route]]
-            [armchair.util :refer [filter-map
-                                   where-map
-                                   where
-                                   map-keys
-                                   map-values
-                                   point-delta
-                                   translate-point
-                                   transform-map]]))
+            [armchair.util :as u]))
 
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
@@ -35,14 +28,14 @@
   :<- [:db-lines]
   (fn [[characters lines] _]
     (let [line-counts (->> (vals lines)
-                           (where :kind :npc)
+                           (u/where :kind :npc)
                            (group-by :character-id)
-                           (map-values count))]
-      (map-values (fn [{id :entity/id :as character}]
-                    (assoc character
-                           :id id
-                           :line-count (get line-counts id 0)))
-                  characters))))
+                           (u/map-values count))]
+      (u/map-values (fn [{id :entity/id :as character}]
+                      (assoc character
+                             :id id
+                             :line-count (get line-counts id 0)))
+                    characters))))
 
 (reg-sub
   :dialogue/modal-line
@@ -75,10 +68,10 @@
       {:kind-options [[:dialogue-state "Dialogue State"]
                       [:switch "Switch"]]
        :switch-options (->> dialogues
-                            (filter-map (fn [{states :states id :entity/id}]
-                                          (and (not (contains? used-switches id))
-                                               (seq states))))
-                            (map-values :synopsis))
+                            (u/filter-map (fn [{states :states id :entity/id}]
+                                            (and (not (contains? used-switches id))
+                                                 (seq states))))
+                            (u/map-values :synopsis))
        :value-options (when switch-id
                         (let [{:keys [states initital-line-id]} (dialogues switch-id)]
                           (conj (seq states)
@@ -97,15 +90,15 @@
   (fn [[positions {:keys [ids cursor-start]} cursor] [_ id]]
     (let [position (get positions id)]
       (if (contains? ids id)
-        (let [delta (point-delta cursor-start cursor)]
-          (translate-point position delta))
+        (let [delta (u/point-delta cursor-start cursor)]
+          (u/translate-point position delta))
         position))))
 
 (reg-sub
   :character-options
   :<- [:db-characters]
   (fn [characters _]
-    (map-values :display-name characters)))
+    (u/map-values :display-name characters)))
 
 (reg-sub
   :dialogue-creation/character-options
@@ -117,8 +110,8 @@
                           #{}
                           (vals dialogues))]
       (->> characters
-           (filter-map #(not (contains? with-dialogue (:entity/id %))))
-           (map-values :display-name)))))
+           (u/filter-map #(not (contains? with-dialogue (:entity/id %))))
+           (u/map-values :display-name)))))
 
 (reg-sub
   :character
@@ -154,21 +147,22 @@
   :<- [:db-locations]
   :<- [:db-characters]
   (fn [[dialogues locations characters]]
-    (map-values (fn [{id :entity/id :keys [synopsis character-id location-id]}]
-                  (let [character (characters character-id)
-                        location (locations location-id)]
-                    {:id id
-                     :synopsis synopsis
-                     :character (merge {:id character-id} character)
-                     :texture (:texture character)
-                     :location (merge {:id location-id} location)}))
-                dialogues)))
+    (u/map-values
+      (fn [{id :entity/id :keys [synopsis character-id location-id]}]
+        (let [character (characters character-id)
+              location (locations location-id)]
+          {:id id
+           :synopsis synopsis
+           :character (merge {:id character-id} character)
+           :texture (:texture character)
+           :location (merge {:id location-id} location)}))
+      dialogues)))
 
 (reg-sub
   :location-options
   :<- [:db-locations]
   (fn [locations _]
-    (map-values :display-name locations)))
+    (u/map-values :display-name locations)))
 
 (reg-sub
   :location-map
@@ -184,7 +178,7 @@
   :<- [:db-dialogues]
   :<- [:db-characters]
   (fn [[locations dialogues characters] [_ location-id]]
-    (let [location-dialogues (where-map :location-id location-id dialogues)]
+    (let [location-dialogues (u/where-map :location-id location-id dialogues)]
       (assoc (get locations location-id)
              :id location-id
              :dialogues (map (fn [[_ d]]

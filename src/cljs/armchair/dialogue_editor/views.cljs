@@ -4,7 +4,7 @@
             [armchair.routes :refer [>navigate]]
             [armchair.config :as config]
             [armchair.slds :as slds]
-            [armchair.util :refer [<sub >evt stop-e! e-> e->val e->left? translate-point]]))
+            [armchair.util :as u :refer [<sub >evt stop-e! e-> e->val e->left?]]))
 
 (defn npc-line-component [line-id]
   (let [{:keys [state
@@ -144,18 +144,18 @@
 (defn line-connection [start end]
   (let [start-pos (<sub [:ui/position start])
         end-pos (<sub [:ui/position end])]
-    [connection {:start (translate-point start-pos [(- config/line-width 15)
-                                                    (+ 33 (/ config/line-height 2))])
-                 :end (translate-point end-pos [15 (+ 33 (/ config/line-height 2))])}]))
+    [connection {:start (u/translate-point start-pos [(- config/line-width 15)
+                                                      (+ 33 (/ config/line-height 2))])
+                 :end (u/translate-point end-pos [15 (+ 33 (/ config/line-height 2))])}]))
 
 (defn option-connection [start index end]
   (let [start-pos (<sub [:ui/position start])
         end-pos (<sub [:ui/position end])]
-    [connection {:start (translate-point start-pos [(- config/line-width 15)
-                                                    (+ 33
-                                                       (/ config/line-height 2)
-                                                       (* index config/line-height))])
-                 :end (translate-point end-pos [15 (+ 33 (/ config/line-height 2))])}]))
+    [connection {:start (u/translate-point start-pos [(- config/line-width 15)
+                                                      (+ 33
+                                                         (/ config/line-height 2)
+                                                         (* index config/line-height))])
+                 :end (u/translate-point end-pos [15 (+ 33 (/ config/line-height 2))])}]))
 
 (defn dialogue-editor [dialogue-id]
   (if-let [{:keys [npc-line-ids

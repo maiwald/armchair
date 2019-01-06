@@ -2,11 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [re-frame.core :refer [reg-sub]]
             [armchair.textures :refer [character-textures]]
-            [armchair.util :refer [map-keys
-                                   map-values
-                                   reverse-map
-                                   filter-map
-                                   where-map]]))
+            [armchair.util :as u]))
 
 (s/def :game/data (s/keys :req-un [:game/lines
                                    :game/locations
@@ -52,16 +48,17 @@
   :<- [:db-lines]
   :<- [:db-player-options]
   (fn [[lines player-options]]
-    (map-values (fn [line]
-                  (-> (select-keys line [:text])
-                      (merge {:options (if-let [next-line (get lines (:next-line-id line))]
-                                         (case (:kind next-line)
-                                           :npc (vector {:text "Continue..."
-                                                         :next-line-id (:entity/id next-line)})
-                                           :player (mapv player-options (:options next-line)))
-                                         (vector {:text "Yeah..., whatever. Farewell"
-                                                  :next-line-id nil}))})))
-      (where-map :kind :npc lines))))
+    (u/map-values
+      (fn [line]
+        (-> (select-keys line [:text])
+            (merge {:options (if-let [next-line (get lines (:next-line-id line))]
+                               (case (:kind next-line)
+                                 :npc (vector {:text "Continue..."
+                                               :next-line-id (:entity/id next-line)})
+                                 :player (mapv player-options (:options next-line)))
+                               (vector {:text "Yeah..., whatever. Farewell"
+                                        :next-line-id nil}))})))
+      (u/where-map :kind :npc lines))))
 
 (reg-sub
   :game/player-data
@@ -77,15 +74,16 @@
   :<- [:db-locations]
   :<- [:game/npcs-by-location]
   (fn [[locations npcs-by-location]]
-    (map-values (fn [{:keys [dimension background connection-triggers walk-set]
-                      id :entity/id}]
-                  {:dimension dimension
-                   :background background
-                   :outbound-connections connection-triggers
-                   :inbound-connections (reverse-map connection-triggers)
-                   :walk-set walk-set
-                   :npcs (npcs-by-location id)})
-                locations)))
+    (u/map-values
+      (fn [{:keys [dimension background connection-triggers walk-set
+                   id :entity/id]}]
+        {:dimension dimension
+         :background background
+         :outbound-connections connection-triggers
+         :inbound-connections (u/reverse-map connection-triggers)
+         :walk-set walk-set
+         :npcs (npcs-by-location id)})
+      locations)))
 
 (reg-sub
   :game/data
@@ -98,5 +96,5 @@
                 (s/explain :game/data %))]}
     {:lines line-data
      :locations locations
-     :initial-state {:dialogue-states (map-values :initial-line-id dialogues)
+     :initial-state {:dialogue-states (u/map-values :initial-line-id dialogues)
                      :player (merge player-data {:direction :right})}}))

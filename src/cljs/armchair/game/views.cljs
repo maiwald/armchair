@@ -1,7 +1,7 @@
 (ns armchair.game.views
   (:require [clojure.core.async :refer [put!]]
             [reagent.core :as r]
-            [armchair.util :refer [<sub relative-cursor]]
+            [armchair.util :refer [<sub]]
             [armchair.components :refer [icon]]
             [armchair.game.core :refer [start-game end-game]]))
 

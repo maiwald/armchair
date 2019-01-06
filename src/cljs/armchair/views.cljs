@@ -5,14 +5,7 @@
             [armchair.components :as c :refer [icon drag-canvas connection e->graph-cursor]]
             [armchair.location-editor.views :refer [location-editor]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
-            [armchair.util :refer [<sub
-                                   >evt
-                                   stop-e!
-                                   e->
-                                   e->left?
-                                   e->val
-                                   translate-point
-                                   upload-json!]]
+            [armchair.util :as u :refer [<sub >evt stop-e! e-> e->left? e->val]]
             [armchair.config :as config]
             [armchair.routes :refer [routes >navigate]]
             [armchair.textures :refer [character-textures texture-path]]
@@ -91,8 +84,8 @@
 (defn location-connection [start end]
   (let [start-pos (<sub [:ui/position start])
         end-pos (<sub [:ui/position end])]
-    [connection {:start (translate-point start-pos [(/ config/line-width 2) 15])
-                 :end (translate-point end-pos [(/ config/line-width 2) 15])}]))
+    [connection {:start (u/translate-point start-pos [(/ config/line-width 2) 15])
+                 :end (u/translate-point end-pos [(/ config/line-width 2) 15])}]))
 
 (defn location-management []
   (let [{:keys [location-ids connections]} (<sub [:location-map])]
@@ -314,7 +307,7 @@
             [:a {:on-click #(>evt [:download-state])}
              [icon "download"] "save to file"]]
            [:li
-            [:a {:on-click #(upload-json! (fn [json] (>evt [:upload-state json])))}
+            [:a {:on-click #(u/upload-json! (fn [json] (>evt [:upload-state json])))}
              [icon "upload"] "load from file"]]
            (when config/debug?
              [:li [:a {:on-click #(>evt [:reset-db])} "reset"]])
