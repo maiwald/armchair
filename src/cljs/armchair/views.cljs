@@ -64,7 +64,7 @@
                                  [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this switch?")
                                                                                (>evt [:delete-switch id]))}])
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-switch-modal id])}]])}
-      :new-resource #(>evt [:open-switch-modal])}]))
+      :new-resource #(>evt [:modal/open-switch-modal])}]))
 
 (defn location-component [location-id]
   (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])
@@ -139,7 +139,6 @@
    [slds/form
     [slds/input-text {:label "State description"
                       :on-change #(>evt [:dialogue-state-update (e->val %)])
-                      :options (<sub [:character-options])
                       :value description}]]])
 
 (defn npc-line-form-modal [line-id]
@@ -244,6 +243,21 @@
                             :disabled (nil? switch-id)
                             :on-change #(>evt [:modal/update-trigger-value (uuid (e->val %))])}]]]))
 
+(defn switch-form-modal [{:keys [display-name values]}]
+  [slds/modal {:title "Switch"
+               :close-handler #(>evt [:close-modal])
+               :confirm-handler #(>evt [:modal/save-switch])}
+     [slds/form
+      [slds/input-text {:label "Name"
+                        :on-change #(>evt [:modal/update-switch-name (e->val %)])
+                        :value display-name}]
+      (for [[value-id value-name] values]
+        ^{:key (str "switch-value" value-id)}
+        [slds/input-text {:label "Value"
+                          :on-change #(>evt [:modal/update-switch-value value-id (e->val %)])
+                          :value value-name}])
+      [slds/add-button "New" #(>evt [:modal/add-switch-value])]]])
+
 (defn modal []
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
@@ -253,7 +267,8 @@
       :player-line-id    [player-line-form-modal (:player-line-id modal)]
       :character-form    [character-form-modal (:character-form modal)]
       :location-creation [location-creation-modal (:location-creation modal)]
-      :trigger-creation  [trigger-creation-modal (:trigger-creation modal)])))
+      :trigger-creation  [trigger-creation-modal (:trigger-creation modal)]
+      :switch-form       [switch-form-modal (:switch-form modal)])))
 
 ;; Navigation
 

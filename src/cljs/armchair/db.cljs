@@ -219,6 +219,20 @@
 (s/def ::dialogues (s/and ::entity-map
                           (s/map-of ::dialogue-id ::dialogue)))
 
+(s/def ::switches (s/and ::entity-map
+                         (s/map-of ::switch-id ::switch)))
+
+(s/def ::switch (s/keys :req [:entity/id
+                              :entity/type]
+                        :req-un [::display-name
+                                 :switch/values]))
+
+(s/def :switch/values (s/map-of :switch/value-id
+                                :switch/value-name
+                                :min-count 2))
+(s/def :switch/value-id :entity/id)
+(s/def :switch/value-name ::text)
+
 ;; Modals
 
 (s/def ::npc-line-id ::line-id)
@@ -227,6 +241,7 @@
                                 :modal/dialogue-creation
                                 :modal/location-creation
                                 :modal/trigger-creation
+                                :modal/switch-form
                                 ::npc-line-id
                                 ::player-line-id
                                 ::dialogue-state]))
@@ -247,22 +262,13 @@
                    :trigger/switch-kind
                    :trigger/switch-value]))
 
+(s/def :modal/switch-form
+  (s/keys :req-un [::display-name
+                   :switch/values]
+          :opt-un [::switch-id]))
+
 (s/def ::dialogue-state (s/keys :req-un [::line-id]
                                 :opt-un [::description]))
-
-(s/def ::switches (s/and ::entity-map
-                         (s/map-of ::switch-id ::switch)))
-
-(s/def ::switch (s/keys :req [:entity/id
-                              :entity/type]
-                        :req-un [::display-name
-                                 :switch/values]))
-
-(s/def :switch/values (s/map-of :switch/value-id
-                                :switch/value-name
-                                :min-count 2))
-(s/def :switch/value-id :entity/id)
-(s/def :switch/value-name string?)
 
 ;; Invariants
 

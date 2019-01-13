@@ -1,6 +1,5 @@
 (ns armchair.dialogue-editor.views
   (:require [armchair.components :refer [icon drag-canvas connection e->graph-cursor]]
-            [clojure.string :refer [join]]
             [armchair.routes :refer [>navigate]]
             [armchair.config :as config]
             [armchair.slds :as slds]

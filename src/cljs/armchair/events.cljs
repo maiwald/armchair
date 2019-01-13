@@ -143,6 +143,63 @@
   (assert (not (contains? db :modal))
           "Attempting to open a modal while modal is open!"))
 
+(defn assert-switch-modal [db]
+  (assert (contains? (:modal db) :switch-form)
+          "No switch form open. Cannot set value!"))
+
+(reg-event-db
+  :modal/open-switch-modal
+  [validate]
+  (fn [db [_ id]]
+    (assert-no-open-modal db)
+    (assoc-in db [:modal :switch-form]
+              (if-let [{:keys [display-name values]} (get-in db [:switches id])]
+                {:switch-id id
+                 :display-name display-name
+                 :values values}
+                {:display-name ""
+                 :values (hash-map (random-uuid) "ON"
+                                   (random-uuid) "OFF")}))))
+
+(reg-event-db
+  :modal/update-switch-name
+  [validate]
+  (fn [db [_ value]]
+    (assert-switch-modal db)
+    (assoc-in db [:modal :switch-form :display-name] value)))
+
+(reg-event-db
+  :modal/update-switch-value
+  [validate]
+  (fn [db [_ id value]]
+    (assert-switch-modal db)
+    (assoc-in db [:modal :switch-form :values id] value)))
+
+(reg-event-db
+  :modal/add-switch-value
+  [validate]
+  (fn [db _]
+    (assert-switch-modal db)
+    (update-in db [:modal :switch-form :values]
+               conj [(random-uuid) ""])))
+
+(reg-event-db
+  :modal/save-switch
+  [validate
+   record-undo]
+  (fn [db _]
+    (assert-switch-modal db)
+    (let [{:keys [switch-id display-name values]} (get-in db [:modal :switch-form])
+          id (or switch-id (random-uuid))
+          switch {:entity/id id
+                  :entity/type :switch
+                  :display-name display-name
+                  :values values}]
+      (cond-> db
+        (s/valid? :armchair.db/switch switch)
+        (-> (dissoc :modal)
+            (assoc-in [:switches id] switch))))))
+
 (defn assert-trigger-modal [db]
   (assert (contains? (:modal db) :trigger-creation)
           "No trigger creation initiated. Cannot set value!"))

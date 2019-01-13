@@ -1,5 +1,6 @@
 (ns armchair.subs
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
+            [clojure.string :refer [join]]
             [armchair.routes :refer [routes]]
             [bidi.bidi :refer [match-route]]
             [armchair.util :as u]))
@@ -42,7 +43,10 @@
   :switch-list
   :<- [:db-switches]
   (fn [switches _]
-    switches))
+    (u/map-values
+      (fn [{v :values :as s}]
+        (assoc s :values (join ", " (vals v))))
+      switches)))
 
 (reg-sub
   :dialogue/modal-line
