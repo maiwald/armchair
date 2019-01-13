@@ -81,7 +81,7 @@
 ;; Types
 
 (s/def :entity/id uuid?)
-(s/def :entity/type #{:location :character :line :dialogue :player-option :trigger})
+(s/def :entity/type #{:location :character :line :dialogue :player-option :trigger :switch})
 (s/def ::text #(not (string/blank? %)))
 (s/def :type/point (s/tuple integer? integer?))
 (s/def :type/rect (s/and (s/tuple :type/point :type/point)
@@ -129,6 +129,7 @@
 (s/def ::location-id :entity/id)
 (s/def ::player-option-id :entity/id)
 (s/def ::trigger-id :entity/id)
+(s/def ::switch-id :entity/id)
 
 (s/def ::display-name ::text)
 (s/def ::color ::text)
@@ -249,6 +250,20 @@
 (s/def ::dialogue-state (s/keys :req-un [::line-id]
                                 :opt-un [::description]))
 
+(s/def ::switches (s/and ::entity-map
+                         (s/map-of ::switch-id ::switch)))
+
+(s/def ::switch (s/keys :req [:entity/id
+                              :entity/type]
+                        :req-un [::display-name
+                                 :switch/values]))
+
+(s/def :switch/values (s/map-of :switch/value-id
+                                :switch/value-name
+                                :min-count 2))
+(s/def :switch/value-id :entity/id)
+(s/def :switch/value-name string?)
+
 ;; Invariants
 
 (s/def ::location-connection-validation
@@ -278,7 +293,8 @@
                                        ::triggers
                                        ::location-editor
                                        ::locations
-                                       ::location-connections]
+                                       ::location-connections
+                                       ::switches]
                               :opt-un [::connecting
                                        ::dragging
                                        ::cursor
@@ -316,7 +332,8 @@
           :location-connections #{}
           :dialogues {}
           :lines {}
-          :triggers {}}
+          :triggers {}
+          :switches {}}
          (->> dummy-data
               ((migrations 2))
               ((migrations 3)))))

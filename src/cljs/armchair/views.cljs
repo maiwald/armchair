@@ -52,6 +52,20 @@
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}
       :new-resource #(>evt [:open-character-modal])}]))
 
+(defn switch-management []
+  (let [switches (<sub [:switch-list])]
+    [slds/resource-page "Switches"
+     {:columns [:display-name :values :actions]
+      :collection (vals switches)
+      :cell-views {:color (fn [color] [slds/badge color color])
+                   :actions (fn [_ {:keys [id line-count]}]
+                              [:div {:class "slds-text-align_right"}
+                               (when (zero? line-count)
+                                 [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this switch?")
+                                                                               (>evt [:delete-switch id]))}])
+                               [slds/symbol-button "edit" {:on-click #(>evt [:open-switch-modal id])}]])}
+      :new-resource #(>evt [:open-switch-modal])}]))
+
 (defn location-component [location-id]
   (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])
         connecting? (some? (<sub [:connector]))]
@@ -244,13 +258,13 @@
 ;; Navigation
 
 (defn navigation []
-  (let [dropdown-open? (r/atom false)]
+  (let [dropdown-open? (r/atom false)
+        select (fn [resource]
+                 (>navigate resource)
+                 (swap! dropdown-open? not))]
     (fn []
       (let [{page-name :handler
-             page-params :route-params} (match-route routes (<sub [:current-page]))
-            select (fn [resource]
-                     (>navigate resource)
-                     (swap! dropdown-open? not))]
+             page-params :route-params} (match-route routes (<sub [:current-page]))]
         [:header {:id "global-header"}
          [:div.logo "Armchair"]
          [:nav
@@ -278,22 +292,23 @@
                        [:span.navigation__item__type "Dialogue"]
                        [:span.navigation__item__title
                         (str character-name ": " synopsis)]]])]))
-          (let [active? (contains? #{:dialogues :characters} page-name)]
+          (let [resource-pages {:dialogues "Dialogues"
+                                :characters "Characters"
+                                :switches "Switches"}
+                active? (contains? resource-pages page-name)]
             [:div.resources {:class ["navigation__item"
                                      (when active? "is-active")]}
              [:a.resources__title {:on-click (fn [] (swap! dropdown-open? not))}
-              [:span.navigation__item__type
-               (when active? "Resources")]
+              (when active?
+                [:span.navigation__item__type "Resources"])
               [:span.navigation__item__title
-               (condp = page-name
-                 :dialogues "Dialogues"
-                 :characters "Characters"
-                 "Resources")]
+               (get resource-pages page-name "Resources")]
               [icon "caret-down"]]
              (when @dropdown-open?
                [:ul.resources__dropdown-list
-                [:li [:a {:on-click #(select :dialogues)} "Dialogues"]]
-                [:li [:a {:on-click #(select :characters)} "Characters"]]])])
+                (for [[route resource] resource-pages]
+                  [:li {:key (str "resource-" route)}
+                   [:a {:on-click #(select route)} resource]])])])
           [:ul.functions
            [:li
             (if (<sub [:can-undo?])
@@ -331,4 +346,5 @@
         :dialogues     [dialogue-management]
         :dialogue-edit [dialogue-editor (uuid (:id page-params))]
         :characters    [character-management]
+        :switches      [switch-management]
         [:div "Page not found"])]]))

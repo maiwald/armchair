@@ -11,6 +11,7 @@
 (reg-sub :db-player #(:player %))
 (reg-sub :db-player-options #(:player-options %))
 (reg-sub :db-triggers #(:triggers %))
+(reg-sub :db-switches #(:switches %))
 
 (reg-sub :db-location-connections #(:location-connections %))
 
@@ -36,6 +37,12 @@
                              :id id
                              :line-count (get line-counts id 0)))
                     characters))))
+
+(reg-sub
+  :switch-list
+  :<- [:db-switches]
+  (fn [switches _]
+    switches))
 
 (reg-sub
   :dialogue/modal-line
