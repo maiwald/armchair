@@ -19,6 +19,7 @@
 # nice things
 - change default collision to walkable
 - movement behaviour when holding and releasing arrow key
+- location preview in map
 - stage direction dialogue nodes
 - separate moving viewport from moving dialogue node positions
 - enable double click for editing lines
