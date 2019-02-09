@@ -153,13 +153,17 @@
   (fn [db [_ id]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :switch-form]
-              (if-let [{:keys [display-name values]} (get-in db [:switches id])]
+              (if-let [{:keys [display-name value-ids]} (get-in db [:switches id])]
                 {:switch-id id
                  :display-name display-name
-                 :values values}
+                 :values (mapv (:switch-values db) value-ids)}
                 {:display-name ""
-                 :values (hash-map (random-uuid) "ON"
-                                   (random-uuid) "OFF")}))))
+                 :values (vector {:entity/id (random-uuid)
+                                  :entity/type :switch-value
+                                  :display-name "ON"}
+                                 {:entity/id (random-uuid)
+                                  :entity/type :switch-value
+                                  :display-name "OFF"})}))))
 
 (reg-event-db
   :modal/update-switch-name
@@ -171,17 +175,20 @@
 (reg-event-db
   :modal/update-switch-value
   [validate]
-  (fn [db [_ id value]]
+  (fn [db [_ index value]]
     (assert-switch-modal db)
-    (assoc-in db [:modal :switch-form :values id] value)))
+    (assoc-in db [:modal :switch-form :values index :display-name] value)))
 
 (reg-event-db
   :modal/add-switch-value
   [validate]
   (fn [db _]
     (assert-switch-modal db)
-    (update-in db [:modal :switch-form :values]
-               conj [(random-uuid) ""])))
+    (let [value-id (random-uuid)]
+      (-> db
+        (update-in [:modal :switch-form :values] conj {:entity/id (random-uuid)
+                                                       :entity/type :switch-value
+                                                       :display-name ""})))))
 
 (reg-event-db
   :modal/save-switch
@@ -189,16 +196,19 @@
    record-undo]
   (fn [db _]
     (assert-switch-modal db)
-    (let [{:keys [switch-id display-name values]} (get-in db [:modal :switch-form])
+    (let [modal (get-in db [:modal :switch-form])
+          {:keys [switch-id display-name values]} modal
           id (or switch-id (random-uuid))
-          switch {:entity/id id
-                  :entity/type :switch
-                  :display-name display-name
-                  :values values}]
+          value-map (into {} (map #(vector (:entity/id %) %) values))]
       (cond-> db
-        (s/valid? :armchair.db/switch switch)
+        (s/valid? :modal/switch-form modal)
         (-> (dissoc :modal)
-            (assoc-in [:switches id] switch))))))
+            (assoc-in [:switches id]
+                      {:entity/id id
+                       :entity/type :switch
+                       :display-name display-name
+                       :value-ids (vec (keys value-map))})
+            (update :switch-values merge value-map))))))
 
 (defn assert-trigger-modal [db]
   (assert (contains? (:modal db) :trigger-creation)

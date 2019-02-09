@@ -66,7 +66,9 @@
                       :player-options
                       :location-connections
                       :lines
-                      :triggers]]
+                      :triggers
+                      :switches
+                      :switch-values]]
     (select-keys db content-keys)))
 
 (defn serialize-db [db]
@@ -81,7 +83,14 @@
 ;; Types
 
 (s/def :entity/id uuid?)
-(s/def :entity/type #{:location :character :line :dialogue :player-option :trigger :switch})
+(s/def :entity/type #{:location
+                      :character
+                      :line
+                      :dialogue
+                      :player-option
+                      :trigger
+                      :switch
+                      :switch-value})
 (s/def ::text #(not (string/blank? %)))
 (s/def :type/point (s/tuple integer? integer?))
 (s/def :type/rect (s/and (s/tuple :type/point :type/point)
@@ -130,6 +139,7 @@
 (s/def ::player-option-id :entity/id)
 (s/def ::trigger-id :entity/id)
 (s/def ::switch-id :entity/id)
+(s/def ::switch-value-id :entity/id)
 
 (s/def ::display-name ::text)
 (s/def ::color ::text)
@@ -225,13 +235,18 @@
 (s/def ::switch (s/keys :req [:entity/id
                               :entity/type]
                         :req-un [::display-name
-                                 :switch/values]))
+                                 :switch/value-ids]))
 
-(s/def :switch/values (s/map-of :switch/value-id
-                                :switch/value-name
-                                :min-count 2))
-(s/def :switch/value-id :entity/id)
-(s/def :switch/value-name ::text)
+(s/def :switch/value-ids (s/coll-of ::switch-value-id
+                                    :kind vector?
+                                    :min-count 2))
+
+(s/def ::switch-values (s/and ::entity-map
+                              (s/map-of ::switch-value-id ::switch-value)))
+
+(s/def ::switch-value (s/keys :req [:entity/id
+                                    :entity/type]
+                              :req-un [::display-name]))
 
 ;; Modals
 
@@ -264,8 +279,10 @@
 
 (s/def :modal/switch-form
   (s/keys :req-un [::display-name
-                   :switch/values]
+                   :switch-form/values]
           :opt-un [::switch-id]))
+
+(s/def :switch-form/values (s/coll-of ::switch-value))
 
 (s/def ::dialogue-state (s/keys :req-un [::line-id]
                                 :opt-un [::description]))
@@ -300,7 +317,8 @@
                                        ::location-editor
                                        ::locations
                                        ::location-connections
-                                       ::switches]
+                                       ::switches
+                                       ::switch-values]
                               :opt-un [::connecting
                                        ::dragging
                                        ::cursor
@@ -339,7 +357,8 @@
           :dialogues {}
           :lines {}
           :triggers {}
-          :switches {}}
+          :switches {}
+          :switch-values {}}
          (->> dummy-data
               ((migrations 2))
               ((migrations 3)))))

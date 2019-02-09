@@ -56,14 +56,14 @@
   (let [switches (<sub [:switch-list])]
     [slds/resource-page "Switches"
      {:columns [:display-name :values :actions]
-      :collection (vals switches)
+      :collection switches
       :cell-views {:color (fn [color] [slds/badge color color])
                    :actions (fn [_ {:keys [id line-count]}]
                               [:div {:class "slds-text-align_right"}
                                (when (zero? line-count)
                                  [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this switch?")
                                                                                (>evt [:delete-switch id]))}])
-                               [slds/symbol-button "edit" {:on-click #(>evt [:open-switch-modal id])}]])}
+                               [slds/symbol-button "edit" {:on-click #(>evt [:modal/open-switch-modal id])}]])}
       :new-resource #(>evt [:modal/open-switch-modal])}]))
 
 (defn location-component [location-id]
@@ -243,20 +243,21 @@
                             :disabled (nil? switch-id)
                             :on-change #(>evt [:modal/update-trigger-value (uuid (e->val %))])}]]]))
 
-(defn switch-form-modal [{:keys [display-name values]}]
-  [slds/modal {:title "Switch"
-               :close-handler #(>evt [:close-modal])
-               :confirm-handler #(>evt [:modal/save-switch])}
-     [slds/form
-      [slds/input-text {:label "Name"
-                        :on-change #(>evt [:modal/update-switch-name (e->val %)])
-                        :value display-name}]
-      (for [[value-id value-name] values]
-        ^{:key (str "switch-value" value-id)}
-        [slds/input-text {:label "Value"
-                          :on-change #(>evt [:modal/update-switch-value value-id (e->val %)])
-                          :value value-name}])
-      [slds/add-button "New" #(>evt [:modal/add-switch-value])]]])
+(defn switch-form-modal []
+  (let [{:keys [display-name values]} (<sub [:modal/switch-form])]
+    [slds/modal {:title "Switch"
+                 :close-handler #(>evt [:close-modal])
+                 :confirm-handler #(>evt [:modal/save-switch])}
+       [slds/form
+        [slds/input-text {:label "Name"
+                          :on-change #(>evt [:modal/update-switch-name (e->val %)])
+                          :value display-name}]
+        (for [[index value-name] values]
+          ^{:key (str "switch-value" index)}
+          [slds/input-text {:label "Value"
+                            :on-change #(>evt [:modal/update-switch-value index (e->val %)])
+                            :value value-name}])
+        [slds/add-button "New" #(>evt [:modal/add-switch-value])]]]))
 
 (defn modal []
   (if-let [modal (<sub [:modal])]
@@ -268,7 +269,7 @@
       :character-form    [character-form-modal (:character-form modal)]
       :location-creation [location-creation-modal (:location-creation modal)]
       :trigger-creation  [trigger-creation-modal (:trigger-creation modal)]
-      :switch-form       [switch-form-modal (:switch-form modal)])))
+      :switch-form       [switch-form-modal])))
 
 ;; Navigation
 

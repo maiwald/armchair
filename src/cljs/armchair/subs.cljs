@@ -13,6 +13,7 @@
 (reg-sub :db-player-options #(:player-options %))
 (reg-sub :db-triggers #(:triggers %))
 (reg-sub :db-switches #(:switches %))
+(reg-sub :db-switches-values #(:switch-values %))
 
 (reg-sub :db-location-connections #(:location-connections %))
 
@@ -22,7 +23,18 @@
 
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
+
 (reg-sub :dnd-payload #(:dnd-payload %))
+
+(reg-sub
+  :modal/switch-form
+  :<- [:modal]
+  (fn [modal]
+    (if-let [{:keys [display-name values]} (:switch-form modal)]
+      {:display-name display-name
+       :values (map-indexed
+                 #(vector %1 (:display-name %2))
+                 values)})))
 
 (reg-sub
   :character-list
@@ -42,11 +54,15 @@
 (reg-sub
   :switch-list
   :<- [:db-switches]
-  (fn [switches _]
-    (u/map-values
-      (fn [{v :values :as s}]
-        (assoc s :values (join ", " (vals v))))
-      switches)))
+  :<- [:db-switches-values]
+  (fn [[switches switch-values] _]
+    (let [value-name (comp :display-name switch-values)]
+      (map
+        (fn [[id {:keys [display-name value-ids]}]]
+          {:id id
+           :display-name display-name
+           :values (->> value-ids (map value-name) (join ", "))})
+        switches))))
 
 (reg-sub
   :dialogue/modal-line
