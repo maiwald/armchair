@@ -65,15 +65,25 @@
                    (fn [ts]
                      (vec (remove #(= trigger-id %) ts)))))))
 
+(defn next-line-clearer [id]
+  (fn [item]
+    (cond-> item
+      (= (:next-line-id item) id)
+      (assoc :next-line-id nil))))
+
 (reg-event-db
   :dialogue-editor/delete-trigger-node
   [validate
    record-undo]
-  (fn [db [_ trigger-node-id]]
-    (let [trigger-ids (get-in db [:lines trigger-node-id :trigger-ids])]
+  (fn [db [_ id]]
+    (let [trigger-ids (get-in db [:lines id :trigger-ids])
+          clear-line (next-line-clearer id)]
       (-> db
           (update :triggers #(apply dissoc % trigger-ids))
-          (update :lines dissoc trigger-node-id)))))
+          (update :ui/positions dissoc id)
+          (update :lines dissoc id)
+          (u/update-values :player-options clear-line)
+          (u/update-values :lines clear-line)))))
 
 (defn initial-line? [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
@@ -96,18 +106,15 @@
   (fn [db [_ id]]
     (assert (not (initial-line? db id))
             "Initial lines cannot be deleted!")
-    (let [{:keys [dialogue-id options]} (get-in db [:lines id])]
-      (letfn [(clear-line [line]
-                (update line :next-line-id #(if (= id %) nil %)))]
-        (-> db
+    (let [options (get-in db [:lines id :options])
+          clear-line (next-line-clearer id)]
+      (-> db
           (db/clear-dialogue-state id)
+          (update :ui/positions dissoc id)
           (update :lines dissoc id)
           (update :player-options #(apply dissoc % options))
           (u/update-values :player-options clear-line)
-          (u/update-values :lines (fn [line]
-                                    (case (:kind line)
-                                      :npc (clear-line line)
-                                      :player line))))))))
+          (u/update-values :lines clear-line)))))
 
 (reg-event-db
   :dialogue-editor/delete-dialogue-state
