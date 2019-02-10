@@ -259,10 +259,14 @@
                           :value display-name}]
         (for [[index value-name] values]
           ^{:key (str "switch-value" index)}
-          [slds/input-text {:label "Value"
-                            :on-change #(>evt [:modal/update-switch-value index (e->val %)])
-                            :value value-name}])
-        [slds/add-button "New" #(>evt [:modal/add-switch-value])]]]))
+          [:div
+            [slds/input-text {:label "Value"
+                              :on-change #(>evt [:modal/update-switch-value index (e->val %)])
+                              :value value-name}]
+            [:a {:on-mouse-down stop-e!
+                 :on-click #(>evt [:modal/remove-switch-value index])}
+             [icon "times-circle"]]])
+        [slds/add-button "Add Option" #(>evt [:modal/add-switch-value])]]]))
 
 (defn modal []
   (if-let [modal (<sub [:modal])]

@@ -282,7 +282,8 @@
                    :switch-form/values]
           :opt-un [::switch-id]))
 
-(s/def :switch-form/values (s/coll-of ::switch-value))
+(s/def :switch-form/values (s/coll-of ::switch-value
+                                      :min-count 2))
 
 (s/def ::dialogue-state (s/keys :req-un [::line-id]
                                 :opt-un [::description]))

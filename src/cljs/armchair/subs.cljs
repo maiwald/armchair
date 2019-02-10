@@ -32,9 +32,9 @@
   (fn [modal]
     (if-let [{:keys [display-name values]} (:switch-form modal)]
       {:display-name display-name
-       :values (map-indexed
-                 #(vector %1 (:display-name %2))
-                 values)})))
+       :values (for [[index v] (zipmap (range (count values)) values)
+                     :when (not (contains? v :deleted))]
+                 [index (:display-name v)])})))
 
 (reg-sub
   :character-list

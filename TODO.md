@@ -1,10 +1,9 @@
 # TODO
 - refactor triggers into separate dialogue nodes
-  - add "info" switches
   - add conditions
   - respect conditions in game
   - clean up migration
-  - consolidate graph node css
+  - consolidate graph node css and other styling
   - move modal stuff into its own namespace
 - local storage
 - directed location connections

@@ -180,6 +180,13 @@
     (assoc-in db [:modal :switch-form :values index :display-name] value)))
 
 (reg-event-db
+  :modal/remove-switch-value
+  [validate]
+  (fn [db [_ index]]
+    (assert-switch-modal db)
+    (assoc-in db [:modal :switch-form :values index :deleted] true)))
+
+(reg-event-db
   :modal/add-switch-value
   [validate]
   (fn [db _]
@@ -196,19 +203,24 @@
    record-undo]
   (fn [db _]
     (assert-switch-modal db)
-    (let [modal (get-in db [:modal :switch-form])
-          {:keys [switch-id display-name values]} modal
+    (let [modal-data (get-in db [:modal :switch-form])
+          {values nil
+           deleted-values true} (group-by :deleted (:values modal-data))
+          {:keys [switch-id display-name]} modal-data
           id (or switch-id (random-uuid))
-          value-map (into {} (map #(vector (:entity/id %) %) values))]
+          value-map (into {} (for [v values] [(:entity/id v) v]))]
       (cond-> db
-        (s/valid? :modal/switch-form modal)
+        (s/valid? :modal/switch-form {:switch-id id
+                                      :display-name display-name
+                                      :values values})
         (-> (dissoc :modal)
             (assoc-in [:switches id]
                       {:entity/id id
                        :entity/type :switch
                        :display-name display-name
-                       :value-ids (vec (keys value-map))})
-            (update :switch-values merge value-map))))))
+                       :value-ids (mapv :entity/id values)})
+            (update :switch-values merge value-map)
+            (update :switch-values #(apply dissoc % (map :entity/id deleted-values))))))))
 
 (defn assert-trigger-modal [db]
   (assert (contains? (:modal db) :trigger-creation)
