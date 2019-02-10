@@ -36,12 +36,20 @@
   :dialogue-editor/trigger
   :<- [:db-triggers]
   :<- [:db-dialogues]
-  (fn [[triggers dialogues] [_ trigger-id]]
-    (let [{:keys [kind switch-id switch-value]} (triggers trigger-id)]
-      {:switch-kind kind
-       :switch-id switch-id
-       :switch-name (get-in dialogues [switch-id :synopsis])
-       :switch-value (get-in dialogues [switch-id :states switch-value] "Initial Line")})))
+  :<- [:db-switches]
+  :<- [:db-switch-values]
+  (fn [[triggers dialogues switches switch-values] [_ trigger-id]]
+    (let [{:keys [switch-kind switch-id switch-value]} (triggers trigger-id)]
+      (merge
+        {:switch-kind switch-kind
+         :switch-id switch-id}
+        (case switch-kind
+          :dialogue-state
+          {:switch-name (get-in dialogues [switch-id :synopsis])
+           :switch-value (get-in dialogues [switch-id :states switch-value] "Initial Line")}
+          :switch
+          {:switch-name (get-in switches [switch-id :display-name])
+           :switch-value (get-in switch-values [switch-value :display-name])})))))
 
 (reg-sub
   :dialogue-editor/trigger-node

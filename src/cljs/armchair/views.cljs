@@ -222,12 +222,17 @@
 (defn trigger-creation-modal [{:keys [switch-kind switch-id switch-value]}]
   (let [{:keys [kind-options
                 switch-options
-                value-options]} (<sub [:trigger-creation-options])]
+                value-options]} (case switch-kind
+                                  :dialogue-state
+                                  (<sub [:trigger-creation/dialogue-state-options])
+                                  :switch
+                                  (<sub [:trigger-creation/switch-options]))]
     [slds/modal {:title "Add Trigger"
                  :close-handler #(>evt [:close-modal])
                  :confirm-handler #(>evt [:modal/save-trigger])}
        [slds/form
-        [slds/radio-button-group {:options kind-options
+        [slds/radio-button-group {:options [[:dialogue-state "Dialogue State"]
+                                            [:switch "Switch"]]
                                   :active switch-kind
                                   :on-change #(>evt [:modal/update-trigger-kind %])}]
         [slds/input-select {:label (case switch-kind

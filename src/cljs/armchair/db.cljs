@@ -193,7 +193,7 @@
 (s/def ::triggers (s/and ::entity-map
                          (s/map-of ::trigger-id ::trigger)))
 
-(s/def :trigger/switch-kind #{:dialogue-state})
+(s/def :trigger/switch-kind #{:dialogue-state :switch})
 (s/def :trigger/switch-id :entity/id)
 (s/def :trigger/switch-value :entity/id)
 (s/def ::trigger (s/keys :req [:entity/id

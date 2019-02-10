@@ -13,7 +13,7 @@
 (reg-sub :db-player-options #(:player-options %))
 (reg-sub :db-triggers #(:triggers %))
 (reg-sub :db-switches #(:switches %))
-(reg-sub :db-switches-values #(:switch-values %))
+(reg-sub :db-switch-values #(:switch-values %))
 
 (reg-sub :db-location-connections #(:location-connections %))
 
@@ -54,7 +54,7 @@
 (reg-sub
   :switch-list
   :<- [:db-switches]
-  :<- [:db-switches-values]
+  :<- [:db-switch-values]
   (fn [[switches switch-values] _]
     (let [value-name (comp :display-name switch-values)]
       (map
@@ -83,18 +83,38 @@
       (get-in options [option-id :text]))))
 
 (reg-sub
-  :trigger-creation-options
+  :trigger-creation/switch-options
   :<- [:modal]
   :<- [:db-triggers]
-  :<- [:db-dialogues]
   :<- [:db-lines]
-  (fn [[{{:keys [trigger-node-id switch-id]} :trigger-creation} triggers dialogues lines]]
+  :<- [:db-switches]
+  :<- [:db-switch-values]
+  (fn [[{{:keys [trigger-node-id switch-id]} :trigger-creation} triggers lines switches switch-values]]
     (let [used-switches (->> (get-in lines [trigger-node-id :trigger-ids])
-                             (map (fn [trigger-id] (get-in triggers [trigger-id :switch-id])))
+                             (map #(get-in triggers [% :switch-id]))
                              set)]
-      {:kind-options [[:dialogue-state "Dialogue State"]
-                      [:switch "Switch"]]
-       :switch-options (->> dialogues
+      {:switch-options (->> switches
+                            (u/filter-map (fn [{id :entity/id}]
+                                            (not (contains? used-switches id))))
+                            (u/map-values :display-name))
+       :value-options (when switch-id
+                        (map
+                          (fn [id]
+                            [id (get-in switch-values [id :display-name])])
+                          (get-in switches [switch-id :value-ids])))})))
+
+
+(reg-sub
+  :trigger-creation/dialogue-state-options
+  :<- [:modal]
+  :<- [:db-triggers]
+  :<- [:db-lines]
+  :<- [:db-dialogues]
+  (fn [[{{:keys [trigger-node-id switch-id]} :trigger-creation} triggers lines dialogues]]
+    (let [used-switches (->> (get-in lines [trigger-node-id :trigger-ids])
+                             (map #(get-in triggers [% :switch-id]))
+                             set)]
+      {:switch-options (->> dialogues
                             (u/filter-map (fn [{states :states id :entity/id}]
                                             (and (not (contains? used-switches id))
                                                  (seq states))))
