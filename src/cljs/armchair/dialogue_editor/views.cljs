@@ -13,43 +13,42 @@
                 connected?
                 text
                 character-name
-                character-color]} (<sub [:dialogue-editor/npc-line line-id])
-        connecting? (some? (<sub [:connector]))]
+                character-color]} (<sub [:dialogue-editor/npc-line line-id])]
     [:div.line
-      [c/graph-node {:title character-name
-                     :color character-color
-                     :on-connect-end #(>evt [:end-connecting-lines line-id])
-                     :actions [(when-not (or initial-line? (some? state))
-                                 ["tag"
-                                  "Create named state"
-                                  #(>evt [:open-dialogue-state-modal line-id])])
-                               (when-not initial-line?
-                                 ["trash"
-                                  "Delete"
-                                  #(when (js/confirm "Are your sure you want to delete this line?")
-                                     (>evt [:delete-line line-id]))])
-                               ["edit" "Edit" #(>evt [:open-npc-line-modal line-id])]]}
-       (cond
-         initial-line? [:div {:class "line__state"}
-                        [c/tag {:icon "tag"
-                                :title "Initial Line"}]]
-         (some? state) [:div {:class "line__state"}
-                        [c/tag {:title state
-                                :icon "tag"
-                                :on-click #(>evt [:open-dialogue-state-modal line-id])
-                                :on-remove #(>evt [:dialogue-editor/delete-dialogue-state line-id])}]])
-       [:div {:class "line__text"
-              :style {:height (u/px config/line-height)}}
-        [:p text]
-        (if connected?
-          [:div {:class "action"
-                 :on-mouse-down stop-e!
-                 :on-click #(>evt [:dialogue-editor/disconnect-line line-id])}
-           [icon "unlink" "Connect"]]
-          [:div {:class "action action_connect"
-                 :on-mouse-down (e-> #(when (e->left? %)
-                                        (>evt [:start-connecting-lines line-id (e->graph-cursor %)])))}
-           [icon "link" "Connect"]])]]]))
+     [c/graph-node {:title character-name
+                    :color character-color
+                    :on-connect-end #(>evt [:end-connecting-lines line-id])
+                    :actions [(when-not (or initial-line? (some? state))
+                                ["tag"
+                                 "Create named state"
+                                 #(>evt [:open-dialogue-state-modal line-id])])
+                              (when-not initial-line?
+                                ["trash"
+                                 "Delete"
+                                 #(when (js/confirm "Are your sure you want to delete this line?")
+                                    (>evt [:delete-line line-id]))])
+                              ["edit" "Edit" #(>evt [:open-npc-line-modal line-id])]]}
+      (cond
+        initial-line? [:div {:class "line__state"}
+                       [c/tag {:icon "tag"
+                               :title "Initial Line"}]]
+        (some? state) [:div {:class "line__state"}
+                       [c/tag {:title state
+                               :icon "tag"
+                               :on-click #(>evt [:open-dialogue-state-modal line-id])
+                               :on-remove #(>evt [:dialogue-editor/delete-dialogue-state line-id])}]])
+      [:div {:class "line__text"
+             :style {:height (u/px config/line-height)}}
+       [:p text]
+       (if connected?
+         [:div {:class "action"
+                :on-mouse-down stop-e!
+                :on-click #(>evt [:dialogue-editor/disconnect-line line-id])}
+          [icon "unlink" "Connect"]]
+         [:div {:class "action action_connect"
+                :on-mouse-down (e-> #(when (e->left? %)
+                                       (>evt [:start-connecting-lines line-id (e->graph-cursor %)])))}
+          [icon "link" "Connect"]])]]]))
 
 (defn player-line-option-component [line-id index option]
   (let [{:keys [text connected?]} option]
@@ -64,22 +63,21 @@
        [:div {:class "action action_connect"
               :on-mouse-down (e-> #(when (e->left? %)
                                      (>evt [:start-connecting-lines line-id (e->graph-cursor %) index])))}
-          [icon "link" "Connect"]])]))
+        [icon "link" "Connect"]])]))
 
 (defn player-line-component [line-id]
-  (let [options (<sub [:dialogue-editor/player-line-options line-id])
-        connecting? (some? (<sub [:connector]))]
+  (let [options (<sub [:dialogue-editor/player-line-options line-id])]
     [:div.line
-      [c/graph-node {:title "Player"
-                     :on-connect-end #(>evt [:end-connecting-lines line-id])
-                     :actions [["trash" "Delete" #(when (js/confirm "Are your sure you want to delete this line?")
+     [c/graph-node {:title "Player"
+                    :on-connect-end #(>evt [:end-connecting-lines line-id])
+                    :actions [["trash" "Delete" #(when (js/confirm "Are your sure you want to delete this line?")
                                                    (>evt [:delete-line line-id]))]
-                               ["edit" "Edit" #(>evt [:open-player-line-modal line-id])]]}
-       [:ul {:class "line__options"}
-        (map-indexed (fn [index option]
-                       ^{:key (str "line-option" line-id ":" index)}
-                       [player-line-option-component line-id index option])
-                     options)]]]))
+                              ["edit" "Edit" #(>evt [:open-player-line-modal line-id])]]}
+      [:ul {:class "line__options"}
+       (map-indexed (fn [index option]
+                      ^{:key (str "line-option" line-id ":" index)}
+                      [player-line-option-component line-id index option])
+                    options)]]]))
 
 (defn trigger-component [trigger-node-id trigger-id]
   (let [{:keys [switch-kind
@@ -98,8 +96,7 @@
       [icon "times-circle"]]]))
 
 (defn trigger-node-component [id]
-  (let [connecting? (some? (<sub [:connector]))
-        {:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
+  (let [{:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
     [:div.line
      [c/graph-node {:title "Triggers"
                     :on-connect-end #(>evt [:end-connecting-lines id])
@@ -107,25 +104,25 @@
                                "Delete"
                                #(when (js/confirm "Are your sure you want to delete this trigger node")
                                   (>evt [:dialogue-editor/delete-trigger-node id]))]]}
-       [:div.line__text
-        [:ul.triggers
-         (for [trigger-id trigger-ids]
-           ^{:key (str "trigger" trigger-id)}
-           [trigger-component id trigger-id])]
-        (if connected?
-          [:div {:class "action"
-                 :on-mouse-down stop-e!
-                 :on-click #(>evt [:dialogue-editor/disconnect-line id])}
-           [icon "unlink" "Connect"]]
-          [:div {:class "action action_connect"
-                 :on-mouse-down (e-> #(when (e->left? %)
-                                        (>evt [:start-connecting-lines id (e->graph-cursor %)])))}
-           [icon "link" "Connect"]])]
-       [:div.line__footer
-        [:a
-         {:on-click #(>evt [:modal/open-trigger-creation id])
-          :on-mouse-down stop-e!}
-         [icon "plus"] " Add Trigger"]]]]))
+      [:div.line__text
+       [:ul.triggers
+        (for [trigger-id trigger-ids]
+          ^{:key (str "trigger" trigger-id)}
+          [trigger-component id trigger-id])]
+       (if connected?
+         [:div {:class "action"
+                :on-mouse-down stop-e!
+                :on-click #(>evt [:dialogue-editor/disconnect-line id])}
+          [icon "unlink" "Connect"]]
+         [:div {:class "action action_connect"
+                :on-mouse-down (e-> #(when (e->left? %)
+                                       (>evt [:start-connecting-lines id (e->graph-cursor %)])))}
+          [icon "link" "Connect"]])]
+      [:div.line__footer
+       [:a
+        {:on-click #(>evt [:modal/open-trigger-creation id])
+         :on-mouse-down stop-e!}
+        [icon "plus"] " Add Trigger"]]]]))
 
 (defn line-connection [start end]
   (let [start-pos (<sub [:ui/position start])
