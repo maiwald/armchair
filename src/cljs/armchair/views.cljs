@@ -69,31 +69,26 @@
 (defn location-component [location-id]
   (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])
         connecting? (some? (<sub [:connector]))]
-    [:div {:class "location"
-           :on-mouse-up (when connecting? #(>evt [:end-connecting-locations location-id]))
-           :style {:width (str config/line-width "px")}}
-     [:div {:class "location__header"}
-      [:p {:class "name"}
-       [:a {:on-click #(>navigate :location-edit :id location-id)
-            :on-mouse-down stop-e!}
-           display-name]]
-      [:ul {:class "actions"
-            :on-mouse-down stop-e!}
-       [:li {:class "action"
-             :on-click #(when (js/confirm "Are you sure you want to delete this location?")
-                          (>evt [:delete-location location-id]))}
-        [icon "trash" "Delete"]]
-       [:li {:class "action action_connect"
-             :on-mouse-down (e-> #(when (e->left? %)
-                                    (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
-        [icon "project-diagram" "Connect"]]]]
-     [:ul {:class "location__characters"}
-      (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
-        [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
-         [:a {:style {:background-color npc-color}
-              :on-mouse-down stop-e!
-              :on-click #(>navigate :dialogue-edit :id dialogue-id)}
-          npc-name]])]]))
+    [:div.location
+     [c/graph-node {:title [:a {:on-click #(>navigate :location-edit :id location-id)}
+                            display-name]
+                    :on-connect-end #(>evt [:end-connecting-locations location-id])
+                    :actions [["trash" "Delete"
+                               #(when (js/confirm "Are you sure you want to delete this location?")
+                                  (>evt [:delete-location location-id]))]]}
+        [:ul {:class "actions"
+              :on-mouse-down stop-e!}
+         [:li {:class "action action_connect"
+               :on-mouse-down (e-> #(when (e->left? %)
+                                      (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
+          [icon "project-diagram" "Connect"]]]
+       [:ul {:class "location__characters"}
+        (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
+          [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
+           [:a {:style {:background-color npc-color}
+                :on-mouse-down stop-e!
+                :on-click #(>navigate :dialogue-edit :id dialogue-id)}
+            npc-name]])]]]))
 
 (defn location-connection [start end]
   (let [start-pos (<sub [:ui/position start])

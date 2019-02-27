@@ -1,6 +1,7 @@
 (ns armchair.components
   (:require [reagent.core :as r]
-            [armchair.util :as u :refer [>evt <sub e-> e->left?]]))
+            [armchair.config :as config]
+            [armchair.util :as u :refer [stop-e! >evt <sub e-> e->left?]]))
 
 ;; Drag & Drop
 
@@ -61,6 +62,22 @@
   [:i {:class (str "fas fa-" glyph)
        :title title}])
 
+;; Tag
+
+(defn tag [{glyph :icon :keys [title on-click on-remove]}]
+  [:div.tag
+   (when glyph [icon glyph])
+   (if on-click
+     [:a {:class "tag__description"
+          :on-click on-click}
+      title]
+     [:span {:class "tag__description"}
+      title])
+   (when on-remove
+     [:a {:class "tag__remove"
+          :on-click on-remove}
+      [icon "times-circle" "Delete state"]])])
+
 ;; Dropdown
 
 (defn dropdown [title items]
@@ -85,3 +102,26 @@
             [:li {:key (str "breadcrump" title)
                   :on-click (item-click-fn on-click)}
              title])])])))
+
+;; Graph Node
+
+(defn graph-node [{:keys [title color actions on-connect-end]}]
+  (let [id (gensym "node")
+        connecting? (some? (<sub [:connector]))
+        children (r/children (r/current-component))]
+    [:div {:class "graph-node"
+           :on-mouse-up (when connecting? on-connect-end)
+           :style {:border-color color
+                   :width (u/px config/line-width)}}
+     [:div {:class "graph-node__header"}
+      [:p {:class "graph-node__header__title"} title]
+      [:ul {:class "graph-node__header__actions actions"
+            :on-mouse-down stop-e!}
+       (for [[action-icon action-title action-handler :as action] actions
+             :when (some? action)]
+         [:li {:key (str id "-" title "-" action-title)
+               :class "action"
+               :on-click action-handler}
+          [icon action-icon action-title]])]]
+     (into [:div {:class "graph-node__content"}]
+           children)]))
