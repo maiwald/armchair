@@ -39,7 +39,7 @@
                                 :on-click #(>evt [:open-dialogue-state-modal line-id])
                                 :on-remove #(>evt [:dialogue-editor/delete-dialogue-state line-id])}]])
        [:div {:class "line__text"
-              :style {:height (str config/line-height "px")}}
+              :style {:height (u/px config/line-height)}}
         [:p text]
         (if connected?
           [:div {:class "action"
@@ -54,7 +54,7 @@
 (defn player-line-option-component [line-id index option]
   (let [{:keys [text connected?]} option]
     [:li {:class "line__text"
-          :style {:height (str config/line-height "px")}}
+          :style {:height (u/px config/line-height)}}
      [:p text]
      (if connected?
        [:div {:class "action"
@@ -101,7 +101,7 @@
   (let [connecting? (some? (<sub [:connector]))
         {:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
     [:div.line {:on-mouse-up (when connecting? #(>evt [:end-connecting-lines id]))
-                :style {:width (str config/line-width "px")}}
+                :style {:width (u/px config/line-width)}}
      [:div.line__header
       [:p.name "Triggers"]
       [:ul.actions {:on-mouse-down stop-e!}
