@@ -7,6 +7,16 @@
             [armchair.slds :as slds]
             [armchair.util :as u :refer [<sub >evt stop-e! e-> e->val e->left?]]))
 
+(defn connector [{:keys [connected? connector disconnector]}]
+  (if connected?
+    [:div {:class "action"
+           :on-mouse-down stop-e!
+           :on-click disconnector}
+     [icon "unlink" "Disconnect"]]
+    [:div {:class "action action_connect"
+           :on-mouse-down (e-> #(when (e->left? %) (connector %)))}
+     [icon "link" "Connect"]]))
+
 (defn npc-line-component [line-id]
   (let [{:keys [state
                 initial-line?
@@ -40,30 +50,18 @@
       [:div {:class "line__text"
              :style {:height (u/px config/line-height)}}
        [:p text]
-       (if connected?
-         [:div {:class "action"
-                :on-mouse-down stop-e!
-                :on-click #(>evt [:dialogue-editor/disconnect-line line-id])}
-          [icon "unlink" "Connect"]]
-         [:div {:class "action action_connect"
-                :on-mouse-down (e-> #(when (e->left? %)
-                                       (>evt [:start-connecting-lines line-id (e->graph-cursor %)])))}
-          [icon "link" "Connect"]])]]]))
+       [connector {:connected? connected?
+                   :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %)])
+                   :disconnector #(>evt [:dialogue-editor/disconnect-line line-id])}]]]]))
 
 (defn player-line-option-component [line-id index option]
   (let [{:keys [text connected?]} option]
     [:li {:class "line__text"
           :style {:height (u/px config/line-height)}}
      [:p text]
-     (if connected?
-       [:div {:class "action"
-              :on-mouse-down stop-e!
-              :on-click #(>evt [:dialogue-editor/disconnect-option line-id index])}
-        [icon "unlink" "Connect"]]
-       [:div {:class "action action_connect"
-              :on-mouse-down (e-> #(when (e->left? %)
-                                     (>evt [:start-connecting-lines line-id (e->graph-cursor %) index])))}
-        [icon "link" "Connect"]])]))
+     [connector {:connected? connected?
+                 :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %) index])
+                 :disconnector #(>evt [:dialogue-editor/disconnect-option line-id index])}]]))
 
 (defn player-line-component [line-id]
   (let [options (<sub [:dialogue-editor/player-line-options line-id])]
@@ -109,15 +107,9 @@
         (for [trigger-id trigger-ids]
           ^{:key (str "trigger" trigger-id)}
           [trigger-component id trigger-id])]
-       (if connected?
-         [:div {:class "action"
-                :on-mouse-down stop-e!
-                :on-click #(>evt [:dialogue-editor/disconnect-line id])}
-          [icon "unlink" "Connect"]]
-         [:div {:class "action action_connect"
-                :on-mouse-down (e-> #(when (e->left? %)
-                                       (>evt [:start-connecting-lines id (e->graph-cursor %)])))}
-          [icon "link" "Connect"]])]
+       [connector {:connected? connected?
+                   :connector #(>evt [:start-connecting-lines id (e->graph-cursor %)])
+                   :disconnector #(>evt [:dialogue-editor/disconnect-line id])}]]
       [:div.line__footer
        [:a
         {:on-click #(>evt [:modal/open-trigger-creation id])
