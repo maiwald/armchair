@@ -125,3 +125,10 @@
           [icon action-icon action-title]])]]
      (into [:div {:class "graph-node__content"}]
            children)]))
+
+(defn connectable [{:keys [height connector]}]
+  [:div.connectable
+   (into [:div.connectable__content]
+         (r/children (r/current-component)))
+   [:div.connectable__connector connector]])
+

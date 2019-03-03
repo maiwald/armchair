@@ -4,8 +4,8 @@
   ^boolean goog.DEBUG)
 
 (def default-ui-position [20 20])
-(def line-width 250)
-(def line-height 80)
+(def line-width 260)
+(def line-height 100)
 (def tile-size 32)
 
 (def color-grid

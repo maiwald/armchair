@@ -76,19 +76,18 @@
                     :actions [["trash" "Delete"
                                #(when (js/confirm "Are you sure you want to delete this location?")
                                   (>evt [:delete-location location-id]))]]}
-        [:ul {:class "actions"
-              :on-mouse-down stop-e!}
-         [:li {:class "action action_connect"
-               :on-mouse-down (e-> #(when (e->left? %)
-                                      (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
-          [icon "project-diagram" "Connect"]]]
+      [c/connectable {:connector
+                      [:div {:class "action action_connect"
+                             :on-mouse-down (e-> #(when (e->left? %)
+                                                    (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
+                       [icon "project-diagram" "Connect"]]}
        [:ul {:class "location__characters"}
         (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
           [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
            [:a {:style {:background-color npc-color}
                 :on-mouse-down stop-e!
                 :on-click #(>navigate :dialogue-edit :id dialogue-id)}
-            npc-name]])]]]))
+            npc-name]])]]]]))
 
 (defn location-connection [start end]
   (let [start-pos (<sub [:ui/position start])

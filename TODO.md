@@ -3,7 +3,6 @@
   - add conditions
   - respect conditions in game
   - clean up migration
-  - consolidate graph node css and other styling
   - move modal stuff into its own namespace
 - local storage
 - directed location connections

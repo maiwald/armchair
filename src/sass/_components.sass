@@ -27,7 +27,7 @@
       margin-right: -2px
 
 
-$graph-node-padding: 7px
+$graph-node-spacing: 7px
 $graph-node-border-radius: 5px
 
 .graph-node
@@ -48,7 +48,7 @@ $graph-node-border-radius: 5px
     border-top-left-radius: $graph-node-border-radius
     border-top-right-radius: $graph-node-border-radius
     background-color: #f5f5f5
-    padding: $graph-node-padding
+    padding: $graph-node-spacing
 
     &__title
       flex-grow: 1
@@ -60,3 +60,20 @@ $graph-node-border-radius: 5px
     &__actions
       justify-content: flex-end
       align-self: center
+
+  &__content
+    display: flex
+
+    > *
+      flex-grow: 1
+
+.connectable
+  display: flex
+  flext-direction: row
+
+  &__content
+    flex-grow: 1
+
+  &__connector
+    align-self: center
+    margin-right: $graph-node-spacing
