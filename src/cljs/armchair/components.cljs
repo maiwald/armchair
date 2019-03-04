@@ -24,7 +24,7 @@
           :y2 y2}])
 
 (defn drag-item [item-id component]
-  (let [position (<sub [:ui/position item-id])
+  (let [[left top] (<sub [:ui/position item-id])
         dragging? (<sub [:dragging-item? item-id])
         start-dragging (start-dragging-handler #{item-id})
         stop-dragging (when dragging? (e-> #(>evt [:end-dragging])))]
@@ -32,8 +32,7 @@
                    (when dragging? "graph__item_is-dragging")]
            :on-mouse-down start-dragging
            :on-mouse-up stop-dragging
-           :style {:left (first position)
-                   :top (second position)}}
+           :style {:left left :top top}}
      [component item-id]]))
 
 (defn drag-canvas [{:keys [kind nodes]} & connection-children]
