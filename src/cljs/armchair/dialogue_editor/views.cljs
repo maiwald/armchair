@@ -99,6 +99,8 @@
   (letfn [(action-delete [e]
             (when (js/confirm "Are your sure you want to delete this line?")
               (>evt [:delete-line line-id])))
+          (action-add-option [e]
+              (>evt [:add-option line-id]))
           (action-edit [e]
             (>evt [:open-player-line-modal line-id]))]
     (fn [line-id]
@@ -106,17 +108,14 @@
         [c/graph-node {:title "Player"
                        :on-connect-end #(>evt [:end-connecting-lines line-id])
                        :actions [["trash" "Delete" action-delete]
+                                 ["plus" "Add Option" action-add-option]
                                  ["edit" "Edit" action-edit]]}
          [:ul {:ref #(swap! node-position-lookup assoc line-id %)
                :class "line__options"}
           (map-indexed (fn [index option]
                          ^{:key (str "line-option" line-id ":" index)}
                          [player-line-option-component line-id index option])
-                       options)]
-         [:div.line__footer
-          [:a {:on-click #(>evt [:add-option line-id])
-               :on-mouse-down stop-e!}
-           [icon "plus"] " Add Option"]]]))))
+                       options)]]))))
 
 
 (defn trigger-component [trigger-node-id trigger-id]
@@ -136,27 +135,26 @@
       [icon "times-circle"]]]))
 
 (defn trigger-node-component [id]
-  (let [{:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
-    [c/graph-node {:title "Triggers"
-                   :on-connect-end #(>evt [:end-connecting-lines id])
-                   :actions [["trash"
-                              "Delete"
-                              #(when (js/confirm "Are your sure you want to delete this trigger node")
-                                 (>evt [:dialogue-editor/delete-trigger-node id]))]]}
-     [c/connectable {:connector
-                     [connector {:connected? connected?
-                                 :connector #(>evt [:start-connecting-lines id (e->graph-cursor %)])
-                                 :disconnector #(>evt [:dialogue-editor/disconnect-line id])}]}
-      [:div {:ref #(swap! node-position-lookup assoc id %)}
-        [:ul.line__triggers
-         (for [trigger-id trigger-ids]
-           ^{:key (str "trigger" trigger-id)}
-           [trigger-component id trigger-id])]
-        [:div.line__footer
-         [:a
-          {:on-click #(>evt [:modal/open-trigger-creation id])
-           :on-mouse-down stop-e!}
-          [icon "plus"] " Add Trigger"]]]]]))
+  (letfn [(action-delete [e]
+            (when (js/confirm "Are your sure you want to delete this trigger node")
+              (>evt [:dialogue-editor/delete-trigger-node id])))
+          (action-add-trigger [e]
+            (>evt [:modal/open-trigger-creation id]))]
+    (fn [id]
+      (let [{:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
+        [c/graph-node {:title "Triggers"
+                       :on-connect-end #(>evt [:end-connecting-lines id])
+                       :actions [["trash" "Delete" action-delete]
+                                 ["plus" "Add Trigger" action-add-trigger]]}
+         [c/connectable {:connector
+                         [connector {:connected? connected?
+                                     :connector #(>evt [:start-connecting-lines id (e->graph-cursor %)])
+                                     :disconnector #(>evt [:dialogue-editor/disconnect-line id])}]}
+          [:div {:ref #(swap! node-position-lookup assoc id %)}
+           [:ul.line__triggers
+            (for [trigger-id trigger-ids]
+              ^{:key (str "trigger" trigger-id)}
+              [trigger-component id trigger-id])]]]]))))
 
 (defn line-connection [start end]
   (let [_ (<sub [:ui/position start])
