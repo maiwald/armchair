@@ -102,9 +102,6 @@
     > li
       border-bottom: 1px solid lighten($gray, 30%)
 
-      &:last-child
-        border-bottom: none
-
   &__state
     position: absolute
     top: -22px
@@ -117,24 +114,45 @@
   &__text
     font-family: "Helvetica"
     font-size: .9rem
-    cursor: default
+    line-height: 1.3rem
+    min-height: 1.3rem
     user-select: none
     -webkit-user-select: none
 
   &__conditions
-    > li
-      font-family: "Helvetica"
-      font-size: .7rem
-      color: $text-light
-      cursor: default
-      user-select: none
+    display: flex
+    flex-direction: row
 
-    &__switch-condition
-      font-weight: bold
+    background: #f6f6f6
+    border-radius: 5px
+    padding: 4px
+    margin-bottom: 5px
+
+    font-family: "Helvetica"
+    font-size: .7rem
+    color: $text-light
+    font-size: .7rem
+
+    i
+      box-sizing: border-box
+      width: 20px
+      padding: 3px
+
+    > ul
+      flex-grow: 1
+
+      > li
+        user-select: none
+        margin-bottom: 2px
+
+        &:last-child
+          margin: 0
+
 
   &__triggers
     > li
-      margin: 7px
+      padding: 7px
+      border-bottom: 1px solid lighten($gray, 40%)
 
     &__switch-name
       display: block

@@ -82,15 +82,17 @@
                                  :disconnector #(>evt [:dialogue-editor/disconnect-option line-id index])}]}
       [:div {:class "line__scroll-wrapper"
              :ref #(swap! node-position-lookup assoc [line-id index] %)}
-       [:ul.line__conditions
-        [:li
-         [:span.line__conditions__switch-name "foo"]
-         " " [:span.line__conditions__switch-condition "is"]
-         " " [:span.line__conditions__switch-value "bar"]]
-        [:li
-         [:span.line__conditions__switch-name "some other thing"]
-         " " [:span.line__conditions__switch-condition "is not"]
-         " " [:span.line__conditions__switch-value "some other value"]]]
+       [:div.line__conditions
+        [icon "unlock" "Unlock Conditions"]
+        [:ul
+         [:li
+          [:span.line__conditions__switch-name "foo"]
+          " " [:span.line__conditions__switch-condition "is"]
+          " " [:span.line__conditions__switch-value "bar"]]
+         [:li
+          [:span.line__conditions__switch-name "some other thing"]
+          " " [:span.line__conditions__switch-condition "is not"]
+          " " [:span.line__conditions__switch-value "some other value"]]]]
        [:p.line__text text]]]]))
 
 (defn player-line-component [line-id]
@@ -110,7 +112,12 @@
           (map-indexed (fn [index option]
                          ^{:key (str "line-option" line-id ":" index)}
                          [player-line-option-component line-id index option])
-                       options)]]))))
+                       options)]
+         [:div.line__footer
+          [:a {:on-click #(>evt [:add-option line-id])
+               :on-mouse-down stop-e!}
+           [icon "plus"] " Add Option"]]]))))
+
 
 (defn trigger-component [trigger-node-id trigger-id]
   (let [{:keys [switch-kind
