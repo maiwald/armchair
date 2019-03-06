@@ -35,7 +35,7 @@
            :style {:left left :top top}}
      [component item-id]]))
 
-(defn drag-canvas [{:keys [kind nodes]} & connection-children]
+(defn drag-canvas [{:keys [kind nodes]}]
   (let [connecting? (some? (<sub [:connector]))
         dragging? (<sub [:dragging?])
         mouse-down (start-dragging-handler (-> nodes vals flatten set))
@@ -50,7 +50,7 @@
            :on-mouse-down mouse-down
            :on-mouse-move mouse-move
            :on-mouse-up mouse-up}
-     (into [:div] connection-children)
+     (into [:div] (r/children (r/current-component)))
      (for [[item-component ids] nodes
            id ids]
        ^{:key (str kind id)} [drag-item id item-component])]))

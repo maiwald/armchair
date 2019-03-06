@@ -69,7 +69,7 @@
                      [connector {:connected? connected?
                                  :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %)])
                                  :disconnector #(>evt [:dialogue-editor/disconnect-line line-id])}]}
-      [:div {:class "line__scroll-wrapper"
+      [:div {:class "line__content-wrapper"
              :ref #(swap! node-position-lookup assoc line-id %)}
        [:p.line__text text]]]]))
 
@@ -80,7 +80,7 @@
                      [connector {:connected? connected?
                                  :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %) index])
                                  :disconnector #(>evt [:dialogue-editor/disconnect-option line-id index])}]}
-      [:div {:class "line__scroll-wrapper"
+      [:div {:class "line__content-wrapper"
              :ref #(swap! node-position-lookup assoc [line-id index] %)}
        [:div.line__conditions
         [icon "unlock" "Unlock Conditions"]
