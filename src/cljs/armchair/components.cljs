@@ -25,13 +25,10 @@
 
 (defn drag-item [item-id component]
   (let [[left top] (<sub [:ui/position item-id])
-        dragging? (<sub [:dragging-item? item-id])
-        start-dragging (start-dragging-handler #{item-id})
-        stop-dragging (when dragging? (e-> #(>evt [:end-dragging])))]
-    [:div {:class ["graph__item"
+        dragging? (<sub [:dragging-item? item-id])]
+    [:div {:on-mouse-down stop-e!
+           :class ["graph__item"
                    (when dragging? "graph__item_is-dragging")]
-           :on-mouse-down start-dragging
-           :on-mouse-up stop-dragging
            :style {:left left :top top}}
      [component item-id]]))
 
@@ -104,26 +101,29 @@
 
 ;; Graph Node
 
-(defn graph-node [{:keys [title color actions on-connect-end]}]
-  (let [id (gensym "node")
-        connecting? (some? (<sub [:connector]))
-        children (r/children (r/current-component))]
-    [:div {:class "graph-node"
-           :on-mouse-up (when connecting? on-connect-end)
-           :style {:border-color color
-                   :width (u/px config/line-width)}}
-     [:div {:class "graph-node__header"}
-      [:p {:class "graph-node__header__title"} title]
-      [:ul {:class "graph-node__header__actions actions"
-            :on-mouse-down stop-e!}
-       (for [[action-icon action-title action-handler :as action] actions
-             :when (some? action)]
-         [:li {:key (str id "-" title "-" action-title)
-               :class "action"
-               :on-click action-handler}
-          [icon action-icon action-title]])]]
-     (into [:div {:class "graph-node__content"}]
-           children)]))
+(defn graph-node [{id :item-id}]
+  (let [dragging? (<sub [:dragging-item? id])
+        start-dragging (start-dragging-handler #{id})
+        stop-dragging (when dragging? (e-> #(>evt [:end-dragging])))]
+    (fn [{:keys [title color actions on-connect-end]}]
+      [:div {:class "graph-node"
+             :on-mouse-up (when (some? (<sub [:connector])) on-connect-end)
+             :style {:border-color color
+                     :width (u/px config/line-width)}}
+       [:div {:class "graph-node__header"
+              :on-mouse-down start-dragging
+              :on-mouse-up stop-dragging}
+        [:p {:class "graph-node__header__title"} title]
+        [:ul {:class "graph-node__header__actions actions"
+              :on-mouse-down stop-e!}
+         (for [[action-icon action-title action-handler :as action] actions
+               :when (some? action)]
+           [:li {:key (str id "-" title "-" action-title)
+                 :class "action"
+                 :on-click action-handler}
+            [icon action-icon action-title]])]]
+       (into [:div {:class "graph-node__content"}]
+             (r/children (r/current-component)))])))
 
 (defn connectable [{:keys [height connector]}]
   [:div.connectable

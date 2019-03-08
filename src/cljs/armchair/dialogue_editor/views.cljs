@@ -64,6 +64,7 @@
                 character-name
                 character-color]} (<sub [:dialogue-editor/npc-line line-id])]
     [c/graph-node {:title character-name
+                   :item-id line-id
                    :color character-color
                    :on-connect-end #(>evt [:end-connecting-lines line-id])
                    :actions [(when-not (or initial-line? (some? state))
@@ -131,6 +132,7 @@
     (fn [line-id]
       (let [options (<sub [:dialogue-editor/player-line-options line-id])]
         [c/graph-node {:title "Player"
+                       :item-id line-id
                        :on-connect-end #(>evt [:end-connecting-lines line-id])
                        :actions [["trash" "Delete" action-delete]
                                  ["plus" "Add Option" action-add-option]
@@ -168,6 +170,7 @@
     (fn [id]
       (let [{:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
         [c/graph-node {:title "Triggers"
+                       :item-id id
                        :on-connect-end #(>evt [:end-connecting-lines id])
                        :actions [["trash" "Delete" action-delete]
                                  ["plus" "Add Trigger" action-add-trigger]]}

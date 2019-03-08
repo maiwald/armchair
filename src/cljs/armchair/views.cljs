@@ -72,6 +72,7 @@
     [:div.location
      [c/graph-node {:title [:a {:on-click #(>navigate :location-edit :id location-id)}
                             display-name]
+                    :item-id location-id
                     :on-connect-end #(>evt [:end-connecting-locations location-id])
                     :actions [["trash" "Delete"
                                #(when (js/confirm "Are you sure you want to delete this location?")
