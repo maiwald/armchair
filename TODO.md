@@ -2,7 +2,6 @@
 - refactor triggers into separate dialogue nodes
   - add conditions
   - respect conditions in game
-  - clean up migration
   - move modal stuff into its own namespace
 - local storage
 - directed location connections

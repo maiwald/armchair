@@ -358,6 +358,4 @@
           :triggers {}
           :switches {}
           :switch-values {}}
-         (->> dummy-data
-              ((migrations 2))
-              ((migrations 3)))))
+         dummy-data))
