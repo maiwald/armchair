@@ -127,7 +127,6 @@
 (def >evt re-frame/dispatch)
 
 (defn stop-e! [e]
-  (.preventDefault e)
   (.stopPropagation e)
   e)
 

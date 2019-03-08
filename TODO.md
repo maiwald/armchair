@@ -20,7 +20,6 @@
 - location preview in map
 - stage direction dialogue nodes
 - separate moving viewport from moving dialogue node positions
-- enable double click for editing lines
 - make modal changes apply on submit
 - copy and paste for background texture sets
 - organize and cluster background textures

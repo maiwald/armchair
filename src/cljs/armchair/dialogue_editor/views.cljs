@@ -10,6 +10,24 @@
 
 (def node-position-lookup (r/atom {}))
 
+(defn inline-textarea [{:keys [text on-change]}]
+  (let [text-state (r/atom text)
+        handle-text-change #(reset! text-state (e->val %))
+        handle-text-blur on-change]
+    (r/create-class
+      {:display-name "inline-textarea"
+       :component-did-update (fn [this old-args]
+                               (let [old-text (:text (second old-args))
+                                     new-text (:text (second (r/argv this)))]
+                                 (when (not= old-text new-text)
+                                   (reset! text-state new-text))))
+        :reagent-render
+        (fn []
+          [:textarea {:on-mouse-down stop-e!
+                      :on-change handle-text-change
+                      :on-blur #(handle-text-blur @text-state)
+                      :value @text-state}])})))
+
 (defn get-rect [elem]
   (let [graph (-> js/document
                   (.getElementsByClassName "graph")
@@ -33,7 +51,9 @@
            :on-click disconnector}
      [icon "unlink" "Disconnect"]]
     [:div {:class "action action_connect"
-           :on-mouse-down (e-> #(when (e->left? %) (connector %)))}
+           :on-mouse-down (e-> #(when (e->left? %)
+                                  (.preventDefault %)
+                                  (connector %)))}
      [icon "link" "Connect"]]))
 
 (defn npc-line-component [line-id]
@@ -71,29 +91,34 @@
                                  :disconnector #(>evt [:dialogue-editor/disconnect-line line-id])}]}
       [:div {:class "line__content-wrapper"
              :ref #(swap! node-position-lookup assoc line-id %)}
-       [:p.line__text text]]]]))
+       [:p.line__text
+        [inline-textarea {:text text
+                          :on-change #(>evt [:update-line line-id :text %])}]]]]]))
 
 (defn player-line-option-component [line-id index option]
-  (let [{:keys [text connected?]} option]
-    [:li
-     [c/connectable {:connector
-                     [connector {:connected? connected?
-                                 :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %) index])
-                                 :disconnector #(>evt [:dialogue-editor/disconnect-option line-id index])}]}
-      [:div {:class "line__content-wrapper"
-             :ref #(swap! node-position-lookup assoc [line-id index] %)}
-       [:div.line__conditions
-        [icon "unlock" "Unlock Conditions"]
-        [:ul
-         [:li
-          [:span.line__conditions__switch-name "foo"]
-          " " [:span.line__conditions__switch-condition "is"]
-          " " [:span.line__conditions__switch-value "bar"]]
-         [:li
-          [:span.line__conditions__switch-name "some other thing"]
-          " " [:span.line__conditions__switch-condition "is not"]
-          " " [:span.line__conditions__switch-value "some other value"]]]]
-       [:p.line__text text]]]]))
+  (let [handle-text-change #(>evt [:update-option line-id index %])]
+    (fn [line-id index {:keys [text connected?]}]
+      [:li
+       [c/connectable {:connector
+                       [connector {:connected? connected?
+                                   :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %) index])
+                                   :disconnector #(>evt [:dialogue-editor/disconnect-option line-id index])}]}
+        [:div {:class "line__content-wrapper"
+               :ref #(swap! node-position-lookup assoc [line-id index] %)}
+         [:div.line__conditions
+          [icon "unlock" "Unlock Conditions"]
+          [:ul
+           [:li
+            [:span.line__conditions__switch-name "foo"]
+            " " [:span.line__conditions__switch-condition "is"]
+            " " [:span.line__conditions__switch-value "bar"]]
+           [:li
+            [:span.line__conditions__switch-name "some other thing"]
+            " " [:span.line__conditions__switch-condition "is not"]
+            " " [:span.line__conditions__switch-value "some other value"]]]]
+         [:p.line__text
+          [inline-textarea {:text text
+                            :on-change handle-text-change}]]]]])))
 
 (defn player-line-component [line-id]
   (letfn [(action-delete [e]
