@@ -8,7 +8,7 @@
             [armchair.slds :as slds]
             [armchair.util :as u :refer [<sub >evt stop-e! e-> e->val e->left?]]))
 
-(def node-position-lookup (r/atom {}))
+(def option-position-lookup (r/atom {}))
 
 (defn inline-textarea [{:keys [text on-change]}]
   (let [text-state (r/atom text)
@@ -86,8 +86,7 @@
                               :icon "tag"
                               :on-click #(>evt [:open-dialogue-state-modal line-id])
                               :on-remove #(>evt [:dialogue-editor/delete-dialogue-state line-id])}]])
-     [:div {:class "line__content-wrapper"
-            :ref #(swap! node-position-lookup assoc line-id %)}
+     [:div {:class "line__content-wrapper"}
       [:div.graph-node__connector
        [connector {:connected? connected?
                    :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %)])
@@ -116,7 +115,7 @@
                              [:div.action {:on-click move-down}
                               [icon "arrow-down" "Move down"]])]}
         [:div {:class "line__content-wrapper"
-               :ref #(swap! node-position-lookup assoc [line-id index] %)}
+               :ref #(swap! option-position-lookup assoc [line-id index] %)}
          [:div.graph-node__connector
           [connector {:connected? connected?
                       :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %) index])
@@ -149,8 +148,7 @@
                        :on-connect-end #(>evt [:end-connecting-lines line-id])
                        :actions [["trash" "Delete" action-delete]
                                  ["plus" "Add Option" action-add-option]]}
-         [:ul {:ref #(swap! node-position-lookup assoc line-id %)
-               :class "line__options"}
+         [:ul {:class "line__options"}
           (map-indexed (fn [index option]
                          ^{:key (str "line-option" line-id ":" index)}
                          [player-line-option-component line-id index option (count options)])
@@ -186,8 +184,7 @@
                        :on-connect-end #(>evt [:end-connecting-lines id])
                        :actions [["trash" "Delete" action-delete]
                                  ["plus" "Add Trigger" action-add-trigger]]}
-         [:div {:class "line__content-wrapper"
-                :ref #(swap! node-position-lookup assoc id %)}
+         [:div {:class "line__content-wrapper"}
           [:div.graph-node__connector
            [connector {:connected? connected?
                        :connector #(>evt [:start-connecting-lines id (e->graph-cursor %)])
@@ -197,33 +194,28 @@
              ^{:key (str "trigger" trigger-id)}
              [trigger-component id trigger-id])]]]))))
 
-(defn line-connection [start end]
-  (let [_ (<sub [:ui/position start])
-        _ (<sub [:ui/position end])
-        {start-right :right
-         start-top :top
-         start-height :height} (get-rect (get @node-position-lookup start))
-        {end-left :left
-         end-top :top} (get-rect (get @node-position-lookup end))]
-    [connection {:start (u/translate-point [start-right start-top]
-                                           [15 20])
+(def top-offset 55)
+(def left-offset 20)
 
-                 :end (u/translate-point [end-left end-top]
-                                         [20 20])}]))
+(defn line-connection [start end]
+  (let [[start-x start-y] (<sub [:ui/position start])
+        [end-x end-y] (<sub [:ui/position end])]
+    [connection {:start (u/translate-point [start-x start-y]
+                                           [(+ config/line-width 15) top-offset])
+
+                 :end (u/translate-point [end-x end-y]
+                                         [left-offset top-offset])}]))
 
 (defn option-connection [start index end]
   (let [_ (<sub [:ui/position start])
-        _ (<sub [:ui/position end])
+        [end-x end-y] (<sub [:ui/position end])
         {start-right :right
          start-top :top
-         start-height :height} (get-rect (get @node-position-lookup [start index]))
-        {end-left :left
-         end-top :top
-         end-height :height} (get-rect (get @node-position-lookup end))]
+         start-height :height} (get-rect (get @option-position-lookup [start index]))]
     [connection {:start (u/translate-point [start-right start-top]
                                            [35 20])
-                 :end (u/translate-point [end-left end-top]
-                                         [20 20])}]))
+                 :end (u/translate-point [end-x end-y]
+                                         [left-offset top-offset])}]))
 
 (defn dialogue-editor [dialogue-id]
   (if-let [{:keys [npc-line-ids
