@@ -21,12 +21,12 @@
                                      new-text (:text (second (r/argv this)))]
                                  (when (not= old-text new-text)
                                    (reset! text-state new-text))))
-        :reagent-render
-        (fn []
-          [:textarea {:on-mouse-down stop-e!
-                      :on-change handle-text-change
-                      :on-blur #(handle-text-blur @text-state)
-                      :value @text-state}])})))
+       :reagent-render
+       (fn []
+         [:textarea {:on-mouse-down stop-e!
+                     :on-change handle-text-change
+                     :on-blur #(handle-text-blur @text-state)
+                     :value @text-state}])})))
 
 (defn get-rect [elem]
   (let [graph (-> js/document
@@ -49,12 +49,12 @@
     [:div {:class "action"
            :on-mouse-down stop-e!
            :on-click disconnector}
-     [icon "unlink" "Disconnect"]]
+     [icon "times-circle" "Disconnect"]]
     [:div {:class "action action_connect"
            :on-mouse-down (e-> #(when (e->left? %)
                                   (.preventDefault %)
                                   (connector %)))}
-     [icon "link" "Connect"]]))
+     [icon "circle-notch" "Connect"]]))
 
 (defn npc-line-component [line-id]
   (let [{:keys [state
@@ -86,15 +86,15 @@
                               :icon "tag"
                               :on-click #(>evt [:open-dialogue-state-modal line-id])
                               :on-remove #(>evt [:dialogue-editor/delete-dialogue-state line-id])}]])
-     [c/action-wrapper {:actions
-                        [[connector {:connected? connected?
-                                     :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %)])
-                                     :disconnector #(>evt [:dialogue-editor/disconnect-line line-id])}]]}
-      [:div {:class "line__content-wrapper"
-             :ref #(swap! node-position-lookup assoc line-id %)}
-       [:p.line__text
-        [inline-textarea {:text text
-                          :on-change #(>evt [:update-line line-id :text %])}]]]]]))
+     [:div {:class "line__content-wrapper"
+            :ref #(swap! node-position-lookup assoc line-id %)}
+      [:div.graph-node__connector
+       [connector {:connected? connected?
+                   :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %)])
+                   :disconnector #(>evt [:dialogue-editor/disconnect-line line-id])}]]
+      [:p.line__text
+       [inline-textarea {:text text
+                         :on-change #(>evt [:update-line line-id :text %])}]]]]))
 
 (defn player-line-option-component [line-id index option total-count]
   (let [handle-text-change #(>evt [:dialogue-editor/update-option line-id index %])
@@ -105,19 +105,22 @@
     (fn [line-id index {:keys [text connected?]}]
       [:li
        [c/action-wrapper {:actions
-                          [[connector {:connected? connected?
-                                       :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %) index])
-                                       :disconnector #(>evt [:dialogue-editor/disconnect-option line-id index])}]
+                          [[:div.action {:on-click #(js/alert "edit me")}
+                            [icon "unlock" "Edit Unlock Conditions"]]
                            [:div.action {:on-click delete}
                             [icon "trash" "Delete"]]
                            (when-not (= 0 index)
                              [:div.action {:on-click move-up}
                               [icon "arrow-up" "Move up"]])
-                           (when-not (= (- total-count 1) index)
+                           (when-not (= (dec total-count) index)
                              [:div.action {:on-click move-down}
                               [icon "arrow-down" "Move down"]])]}
         [:div {:class "line__content-wrapper"
                :ref #(swap! node-position-lookup assoc [line-id index] %)}
+         [:div.graph-node__connector
+          [connector {:connected? connected?
+                      :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %) index])
+                      :disconnector #(>evt [:dialogue-editor/disconnect-option line-id index])}]]
          ; [:div.line__conditions
          ;  [icon "unlock" "Unlock Conditions"]
          ;  [:ul
@@ -138,7 +141,7 @@
             (when (js/confirm "Are your sure you want to delete this line?")
               (>evt [:delete-line line-id])))
           (action-add-option [e]
-              (>evt [:dialogue-editor/add-option line-id]))]
+            (>evt [:dialogue-editor/add-option line-id]))]
     (fn [line-id]
       (let [options (<sub [:dialogue-editor/player-line-options line-id])]
         [c/graph-node {:title "Player"
@@ -183,15 +186,16 @@
                        :on-connect-end #(>evt [:end-connecting-lines id])
                        :actions [["trash" "Delete" action-delete]
                                  ["plus" "Add Trigger" action-add-trigger]]}
-         [c/action-wrapper {:actions
-                            [[connector {:connected? connected?
-                                         :connector #(>evt [:start-connecting-lines id (e->graph-cursor %)])
-                                         :disconnector #(>evt [:dialogue-editor/disconnect-line id])}]]}
-          [:div {:ref #(swap! node-position-lookup assoc id %)}
-           [:ul.line__triggers
-            (for [trigger-id trigger-ids]
-              ^{:key (str "trigger" trigger-id)}
-              [trigger-component id trigger-id])]]]]))))
+         [:div {:class "line__content-wrapper"
+                :ref #(swap! node-position-lookup assoc id %)}
+          [:div.graph-node__connector
+           [connector {:connected? connected?
+                       :connector #(>evt [:start-connecting-lines id (e->graph-cursor %)])
+                       :disconnector #(>evt [:dialogue-editor/disconnect-line id])}]]
+          [:ul.line__triggers
+           (for [trigger-id trigger-ids]
+             ^{:key (str "trigger" trigger-id)}
+             [trigger-component id trigger-id])]]]))))
 
 (defn line-connection [start end]
   (let [_ (<sub [:ui/position start])
@@ -202,7 +206,7 @@
         {end-left :left
          end-top :top} (get-rect (get @node-position-lookup end))]
     [connection {:start (u/translate-point [start-right start-top]
-                                           [10 (/ start-height 2)])
+                                           [15 20])
 
                  :end (u/translate-point [end-left end-top]
                                          [20 20])}]))
@@ -217,7 +221,7 @@
          end-top :top
          end-height :height} (get-rect (get @node-position-lookup end))]
     [connection {:start (u/translate-point [start-right start-top]
-                                           [10 (/ start-height 2)])
+                                           [35 20])
                  :end (u/translate-point [end-left end-top]
                                          [20 20])}]))
 
@@ -239,7 +243,6 @@
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
-             ; :style {:z-index 1000}}
        (when-let [connector (<sub [:connector])]
          [connection connector])
        (for [[start end] line-connections]

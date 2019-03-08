@@ -31,14 +31,28 @@ $graph-node-spacing: 7px
 $graph-node-border-radius: 5px
 
 .graph-node
+  position: relative
   display: flex
   flex-direction: column
   box-sizing: border-box
-  min-height: 30px
+  min-height: 70px
   border: 1px solid $gray
   border-radius: $graph-node-border-radius
   background: white
   user-select: none
+
+  &__connector
+    width: 25px
+    height: 25px
+    right: -25px
+    padding: 5px 2px
+    border-radius: 12.5px
+    border: 1px solid $gray
+    border-left: none
+    border-top-left-radius: 0
+    border-bottom-left-radius: 0
+    position: absolute
+    background: white
 
   &__header
     display: flex
