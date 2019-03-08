@@ -251,14 +251,12 @@
 ;; Modals
 
 (s/def ::npc-line-id ::line-id)
-(s/def ::player-line-id ::line-id)
 (s/def ::modal (s/keys :opt-un [:modal/character-form
                                 :modal/dialogue-creation
                                 :modal/location-creation
                                 :modal/trigger-creation
                                 :modal/switch-form
                                 ::npc-line-id
-                                ::player-line-id
                                 ::dialogue-state]))
 
 (s/def :modal/location-creation ::display-name)

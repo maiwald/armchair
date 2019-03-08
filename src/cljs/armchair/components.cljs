@@ -125,9 +125,10 @@
        (into [:div {:class "graph-node__content"}]
              (r/children (r/current-component)))])))
 
-(defn connectable [{:keys [height connector]}]
-  [:div.connectable
-   (into [:div.connectable__content]
+(defn action-wrapper [{:keys [actions]}]
+  [:div.action-wrapper
+   (into [:div.action-wrapper__content]
          (r/children (r/current-component)))
-   [:div.connectable__connector connector]])
+   (into [:div.action-wrapper__actions.actions_vertical]
+         actions)])
 

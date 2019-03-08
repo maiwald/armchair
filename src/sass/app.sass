@@ -64,22 +64,26 @@
     &:last-child
       margin: 0
 
-  &_vertical
-    flex-direction: column
+.actions_vertical
+  display: flex
+  flex-direction: column
 
-    .action
+  .action
+    margin: 0
+    margin-bottom: 6px
+
+    &:last-child
       margin: 0
-      margin-bottom: 4px
 
 .action
   display: flex
   justify-content: center
   align-items: flex-start
   width: 16px
-  color: lighten($gray, 30%)
+  color: lighten($gray, 20%)
 
   &:hover
-    color: $gray
+    color: darken($gray, 20%)
     cursor: pointer
 
   &_connect:hover

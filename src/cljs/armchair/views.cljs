@@ -77,11 +77,11 @@
                     :actions [["trash" "Delete"
                                #(when (js/confirm "Are you sure you want to delete this location?")
                                   (>evt [:delete-location location-id]))]]}
-      [c/connectable {:connector
-                      [:div {:class "action action_connect"
-                             :on-mouse-down (e-> #(when (e->left? %)
-                                                    (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
-                       [icon "project-diagram" "Connect"]]}
+      [c/action-wrapper {:actions
+                         [[:div {:class "action action_connect"
+                                 :on-mouse-down (e-> #(when (e->left? %)
+                                                        (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
+                           [icon "project-diagram" "Connect"]]]}
        [:ul {:class "location__characters"}
         (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
           [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
@@ -149,35 +149,6 @@
       [slds/input-textarea {:label "Text"
                             :on-change #(>evt [:update-line line-id :text (e->val %)])
                             :value (:text line)}]]]))
-
-(defn player-line-form-modal-option [line-id index total-count]
-  (let [text (<sub [:dialogue/player-line-option line-id index])]
-    [:div {:class "player-line-form__response"}
-     [:div {:class "text"}
-      [slds/input-textarea {:label (str "Response " (inc index))
-                            :on-change #(>evt [:update-option line-id index (e->val %)])
-                            :value text}]]
-     [:ul {:class "actions actions_vertical"}
-      [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
-                                         (>evt [:delete-option line-id index]))}
-       [icon "trash" "Delete"]]
-      (when-not (= index 0)
-        [:li {:class "action" :on-click #(>evt [:move-option line-id index :up])}
-         [icon "arrow-up" "Move up"]])
-      (when-not (= index (dec total-count))
-        [:li {:class "action" :on-click #(>evt [:move-option line-id index :down])}
-         [icon "arrow-down" "Move down"]])]]))
-
-(defn player-line-form-modal [line-id]
-  (let [{:keys [option-count]} (<sub [:dialogue/modal-line line-id])]
-    [slds/modal {:title "Player Line"
-                 :close-handler #(>evt [:close-modal])}
-     [:div {:class "player-line-form"}
-      [slds/form
-       (for [index (range option-count)]
-         ^{:key (str "option:" line-id ":" index)}
-         [player-line-form-modal-option line-id index option-count])
-       [slds/add-button "New Option" #(>evt [:add-option line-id])]]]]))
 
 (defn character-form-modal [{:keys [display-name color texture]}]
   (let [update-handler (fn [field] #(>evt [:character-form/update field (e->val %)]))]
@@ -269,7 +240,6 @@
       :dialogue-creation [dialogue-creation-modal (:dialogue-creation modal)]
       :dialogue-state    [dialogue-state-modal (:dialogue-state modal)]
       :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
-      :player-line-id    [player-line-form-modal (:player-line-id modal)]
       :character-form    [character-form-modal (:character-form modal)]
       :location-creation [location-creation-modal (:location-creation modal)]
       :trigger-creation  [trigger-creation-modal (:trigger-creation modal)]

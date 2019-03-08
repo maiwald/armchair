@@ -7,38 +7,41 @@
             [armchair.undo :refer [record-undo]]
             [armchair.util :as u]))
 
-(reg-event-fx
+(reg-event-db
   :create-npc-line
   [validate
    record-undo]
-  (fn [{db :db} [_ dialogue-id]]
+  (fn [db [_ dialogue-id]]
     (let [id (random-uuid)
           character-id (get-in db [:dialogues dialogue-id :character-id])]
-      {:db (-> db
-               (assoc-in [:ui/positions id] config/default-ui-position)
-               (assoc-in [:lines id] {:entity/id id
-                                      :entity/type :line
-                                      :kind :npc
-                                      :character-id character-id
-                                      :dialogue-id dialogue-id
-                                      :text nil
-                                      :next-line-id nil}))
-       :dispatch [:open-npc-line-modal id]})))
+      (-> db
+          (assoc-in [:ui/positions id] config/default-ui-position)
+          (assoc-in [:lines id] {:entity/id id
+                                 :entity/type :line
+                                 :kind :npc
+                                 :character-id character-id
+                                 :dialogue-id dialogue-id
+                                 :text nil
+                                 :next-line-id nil})))))
 
-(reg-event-fx
+(reg-event-db
   :create-player-line
   [validate
    record-undo]
-  (fn [{db :db} [_ dialogue-id]]
-    (let [id (random-uuid)]
-      {:db (-> db
-               (assoc-in [:ui/positions id] config/default-ui-position)
-               (assoc-in [:lines id] {:entity/id id
-                                      :entity/type :line
-                                      :kind :player
-                                      :dialogue-id dialogue-id
-                                      :options []}))
-       :dispatch [:open-player-line-modal id]})))
+  (fn [db [_ dialogue-id]]
+    (let [id (random-uuid)
+          option-id (random-uuid)]
+      (-> db
+          (assoc-in [:ui/positions id] config/default-ui-position)
+          (assoc-in [:lines id] {:entity/id id
+                                 :entity/type :line
+                                 :kind :player
+                                 :dialogue-id dialogue-id
+                                 :options [option-id]})
+          (assoc-in [:player-options option-id] {:entity/id option-id
+                                                 :entity/type :player-option
+                                                 :text ""
+                                                 :next-line-id nil})))))
 
 (reg-event-db
   :create-trigger-node
@@ -155,6 +158,53 @@
    record-undo]
   (fn [db [_ id]]
     (assoc-in db [:lines id :next-line-id] nil)))
+
+;; Option events
+
+(reg-event-db
+  :dialogue-editor/move-option
+  [validate
+   record-undo]
+  (fn [db [_ line-id s-index direction]]
+    (let [t-index (case direction
+                    :up (dec s-index)
+                    :down (inc s-index))
+          swap-option (fn [options]
+                        (replace {(get options s-index) (get options t-index)
+                                  (get options t-index) (get options s-index)}
+                                 options))]
+      (update-in db [:lines line-id :options] swap-option))))
+
+(reg-event-db
+  :dialogue-editor/add-option
+  [validate
+   record-undo]
+  (fn [db [_ line-id]]
+    (let [option-id (random-uuid)]
+      (-> db
+          (update-in [:lines line-id :options] conj option-id)
+          (assoc-in [:player-options option-id] {:entity/id option-id
+                                                 :entity/type :player-option
+                                                 :text ""
+                                                 :next-line-id nil})))))
+
+(reg-event-db
+  :dialogue-editor/update-option
+  [validate
+   record-undo]
+  (fn [db [_ line-id index text]]
+    (let [option-id (get-in db [:lines line-id :options index])]
+      (assoc-in db [:player-options option-id :text] text))))
+
+(reg-event-db
+  :dialogue-editor/delete-option
+  [validate
+   record-undo]
+  (fn [db [_ line-id index]]
+    (let [option-id (get-in db [:lines line-id :options index])]
+      (-> db
+          (update-in [:lines line-id :options] #(u/removev % index))
+          (update :player-options dissoc option-id)))))
 
 (reg-event-db
   :dialogue-editor/disconnect-option

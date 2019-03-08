@@ -90,53 +90,6 @@
           (u/update-in-map :locations connected-location-ids update :connection-triggers (fn [cts] (u/filter-map #(not= id %) cts)))
           (u/update-in-map :dialogues location-dialogue-ids dissoc :location-id :location-position)))))
 
-;; Line CRUD
-
-(reg-event-db
-  :move-option
-  [validate
-   record-undo]
-  (fn [db [_ line-id s-index direction]]
-    (let [t-index (case direction
-                    :up (dec s-index)
-                    :down (inc s-index))
-          swap-option (fn [options]
-                        (replace {(get options s-index) (get options t-index)
-                                  (get options t-index) (get options s-index)}
-                                 options))]
-      (update-in db [:lines line-id :options] swap-option))))
-
-(reg-event-db
-  :add-option
-  [validate
-   record-undo]
-  (fn [db [_ line-id]]
-    (let [option-id (random-uuid)]
-      (-> db
-          (update-in [:lines line-id :options] conj option-id)
-          (assoc-in [:player-options option-id] {:entity/id option-id
-                                                 :entity/type :player-option
-                                                 :text ""
-                                                 :next-line-id nil})))))
-
-(reg-event-db
-  :update-option
-  [validate
-   record-undo]
-  (fn [db [_ line-id index text]]
-    (let [option-id (get-in db [:lines line-id :options index])]
-      (assoc-in db [:player-options option-id :text] text))))
-
-(reg-event-db
-  :delete-option
-  [validate
-   record-undo]
-  (fn [db [_ line-id index]]
-    (let [option-id (get-in db [:lines line-id :options index])]
-      (-> db
-          (update-in [:lines line-id :options] #(u/removev % index))
-          (update :player-options dissoc option-id)))))
-
 ;; Modal
 
 (defn assert-no-open-modal [db]
@@ -370,13 +323,6 @@
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :npc-line-id] payload)))
-
-(reg-event-db
-  :open-player-line-modal
-  [validate]
-  (fn [db [_ payload]]
-    (assert-no-open-modal db)
-    (assoc-in db [:modal :player-line-id] payload)))
 
 (reg-event-db
   :open-dialogue-creation-modal

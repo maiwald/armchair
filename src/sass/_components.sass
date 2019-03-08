@@ -70,13 +70,17 @@ $graph-node-border-radius: 5px
     > *
       flex-grow: 1
 
-.connectable
+.action-wrapper
   display: flex
   flext-direction: row
 
   &__content
     flex-grow: 1
 
-  &__connector
-    align-self: center
-    margin-right: $graph-node-spacing
+  &__actions
+    opacity: .3
+    margin: $graph-node-spacing
+    margin-left: 0
+
+  &:hover &__actions
+    opacity: 1
