@@ -1,9 +1,10 @@
 (ns armchair.slds
-  (:require [cljsjs.react-select]))
+  (:require [reagent.core :as r]
+            [cljsjs.react-select]))
 
-(defn form [& children]
+(defn form []
   (into [:div {:class "slds-form slds-form_stacked"}]
-        children))
+        (r/children (r/current-component))))
 
 (defn form-title [title]
   [:div {:class "slds-text-heading_small"} title])
@@ -154,7 +155,7 @@
     [data-table
      (assoc content-options :table-id title)]]])
 
-(defn modal [{:keys [title close-handler confirm-handler width]} & children]
+(defn modal [{:keys [title close-handler confirm-handler width]}]
   [:div
    [:section {:class (cond-> ["slds-modal" "slds-fade-in-open"]
                        (= width :medium) (conj "slds-modal_medium"))}
@@ -167,7 +168,7 @@
         [:use {:xlinkHref "assets/icons/utility-sprite/svg/symbols.svg#close", :xmlnsXlink "http://www.w3.org/1999/xlink"}]]]
       [:h2 {:class "slds-text-heading_medium slds-hyphenate"} title]]
      (into [:div {:class "slds-modal__content slds-p-around_medium"}]
-           children)
+           (r/children (r/current-component)))
      [:footer {:class "slds-modal__footer"}
       [:button {:class "slds-button slds-button_brand"
                 :on-click (or confirm-handler
