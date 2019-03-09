@@ -42,7 +42,7 @@
          :right (.-right rect)
          :width (.-width rect)
          :height (.-height rect)})
-      {:top 0 :left 0 :botton 0 :right 0 :width 0 :height 0})))
+      nil)))
 
 (defn connector [{:keys [connected? connector disconnector]}]
   (if connected?
@@ -208,14 +208,13 @@
 
 (defn option-connection [start index end]
   (let [_ (<sub [:ui/position start])
-        [end-x end-y] (<sub [:ui/position end])
-        {start-right :right
-         start-top :top
-         start-height :height} (get-rect (get @option-position-lookup [start index]))]
-    [connection {:start (u/translate-point [start-right start-top]
-                                           [35 20])
-                 :end (u/translate-point [end-x end-y]
-                                         [left-offset top-offset])}]))
+        [end-x end-y] (<sub [:ui/position end])]
+    (when-let [{start-right :right
+                start-top :top} (get-rect (get @option-position-lookup [start index]))]
+      [connection {:start (u/translate-point [start-right start-top]
+                                             [35 20])
+                   :end (u/translate-point [end-x end-y]
+                                           [left-offset top-offset])}])))
 
 (defn dialogue-editor [dialogue-id]
   (if-let [{:keys [npc-line-ids
