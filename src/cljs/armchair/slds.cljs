@@ -28,7 +28,8 @@
 (defn input-select [{:keys [label disabled on-change value options]}]
   (let [id (gensym "input-select")]
     [:div {:class "slds-form-element"}
-     [:label {:class "slds-form-element__label" :for id} label]
+     (when label
+       [:label {:class "slds-form-element__label" :for id} label])
      [:div {:class "slds-form-element__control"}
       [:div {:class "slds-select_container"}
        [:select {:class "slds-select"

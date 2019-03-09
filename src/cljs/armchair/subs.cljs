@@ -2,6 +2,7 @@
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
             [clojure.string :refer [join]]
             [armchair.routes :refer [routes]]
+            [armchair.config :as config]
             [bidi.bidi :refer [match-route]]
             [armchair.util :as u]))
 
@@ -35,6 +36,34 @@
        :values (for [[index v] (zipmap (range (count values)) values)
                      :when (not (contains? v :deleted))]
                  [index (:display-name v)])})))
+
+(reg-sub
+  :modal/conditions-form
+  :<- [:modal]
+  :<- [:db-switches]
+  :<- [:db-switch-values]
+  (fn [[modal switches switch-values]]
+    (if-let [{:keys [conditions conjunction]} (:conditions-form modal)]
+      (let [switch-options (u/map-values :display-name switches)
+            used-switches (set (map :switch-id conditions))
+            operator-options (u/map-values :display-name config/condition-operators)]
+        {:conjunction conjunction
+         :conditions
+         (map-indexed
+           (fn [index {:keys [switch-id] :as c}]
+             (let [value-options (->> switch-id
+                                      switches
+                                      :value-ids
+                                      (map (fn [id]
+                                             [id (-> id
+                                                     switch-values
+                                                     :display-name)])))]
+               [index (assoc c
+                             :switch-options (apply dissoc switch-options
+                                                    (disj used-switches switch-id))
+                             :operator-options operator-options
+                             :switch-value-options value-options)]))
+           conditions)}))))
 
 (reg-sub
   :character-list

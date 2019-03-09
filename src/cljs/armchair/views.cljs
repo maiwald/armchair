@@ -234,6 +234,51 @@
           [icon "times-circle"]]])
       [slds/add-button "Add Option" #(>evt [:modal/add-switch-value])]]]))
 
+(defn condition-form-item [index {:keys [switch-id switch-options
+                                         operator operator-options
+                                         switch-value-id switch-value-options]}]
+  (letfn [(update-switch [e]
+            (>evt [:modal/update-condition-switch index (uuid (e->val e))]))
+          (update-operator [e]
+            (>evt [:modal/update-condition-operator index (keyword (e->val e))]))
+          (update-value [e]
+            (>evt [:modal/update-condition-value index (uuid (e->val e))]))]
+    [:li {:class "condition-select"}
+     [slds/input-select {:on-change update-switch
+                         :options switch-options
+                         :value switch-id}]
+     [slds/input-select {:on-change update-operator
+                         :options operator-options
+                         :value operator}]
+     [slds/input-select {:on-change update-value
+                         :disabled (empty? switch-value-options)
+                         :options switch-value-options
+                         :value switch-value-id}]
+     [:div {:on-click #(>evt [:modal/remove-condition index])}
+           [icon "trash" "Delete condition"]]]))
+
+(defn conditions-form-modal []
+  (letfn [(close-modal [e] (>evt [:close-modal]))
+          (save-conditions [e] (>evt [:modal/save-conditions]))
+          (add-condition [e] (>evt [:modal/add-condition]))
+          (update-conjunction [e]
+            (>evt [:modal/update-conditions-conjunction (keyword (e->val e))]))]
+    (fn []
+      (let [{:keys [conditions conjunction]} (<sub [:modal/conditions-form])]
+        [slds/modal {:title "Unlock Conditions"
+                     :close-handler close-modal
+                     :confirm-handler save-conditions}
+         [slds/form
+          (when (< 1 (count conditions))
+            [slds/input-select {:on-change update-conjunction
+                                :options config/condition-conjunctions
+                                :value conjunction}])
+          [:ul
+           (for [[index condition] conditions]
+             ^{:key (str "condition-select" index)}
+             [condition-form-item index condition])]
+          [slds/add-button "Add Condition" add-condition]]]))))
+
 (defn modal []
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
@@ -243,7 +288,8 @@
       :character-form    [character-form-modal (:character-form modal)]
       :location-creation [location-creation-modal (:location-creation modal)]
       :trigger-creation  [trigger-creation-modal (:trigger-creation modal)]
-      :switch-form       [switch-form-modal])))
+      :switch-form       [switch-form-modal]
+      :conditions-form   [conditions-form-modal])))
 
 ;; Navigation
 

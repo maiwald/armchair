@@ -97,14 +97,15 @@
 
 (defn player-line-option-component [line-id index option total-count]
   (let [handle-text-change #(>evt [:dialogue-editor/update-option line-id index %])
+        edit-conditions #(>evt [:modal/open-conditions-modal line-id index])
         move-up #(>evt [:dialogue-editor/move-option line-id index :up])
         move-down #(>evt [:dialogue-editor/move-option line-id index :down])
         delete #(when (js/confirm "Do you really want to delete this option?")
                   (>evt [:dialogue-editor/delete-option line-id index]))]
-    (fn [line-id index {:keys [text connected?]}]
+    (fn [line-id index {:keys [text connected? conditions]}]
       [:li
        [c/action-wrapper {:actions
-                          [[:div.action {:on-click #(js/alert "edit me")}
+                          [[:div.action {:on-click edit-conditions}
                             [icon "unlock" "Edit Unlock Conditions"]]
                            [:div.action {:on-click delete}
                             [icon "trash" "Delete"]]
@@ -120,17 +121,15 @@
           [connector {:connected? connected?
                       :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %) index])
                       :disconnector #(>evt [:dialogue-editor/disconnect-option line-id index])}]]
-         ; [:div.line__conditions
-         ;  [icon "unlock" "Unlock Conditions"]
-         ;  [:ul
-         ;   [:li
-         ;    [:span.line__conditions__switch-name "foo"]
-         ;    " " [:span.line__conditions__switch-condition "is"]
-         ;    " " [:span.line__conditions__switch-value "bar"]]
-         ;   [:li
-         ;    [:span.line__conditions__switch-name "some other thing"]
-         ;    " " [:span.line__conditions__switch-condition "is not"]
-         ;    " " [:span.line__conditions__switch-value "some other value"]]]]
+         (when (seq conditions)
+           [:div.line__conditions
+            [icon "unlock" "Unlock Conditions"]
+            [:ul
+             (for [{:keys [switch operator value]} conditions]
+               [:li {:key (str line-id index switch operator value)}
+                [:span.line__conditions__switch switch]
+                " " [:span.line__conditions__operator operator]
+                " " [:span.line__conditions__value value]])]])
          [:p.line__text
           [inline-textarea {:text text
                             :on-change handle-text-change}]]]]])))

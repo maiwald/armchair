@@ -98,6 +98,81 @@
   (assert (not (contains? db :modal))
           "Attempting to open a modal while modal is open!"))
 
+(defn assert-conditions-modal [db]
+  (assert (contains? (:modal db) :conditions-form)
+          "No conditions form open. Cannot set value!"))
+
+(reg-event-db
+  :modal/open-conditions-modal
+  [validate]
+  (fn [db [_ line-id index]]
+    (assert-no-open-modal db)
+    (let [option-id (get-in db [:lines line-id :options index])
+          conditions (get-in db [:player-options option-id :conditions]
+                             (vector {}))
+          conjunction (get-in db [:player-options option-id :conjunction] :and)]
+      (assoc-in db [:modal :conditions-form] {:player-option-id option-id
+                                              :conditions conditions
+                                              :conjunction conjunction}))))
+
+(reg-event-db
+  :modal/update-conditions-conjunction
+  [validate]
+  (fn [db [_ value]]
+    (assert-conditions-modal db)
+    (assoc-in db [:modal :conditions-form :conjunction] value)))
+
+(reg-event-db
+  :modal/add-condition
+  [validate]
+  (fn [db]
+    (assert-conditions-modal db)
+    (update-in db [:modal :conditions-form :conditions]
+               conj {})))
+
+(reg-event-db
+  :modal/remove-condition
+  [validate]
+  (fn [db [_ index]]
+    (assert-conditions-modal db)
+    (update-in db [:modal :conditions-form :conditions]
+               u/removev index)))
+
+(reg-event-db
+  :modal/update-condition-switch
+  [validate]
+  (fn [db [_ index value]]
+    (assert-conditions-modal db)
+    (-> db
+        (assoc-in [:modal :conditions-form :conditions index :switch-id] value)
+        (update-in [:modal :conditions-form :conditions index] dissoc :switch-value-id))))
+
+(reg-event-db
+  :modal/update-condition-operator
+  [validate]
+  (fn [db [_ index value]]
+    (assert-conditions-modal db)
+    (assoc-in db [:modal :conditions-form :conditions index :operator] value)))
+
+(reg-event-db
+  :modal/update-condition-value
+  [validate]
+  (fn [db [_ index value]]
+    (assert-conditions-modal db)
+    (assoc-in db [:modal :conditions-form :conditions index :switch-value-id] value)))
+
+(reg-event-db
+  :modal/save-conditions
+  [validate
+   record-undo]
+  (fn [db]
+    (assert-conditions-modal db)
+    (let [{:keys [player-option-id conditions]} (get-in db [:modal :conditions-form])]
+      (cond-> db
+        (s/valid? :player-option/conditions conditions)
+        (-> (dissoc :modal)
+            (assoc-in [:player-options player-option-id :conditions] conditions))))))
+
 (defn assert-switch-modal [db]
   (assert (contains? (:modal db) :switch-form)
           "No switch form open. Cannot set value!"))
@@ -148,9 +223,9 @@
     (assert-switch-modal db)
     (let [value-id (random-uuid)]
       (-> db
-        (update-in [:modal :switch-form :values] conj {:entity/id (random-uuid)
-                                                       :entity/type :switch-value
-                                                       :display-name ""})))))
+          (update-in [:modal :switch-form :values] conj {:entity/id (random-uuid)
+                                                         :entity/type :switch-value
+                                                         :display-name ""})))))
 
 (reg-event-db
   :modal/save-switch
@@ -243,13 +318,13 @@
   (fn [db [_ id]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :character-form]
-      (if-let [{:keys [display-name color texture]} (get-in db [:characters id])]
-        {:id id
-         :display-name display-name
-         :texture texture
-         :color color}
-        {:display-name ""
-         :color (rand-nth config/color-grid)}))))
+              (if-let [{:keys [display-name color texture]} (get-in db [:characters id])]
+                {:id id
+                 :display-name display-name
+                 :texture texture
+                 :color color}
+                {:display-name ""
+                 :color (rand-nth config/color-grid)}))))
 
 (defn assert-character-modal [db]
   (assert (contains? (:modal db) :character-form)

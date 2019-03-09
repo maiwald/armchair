@@ -183,8 +183,24 @@
                                (s/map-of ::player-option-id ::player-option)))
 
 (s/def ::player-option (s/keys :req [:entity/id :entity/type]
-                               :req-un [::text ::next-line-id]))
+                               :req-un [::text ::next-line-id]
+                               :opt-un [:player-option/conditions
+                                        :player-option/conjunction]))
 
+(s/def :player-option/conjunction (-> config/condition-conjunctions
+                                      keys
+                                      set))
+
+(s/def :player-option/conditions
+  (s/coll-of :player-option/condition
+             :kind vector?))
+
+(s/def :player-option/condition
+  (s/keys :req-un [::switch-id
+                   :condition/operator
+                   ::switch-value-id]))
+
+(s/def :condition/operator (-> config/condition-operators keys set))
 
 (s/def ::trigger-node (s/and #(= (:kind %) :trigger)
                              (s/keys :req-un [::trigger-ids ::next-line-id])))
@@ -256,6 +272,7 @@
                                 :modal/location-creation
                                 :modal/trigger-creation
                                 :modal/switch-form
+                                :modal/conditions-form
                                 ::npc-line-id
                                 ::dialogue-state]))
 
@@ -280,11 +297,17 @@
                    :switch-form/values]
           :opt-un [::switch-id]))
 
-(s/def :switch-form/values (s/coll-of ::switch-value
-                                      :min-count 2))
+(s/def :switch-form/values
+  (s/coll-of ::switch-value
+             :min-count 2))
 
-(s/def ::dialogue-state (s/keys :req-un [::line-id]
-                                :opt-un [::description]))
+(s/def :modal/conditions-form
+  (s/keys :req-un [::player-option-id
+                   :player-option/conditions]))
+
+(s/def ::dialogue-state
+  (s/keys :req-un [::line-id]
+          :opt-un [::description]))
 
 ;; Invariants
 

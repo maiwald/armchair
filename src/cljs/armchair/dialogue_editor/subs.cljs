@@ -1,5 +1,6 @@
 (ns armchair.dialogue-editor.subs
   (:require [re-frame.core :refer [reg-sub]]
+            [armchair.config :as config]
             [armchair.util :as u]))
 
 (reg-sub
@@ -23,12 +24,19 @@
   :dialogue-editor/player-line-options
   :<- [:db-lines]
   :<- [:db-player-options]
-  (fn [[lines player-options] [_ line-id]]
+  :<- [:db-switches]
+  :<- [:db-switch-values]
+  (fn [[lines player-options switches switch-values] [_ line-id]]
     (let [{:keys [options dialogue-id]} (lines line-id)]
       (mapv
         (fn [option-id]
-          (let [{:keys [text next-line-id]} (player-options option-id)]
+          (let [{:keys [text conditions next-line-id]} (player-options option-id)]
             {:text text
+             :conditions (map (fn [{:keys [switch-id operator switch-value-id]}]
+                                {:switch (-> switch-id switches :display-name)
+                                 :operator (-> operator config/condition-operators :display-name)
+                                 :value (-> switch-value-id switch-values :display-name)})
+                              conditions)
              :connected? (some? next-line-id)}))
         options))))
 
