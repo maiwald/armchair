@@ -25,8 +25,8 @@
                    :texture (fn [texture]
                               [:img {:src (texture-path texture)}])
                    :synopsis (fn [synopsis {id :id}]
-                                [:a {:on-click #(>navigate :dialogue-edit :id id)}
-                                 synopsis])
+                               [:a {:on-click #(>navigate :dialogue-edit :id id)}
+                                synopsis])
                    :location (fn [{:keys [id display-name]}]
                                [:a {:on-click #(>navigate :location-edit :id id)}
                                 display-name])
@@ -196,43 +196,43 @@
     [slds/modal {:title "Add Trigger"
                  :close-handler #(>evt [:close-modal])
                  :confirm-handler #(>evt [:modal/save-trigger])}
-       [slds/form
-        [slds/radio-button-group {:options [[:dialogue-state "Dialogue State"]
-                                            [:switch "Switch"]]
-                                  :active switch-kind
-                                  :on-change #(>evt [:modal/update-trigger-kind %])}]
-        [slds/input-select {:label (case switch-kind
-                                     :dialogue-state "Dialogue"
-                                     :switch "Switch")
-                            :options switch-options
-                            :value switch-id
-                            :disabled (nil? switch-kind)
-                            :on-change #(>evt [:modal/update-trigger-switch-id (uuid (e->val %))])}]
-        [slds/input-select {:label "Value"
-                            :options value-options
-                            :value switch-value
-                            :disabled (nil? switch-id)
-                            :on-change #(>evt [:modal/update-trigger-value (uuid (e->val %))])}]]]))
+     [slds/form
+      [slds/radio-button-group {:options [[:dialogue-state "Dialogue State"]
+                                          [:switch "Switch"]]
+                                :active switch-kind
+                                :on-change #(>evt [:modal/update-trigger-kind %])}]
+      [slds/input-select {:label (case switch-kind
+                                   :dialogue-state "Dialogue"
+                                   :switch "Switch")
+                          :options switch-options
+                          :value switch-id
+                          :disabled (nil? switch-kind)
+                          :on-change #(>evt [:modal/update-trigger-switch-id (uuid (e->val %))])}]
+      [slds/input-select {:label "Value"
+                          :options value-options
+                          :value switch-value
+                          :disabled (nil? switch-id)
+                          :on-change #(>evt [:modal/update-trigger-value (uuid (e->val %))])}]]]))
 
 (defn switch-form-modal []
   (let [{:keys [display-name values]} (<sub [:modal/switch-form])]
     [slds/modal {:title "Switch"
                  :close-handler #(>evt [:close-modal])
                  :confirm-handler #(>evt [:modal/save-switch])}
-       [slds/form
-        [slds/input-text {:label "Name"
-                          :on-change #(>evt [:modal/update-switch-name (e->val %)])
-                          :value display-name}]
-        (for [[index value-name] values]
-          ^{:key (str "switch-value" index)}
-          [:div
-            [slds/input-text {:label "Value"
-                              :on-change #(>evt [:modal/update-switch-value index (e->val %)])
-                              :value value-name}]
-            [:a {:on-mouse-down stop-e!
-                 :on-click #(>evt [:modal/remove-switch-value index])}
-             [icon "times-circle"]]])
-        [slds/add-button "Add Option" #(>evt [:modal/add-switch-value])]]]))
+     [slds/form
+      [slds/input-text {:label "Name"
+                        :on-change #(>evt [:modal/update-switch-name (e->val %)])
+                        :value display-name}]
+      (for [[index value-name] values]
+        ^{:key (str "switch-value" index)}
+        [:div
+         [slds/input-text {:label "Value"
+                           :on-change #(>evt [:modal/update-switch-value index (e->val %)])
+                           :value value-name}]
+         [:a {:on-mouse-down stop-e!
+              :on-click #(>evt [:modal/remove-switch-value index])}
+          [icon "times-circle"]]])
+      [slds/add-button "Add Option" #(>evt [:modal/add-switch-value])]]]))
 
 (defn modal []
   (if-let [modal (<sub [:modal])]

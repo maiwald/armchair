@@ -87,8 +87,10 @@
       (-> db
           (update :locations dissoc id)
           (update :location-connections difference location-connections)
-          (u/update-in-map :locations connected-location-ids update :connection-triggers (fn [cts] (u/filter-map #(not= id %) cts)))
-          (u/update-in-map :dialogues location-dialogue-ids dissoc :location-id :location-position)))))
+          (u/update-in-map :locations connected-location-ids
+                           update :connection-triggers (fn [cts] (u/filter-map #(not= id %) cts)))
+          (u/update-in-map :dialogues location-dialogue-ids
+                           dissoc :location-id :location-position)))))
 
 ;; Modal
 
