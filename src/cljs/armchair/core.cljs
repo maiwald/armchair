@@ -33,8 +33,10 @@
   (mount-root))
 
 ;; Undo/Redo key bindings
-(set! (.-onkeypress js/window)
+(set! (.-onkeyup js/window)
       (fn [e]
+        (when (= "Escape" (.-code e))
+          (>evt [:close-modal]))
         (when (.-ctrlKey e)
           (condp = (.-code e)
             "KeyZ" (>evt [:undo])
