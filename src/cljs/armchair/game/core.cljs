@@ -184,6 +184,7 @@
       (c/clear! @ctx)
       (c/set-fill-style! @ctx "rgb(0, 0, 0)")
       (c/fill-rect! @ctx [0 0] (c/width @ctx) (c/height @ctx))
+      ;; NOTE: try copying drawn tiles to prevent gaps
       (let [a (/ (c/width @ctx) (u/rect-width camera))
             d (/ (c/height @ctx) (u/rect-height camera))
             e (* a (- left))

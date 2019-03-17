@@ -58,11 +58,10 @@
      {:columns [:display-name :values :actions]
       :collection switches
       :cell-views {:color (fn [color] [slds/badge color color])
-                   :actions (fn [_ {:keys [id line-count]}]
+                   :actions (fn [_ {:keys [id]}]
                               [:div {:class "slds-text-align_right"}
-                               (when (zero? line-count)
-                                 [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this switch?")
-                                                                               (>evt [:delete-switch id]))}])
+                               [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this switch?")
+                                                                               (>evt [:delete-switch id]))}]
                                [slds/symbol-button "edit" {:on-click #(>evt [:modal/open-switch-modal id])}]])}
       :new-resource #(>evt [:modal/open-switch-modal])}]))
 

@@ -1,5 +1,8 @@
 (ns armchair.events
   (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
+            [com.rpl.specter
+             :refer [must ALL NONE MAP-VALS]
+             :refer-macros [setval]]
             [clojure.set :refer [difference]]
             [clojure.string :refer [blank?]]
             [armchair.config :as config]
@@ -91,6 +94,27 @@
                            update :connection-triggers (fn [cts] (u/filter-map #(not= id %) cts)))
           (u/update-in-map :dialogues location-dialogue-ids
                            dissoc :location-id :location-position)))))
+
+(reg-event-db
+  :delete-switch
+  [validate
+   record-undo]
+  (fn [db [_ switch-id]]
+    (let [switch-value-ids (get-in db [:switches switch-id :value-ids])
+          belongs-to-switch? (fn [i] (= (:switch-id i) switch-id))
+          trigger-ids (->> (:triggers db)
+                           (u/filter-map belongs-to-switch?)
+                           keys
+                           set)]
+      (->>
+        (-> db
+            (update :switches dissoc switch-id)
+            (update :switch-values #(apply dissoc % switch-value-ids))
+            (update :triggers #(apply dissoc % trigger-ids)))
+        (setval [:player-options MAP-VALS (must :conditions) ALL belongs-to-switch?]
+                NONE)
+        (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)]
+                NONE)))))
 
 ;; Modal
 
