@@ -2,6 +2,9 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.set :refer [union subset?]]
+            [com.rpl.specter
+             :refer [must ALL NONE MAP-VALS]
+             :refer-macros [setval]]
             [cognitect.transit :as t]
             [armchair.dummy-data :refer [dummy-data]]
             [armchair.textures :refer [background-textures texture-set]]
@@ -352,19 +355,14 @@
 (defn clear-dialogue-state [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])
         trigger-ids (->> (:triggers db)
-                         (u/filter-map (fn [{v :switch-value kind :kind}]
+                         (u/filter-map (fn [{v :switch-value
+                                             kind :switch-kind}]
                                          (and (= kind :dialogue-state)
                                               (= v line-id))))
                          keys
                          set)]
-    (-> db
-        (u/update-values :lines
-                         (fn [l]
-                           (cond-> l
-                             (contains? l :trigger-ids)
-                             (update :trigger-ids
-                                     (fn [ids]
-                                       (filterv #(not (contains? trigger-ids %)) ids))))))
+    (-> (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)]
+                NONE db)
         (update-in [:dialogues dialogue-id :states] dissoc line-id)
         (update :triggers #(apply dissoc % trigger-ids)))))
 
