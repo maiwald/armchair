@@ -1,7 +1,10 @@
 (ns armchair.util
   (:require [clojure.set :refer [intersection]]
             [re-frame.core :as re-frame]
-            [armchair.config :refer [tile-size]]))
+            [armchair.config :refer [tile-size]]
+            [com.rpl.specter
+             :refer [must ALL NONE MAP-VALS MAP-KEYS]
+             :refer-macros [transform]]))
 
 (defn px [v]
   (str v "px"))
@@ -72,22 +75,16 @@
                ks)))))
 
 (defn reverse-map [m]
-  (into {} (map (fn [[k v]] [v k]) m)))
+  (reduce-kv (fn [acc k v] (assoc acc v k)) {} m))
 
 (defn map-values [f m]
-  (into {} (for [[k v] m] [k (f v)])))
+  (transform [MAP-VALS] f m))
 
 (defn map-keys [f m]
-  (into {} (for [[k v] m] [(f k) v])))
-
-(defn transform-map [m kf vf]
-  (into {} (for [[k v] m] [(kf k) (vf v)])))
-
-(defn update-values-in [m path f]
-  (update-in m path #(map-values f %)))
+  (transform [MAP-KEYS] f m))
 
 (defn update-values [m k f]
-  (update m k #(map-values f %)))
+  (transform [k MAP-VALS] f m))
 
 (defn where
   ([property value coll]
@@ -104,14 +101,8 @@
 (defn filter-keys [pred? coll]
   (into {} (filter #(pred? (first %)) coll)))
 
-(defn where-map
-  ([property value coll]
-   (filter-map #(= (property %) value)
-               coll))
-  ([property-map coll]
-   (filter-map #(every? (fn [[p v]] (= (p %) v))
-                        property-map)
-               coll)))
+(defn where-map [property value coll]
+  (filter-map #(= (property %) value) coll))
 
 (defn removev [v idx]
   (vec (concat (take idx v)
