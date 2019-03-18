@@ -49,15 +49,15 @@
   :<- [:db-player-options]
   (fn [[lines player-options]]
     (u/map-values
-      (fn [line]
-        (-> (select-keys line [:text])
-            (merge {:options (if-let [next-line (get lines (:next-line-id line))]
-                               (case (:kind next-line)
-                                 :npc (vector {:text "Continue..."
-                                               :next-line-id (:entity/id next-line)})
-                                 :player (mapv player-options (:options next-line)))
-                               (vector {:text "Yeah..., whatever. Farewell"
-                                        :next-line-id nil}))})))
+      (fn [{:keys [text next-line-id]}]
+        {:text text
+         :options (if-let [next-line (get lines next-line-id)]
+                    (case (:kind next-line)
+                      :npc (vector {:text "Continue..."
+                                    :next-line-id (:entity/id next-line)})
+                      :player (mapv player-options (:options next-line)))
+                    (vector {:text "Yeah..., whatever. Farewell"
+                             :next-line-id nil}))})
       (u/where-map :kind :npc lines))))
 
 (reg-sub
