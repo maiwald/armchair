@@ -66,8 +66,8 @@
 (defn ^boolean interacting? [state]
   (contains? state :interaction))
 
-(defn interaction-option-count [state]
-  (count (:options (dialogue-data state))))
+(defn interaction-option-count [{{:keys [line-id]} :interaction}]
+  (count (get-in @data [:lines line-id :options])))
 
 (defn interaction-option [{{:keys [line-id selected-option]} :interaction}]
   (get-in @data [:lines line-id :options selected-option]))
@@ -206,11 +206,11 @@
 
 (defn handle-move [direction]
   (if (interacting? @state)
-    (let [option-count (interaction-option-count @state)]
-      (case direction
-        :up (swap! state update-in [:interaction :selected-option] #(mod (dec %) option-count))
-        :down (swap! state update-in [:interaction :selected-option] #(mod (inc %) option-count))
-        :else))
+    (if-let [next-index-fn (get {:up dec :down inc} direction)]
+      (swap! state
+             update-in [:interaction :selected-option]
+             (fn [index] (mod (next-index-fn index)
+                              (interaction-option-count @state)))))
     (swap! move-q conj direction)))
 
 (defn handle-interact []
@@ -226,12 +226,10 @@
                   (update :switches merge
                           (:switches current-triggers)
                           (:switches option-triggers))))
-      (if (nil? next-line-id)
-        (reset! state (-> @state
-                          (dissoc :interaction)))
-        (reset! state (let [{{line-id :line-id} :interaction} @state]
-                        (assoc @state :interaction {:line-id next-line-id
-                                                    :selected-option 0})))))
+      (if (some? next-line-id)
+        (swap! state assoc :interaction {:line-id next-line-id
+                                         :selected-option 0})
+        (swap! state dissoc :interaction)))
     (let [l (get-in @state [:player :location-id])
           npcs (get-in @data [:locations l :npcs])]
       (if-let [dialogue-id (get-in npcs [(interaction-tile @state) :dialogue-id])]
@@ -303,7 +301,7 @@
   (if (not (contains? state :animation))
     (if-let [direction (peek @move-q)]
       (let [new-position (u/translate-point (get-in state [:player :position])
-                                          (direction-map direction))]
+                                            (direction-map direction))]
         (swap! move-q pop)
         (cond-> (assoc-in state [:player :direction] direction)
           (walkable? new-position)

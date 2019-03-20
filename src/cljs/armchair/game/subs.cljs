@@ -56,8 +56,8 @@
   :<- [:db-triggers]
   (fn [[lines triggers]]
     (transform [MAP-VALS
-                #(= :npc (:kind %))
-                #(= :trigger (get-in lines [(:next-line-id %) :kind]))]
+                #(and (= :npc (:kind %))
+                      (= :trigger (get-in lines [(:next-line-id %) :kind])))]
                (fn [line]
                  (let [trigger (get lines (:next-line-id line))
                        triggers (->> (:trigger-ids trigger)
