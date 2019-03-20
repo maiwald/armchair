@@ -23,7 +23,7 @@
                     :right [1 0]})
 
 
-(s/def ::state (s/and (s/keys :req-un [::player ::dialogue-states]
+(s/def ::state (s/and (s/keys :req-un [::player ::dialogue-states ::switches]
                               :opt-un [::interaction ::animation])))
 
 (s/def ::player (s/keys :req-un [:player/position
@@ -32,6 +32,7 @@
 (s/def :player/direction #{:up :down :left :right})
 
 (s/def ::dialogue-states (s/map-of :entity/id :entity/id))
+(s/def ::switches (s/map-of :entity/id (s/nilable :entity/id)))
 
 (s/def ::interaction (s/keys :req-un [::line-id ::selected-option]))
 (s/def ::animation (s/keys :req-un [::start ::destination]))
@@ -214,7 +215,17 @@
 
 (defn handle-interact []
   (if (interacting? @state)
-    (let [{next-line-id :next-line-id} (interaction-option @state)]
+    (let [current-line-id (get-in @state [:interaction :line-id])
+          current-triggers (get-in @data [:lines current-line-id :triggers])
+          {option-triggers :triggers :keys [next-line-id]} (interaction-option @state)]
+      (swap! state
+             #(-> %
+                  (update :dialogue-states merge
+                          (:dialogue-states current-triggers)
+                          (:dialogue-states option-triggers))
+                  (update :switches merge
+                          (:switches current-triggers)
+                          (:switches option-triggers))))
       (if (nil? next-line-id)
         (reset! state (-> @state
                           (dissoc :interaction)))
@@ -224,9 +235,9 @@
     (let [l (get-in @state [:player :location-id])
           npcs (get-in @data [:locations l :npcs])]
       (if-let [dialogue-id (get-in npcs [(interaction-tile @state) :dialogue-id])]
-        (let [next-line-id (get-in @state [:dialogue-states dialogue-id])]
-          (reset! state (assoc @state :interaction {:line-id next-line-id
-                                                    :selected-option 0})))))))
+        (let [line-id (get-in @state [:dialogue-states dialogue-id])]
+          (swap! state assoc :interaction {:line-id line-id
+                                           :selected-option 0}))))))
 
 (defn start-input-loop [channel]
   (go-loop [[command payload :as message] (<! channel)]

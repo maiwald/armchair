@@ -1,6 +1,9 @@
 (ns armchair.game.subs
   (:require [clojure.spec.alpha :as s]
             [re-frame.core :refer [reg-sub]]
+            [com.rpl.specter
+             :refer [must ALL NONE MAP-VALS]
+             :refer-macros [select transform]]
             [armchair.textures :refer [character-textures]]
             [armchair.util :as u]))
 
@@ -43,14 +46,60 @@
       {}
       dialogues)))
 
+(defn triggers-to-map [triggers]
+  (into {} (for [{:keys [switch-id switch-value]} triggers]
+             [switch-id switch-value])))
+
+(reg-sub
+  :game/lines-with-triggers
+  :<- [:db-lines]
+  :<- [:db-triggers]
+  (fn [[lines triggers]]
+    (transform [MAP-VALS
+                #(= :npc (:kind %))
+                #(= :trigger (get-in lines [(:next-line-id %) :kind]))]
+               (fn [line]
+                 (let [trigger (get lines (:next-line-id line))
+                       triggers (->> (:trigger-ids trigger)
+                                     (map triggers)
+                                     (group-by :switch-kind)
+                                     (u/map-values triggers-to-map))]
+                   (assoc line
+                          :next-line-id (:next-line-id trigger)
+                          :triggers {:dialogue-states (:dialogue-state triggers)
+                                     :switches (:switch triggers)})))
+               lines)))
+
+(reg-sub
+  :game/player-options-with-triggers
+  :<- [:db-player-options]
+  :<- [:db-lines]
+  :<- [:db-triggers]
+  (fn [[player-options lines triggers]]
+    (transform [MAP-VALS
+                #(= :trigger (get-in lines [(:next-line-id %) :kind]))]
+               (fn [player-option]
+                 (let [trigger (get lines (:next-line-id player-option))
+                       triggers (->> (:trigger-ids trigger)
+                                     (map triggers)
+                                     (group-by :switch-kind)
+                                     (u/map-values triggers-to-map))]
+                   (assoc player-option
+                          :next-line-id (:next-line-id trigger)
+                          :triggers {:dialogue-states (:dialogue-state triggers)
+                                     :switches (:switch triggers)})))
+               player-options)))
+
+
 (reg-sub
   :game/line-data
-  :<- [:db-lines]
-  :<- [:db-player-options]
+  :<- [:game/lines-with-triggers]
+  :<- [:game/player-options-with-triggers]
   (fn [[lines player-options]]
     (u/map-values
-      (fn [{:keys [text next-line-id]}]
+      (fn [{:keys [triggers text next-line-id]}]
         {:text text
+         :triggers triggers
          :options (if-let [next-line (get lines next-line-id)]
                     (case (:kind next-line)
                       :npc (vector {:text "Continue..."
@@ -91,10 +140,12 @@
   :<- [:game/locations]
   :<- [:game/line-data]
   :<- [:db-dialogues]
-  (fn [[player-data locations line-data dialogues] _]
+  :<- [:db-switches]
+  (fn [[player-data locations line-data dialogues switches] _]
     {:post [(or (s/valid? :game/data %)
                 (s/explain :game/data %))]}
     {:lines line-data
      :locations locations
      :initial-state {:dialogue-states (u/map-values :initial-line-id dialogues)
+                     :switches (u/map-values (constantly nil) switches)
                      :player (merge player-data {:direction :right})}}))
