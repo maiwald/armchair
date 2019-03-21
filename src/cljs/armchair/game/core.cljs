@@ -84,11 +84,11 @@
      (u/tile->coord [(inc x) (inc y)])]))
 
 (defn draw-texture [ctx texture coord]
-  (when @texture-atlas
+  (when (some? @texture-atlas)
     (c/draw-image! ctx (get @texture-atlas texture (@texture-atlas :missing_texture)) coord)))
 
 (defn draw-texture-rotated [ctx texture coord deg]
-  (when @texture-atlas
+  (when (some? @texture-atlas)
     (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
 
 (defn draw-background [ctx [[left top] [right bottom]] background camera]
@@ -149,36 +149,35 @@
             spacing 6]
         (loop [idx 0
                y (+ y 40 offset)
-               options options]
-          (if-let [option (first options)]
-            (do
-              (c/set-fill-style! ctx "rgb(0, 0, 0)")
+               [option & options] options]
+          (when (some? option)
+            (c/set-fill-style! ctx "rgb(0, 0, 0)")
+            (if (= selected-option idx)
+              (c/set-stroke-style! ctx "rgb(255, 0, 0)")
+              (c/set-stroke-style! ctx "rgb(0, 0, 0)"))
+            (let [coord (u/translate-point [x y] [20 0])
+                  height (+ padding (c/draw-textbox! ctx option (u/translate-point coord [7 padding]) w))]
               (if (= selected-option idx)
-                (c/set-stroke-style! ctx "rgb(255, 0, 0)")
-                (c/set-stroke-style! ctx "rgb(0, 0, 0)"))
-              (let [coord (u/translate-point [x y] [20 0])
-                    height (+ padding (c/draw-textbox! ctx option (u/translate-point coord [7 padding]) w))]
-                (if (= selected-option idx)
-                  (c/set-fill-style! ctx "rgba(0, 0, 0, .1)")
-                  (c/set-fill-style! ctx "rgba(0, 0, 0, 0)"))
-                (c/fill-rect! ctx coord w height)
+                (c/set-fill-style! ctx "rgba(0, 0, 0, .1)")
+                (c/set-fill-style! ctx "rgba(0, 0, 0, 0)"))
+              (c/fill-rect! ctx coord w height)
 
-                (c/set-line-width! ctx "1")
-                (c/stroke-rect! ctx coord w height)
+              (c/set-line-width! ctx "1")
+              (c/stroke-rect! ctx coord w height)
 
-                (recur (inc idx)
-                       (+ y height spacing)
-                       (rest options))))))))
+              (recur (inc idx)
+                     (+ y height spacing)
+                     options))))))
     (c/restore! ctx)))
 
 (defn draw-camera [[left-top right-bottom]]
-  (when @ctx
+  (when (some? @ctx)
     (c/stroke-rect! @ctx
                     left-top
                     right-bottom)))
 
 (defn render [view-state]
-  (when @ctx
+  (when (some? @ctx)
     (let [l (get-in view-state [:player :location-id])
           [[left top] :as camera] (:camera view-state)
           {:keys [npcs dimension background]} (get-in @data [:locations l])]
