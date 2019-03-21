@@ -45,7 +45,7 @@
 (def state (atom nil))
 (def data (atom nil))
 
-(defn ^boolean walkable? [tile]
+(defn walkable? [tile]
   (let [{l :location-id} (:player @state)
         {:keys [walk-set npcs]} (get-in @data [:locations l])]
     (and (contains? walk-set tile)
@@ -63,7 +63,7 @@
                    (map :text))
      :selected-option selected-option}))
 
-(defn ^boolean interacting? [state]
+(defn interacting? [state]
   (contains? state :interaction))
 
 (defn interaction-option-count [{{:keys [line-id]} :interaction}]
