@@ -187,23 +187,26 @@
 
 (s/def ::player-option (s/keys :req [:entity/id :entity/type]
                                :req-un [::text ::next-line-id]
-                               :opt-un [:player-option/conditions
-                                        :player-option/conjunction]))
-
-(s/def :player-option/conjunction (-> config/condition-conjunctions
-                                      keys
-                                      set))
-
-(s/def :player-option/conditions
-  (s/coll-of :player-option/condition
-             :kind vector?))
+                               :opt-un [:player-option/condition]))
 
 (s/def :player-option/condition
+  (s/keys :req-un [:condition/conjunction
+                   :condition/terms]))
+
+(s/def :condition/conjunction
+  (-> config/condition-conjunctions keys set))
+
+(s/def :condition/terms
+  (s/coll-of :condition/term
+             :kind vector?))
+
+(s/def :condition/term
   (s/keys :req-un [::switch-id
                    :condition/operator
                    ::switch-value-id]))
 
-(s/def :condition/operator (-> config/condition-operators keys set))
+(s/def :condition/operator
+  (-> config/condition-operators keys set))
 
 (s/def ::trigger-node (s/and #(= (:kind %) :trigger)
                              (s/keys :req-un [::trigger-ids ::next-line-id])))
@@ -306,7 +309,8 @@
 
 (s/def :modal/conditions-form
   (s/keys :req-un [::player-option-id
-                   :player-option/conditions]))
+                   :condition/terms
+                   :condition/conjunction]))
 
 (s/def ::dialogue-state
   (s/keys :req-un [::line-id]

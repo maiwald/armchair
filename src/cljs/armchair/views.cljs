@@ -233,15 +233,15 @@
           [icon "times-circle"]]])
       [slds/add-button "Add Option" #(>evt [:modal/add-switch-value])]]]))
 
-(defn condition-form-item [index {:keys [switch-id switch-options
-                                         operator operator-options
-                                         switch-value-id switch-value-options]}]
+(defn conditions-form-term [index {:keys [switch-id switch-options
+                                          operator operator-options
+                                          switch-value-id switch-value-options]}]
   (letfn [(update-switch [e]
-            (>evt [:modal/update-condition-switch index (uuid (e->val e))]))
+            (>evt [:modal/update-condition-term-switch index (uuid (e->val e))]))
           (update-operator [e]
-            (>evt [:modal/update-condition-operator index (keyword (e->val e))]))
+            (>evt [:modal/update-condition-term-operator index (keyword (e->val e))]))
           (update-value [e]
-            (>evt [:modal/update-condition-value index (uuid (e->val e))]))]
+            (>evt [:modal/update-condition-term-value index (uuid (e->val e))]))]
     [:li {:class "condition-select"}
      [slds/input-select {:on-change update-switch
                          :options switch-options
@@ -253,29 +253,29 @@
                          :disabled (empty? switch-value-options)
                          :options switch-value-options
                          :value switch-value-id}]
-     [:div {:on-click #(>evt [:modal/remove-condition index])}
+     [:div {:on-click #(>evt [:modal/remove-condition-term index])}
            [icon "trash" "Delete condition"]]]))
 
 (defn conditions-form-modal []
   (letfn [(close-modal [e] (>evt [:close-modal]))
-          (save-conditions [e] (>evt [:modal/save-conditions]))
-          (add-condition [e] (>evt [:modal/add-condition]))
+          (save-conditions [e] (>evt [:modal/save-condition]))
+          (add-condition [e] (>evt [:modal/add-condition-term]))
           (update-conjunction [e]
-            (>evt [:modal/update-conditions-conjunction (keyword (e->val e))]))]
+            (>evt [:modal/update-condition-conjunction (keyword (e->val e))]))]
     (fn []
-      (let [{:keys [conditions conjunction]} (<sub [:modal/conditions-form])]
+      (let [{:keys [terms conjunction]} (<sub [:modal/conditions-form])]
         [slds/modal {:title "Unlock Conditions"
                      :close-handler close-modal
                      :confirm-handler save-conditions}
          [slds/form
-          (when (< 1 (count conditions))
+          (when (< 1 (count terms))
             [slds/input-select {:on-change update-conjunction
-                                :options config/condition-conjunctions
+                                :options (u/map-values :display-name config/condition-conjunctions)
                                 :value conjunction}])
           [:ul
-           (for [[index condition] conditions]
+           (for [[index term] terms]
              ^{:key (str "condition-select" index)}
-             [condition-form-item index condition])]
+             [conditions-form-term index term])]
           [slds/add-button "Add Condition" add-condition]]]))))
 
 (defn modal []

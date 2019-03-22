@@ -43,12 +43,12 @@
   :<- [:db-switches]
   :<- [:db-switch-values]
   (fn [[modal switches switch-values]]
-    (if-let [{:keys [conditions conjunction]} (:conditions-form modal)]
+    (if-let [{:keys [terms conjunction]} (:conditions-form modal)]
       (let [switch-options (u/map-values :display-name switches)
-            used-switches (set (map :switch-id conditions))
+            used-switches (set (map :switch-id terms))
             operator-options (u/map-values :display-name config/condition-operators)]
         {:conjunction conjunction
-         :conditions
+         :terms
          (map-indexed
            (fn [index {:keys [switch-id] :as c}]
              (let [value-options (->> switch-id
@@ -63,7 +63,7 @@
                                                     (disj used-switches switch-id))
                              :operator-options operator-options
                              :switch-value-options value-options)]))
-           conditions)}))))
+           terms)}))))
 
 (reg-sub
   :character-list

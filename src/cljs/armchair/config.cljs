@@ -24,5 +24,5 @@
    :is-not {:display-name "is not" :func not=}})
 
 (def condition-conjunctions
-  {:and "and"
-   :or "or"})
+  {:and {:display-name "and" :func every?}
+   :or {:display-name "or" :func some}})

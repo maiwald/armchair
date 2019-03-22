@@ -111,10 +111,10 @@
             (update :switches dissoc switch-id)
             (update :switch-values #(apply dissoc % switch-value-ids))
             (update :triggers #(apply dissoc % trigger-ids)))
-        (setval [:player-options MAP-VALS (must :conditions) ALL belongs-to-switch?]
-                NONE)
-        (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)]
-                NONE)))))
+        (setval [:player-options MAP-VALS (must :condition) :terms ALL belongs-to-switch?] NONE)
+        (setval [:player-options MAP-VALS (must :condition) #(empty? (:terms %))] NONE)
+        (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)] NONE)
+        u/log))))
 
 ;; Modal
 
@@ -127,75 +127,78 @@
           "No conditions form open. Cannot set value!"))
 
 (reg-event-db
-  :modal/open-conditions-modal
+  :modal/open-condition-modal
   [validate]
   (fn [db [_ line-id index]]
     (assert-no-open-modal db)
     (let [option-id (get-in db [:lines line-id :options index])
-          conditions (get-in db [:player-options option-id :conditions]
-                             (vector {}))
-          conjunction (get-in db [:player-options option-id :conjunction] :and)]
-      (assoc-in db [:modal :conditions-form] {:player-option-id option-id
-                                              :conditions conditions
-                                              :conjunction conjunction}))))
+          {:keys [terms conjunction]
+           :or {terms (vector {})
+                conjunction :and}} (get-in db [:player-options option-id :condition])]
+      (assoc-in db [:modal :conditions-form]
+                {:player-option-id option-id
+                 :conjunction conjunction
+                 :terms terms}))))
 
 (reg-event-db
-  :modal/update-conditions-conjunction
+  :modal/update-condition-conjunction
   [validate]
   (fn [db [_ value]]
     (assert-conditions-modal db)
     (assoc-in db [:modal :conditions-form :conjunction] value)))
 
 (reg-event-db
-  :modal/add-condition
+  :modal/add-condition-term
   [validate]
   (fn [db]
     (assert-conditions-modal db)
-    (update-in db [:modal :conditions-form :conditions]
+    (update-in db [:modal :conditions-form :terms]
                conj {})))
 
 (reg-event-db
-  :modal/remove-condition
+  :modal/remove-condition-term
   [validate]
   (fn [db [_ index]]
     (assert-conditions-modal db)
-    (update-in db [:modal :conditions-form :conditions]
+    (update-in db [:modal :conditions-form :terms]
                u/removev index)))
 
 (reg-event-db
-  :modal/update-condition-switch
+  :modal/update-condition-term-switch
   [validate]
   (fn [db [_ index value]]
     (assert-conditions-modal db)
     (-> db
-        (assoc-in [:modal :conditions-form :conditions index :switch-id] value)
-        (update-in [:modal :conditions-form :conditions index] dissoc :switch-value-id))))
+        (assoc-in [:modal :conditions-form :terms index :switch-id] value)
+        (update-in [:modal :conditions-form :terms index] dissoc :switch-value-id))))
 
 (reg-event-db
-  :modal/update-condition-operator
+  :modal/update-condition-term-operator
   [validate]
   (fn [db [_ index value]]
     (assert-conditions-modal db)
-    (assoc-in db [:modal :conditions-form :conditions index :operator] value)))
+    (assoc-in db [:modal :conditions-form :terms index :operator] value)))
 
 (reg-event-db
-  :modal/update-condition-value
+  :modal/update-condition-term-value
   [validate]
   (fn [db [_ index value]]
     (assert-conditions-modal db)
-    (assoc-in db [:modal :conditions-form :conditions index :switch-value-id] value)))
+    (assoc-in db [:modal :conditions-form :terms index :switch-value-id] value)))
 
 (reg-event-db
-  :modal/save-conditions
+  :modal/save-condition
   [validate
    record-undo]
   (fn [db]
     (assert-conditions-modal db)
-    (let [{:keys [player-option-id conditions]} (get-in db [:modal :conditions-form])]
+    (let [{:keys [player-option-id conjunction terms]} (get-in db [:modal :conditions-form])
+          condition {:conjunction conjunction
+                     :terms terms}]
       (cond-> db
-        (s/valid? :player-option/conditions conditions)
+        (s/valid? :player-option/condition condition)
         (-> (dissoc :modal)
-            (assoc-in [:player-options player-option-id :conditions] conditions))))))
+            (assoc-in [:player-options player-option-id :condition] condition))))))
 
 (defn assert-switch-modal [db]
   (assert (contains? (:modal db) :switch-form)

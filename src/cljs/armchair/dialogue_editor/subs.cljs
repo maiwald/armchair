@@ -30,13 +30,17 @@
     (let [{:keys [options dialogue-id]} (lines line-id)]
       (mapv
         (fn [option-id]
-          (let [{:keys [text conditions next-line-id]} (player-options option-id)]
+          (let [{:keys [text condition next-line-id]} (player-options option-id)]
             {:text text
              :conditions (map (fn [{:keys [switch-id operator switch-value-id]}]
                                 {:switch (-> switch-id switches :display-name)
                                  :operator (-> operator config/condition-operators :display-name)
                                  :value (-> switch-value-id switch-values :display-name)})
-                              conditions)
+                              (:terms condition))
+             :condition-conjunction (-> condition
+                                        :conjunction
+                                        config/condition-conjunctions
+                                        :display-name)
              :connected? (some? next-line-id)}))
         options))))
 
