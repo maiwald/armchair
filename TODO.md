@@ -1,6 +1,5 @@
 # TODO
 - refactor triggers into separate dialogue nodes
-  - respect conditions in game
   - move modal stuff into its own namespace
 - local storage
 - directed location connections

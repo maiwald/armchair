@@ -5,6 +5,7 @@
             [com.rpl.specter
              :refer [must ALL NONE MAP-VALS]
              :refer-macros [select transform]]
+            [armchair.config :as config]
             [armchair.textures :refer [character-textures]]
             [armchair.util :as u]))
 
@@ -15,7 +16,7 @@
 (s/def :game/lines (s/map-of :entity/id (s/keys :req-un [:game/text :game/options]
                                                 :opt-un [:game/triggers])))
 (s/def :game/options (s/coll-of (s/keys :req-un [:game/text :game/next-line-id]
-                                        :opt-un [:game/triggers])
+                                        :opt-un [:game/condition :game/triggers])
                                 :kind vector?))
 (s/def :game/locations (s/map-of :entity/id (s/keys :req-un [:game/dimension
                                                              :game/background
@@ -103,7 +104,6 @@
                                                   :switch :switches}))))
                player-options)))
 
-
 (reg-sub
   :game/line-data
   :<- [:game/lines-with-triggers]
@@ -117,7 +117,20 @@
                       (case (:kind next-line)
                         :npc (vector {:text "Continue..."
                                       :next-line-id (:entity/id next-line)})
-                        :player (mapv player-options (:options next-line)))
+                        :player (->> (mapv player-options (:options next-line))
+                                     (transform [ALL (must :condition)]
+                                                (fn [{:keys [conjunction terms]}]
+                                                  (fn [switches]
+                                                    ((-> conjunction
+                                                         config/condition-conjunctions
+                                                         :func)
+                                                     (fn [{:keys [switch-id operator switch-value-id]}]
+                                                       ((-> operator
+                                                            config/condition-operators
+                                                            :func)
+                                                        (switches switch-id)
+                                                        switch-value-id))
+                                                     terms))))))
                       (vector {:text "Yeah..., whatever. Farewell"
                                :next-line-id nil}))}))
       (u/where-map :kind :npc lines))))

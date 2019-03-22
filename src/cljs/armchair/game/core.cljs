@@ -56,10 +56,15 @@
     position
     (direction-map direction)))
 
+(defn available-option? [{:keys [condition]}]
+  (or (not (fn? condition))
+      (condition (:switches @state))))
+
 (defn dialogue-data [{{:keys [line-id selected-option]} :interaction}]
   (let [line (get-in @data [:lines line-id])]
     {:text (:text line)
      :options (->> (:options line)
+                   (filter available-option?)
                    (map :text))
      :selected-option selected-option}))
 
@@ -67,10 +72,14 @@
   (contains? state :interaction))
 
 (defn interaction-option-count [{{:keys [line-id]} :interaction}]
-  (count (get-in @data [:lines line-id :options])))
+  (->> (get-in @data [:lines line-id :options])
+       (filter available-option?)
+       count))
 
 (defn interaction-option [{{:keys [line-id selected-option]} :interaction}]
-  (get-in @data [:lines line-id :options selected-option]))
+  (get (->> (get-in @data [:lines line-id :options])
+            (filterv available-option?))
+       selected-option))
 
 ;; Rendering
 
