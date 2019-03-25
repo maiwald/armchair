@@ -1,8 +1,6 @@
 # TODO
-- local storage
 - directed location connections
 - trees! (multiple texture layers)
-- validation error notifications and form states
 - information dependency invariants
 - texture sprite support
 - (multiple?) decorative textures
@@ -10,6 +8,9 @@
 - zoom in dialogue editor
 
 # nice things
+- typing animation for dialogue screens
+- restrict camera to location edges and fix tile scale
+- local storage
 - change default collision to walkable
 - movement behaviour when holding and releasing arrow key
 - location preview in map
@@ -19,4 +20,5 @@
 - copy and paste for background texture sets
 - organize and cluster background textures
 - prevent placing npcs on taken/non-walkable tiles
-- show previous line's content in line form
+- remove slds dependency
+- validation error notifications and form states
