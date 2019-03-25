@@ -1,5 +1,6 @@
 (ns armchair.modals.subs
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
+            [armchair.config :as config]
             [armchair.util :as u]))
 
 (reg-sub
