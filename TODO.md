@@ -1,6 +1,5 @@
 # TODO
 - refactor triggers into separate dialogue nodes
-  - move modal stuff into its own namespace
 - local storage
 - directed location connections
 - trees! (multiple texture layers)

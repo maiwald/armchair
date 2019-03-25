@@ -4,6 +4,8 @@
             [armchair.undo]
             [armchair.events]
             [armchair.subs]
+            [armchair.modals.events]
+            [armchair.modals.subs]
             [armchair.dialogue-editor.events]
             [armchair.dialogue-editor.subs]
             [armchair.location-editor.events]
