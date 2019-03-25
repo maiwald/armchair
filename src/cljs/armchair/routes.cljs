@@ -12,7 +12,7 @@
         ["dialogues" :dialogues]
         [["dialogues/" :id "/edit"] :dialogue-edit]
         ["characters" :characters]
-        ["infos" :infos]]])
+        ["switches" :switches]]])
 
 (def root (str "#" (path-for routes :game)))
 

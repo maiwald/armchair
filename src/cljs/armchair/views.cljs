@@ -5,17 +5,11 @@
             [armchair.components :as c :refer [icon drag-canvas connection e->graph-cursor]]
             [armchair.location-editor.views :refer [location-editor]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
-            [armchair.util :refer [<sub
-                                   >evt
-                                   stop-e!
-                                   e->
-                                   e->left?
-                                   e->val
-                                   translate-point
-                                   upload-json!]]
+            [armchair.modals.views :refer [modal]]
+            [armchair.util :as u :refer [<sub >evt stop-e! e-> e->left? e->val]]
             [armchair.config :as config]
             [armchair.routes :refer [routes >navigate]]
-            [armchair.textures :refer [character-textures texture-path]]
+            [armchair.textures :refer [texture-path]]
             [armchair.game.views :refer [game-canvas]]
             [bidi.bidi :refer [match-route]]))
 
@@ -32,8 +26,8 @@
                    :texture (fn [texture]
                               [:img {:src (texture-path texture)}])
                    :synopsis (fn [synopsis {id :id}]
-                                [:a {:on-click #(>navigate :dialogue-edit :id id)}
-                                 synopsis])
+                               [:a {:on-click #(>navigate :dialogue-edit :id id)}
+                                synopsis])
                    :location (fn [{:keys [id display-name]}]
                                [:a {:on-click #(>navigate :location-edit :id id)}
                                 display-name])
@@ -59,52 +53,48 @@
                                [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}
       :new-resource #(>evt [:open-character-modal])}]))
 
-(defn info-management []
-  (let [infos (<sub [:info-list])]
-    [slds/resource-page "Infos"
-     {:columns [:description :actions]
-      :collection (vals infos)
-      :cell-views {:actions (fn [_ {id :id}]
+(defn switch-management []
+  (let [switches (<sub [:switch-list])]
+    [slds/resource-page "Switches"
+     {:columns [:display-name :values :actions]
+      :collection switches
+      :cell-views {:color (fn [color] [slds/badge color color])
+                   :actions (fn [_ {:keys [id]}]
                               [:div {:class "slds-text-align_right"}
-                               [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this info?")
-                                                                             (>evt [:delete-info id]))}]
-                               [slds/symbol-button "edit" {:on-click #(>evt [:open-info-modal id])}]])}
-      :new-resource #(>evt [:open-info-modal])}]))
+                               [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this switch?")
+                                                                               (>evt [:delete-switch id]))}]
+                               [slds/symbol-button "edit" {:on-click #(>evt [:modal/open-switch-modal id])}]])}
+      :new-resource #(>evt [:modal/open-switch-modal])}]))
 
 (defn location-component [location-id]
   (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])
         connecting? (some? (<sub [:connector]))]
-    [:div {:class "location"
-           :on-mouse-up (when connecting? #(>evt [:end-connecting-locations location-id]))
-           :style {:width (str config/line-width "px")}}
-     [:div {:class "location__header"}
-      [:p {:class "name"}
-       [:a {:on-click #(>navigate :location-edit :id location-id)
-            :on-mouse-down stop-e!}
-           display-name]]
-      [:ul {:class "actions"
-            :on-mouse-down stop-e!}
-       [:li {:class "action"
-             :on-click #(when (js/confirm "Are you sure you want to delete this location?")
-                          (>evt [:delete-location location-id]))}
-        [icon "trash" "Delete"]]
-       [:li {:class "action action_connect"
-             :on-mouse-down (e-> #(when (e->left? %)
-                                    (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
-        [icon "project-diagram" "Connect"]]]]
-     [:ul {:class "location__characters"}
-      (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
-        [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
-         [:a {:style {:background-color npc-color}
-              :on-mouse-down stop-e!
-              :on-click #(>navigate :dialogue-edit :id dialogue-id)}
-          npc-name]])]]))
+    [:div.location
+     [c/graph-node {:title [:a {:on-click #(>navigate :location-edit :id location-id)}
+                            display-name]
+                    :item-id location-id
+                    :on-connect-end #(>evt [:end-connecting-locations location-id])
+                    :actions [["trash" "Delete"
+                               #(when (js/confirm "Are you sure you want to delete this location?")
+                                  (>evt [:delete-location location-id]))]]}
+      [c/action-wrapper {:actions
+                         [[:div {:class "action action_connect"
+                                 :on-mouse-down (e-> #(when (e->left? %)
+                                                        (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
+                           [icon "project-diagram" "Connect"]]]}
+       [:ul {:class "location__characters"}
+        (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
+          [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
+           [:a {:style {:background-color npc-color}
+                :on-mouse-down stop-e!
+                :on-click #(>navigate :dialogue-edit :id dialogue-id)}
+            npc-name]])]]]]))
 
 (defn location-connection [start end]
   (let [start-pos (<sub [:ui/position start])
         end-pos (<sub [:ui/position end])]
-    [connection {:start (translate-point start-pos [(/ config/line-width 2) 15])
-                 :end (translate-point end-pos [(/ config/line-width 2) 15])}]))
+    [connection {:start (u/translate-point start-pos [(/ config/line-width 2) 15])
+                 :end (u/translate-point end-pos [(/ config/line-width 2) 15])}]))
 
 (defn location-management []
   (let [{:keys [location-ids connections]} (<sub [:location-map])]
@@ -122,157 +112,17 @@
          ^{:key (str "location-connection" start "->" end)}
          [location-connection start end])]]]))
 
-;; Modals
-
-(defn dialogue-creation-modal [{:keys [character-id synopsis]}]
-  [slds/modal {:title "Create Dialogue"
-               :confirm-handler #(>evt [:create-dialogue])
-               :close-handler #(>evt [:close-modal])}
-   [slds/form
-    [slds/input-select {:label "Character *"
-                        :on-change #(>evt [:dialogue-creation-update :character-id (uuid (e->val %))])
-                        :options (<sub [:dialogue-creation/character-options])
-                        :value character-id}]
-    [slds/input-textarea {:label "Synopsis *"
-                          :on-change #(>evt [:dialogue-creation-update :synopsis (e->val %)])
-                          :value synopsis}]]])
-
-(defn dialogue-state-modal [{:keys [line-id description]}]
-  [slds/modal {:title "Dialogue State"
-               :confirm-handler #(>evt [:create-dialogue-state])
-               :close-handler #(>evt [:close-modal])}
-   [slds/form
-    [slds/input-text {:label "State description"
-                      :on-change #(>evt [:dialogue-state-update (e->val %)])
-                      :options (<sub [:character-options])
-                      :value description}]]])
-
-(defn npc-line-form-modal [line-id]
-  (let [line (<sub [:dialogue/modal-line line-id])]
-    [slds/modal {:title "NPC Line"
-                 :close-handler #(>evt [:close-modal])}
-     [slds/form
-      [slds/input-select {:label "Character"
-                          :disabled (:initial-line? line)
-                          :on-change #(>evt [:update-line line-id :character-id (uuid (e->val %))])
-                          :options (<sub [:character-options])
-                          :value (:character-id line)}]
-      [slds/input-textarea {:label "Text"
-                            :on-change #(>evt [:update-line line-id :text (e->val %)])
-                            :value (:text line)}]
-      [slds/multi-select {:label "Infos"
-                          :options (clj->js (<sub [:info-options]))
-                          :values (:info-ids line)
-                          :on-change #(>evt [:set-infos line-id (map uuid %)])}]
-      [slds/multi-select {:label "Dialogue State Triggers"
-                          :options (clj->js (<sub [:dialogue/state-options line-id]))
-                          :values (:state-triggers line)
-                          :on-change #(>evt [:set-state-triggers line-id (map uuid %)])}]]]))
-
-(defn player-line-form-modal-option [line-id index total-count]
-  (let [{:keys [text required-info-ids state-triggers]} (<sub [:dialogue/player-line-option line-id index])
-        info-options (<sub [:info-options])]
-    [:div { :class "player-line-form__response"}
-     [:div {:class "text"}
-      [slds/input-textarea {:label (str "Response " (inc index))
-                            :on-change #(>evt [:update-option line-id index (e->val %)])
-                            :value text}]
-      [slds/multi-select {:label "Required Infos"
-                          :options info-options
-                          :values required-info-ids
-                          :on-change #(>evt [:set-required-info line-id index (map uuid %)])}]
-      [slds/multi-select {:label "Dialogue State Triggers"
-                          :options (clj->js (<sub [:dialogue/state-options line-id index]))
-                          :values state-triggers
-                          :on-change #(>evt [:set-state-triggers line-id (map uuid %) index])}]]
-     [:ul {:class "actions actions_vertial"}
-      [:li {:class "action" :on-click #(when (js/confirm "Are you sure you want to delete this option?")
-                                         (>evt [:delete-option line-id index]))}
-       [icon "trash" "Delete"]]
-      (when-not (= index 0)
-        [:li {:class "action" :on-click #(>evt [:move-option line-id index :up])}
-         [icon "arrow-up" "Move up"]])
-      (when-not (= index (dec total-count))
-        [:li {:class "action" :on-click #(>evt [:move-option line-id index :down])}
-         [icon "arrow-down" "Move down"]])]]))
-
-(defn player-line-form-modal [line-id]
-  (let [{:keys [option-count]} (<sub [:dialogue/modal-line line-id])]
-    [slds/modal {:title "Player Line"
-                 :close-handler #(>evt [:close-modal])}
-     [:div {:class "player-line-form"}
-      [slds/form
-       (for [index (range option-count)]
-         ^{:key (str "option:" line-id ":" index)}
-         [player-line-form-modal-option line-id index option-count])
-       [slds/add-button "New Option" #(>evt [:add-option line-id])]]]]))
-
-(defn character-form-modal [{:keys [display-name color texture]}]
-  (let [update-handler (fn [field] #(>evt [:character-form/update field (e->val %)]))]
-    [slds/modal {:title "Character"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [:character-form/save])}
-     [slds/form
-      [slds/input-text {:label "Name"
-                        :on-change (update-handler :display-name)
-                        :value display-name}]
-      [slds/input-text {:label "Color"
-                        :on-change (update-handler :color)
-                        :value color}]
-      [:div {:class "color-picker"}
-       (for [c config/color-grid]
-         [:div {:key (str "color-picker-color:" c)
-                :class ["color-picker__color"
-                        (when (= c color) "color-picker__color_selected")]
-                :on-click #(>evt [:character-form/update :color c])
-                :style {:background-color c}}])]
-      [slds/input-select {:label "Avatar"
-                          :options (mapv #(vector % %) character-textures)
-                          :value texture
-                          :on-change #(>evt [:character-form/update :texture (keyword (e->val %))])}]
-      [:img {:src (texture-path texture)}]]]))
-
-(defn info-form-modal [{:keys [description]}]
-  (let [update-description #(>evt [:update-info (e->val %)])]
-    [slds/modal {:title "Info"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [:save-info])}
-     [slds/form
-      [slds/input-text {:label "Description"
-                        :on-change update-description
-                        :value description}]]]))
-
-(defn location-creation-modal [display-name]
-  (let [update-name #(>evt [:update-location-creation-name (e->val %)])]
-    [slds/modal {:title "Create Location"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [:create-location])}
-     [slds/form
-      [slds/input-text {:label "Name"
-                        :on-change update-name
-                        :value display-name}]]]))
-
-(defn modal []
-  (if-let [modal (<sub [:modal])]
-    (condp #(contains? %2 %1) modal
-      :dialogue-creation [dialogue-creation-modal (:dialogue-creation modal)]
-      :dialogue-state    [dialogue-state-modal (:dialogue-state modal)]
-      :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
-      :player-line-id    [player-line-form-modal (:player-line-id modal)]
-      :character-form    [character-form-modal (:character-form modal)]
-      :info-form         [info-form-modal (:info-form modal)]
-      :location-creation [location-creation-modal (:location-creation modal)])))
 
 ;; Navigation
 
 (defn navigation []
-  (let [dropdown-open? (r/atom false)]
+  (let [dropdown-open? (r/atom false)
+        select (fn [resource]
+                 (>navigate resource)
+                 (swap! dropdown-open? not))]
     (fn []
       (let [{page-name :handler
-             page-params :route-params} (match-route routes (<sub [:current-page]))
-            select (fn [resource]
-                     (>navigate resource)
-                     (swap! dropdown-open? not))]
+             page-params :route-params} (match-route routes (<sub [:current-page]))]
         [:header {:id "global-header"}
          [:div.logo "Armchair"]
          [:nav
@@ -300,24 +150,23 @@
                        [:span.navigation__item__type "Dialogue"]
                        [:span.navigation__item__title
                         (str character-name ": " synopsis)]]])]))
-          (let [active? (contains? #{:dialogues :characters :infos} page-name)]
+          (let [resource-pages {:dialogues "Dialogues"
+                                :characters "Characters"
+                                :switches "Switches"}
+                active? (contains? resource-pages page-name)]
             [:div.resources {:class ["navigation__item"
                                      (when active? "is-active")]}
              [:a.resources__title {:on-click (fn [] (swap! dropdown-open? not))}
-              [:span.navigation__item__type
-               (when active? "Resources")]
+              (when active?
+                [:span.navigation__item__type "Resources"])
               [:span.navigation__item__title
-               (condp = page-name
-                 :dialogues "Dialogues"
-                 :characters "Characters"
-                 :infos "Infos"
-                 "Resources")]
+               (get resource-pages page-name "Resources")]
               [icon "caret-down"]]
              (when @dropdown-open?
                [:ul.resources__dropdown-list
-                [:li [:a {:on-click #(select :dialogues)} "Dialogues"]]
-                [:li [:a {:on-click #(select :characters)} "Characters"]]
-                [:li [:a {:on-click #(select :infos)} "Infos"]]])])
+                (for [[route resource] resource-pages]
+                  [:li {:key (str "resource-" route)}
+                   [:a {:on-click #(select route)} resource]])])])
           [:ul.functions
            [:li
             (if (<sub [:can-undo?])
@@ -331,13 +180,13 @@
             [:a {:on-click #(>evt [:download-state])}
              [icon "download"] "save to file"]]
            [:li
-            [:a {:on-click #(upload-json! (fn [json] (>evt [:upload-state json])))}
+            [:a {:on-click #(u/upload-json! (fn [json] (>evt [:upload-state json])))}
              [icon "upload"] "load from file"]]
-           [:li
-            (if config/debug?
-              [:a {:on-click #(>evt [:reset-db])} "reset"]
-              [:a {:href "https://github.com/maiwald/armchair"
-                   :target "_blank"} [icon "code-branch"] "source"])]]]]))))
+           (when config/debug?
+             [:li [:a {:on-click #(>evt [:reset-db])} "reset"]])
+           (when-not config/debug?
+             [:li [:a {:href "https://github.com/maiwald/armchair"}]
+              :target "_blank" [icon "code-branch"] "source"])]]]))))
 
 ;; Root
 
@@ -355,5 +204,5 @@
         :dialogues     [dialogue-management]
         :dialogue-edit [dialogue-editor (uuid (:id page-params))]
         :characters    [character-management]
-        :infos         [info-management]
+        :switches      [switch-management]
         [:div "Page not found"])]]))

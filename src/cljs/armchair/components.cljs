@@ -1,13 +1,14 @@
 (ns armchair.components
   (:require [reagent.core :as r]
-            [armchair.util :refer [>evt <sub e-> e->left? relative-cursor]]))
+            [armchair.config :as config]
+            [armchair.util :as u :refer [stop-e! >evt <sub e-> e->left?]]))
 
 ;; Drag & Drop
 
 (defn e->graph-cursor [e]
-  (relative-cursor e (-> js/document
-                         (.getElementsByClassName "graph")
-                         (aget 0))))
+  (u/relative-cursor e (-> js/document
+                           (.getElementsByClassName "graph")
+                           (aget 0))))
 
 (defn start-dragging-handler [ids]
   (e-> (fn [e]
@@ -23,19 +24,15 @@
           :y2 y2}])
 
 (defn drag-item [item-id component]
-  (let [position (<sub [:ui/position item-id])
-        dragging? (<sub [:dragging-item? item-id])
-        start-dragging (start-dragging-handler #{item-id})
-        stop-dragging (when dragging? (e-> #(>evt [:end-dragging])))]
-    [:div {:class ["graph__item"
+  (let [[left top] (<sub [:ui/position item-id])
+        dragging? (<sub [:dragging-item? item-id])]
+    [:div {:on-mouse-down stop-e!
+           :class ["graph__item"
                    (when dragging? "graph__item_is-dragging")]
-           :on-mouse-down start-dragging
-           :on-mouse-up stop-dragging
-           :style {:left (first position)
-                   :top (second position)}}
+           :style {:left left :top top}}
      [component item-id]]))
 
-(defn drag-canvas [{:keys [kind nodes]} & connection-children]
+(defn drag-canvas [{:keys [kind nodes]}]
   (let [connecting? (some? (<sub [:connector]))
         dragging? (<sub [:dragging?])
         mouse-down (start-dragging-handler (-> nodes vals flatten set))
@@ -50,7 +47,7 @@
            :on-mouse-down mouse-down
            :on-mouse-move mouse-move
            :on-mouse-up mouse-up}
-     (into [:div] connection-children)
+     (into [:div] (r/children (r/current-component)))
      (for [[item-component ids] nodes
            id ids]
        ^{:key (str kind id)} [drag-item id item-component])]))
@@ -60,6 +57,22 @@
 (defn icon [glyph title]
   [:i {:class (str "fas fa-" glyph)
        :title title}])
+
+;; Tag
+
+(defn tag [{glyph :icon :keys [title on-click on-remove]}]
+  [:div.tag
+   (when glyph [icon glyph])
+   (if on-click
+     [:a {:class "tag__description"
+          :on-click on-click}
+      title]
+     [:span {:class "tag__description"}
+      title])
+   (when on-remove
+     [:a {:class "tag__remove"
+          :on-click on-remove}
+      [icon "times-circle" "Delete state"]])])
 
 ;; Dropdown
 
@@ -85,3 +98,37 @@
             [:li {:key (str "breadcrump" title)
                   :on-click (item-click-fn on-click)}
              title])])])))
+
+;; Graph Node
+
+(defn graph-node [{id :item-id}]
+  (let [dragging? (<sub [:dragging-item? id])
+        start-dragging (start-dragging-handler #{id})
+        stop-dragging (when dragging? (e-> #(>evt [:end-dragging])))]
+    (fn [{:keys [title color actions on-connect-end]}]
+      [:div {:class "graph-node"
+             :on-mouse-up (when (some? (<sub [:connector])) on-connect-end)
+             :style {:border-color color
+                     :width (u/px config/line-width)}}
+       [:div {:class "graph-node__header"
+              :on-mouse-down start-dragging
+              :on-mouse-up stop-dragging}
+        [:p {:class "graph-node__header__title"} title]
+        [:ul {:class "graph-node__header__actions actions"
+              :on-mouse-down stop-e!}
+         (for [[action-icon action-title action-handler :as action] actions
+               :when (some? action)]
+           [:li {:key (str id "-" title "-" action-title)
+                 :class "action"
+                 :on-click action-handler}
+            [icon action-icon action-title]])]]
+       (into [:div {:class "graph-node__content"}]
+             (r/children (r/current-component)))])))
+
+(defn action-wrapper [{:keys [actions]}]
+  [:div.action-wrapper
+   (into [:div.action-wrapper__content]
+         (r/children (r/current-component)))
+   (into [:div.action-wrapper__actions.actions_vertical]
+         actions)])
+

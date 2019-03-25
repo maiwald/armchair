@@ -1,6 +1,6 @@
 (ns armchair.location-editor.subs
   (:require [re-frame.core :refer [reg-sub]]
-            [armchair.util :refer [where map-values filter-map]]))
+            [armchair.util :as u :refer [where filter-map]]))
 
 (reg-sub
   :location-editor/ui
@@ -28,9 +28,8 @@
   :<- [:db-characters]
   (fn [[locations characters] [_ location-id]]
     (-> (locations location-id)
-        (update :connection-triggers
-                (fn [ct] (map-values #(assoc (locations %) :id %)
-                                     ct))))))
+        (u/update-values :connection-triggers
+                         #(assoc (locations %) :id %)))))
 
 (reg-sub
   :location-editor/npcs

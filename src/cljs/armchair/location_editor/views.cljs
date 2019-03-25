@@ -3,7 +3,7 @@
             [armchair.slds :as slds]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
-            [armchair.util :refer [px <sub >evt stop-e! e-> e->val rect->0 rect-width rect-height tile->coord coord->tile translate-point relative-cursor]]
+            [armchair.util :as u :refer [px <sub >evt stop-e! e-> e->val]]
             [armchair.textures :refer [texture-path background-textures]]))
 
 (defn icon [glyph title]
@@ -27,13 +27,13 @@
                           [delta _] :dimension}]
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
-    (letfn [(get-tile [e] (coord->tile (relative-cursor e (.-currentTarget e))))
+    (letfn [(get-tile [e] (u/coord->tile (u/relative-cursor e (.-currentTarget e))))
             (set-current-tile [e] (reset! current-tile (get-tile e)))
             (clear-current-tile [] (reset! current-tile nil))
             (start-painting [] (reset! painted-tiles #{}))
             (stop-painting [] (reset! painted-tiles nil))
             (paint [e]
-              (let [tile (translate-point (get-tile e) delta)]
+              (let [tile (u/translate-point (get-tile e) delta)]
                 (when (and (some? @painted-tiles)
                            (not (contains? @painted-tiles tile)))
                   (swap! painted-tiles conj tile)
@@ -48,7 +48,7 @@
                                    (paint %))
                :on-mouse-up stop-painting}
          (when-let [tile @current-tile]
-           (let [[x y] (tile->coord tile)]
+           (let [[x y] (u/tile->coord tile)]
              [:div {:class "interactor interactor_paint"
                     :style {:height (px config/tile-size)
                             :width (px config/tile-size)
@@ -202,7 +202,7 @@
          :let [tile [x y]]]
      [:div {:key (str "location-cell:" layer-title ":" tile)
             :class "level-layer__tile"
-            :style (apply tile-style (rect->0 rect tile))}
+            :style (apply tile-style (u/rect->0 rect tile))}
       (f tile)])])
 
 (defn dropzone [{:keys [dimension highlight on-drop]}]
@@ -223,7 +223,7 @@
    (for [[tile item] coll]
      [:div {:key (str "location-cell:" layer-title ":" tile)
             :class "level-layer__tile"
-            :style (apply tile-style (rect->0 rect tile))}
+            :style (apply tile-style (u/rect->0 rect tile))}
       (f tile item)])])
 
 (defn player-layer [rect position]
@@ -253,8 +253,8 @@
     [:div {:class "level-wrap"}
      [:div {:class "level"
             :on-mouse-leave #(>evt [:location-editor/unset-highlight])
-            :style {:width (str (* config/tile-size (rect-width dimension)) "px")
-                    :height (str (* config/tile-size (rect-height dimension)) "px")}}
+            :style {:width (str (* config/tile-size (u/rect-width dimension)) "px")
+                    :height (str (* config/tile-size (u/rect-height dimension)) "px")}}
       [background-tiles dimension background]
       [npc-layer dimension npcs]
       (when player-position [player-layer dimension player-position])

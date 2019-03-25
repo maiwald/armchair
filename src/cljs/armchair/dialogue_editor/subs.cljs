@@ -1,37 +1,21 @@
 (ns armchair.dialogue-editor.subs
   (:require [re-frame.core :refer [reg-sub]]
-            [armchair.util :refer [where-map map-values]]))
-
-(reg-sub
-  :dialogue-editor/dialogue-states
-  :<- [:db-dialogues]
-  (fn [dialogues]
-    (->> (vals dialogues)
-         (map (fn [{:keys [states synopsis]}]
-                (map-values #(str synopsis ": " %) states)))
-         (apply merge))))
+            [armchair.config :as config]
+            [armchair.util :as u]))
 
 (reg-sub
   :dialogue-editor/npc-line
   :<- [:db-lines]
   :<- [:db-dialogues]
-  :<- [:dialogue-editor/dialogue-states]
   :<- [:db-characters]
-  :<- [:db-infos]
-  (fn [[lines dialogues dialogue-states characters infos] [_ line-id]]
-    (let [{:keys [text character-id dialogue-id info-ids next-line-id state-triggers]} (get lines line-id)
+  (fn [[lines dialogues characters] [_ line-id]]
+    (let [{:keys [text character-id dialogue-id next-line-id]} (get lines line-id)
           character (get characters character-id)
-          {:keys [initial-line-id states]} (get dialogues dialogue-id)
-          dialogue-states (->> (vals dialogues)
-                               (map (fn [{:keys [states synopsis]}]
-                                      (map-values #(str synopsis ": " %) states)))
-                               (apply merge))]
+          {:keys [initial-line-id states]} (get dialogues dialogue-id)]
       {:id line-id
        :text text
-       :infos (map #(get-in infos [% :description]) info-ids)
        :initial-line? (= initial-line-id line-id)
        :state (get states line-id)
-       :state-triggers (vals (select-keys dialogue-states state-triggers))
        :connected? (some? next-line-id)
        :character-color (:color character)
        :character-name (:display-name character)})))
@@ -39,37 +23,78 @@
 (reg-sub
   :dialogue-editor/player-line-options
   :<- [:db-lines]
-  :<- [:db-infos]
-  :<- [:dialogue-editor/dialogue-states]
-  (fn [[lines infos dialogue-states] [_ line-id]]
+  :<- [:db-player-options]
+  :<- [:db-switches]
+  :<- [:db-switch-values]
+  (fn [[lines player-options switches switch-values] [_ line-id]]
     (let [{:keys [options dialogue-id]} (lines line-id)]
       (mapv
-        (fn [{:keys [text required-info-ids state-triggers next-line-id]}]
-          {:text text
-           :required-infos (map #(get-in infos [% :description]) required-info-ids)
-           :state-triggers (vals (select-keys dialogue-states state-triggers))
-           :connected? (some? next-line-id)})
+        (fn [option-id]
+          (let [{:keys [text condition next-line-id]} (player-options option-id)]
+            {:text text
+             :conditions (map (fn [{:keys [switch-id operator switch-value-id]}]
+                                {:switch (-> switch-id switches :display-name)
+                                 :operator (-> operator config/condition-operators :display-name)
+                                 :value (-> switch-value-id switch-values :display-name)})
+                              (:terms condition))
+             :condition-conjunction (-> condition
+                                        :conjunction
+                                        config/condition-conjunctions
+                                        :display-name)
+             :connected? (some? next-line-id)}))
         options))))
+
+(reg-sub
+  :dialogue-editor/trigger
+  :<- [:db-triggers]
+  :<- [:db-dialogues]
+  :<- [:db-switches]
+  :<- [:db-switch-values]
+  (fn [[triggers dialogues switches switch-values] [_ trigger-id]]
+    (let [{:keys [switch-kind switch-id switch-value]} (triggers trigger-id)]
+      (merge
+        {:switch-kind switch-kind
+         :switch-id switch-id}
+        (case switch-kind
+          :dialogue-state
+          {:switch-name (get-in dialogues [switch-id :synopsis])
+           :switch-value (get-in dialogues [switch-id :states switch-value] "Initial Line")}
+          :switch
+          {:switch-name (get-in switches [switch-id :display-name])
+           :switch-value (get-in switch-values [switch-value :display-name])})))))
+
+(reg-sub
+  :dialogue-editor/trigger-node
+  :<- [:db-lines]
+  (fn [lines [_ trigger-id]]
+    (let [{:keys [next-line-id trigger-ids]} (lines trigger-id)]
+      {:connected? (some? next-line-id)
+       :trigger-ids trigger-ids})))
 
 (reg-sub
   :dialogue-editor/dialogue
   :<- [:db-lines]
+  :<- [:db-player-options]
   :<- [:db-dialogues]
   :<- [:db-characters]
-  (fn [[lines dialogues characters positions] [_ dialogue-id]]
+  (fn [[lines player-options dialogues characters positions] [_ dialogue-id]]
     (if-let [dialogue (get dialogues dialogue-id)]
-      (let [dialogue-lines (where-map :dialogue-id dialogue-id lines)
+      (let [dialogue-lines (u/where-map :dialogue-id dialogue-id lines)
             lines-by-kind (group-by :kind (vals dialogue-lines))]
         {:npc-line-ids (map :entity/id (lines-by-kind :npc))
          :player-line-ids (map :entity/id (lines-by-kind :player))
-         :npc-connections (->> (lines-by-kind :npc)
-                               (remove #(nil? (:next-line-id %)))
-                               (map #(vector (:entity/id %) (:next-line-id %))))
-         :player-connections (reduce
+         :trigger-node-ids (map :entity/id (lines-by-kind :trigger))
+         :line-connections (->> (concat (lines-by-kind :npc)
+                                        (lines-by-kind :trigger))
+                                (filter #(some? (:next-line-id %)))
+                                (map #(vector (:entity/id %) (:next-line-id %))))
+         :option-connections (reduce
                                (fn [acc {start :entity/id :keys [options]}]
                                  (apply conj acc (->> options
-                                                      (map-indexed (fn [index {end :next-line-id}]
-                                                                     (vector start index end)))
-                                                      (remove (fn [[_ _ end]] (nil? end))))))
+                                                      (map-indexed (fn [index option-id]
+                                                                     (vector start
+                                                                             index
+                                                                             (get-in player-options [option-id :next-line-id]))))
+                                                      (filter (fn [[_ _ end]] (some? end))))))
                                (list)
                                (lines-by-kind :player))}))))

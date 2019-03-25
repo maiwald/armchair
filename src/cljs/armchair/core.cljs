@@ -4,6 +4,8 @@
             [armchair.undo]
             [armchair.events]
             [armchair.subs]
+            [armchair.modals.events]
+            [armchair.modals.subs]
             [armchair.dialogue-editor.events]
             [armchair.dialogue-editor.subs]
             [armchair.location-editor.events]
@@ -33,8 +35,10 @@
   (mount-root))
 
 ;; Undo/Redo key bindings
-(set! (.-onkeypress js/window)
+(set! (.-onkeyup js/window)
       (fn [e]
+        (when (= "Escape" (.-code e))
+          (>evt [:close-modal]))
         (when (.-ctrlKey e)
           (condp = (.-code e)
             "KeyZ" (>evt [:undo])

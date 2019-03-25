@@ -1,10 +1,13 @@
 (ns armchair.util
   (:require [clojure.set :refer [intersection]]
             [re-frame.core :as re-frame]
-            [armchair.config :refer [tile-size]]))
+            [armchair.config :refer [tile-size]]
+            [com.rpl.specter
+             :refer [must ALL NONE MAP-VALS MAP-KEYS]
+             :refer-macros [transform]]))
 
-(defn px [val]
-  (str val "px"))
+(defn px [v]
+  (str v "px"))
 
 (defn upload-json! [callback]
   (let [file-input (doto (js/document.createElement "input")
@@ -71,14 +74,17 @@
         (recur (update-in m (conj path-ks k) wrapped-f)
                ks)))))
 
+(defn reverse-map [m]
+  (reduce-kv (fn [acc k v] (assoc acc v k)) {} m))
+
 (defn map-values [f m]
-  (into {} (for [[k v] m] [k (f v)])))
+  (transform [MAP-VALS] f m))
 
 (defn map-keys [f m]
-  (into {} (for [[k v] m] [(f k) v])))
+  (transform [MAP-KEYS] f m))
 
-(defn transform-map [m kf vf]
-  (into {} (for [[k v] m] [(kf k) (vf v)])))
+(defn update-values [m k f]
+  (transform [k MAP-VALS] f m))
 
 (defn where
   ([property value coll]
@@ -95,14 +101,8 @@
 (defn filter-keys [pred? coll]
   (into {} (filter #(pred? (first %)) coll)))
 
-(defn where-map
-  ([property value coll]
-   (filter-map #(= (property %) value)
-               coll))
-  ([property-map coll]
-   (filter-map #(every? (fn [[p v]] (= (p %) v))
-                        property-map)
-               coll)))
+(defn where-map [property value coll]
+  (filter-map #(= (property %) value) coll))
 
 (defn removev [v idx]
   (vec (concat (take idx v)
@@ -118,7 +118,6 @@
 (def >evt re-frame/dispatch)
 
 (defn stop-e! [e]
-  (.preventDefault e)
   (.stopPropagation e)
   e)
 

@@ -11,14 +11,7 @@
             [armchair.game.pathfinding :as path]
             [armchair.config :refer [tile-size]]
             [armchair.textures :refer [texture-set load-textures]]
-            [armchair.util :refer [map-values
-                                   tile->coord
-                                   coord->tile
-                                   normalize-to-tile
-                                   rect-width
-                                   rect-height
-                                   rect-intersects?
-                                   translate-point]]))
+            [armchair.util :as u]))
 
 ;; Definitions
 
@@ -30,17 +23,16 @@
                     :right [1 0]})
 
 
-(s/def ::state (s/and (s/keys :req-un [::player ::dialogue-states]
+(s/def ::state (s/and (s/keys :req-un [::player ::dialogue-states ::switches]
                               :opt-un [::interaction ::animation])))
 
 (s/def ::player (s/keys :req-un [:player/position
-                                 :player/direction
-                                 :player/infos]))
+                                 :player/direction]))
 (s/def :player/position :type/point)
 (s/def :player/direction #{:up :down :left :right})
-(s/def :player/infos (s/coll-of :entity/id :kind set?))
 
 (s/def ::dialogue-states (s/map-of :entity/id :entity/id))
+(s/def ::switches (s/map-of :entity/id (s/nilable :entity/id)))
 
 (s/def ::interaction (s/keys :req-un [::line-id ::selected-option]))
 (s/def ::animation (s/keys :req-un [::start ::destination]))
@@ -53,34 +45,41 @@
 (def state (atom nil))
 (def data (atom nil))
 
-(defn ^boolean walkable? [tile]
+(defn walkable? [tile]
   (let [{l :location-id} (:player @state)
         {:keys [walk-set npcs]} (get-in @data [:locations l])]
     (and (contains? walk-set tile)
          (not (contains? npcs tile)))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
-  (translate-point
+  (u/translate-point
     position
     (direction-map direction)))
 
-(defn dialogue-data [{{:keys [line-id selected-option]} :interaction
-                      {player-infos :infos} :player}]
+(defn available-option? [{:keys [condition]}]
+  (or (not (fn? condition))
+      (condition (:switches @state))))
+
+(defn dialogue-data [{{:keys [line-id selected-option]} :interaction}]
   (let [line (get-in @data [:lines line-id])]
     {:text (:text line)
      :options (->> (:options line)
-                   (filterv #(subset? (:required-info-ids %) player-infos))
+                   (filter available-option?)
                    (map :text))
      :selected-option selected-option}))
 
-(defn ^boolean interacting? [state]
+(defn interacting? [state]
   (contains? state :interaction))
 
-(defn interaction-option-count [state]
-  (count (:options (dialogue-data state))))
+(defn interaction-option-count [{{:keys [line-id]} :interaction}]
+  (->> (get-in @data [:lines line-id :options])
+       (filter available-option?)
+       count))
 
 (defn interaction-option [{{:keys [line-id selected-option]} :interaction}]
-  (get-in @data [:lines line-id :options selected-option]))
+  (get (->> (get-in @data [:lines line-id :options])
+            (filterv available-option?))
+       selected-option))
 
 ;; Rendering
 
@@ -88,17 +87,17 @@
 (def texture-atlas (atom nil))
 
 (defn tile-visible? [camera [x y]]
-  (rect-intersects?
+  (u/rect-intersects?
     camera
-    [(tile->coord [x y])
-     (tile->coord [(inc x) (inc y)])]))
+    [(u/tile->coord [x y])
+     (u/tile->coord [(inc x) (inc y)])]))
 
 (defn draw-texture [ctx texture coord]
-  (when @texture-atlas
+  (when (some? @texture-atlas)
     (c/draw-image! ctx (get @texture-atlas texture (@texture-atlas :missing_texture)) coord)))
 
 (defn draw-texture-rotated [ctx texture coord deg]
-  (when @texture-atlas
+  (when (some? @texture-atlas)
     (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
 
 (defn draw-background [ctx [[left top] [right bottom]] background camera]
@@ -106,7 +105,7 @@
           y (range top (inc bottom))
           :when (tile-visible? camera [x y])
           :let [texture (get background [x y])]]
-    (draw-texture ctx texture (tile->coord [x y]))))
+    (draw-texture ctx texture (u/tile->coord [x y]))))
 
 (defn draw-player [ctx player]
   (draw-texture ctx :player player))
@@ -114,7 +113,7 @@
 (defn draw-npcs [ctx npcs camera]
   (doseq [[tile {texture :texture}] npcs]
     (when (tile-visible? camera tile)
-      (draw-texture ctx texture (tile->coord tile)))))
+      (draw-texture ctx texture (u/tile->coord tile)))))
 
 ; (defn draw-highlight [ctx highlight-coord]
 ;   (c/save! ctx)
@@ -127,11 +126,11 @@
 ;   (if highlight
 ;     (doseq [path-tile (path/a-star
 ;                         walkable?
-;                         (coord->tile position)
-;                         (coord->tile highlight))]
+;                         (u/coord->tile position)
+;                         (u/coord->tile highlight))]
 ;       (c/save! ctx)
 ;       (c/set-fill-style! ctx "rgba(255, 255, 0, .2)")
-;       (c/fill-rect! ctx (tile->coord path-tile) tile-size tile-size)
+;       (c/fill-rect! ctx (u/tile->coord path-tile) tile-size tile-size)
 ;       (c/restore! ctx))))
 
 (defn draw-direction-indicator [ctx {{:keys [position direction]} :player}]
@@ -152,51 +151,51 @@
     (c/set-fill-style! ctx "rgb(0, 0, 0)")
     (c/set-baseline! ctx "top")
     (c/set-font! ctx "23px serif")
-    (let [offset (c/draw-textbox! ctx text (translate-point [x y] [20 20]) (- w 40))]
+    (let [offset (c/draw-textbox! ctx text (u/translate-point [x y] [20 20]) (- w 40))]
       (c/set-font! ctx "18px serif")
       (let [w (- w 40)
             padding 6
             spacing 6]
         (loop [idx 0
                y (+ y 40 offset)
-               options options]
-          (if-let [option (first options)]
-            (do
-              (c/set-fill-style! ctx "rgb(0, 0, 0)")
+               [option & options] options]
+          (when (some? option)
+            (c/set-fill-style! ctx "rgb(0, 0, 0)")
+            (if (= selected-option idx)
+              (c/set-stroke-style! ctx "rgb(255, 0, 0)")
+              (c/set-stroke-style! ctx "rgb(0, 0, 0)"))
+            (let [coord (u/translate-point [x y] [20 0])
+                  height (+ padding (c/draw-textbox! ctx option (u/translate-point coord [7 padding]) w))]
               (if (= selected-option idx)
-                (c/set-stroke-style! ctx "rgb(255, 0, 0)")
-                (c/set-stroke-style! ctx "rgb(0, 0, 0)"))
-              (let [coord (translate-point [x y] [20 0])
-                    height (+ padding (c/draw-textbox! ctx option (translate-point coord [7 padding]) w))]
-                (if (= selected-option idx)
-                  (c/set-fill-style! ctx "rgba(0, 0, 0, .1)")
-                  (c/set-fill-style! ctx "rgba(0, 0, 0, 0)"))
-                (c/fill-rect! ctx coord w height)
+                (c/set-fill-style! ctx "rgba(0, 0, 0, .1)")
+                (c/set-fill-style! ctx "rgba(0, 0, 0, 0)"))
+              (c/fill-rect! ctx coord w height)
 
-                (c/set-line-width! ctx "1")
-                (c/stroke-rect! ctx coord w height)
+              (c/set-line-width! ctx "1")
+              (c/stroke-rect! ctx coord w height)
 
-                (recur (inc idx)
-                       (+ y height spacing)
-                       (rest options))))))))
+              (recur (inc idx)
+                     (+ y height spacing)
+                     options))))))
     (c/restore! ctx)))
 
 (defn draw-camera [[left-top right-bottom]]
-  (when @ctx
+  (when (some? @ctx)
     (c/stroke-rect! @ctx
                     left-top
                     right-bottom)))
 
 (defn render [view-state]
-  (when @ctx
+  (when (some? @ctx)
     (let [l (get-in view-state [:player :location-id])
           [[left top] :as camera] (:camera view-state)
           {:keys [npcs dimension background]} (get-in @data [:locations l])]
       (c/clear! @ctx)
       (c/set-fill-style! @ctx "rgb(0, 0, 0)")
       (c/fill-rect! @ctx [0 0] (c/width @ctx) (c/height @ctx))
-      (let [a (/ (c/width @ctx) (rect-width camera))
-            d (/ (c/height @ctx) (rect-height camera))
+      ;; NOTE: try copying drawn tiles to prevent gaps
+      (let [a (/ (c/width @ctx) (u/rect-width camera))
+            d (/ (c/height @ctx) (u/rect-height camera))
             e (* a (- left))
             f (* d (- top))]
         (c/set-transform! @ctx a 0 0 d e f))
@@ -215,39 +214,36 @@
 
 (defn handle-move [direction]
   (if (interacting? @state)
-    (let [option-count (interaction-option-count @state)]
-      (case direction
-        :up (swap! state update-in [:interaction :selected-option] #(mod (dec %) option-count))
-        :down (swap! state update-in [:interaction :selected-option] #(mod (inc %) option-count))
-        :else))
+    (if-let [next-index-fn (get {:up dec :down inc} direction)]
+      (swap! state
+             update-in [:interaction :selected-option]
+             (fn [index] (mod (next-index-fn index)
+                              (interaction-option-count @state)))))
     (swap! move-q conj direction)))
 
 (defn handle-interact []
   (if (interacting? @state)
-    (let [{next-line-id :next-line-id
-           option-state-triggers :state-triggers} (interaction-option @state)
-          new-state (update @state :dialogue-states merge option-state-triggers)]
-      (if (nil? next-line-id)
-        (reset! state (-> new-state
-                          (update :dialogue-states merge option-state-triggers)
-                          (dissoc :interaction)))
-        (reset! state (let [{{line-id :line-id} :interaction} new-state
-                            {info-ids :info-ids
-                             line-state-triggers :state-triggers} (get-in @data [:lines next-line-id])]
-                        (cond-> (assoc new-state :interaction {:line-id next-line-id
-                                                               :selected-option 0})
-                          (seq line-state-triggers) (update :dialogue-states merge line-state-triggers)
-                          (seq info-ids) (update-in [:player :infos] union info-ids))))))
+    (let [current-line-id (get-in @state [:interaction :line-id])
+          current-triggers (get-in @data [:lines current-line-id :triggers])
+          {option-triggers :triggers :keys [next-line-id]} (interaction-option @state)]
+      (swap! state
+             #(-> %
+                  (update :dialogue-states merge
+                          (:dialogue-states current-triggers)
+                          (:dialogue-states option-triggers))
+                  (update :switches merge
+                          (:switches current-triggers)
+                          (:switches option-triggers))))
+      (if (some? next-line-id)
+        (swap! state assoc :interaction {:line-id next-line-id
+                                         :selected-option 0})
+        (swap! state dissoc :interaction)))
     (let [l (get-in @state [:player :location-id])
           npcs (get-in @data [:locations l :npcs])]
       (if-let [dialogue-id (get-in npcs [(interaction-tile @state) :dialogue-id])]
-        (let [next-line-id (get-in @state [:dialogue-states dialogue-id])
-              {info-ids :info-ids
-               line-state-triggers :state-triggers} (get-in @data [:lines next-line-id])]
-          (reset! state (cond-> (assoc @state :interaction {:line-id next-line-id
-                                                            :selected-option 0})
-                          (seq line-state-triggers) (update :dialogue-states merge line-state-triggers)
-                          (seq info-ids) (update-in [:player :infos] union info-ids))))))))
+        (let [line-id (get-in @state [:dialogue-states dialogue-id])]
+          (swap! state assoc :interaction {:line-id line-id
+                                           :selected-option 0}))))))
 
 (defn start-input-loop [channel]
   (go-loop [[command payload :as message] (<! channel)]
@@ -280,10 +276,10 @@
         w 15
         camera-delta [(* (quot w -2) tile-size)
                       (* (quot h -2) tile-size)]
-        left-top (translate-point
+        left-top (u/translate-point
                    player-coord
                    camera-delta)
-        right-bottom (translate-point
+        right-bottom (u/translate-point
                        player-coord
                        (mapv - camera-delta)
                        [tile-size tile-size])]
@@ -312,8 +308,8 @@
 (defn update-state-movement [state now]
   (if (not (contains? state :animation))
     (if-let [direction (peek @move-q)]
-      (let [new-position (translate-point (get-in state [:player :position])
-                                          (direction-map direction))]
+      (let [new-position (u/translate-point (get-in state [:player :position])
+                                            (direction-map direction))]
         (swap! move-q pop)
         (cond-> (assoc-in state [:player :direction] direction)
           (walkable? new-position)
@@ -331,11 +327,11 @@
   (as-> state s
     (update-in s [:player :position]
                (fn [player-tile]
-                 (let [player-coord (tile->coord player-tile)]
+                 (let [player-coord (u/tile->coord player-tile)]
                    (if-let [{:keys [start destination]} (:animation state)]
                      (animated-position start
                                         player-coord
-                                        (tile->coord destination)
+                                        (u/tile->coord destination)
                                         now)
                      player-coord))))
     (assoc s :camera (camera-rect (get-in s [:player :position])))))

@@ -7,7 +7,8 @@
                  [cljsjs/react-select "1.2.1-1"]
                  [cljsjs/filesaverjs "1.3.3-0"]
                  [com.cognitect/transit-cljs "0.8.256"]
-                 [bidi "2.1.5"]]
+                 [bidi "2.1.5"]
+                 [com.rpl/specter "1.1.2"]]
 
   :plugins [[lein-cljsbuild "1.1.5"]]
 

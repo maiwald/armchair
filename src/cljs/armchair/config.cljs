@@ -4,8 +4,8 @@
   ^boolean goog.DEBUG)
 
 (def default-ui-position [20 20])
-(def line-width 250)
-(def line-height 80)
+(def line-width 260)
+(def line-height 100)
 (def tile-size 32)
 
 (def color-grid
@@ -18,3 +18,11 @@
    "#C0C0C0" "#FF6666" "#FFB266" "#FFFF66" "#B2FF66" "#66FF66" "#66FFB2" "#66FFFF" "#66B2FF" "#6666FF" "#B266FF" "#FF66FF" "#FF66B2"
    "#E0E0E0" "#FF9999" "#FFCC99" "#FFFF99" "#CCFF99" "#99FF99" "#99FFCC" "#99FFFF" "#99CCFF" "#9999FF" "#CC99FF" "#FF99FF" "#FF99CC"
    "#FFFFFF" "#FFCCCC" "#FFE5CC" "#FFFFCC" "#E5FFCC" "#CCFFCC" "#CCFFE5" "#CCFFFF" "#CCE5FF" "#CCCCFF" "#E5CCFF" "#FFCCFF" "#FFCCE5"])
+
+(def condition-operators
+  {:is {:display-name "is" :func =}
+   :is-not {:display-name "is not" :func not=}})
+
+(def condition-conjunctions
+  {:and {:display-name "and" :func every?}
+   :or {:display-name "or" :func some}})
