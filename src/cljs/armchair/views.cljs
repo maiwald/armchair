@@ -10,7 +10,7 @@
             [armchair.config :as config]
             [armchair.routes :refer [routes >navigate]]
             [armchair.textures :refer [texture-path]]
-            [armchair.game.views :refer [game-canvas]]
+            [armchair.game.views :refer [game-view]]
             [bidi.bidi :refer [match-route]]))
 
 ;; Components
@@ -198,7 +198,7 @@
      [navigation]
      [:div {:id "content"}
       (case page-name
-        :game          [game-canvas]
+        :game          [game-view]
         :locations     [location-management]
         :location-edit [location-editor (uuid (:id page-params))]
         :dialogues     [dialogue-management]

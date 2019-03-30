@@ -5,68 +5,70 @@
             [armchair.components :refer [icon]]
             [armchair.game.core :refer [start-game end-game]]))
 
-(defn game-canvas [game-data]
+(defn game-canvas []
   (let [game-data (<sub [:game/data])
         canvas (atom nil)
         game-handle (atom nil)
-        key-listener (fn [e]
-                       (when-let [action (case (.-code e)
-                                           ("ArrowUp" "KeyW" "KeyK")
-                                           (put! (:input @game-handle) [:move :up])
+        keypresses (atom #{})]
+    (letfn [(on-key-down [e]
+              (let [keycode (.-code e)]
+                (when-let [action (case keycode
+                                    ("ArrowUp" "KeyW" "KeyK") [:move :up]
+                                    ("ArrowRight" "KeyD" "KeyL") [:move :right]
+                                    ("ArrowDown" "KeyS" "KeyJ") [:move :down]
+                                    ("ArrowLeft" "KeyA" "KeyH") [:move :left]
+                                    ("Space" "Enter") [:interact]
+                                    nil)]
+                  (.preventDefault e)
+                  (when (not (contains? @keypresses keycode))
+                    (swap! keypresses conj keycode)
+                    (put! (:input @game-handle) action)))))
+            (on-key-up [e]
+              (swap! keypresses disj (.-code e)))]
+      (r/create-class
+        {:display-name "game-canvas"
+         :component-did-mount
+         (fn []
+           (reset! game-handle (start-game (.getContext @canvas "2d")
+                                           game-data))
+           (.addEventListener js/document "keydown" on-key-down)
+           (.addEventListener js/document "keyup" on-key-up))
 
-                                           ("ArrowRight" "KeyD" "KeyL")
-                                           (put! (:input @game-handle) [:move :right])
+         :component-will-unmount
+         (fn []
+           (.removeEventListener js/document "keydown" on-key-down)
+           (.removeEventListener js/document "keyup" on-key-up)
+           (end-game @game-handle)
+           (reset! canvas nil))
 
-                                           ("ArrowDown" "KeyS" "KeyJ")
-                                           (put! (:input @game-handle) [:move :down])
+         :reagent-render
+         (fn []
+           [:div {:id "game"
+                  :style {:width (str 800 "px")
+                          :height (str 448 "px")}}
+            [:canvas {:height 448
+                      :width 800
+                      :ref (fn [el] (reset! canvas el))}]])}))))
 
-                                           ("ArrowLeft" "KeyA" "KeyH")
-                                           (put! (:input @game-handle) [:move :left])
-
-                                           ("Space" "Enter")
-                                           (put! (:input @game-handle) [:interact])
-
-                                           nil)]
-                         (.preventDefault e)))]
-    (r/create-class
-      {:display-name "game-canvas"
-       :component-did-mount
-       (fn []
-         (reset! game-handle (start-game
-                               (.getContext @canvas "2d")
-                               game-data))
-         (.addEventListener js/document "keydown" key-listener))
-
-       :component-will-unmount
-       (fn []
-         (.removeEventListener js/document "keydown" key-listener)
-         (end-game @game-handle))
-
-       :reagent-render
-       (fn []
-         [:div {:class "content-wrapper"}
-          [:div {:id "game"
-                 :style {:width (str 800 "px")
-                         :height (str 448 "px")}}
-           [:canvas {:height 448
-                     :width 800
-                     :ref (fn [el] (reset! canvas el))}]]
-          [:div {:id "game-help"}
-           [:p
-             "Use "
-             [:span [icon "arrow-left" "Arrow Left"]] " "
-             [:span [icon "arrow-up" "Arrow Up"]] " "
-             [:span [icon "arrow-down" "Arrow Down"]] " "
-             [:span [icon "arrow-right" "Arrow Right"]] " "
-             "or "
-             [:span "w"] " "
-             [:span "a"] " "
-             [:span "s"] " "
-             [:span "d"] " "
-             "for movement and selection."]
-           [:p
-            "Use "
-            [:span "Space"]
-            " or "
-            [:span "Enter"]
-            " to interact."]]])})))
+(defn game-view []
+  [:div {:class "content-wrapper"}
+   [game-canvas]
+   [:div {:id "game-help"}
+    [:p
+     "Use "
+     [:span [icon "arrow-left" "Arrow Left"]] " "
+     [:span [icon "arrow-up" "Arrow Up"]] " "
+     [:span [icon "arrow-down" "Arrow Down"]] " "
+     [:span [icon "arrow-right" "Arrow Right"]] " "
+     "or "
+     [:span "w"] " "
+     [:span "a"] " "
+     [:span "s"] " "
+     [:span "d"] " "
+     "for movement and selection."]
+    [:p
+     "Use "
+     [:span "Space"]
+     " or "
+     [:span "Enter"]
+     " to interact."]]])
