@@ -1,6 +1,5 @@
 (ns armchair.slds
-  (:require [reagent.core :as r]
-            [cljsjs.react-select]))
+  (:require [reagent.core :as r]))
 
 (defn form []
   (into [:div {:class "slds-form slds-form_stacked"}]
@@ -9,68 +8,11 @@
 (defn form-title [title]
   [:div {:class "slds-text-heading_small"} title])
 
-(defn input-text [{:keys [label on-change value]}]
-  (let [id (gensym "input-text")]
-    [:div {:class "slds-form-element"}
-     [:label {:class "slds-form-element__label" :for id} label]
-     [:div {:class "slds-form-element__control"}
-      [:input {:class "slds-input"
-               :id id
-               :on-change on-change
-               :value value}]]]))
-
 (defn label [label & children]
   [:div {:class "slds-form-element"}
    [:label {:class "slds-form-element__label"} label]
    (into [:div {:class "slds-form-element__control"}]
          children)])
-
-(defn input-select [{:keys [label disabled on-change value options]}]
-  (let [id (gensym "input-select")]
-    [:div {:class "slds-form-element"}
-     (when label
-       [:label {:class "slds-form-element__label" :for id} label])
-     [:div {:class "slds-form-element__control"}
-      [:div {:class "slds-select_container"}
-       [:select {:class "slds-select"
-                 :id id
-                 :on-change on-change
-                 :disabled disabled
-                 :value (or value "nil")}
-        [:option {:key (str id "nil") :value "nil" :disabled "disabled"}]
-        (for [[option option-label] options]
-          [:option {:key (str id ":" option) :value option} option-label])]]]]))
-
-(defn input-textarea [{:keys [label on-change value]}]
-  (let [id (gensym "input-textarea")]
-    [:div {:class "slds-form-element"}
-     [:label {:class "slds-form-element__label" :for id} label]
-     [:div {:class "slds-form-element__control"}
-      [:textarea {:class "slds-textarea"
-                  :id id
-                  :on-change on-change
-                  :value value}]]]))
-
-(defn checkbox-select [{:keys [label options values on-change]}]
-  (let [id (gensym "checkbox-select")]
-    [:fieldset {:class "slds-form-element"}
-     [:legend {:class ["slds-form-element__legend"
-                       "slds-form-element__label"]}
-      label]
-     [:div {:class "slds-form-element__control"}
-      (for [[option option-label & attrs] options]
-        [:span {:key (str id ":" option)
-                :class "slds-checkbox"}
-         [:input (merge {:id (str id ":" option)
-                         :value option
-                         :name id
-                         :checked (contains? values option)
-                         :on-change #(on-change option)
-                         :type "checkbox"}
-                        (into {} (map #(vector % %) attrs)))]
-         [:label {:class "slds-checkbox__label" :for (str id ":" option)}
-          [:span {:class "slds-checkbox_faux"}]
-          [:span {:class "slds-form-element__label"} option-label]]])]]))
 
 (defn radio-button-group [{:keys [label options active on-change]}]
   (let [id (gensym "radio-button-group")]
@@ -93,20 +35,6 @@
                    :for (str id option)}
            [:span {:class "slds-radio_faux"}
             option-label]]])]]]))
-
-(defn multi-select [{:keys [label on-change values options]}]
-  (let [id (gensym "multi-select")]
-    [:div {:class "slds-form-element"}
-     [:label {:class "slds-form-element__label" :for id} label]
-     [:div {:class "slds-form-element__control"}
-      [:> js/Select {:id id
-                     :options options
-                     :multi true
-                     :complete true
-                     :onChange #(on-change (map :value (js->clj % :keywordize-keys true)))
-                     :matchProp "label"
-                     :ignoreCase true
-                     :value values}]]]))
 
 (defn badge [value color]
   [:span {:class "slds-badge"

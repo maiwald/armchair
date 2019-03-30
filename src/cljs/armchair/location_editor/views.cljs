@@ -1,6 +1,7 @@
 (ns armchair.location-editor.views
   (:require [reagent.core :as r]
             [armchair.slds :as slds]
+            [armchair.input :as input]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
             [armchair.util :as u :refer [px <sub >evt stop-e! e-> e->val]]
@@ -57,13 +58,14 @@
 
 (defn sidebar-info [location-id]
   (let [{:keys [display-name]} (<sub [:location-editor/location location-id])]
-    [slds/input-text {:label "Name"
-                      :on-change #(>evt [:location-editor/update-name location-id (e->val %)])
-                      :value display-name}]))
+    [input/text {:label "Name"
+                 :on-change #(>evt [:location-editor/update-name location-id (e->val %)])
+                 :value display-name}]))
 
 (defn sidebar-paint [location-id]
   (let [{:keys [active-texture]} (<sub [:location-editor/ui])]
-    [slds/label "Background Textures"
+    [:div
+     "Background Textures"
      [:ul {:class "tile-grid"}
       (for [texture background-textures]
         [:li {:key (str "texture-select:" texture)
@@ -75,7 +77,8 @@
 
 (defn sidebar-collision [location-id]
   (let [{:keys [active-walk-state]} (<sub [:location-editor/ui])]
-    [slds/label "Collision State"
+    [:div
+     "Collision State"
      [:ul {:class "tile-grid"}
       (for [walk-state (list true false)]
         [:li {:key (str "walk-state-select:" walk-state)
@@ -90,7 +93,8 @@
                                           "rgba(255, 0, 0, .2")}}]])]]))
 
 (defn sidebar-resize [location-id]
-  [slds/label "Resize level"
+  [:div
+   "Resize level"
    [:div {:class "resize-container"}
     [:div {:class "resize-container__reference"}
      [:div {:class "resizer resizer_horizontal resizer_top"}
@@ -110,52 +114,54 @@
   (let [available-npcs (<sub [:location-editor/available-npcs location-id])
         dnd-character-id (:character-id (<sub [:dnd-payload]))]
     [:div
-     [slds/label "Player"
-      [:ul {:class "tile-list"}
-       [:li {:class "tile-list__item"
-             :draggable true
-             :on-drag-start (fn [e]
-                              (set-dnd-texture! e)
-                              (.setData (.-dataTransfer e) "text/plain" ":player")
-                              (>evt [:location-editor/start-entity-drag :player]))}
-        [dnd-texture :player]
-        [:span {:class "tile-list__item__image"
-                :style {:width (str config/tile-size "px")
-                        :height (str config/tile-size "px")}}
-         [:img {:title "Player" :src (texture-path :player)}]]
-        [:span {:class "tile-list__item__label"} "Player"]]]]
-     [slds/label "Available Characters"
-      [:ul {:class "tile-list"}
-       (for [[character-id {:keys [display-name texture]}] available-npcs]
-         [:li {:key (str "character-select" display-name)
-               :class "tile-list__item"
-               :draggable true
-               :on-drag-start (fn [e]
-                                (set-dnd-texture! e)
-                                (.setData (.-dataTransfer e) "text/plain" display-name)
-                                (>evt [:location-editor/start-entity-drag {:character-id character-id}]))}
-          [dnd-texture texture]
-          [:span {:class "tile-list__item__image"
-                  :style {:width (str config/tile-size "px")
-                          :height (str config/tile-size "px")}}
-           [:img {:title display-name :src (texture-path texture)}]]
-          [:span {:class "tile-list__item__label"} display-name]])
-       (when (and (some? dnd-character-id)
-                  (not (contains? available-npcs dnd-character-id)))
-         [:li {:class "tile-list__item tile-list__item_dropzone"
-               :on-drag-over stop-e!
-               :on-drop (e-> #(>evt [:location-editor/remove-character dnd-character-id]))}
-          [:span {:class "tile-list__item__image"
-                  :style {:width (str config/tile-size "px")
-                          :height (str config/tile-size "px")}}
-           [icon "trash" "Drop here to remove."]]
-          [:span {:class "tile-list__item__label"} "Drop here to remove."]])]
-      (if (empty? available-npcs) "All Characters are placed in locations.")]
+     [:div "Player"]
+     [:ul {:class "tile-list"}
+      [:li {:class "tile-list__item"
+            :draggable true
+            :on-drag-start (fn [e]
+                             (set-dnd-texture! e)
+                             (.setData (.-dataTransfer e) "text/plain" ":player")
+                             (>evt [:location-editor/start-entity-drag :player]))}
+       [dnd-texture :player]
+       [:span {:class "tile-list__item__image"
+               :style {:width (str config/tile-size "px")
+                       :height (str config/tile-size "px")}}
+        [:img {:title "Player" :src (texture-path :player)}]]
+       [:span {:class "tile-list__item__label"} "Player"]]]
+
+     [:div "Available Characters"]
+     [:ul {:class "tile-list"}
+      (for [[character-id {:keys [display-name texture]}] available-npcs]
+        [:li {:key (str "character-select" display-name)
+              :class "tile-list__item"
+              :draggable true
+              :on-drag-start (fn [e]
+                               (set-dnd-texture! e)
+                               (.setData (.-dataTransfer e) "text/plain" display-name)
+                               (>evt [:location-editor/start-entity-drag {:character-id character-id}]))}
+         [dnd-texture texture]
+         [:span {:class "tile-list__item__image"
+                 :style {:width (str config/tile-size "px")
+                         :height (str config/tile-size "px")}}
+          [:img {:title display-name :src (texture-path texture)}]]
+         [:span {:class "tile-list__item__label"} display-name]])
+      (when (and (some? dnd-character-id)
+                 (not (contains? available-npcs dnd-character-id)))
+        [:li {:class "tile-list__item tile-list__item_dropzone"
+              :on-drag-over stop-e!
+              :on-drop (e-> #(>evt [:location-editor/remove-character dnd-character-id]))}
+         [:span {:class "tile-list__item__image"
+                 :style {:width (str config/tile-size "px")
+                         :height (str config/tile-size "px")}}
+          [icon "trash" "Drop here to remove."]]
+         [:span {:class "tile-list__item__label"} "Drop here to remove."]])]
+     (if (empty? available-npcs) "All Characters are placed in locations.")
      [:div.button
-       [slds/add-button "Create Character" #(>evt [:open-character-modal])]]]))
+      [slds/add-button "Create Character" #(>evt [:open-character-modal])]]]))
 
 (defn sidebar-connections [location-id]
-  [slds/label "Assigned Connections"
+  [:div
+   "Assigned Connections"
    [:ul {:class "tile-list"}
     (for [[target-loctation-id {:keys [display-name]}] (<sub [:location-editor/connected-locations location-id])]
       [:li {:key (str "connection-select" display-name)
@@ -171,7 +177,7 @@
 
 (defn sidebar [location-id]
   (let [{:keys [tool]} (<sub [:location-editor/ui])]
-    [slds/form
+    [:div
      [slds/radio-button-group {:options [[:info [icon "info" "Info"]]
                                          [:background-painter [icon "paint-roller" "Background"]]
                                          [:resize [icon "expand" "Resize"]]
