@@ -192,8 +192,9 @@
            (when config/debug?
              [:li [:a {:on-click #(>evt [:reset-db])} "reset"]])
            (when-not config/debug?
-             [:li [:a {:href "https://github.com/maiwald/armchair"}]
-              :target "_blank" [icon "code-branch"] "source"])]]]))))
+             [:li [:a {:href "https://github.com/maiwald/armchair"
+                       :target "_blank"}
+                   [icon "code-branch"] "source"]])]]]))))
 
 ;; Root
 
