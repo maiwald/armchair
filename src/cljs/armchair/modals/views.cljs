@@ -133,18 +133,22 @@
           (update-value [e]
             (>evt [:modal/update-condition-term-value index (uuid (e->val e))]))]
     [:li {:class "condition-select"}
-     [input/select {:on-change update-switch
-                    :options switch-options
-                    :value switch-id}]
-     [input/select {:on-change update-operator
-                    :options operator-options
-                    :value operator}]
-     [input/select {:on-change update-value
-                    :disabled (empty? switch-value-options)
-                    :options switch-value-options
-                    :value switch-value-id}]
-     [:div {:on-click #(>evt [:modal/remove-condition-term index])}
-      [icon "trash" "Delete condition"]]]))
+     [:div {:class "condition-select__switch"}
+      [input/select {:on-change update-switch
+                     :options switch-options
+                     :value switch-id}]]
+     [:div {:class "condition-select__operator"}
+      [input/select {:on-change update-operator
+                     :options operator-options
+                     :value operator}]]
+     [:div {:class "condition-select__value"}
+      [input/select {:on-change update-value
+                     :disabled (empty? switch-value-options)
+                     :options switch-value-options
+                     :value switch-value-id}]]
+     [:div {:class "condition-select__delete"}
+      [:a {:on-click #(>evt [:modal/remove-condition-term index])}
+       [icon "trash" "Delete condition"]]]]))
 
 (defn conditions-form-modal []
   (letfn [(close-modal [e] (>evt [:close-modal]))
