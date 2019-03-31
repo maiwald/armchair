@@ -33,8 +33,9 @@
                                 display-name])
                    :actions (fn [_ {id :id}]
                               [:div {:class "slds-text-align_right"}
-                               [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this dialogue?")
-                                                                             (>evt [:delete-dialogue id]))}]])}
+                               [c/button {:icon "trash-alt"
+                                          :on-click #(when (js/confirm "Are you sure you want to delete this dialogue?")
+                                                       (>evt [:delete-dialogue id]))}]])}
       :new-resource #(>evt [:open-dialogue-creation-modal])}]))
 
 (defn character-management []
@@ -48,9 +49,11 @@
                    :actions (fn [_ {:keys [id line-count]}]
                               [:div {:class "slds-text-align_right"}
                                (when (zero? line-count)
-                                 [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this character?")
-                                                                               (>evt [:delete-character id]))}])
-                               [slds/symbol-button "edit" {:on-click #(>evt [:open-character-modal id])}]])}
+                                 [c/button {:icon "trash-alt"
+                                            :on-click #(when (js/confirm "Are you sure you want to delete this character?")
+                                                         (>evt [:delete-character id]))}])
+                               [c/button {:icon "edit"
+                                          :on-click #(>evt [:open-character-modal id])}]])}
       :new-resource #(>evt [:open-character-modal])}]))
 
 (defn switch-management []
@@ -61,9 +64,11 @@
       :cell-views {:color (fn [color] [slds/badge color color])
                    :actions (fn [_ {:keys [id]}]
                               [:div {:class "slds-text-align_right"}
-                               [slds/symbol-button "trash-alt" {:on-click #(when (js/confirm "Are you sure you want to delete this switch?")
-                                                                               (>evt [:delete-switch id]))}]
-                               [slds/symbol-button "edit" {:on-click #(>evt [:modal/open-switch-modal id])}]])}
+                               [c/button {:icon "trash-alt"
+                                          :on-click #(when (js/confirm "Are you sure you want to delete this switch?")
+                                                       (>evt [:delete-switch id]))}]
+                               [c/button {:icon "edit"
+                                          :on-click #(>evt [:modal/open-switch-modal id])}]])}
       :new-resource #(>evt [:modal/open-switch-modal])}]))
 
 (defn location-component [location-id]
@@ -100,7 +105,9 @@
   (let [{:keys [location-ids connections]} (<sub [:location-map])]
     [:div {:class "content-wrapper"}
      [:div {:class "new-item-button"}
-      [slds/add-button "New" #(>evt [:open-location-creation])]]
+      [c/button {:title "New"
+                 :icon "plus"
+                 :on-click #(>evt [:open-location-creation])}]]
      [drag-canvas {:kind "location"
                    :nodes {location-component location-ids}}
       [:svg {:class "graph__connection-container" :version "1.1"

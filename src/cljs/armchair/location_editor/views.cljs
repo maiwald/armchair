@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [armchair.slds :as slds]
             [armchair.input :as input]
+            [armchair.components :as c]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
             [armchair.util :as u :refer [px <sub >evt stop-e! e-> e->val]]
@@ -157,7 +158,9 @@
          [:span {:class "tile-list__item__label"} "Drop here to remove."]])]
      (if (empty? available-npcs) "All Characters are placed in locations.")
      [:div.button
-      [slds/add-button "Create Character" #(>evt [:open-character-modal])]]]))
+      [c/button {:title "Create Character"
+                 :icon "plus"
+                 :on-click #(>evt [:open-character-modal])}]]]))
 
 (defn sidebar-connections [location-id]
   [:div

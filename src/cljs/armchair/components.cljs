@@ -132,3 +132,10 @@
    (into [:div.action-wrapper__actions.actions_vertical]
          actions)])
 
+;; Button
+
+(defn button [{glyph :icon :keys [title on-click]}]
+  [:button {:class "button"
+            :on-click on-click}
+   (when (some? glyph) [:div {:class "button__icon"} [icon glyph title]])
+   (when (some? title) [:div {:class "button__title"} title])])

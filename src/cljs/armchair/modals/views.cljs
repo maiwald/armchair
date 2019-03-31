@@ -119,7 +119,9 @@
         [:a {:on-mouse-down stop-e!
              :on-click #(>evt [:modal/remove-switch-value index])}
          [icon "times-circle"]]])
-     [slds/add-button "Add Option" #(>evt [:modal/add-switch-value])]]))
+     [c/button {:title "Add Option"
+                :icon "plus"
+                :on-click #(>evt [:modal/add-switch-value])}]]))
 
 (defn conditions-form-term [index {:keys [switch-id switch-options
                                           operator operator-options
@@ -163,7 +165,9 @@
           (for [[index term] terms]
             ^{:key (str "condition-select" index)}
             [conditions-form-term index term])]
-         [slds/add-button "Add Condition" add-condition]]))))
+         [c/button {:title "Add Condition"
+                    :icon "plus"
+                    :on-click add-condition}]]))))
 
 (defn modal []
   (if-let [modal (<sub [:modal])]

@@ -1,5 +1,6 @@
 (ns armchair.slds
-  (:require [reagent.core :as r]))
+  (:require [reagent.core :as r]
+            [armchair.components :as c]))
 
 (defn form []
   (into [:div {:class "slds-form slds-form_stacked"}]
@@ -42,17 +43,6 @@
                   :background-color color}}
    value])
 
-(defn add-button [label click-handler]
-  [:button {:class "slds-button slds-button_neutral"
-            :on-click click-handler}
-   [:i {:class "slds-button__icon slds-button__icon_left fas fa-plus"}] label])
-
-(defn symbol-button [sym options]
-  [:button (merge
-             {:class "slds-button slds-button_icon-small slds-button_icon-border-filled"}
-             options)
-   [:i {:class (str "slds-button__icon fas fa-" sym)} ]])
-
 (defn data-table [{:keys [table-id id columns cell-views title collection]
                    :or {id :id}}]
   [:div {:class "slds-grid slds-gutters"}
@@ -79,7 +69,9 @@
     [:div {:class "slds-col slds-has-flexi-truncate"}
      [:h1 {:class "slds-page-header__title"} title]]
     [:div {:class "slds-col slds-no-flex"}
-     [add-button "New" (:new-resource content-options)]]]
+     [c/button {:title "New"
+                :icon "plus"
+                :on-click (:new-resource content-options)}]]]
    [:div {:class "slds-page-header__detail-row"}
     [data-table
      (assoc content-options :table-id title)]]])

@@ -98,3 +98,33 @@ $graph-node-border-radius: 5px
 
   &:hover &__actions
     opacity: 1
+
+.button
+  display: flex
+  flex-direction: row
+  background: #fff
+  border: 1px solid #ddd
+  border-radius: .25rem
+  padding: 0 12px
+
+  color: $text-link
+  font-family: Verdana
+  font-size: .75rem
+  line-height: 1.75rem
+
+  &:focus
+    outline: 0
+    box-shadow: 0 0 3px $text-link
+    background: #f4f6f9
+
+  margin-right: 6px
+  &:last-child
+    margin-right: 0
+
+  &:hover
+    background: #f4f6f9
+
+  &__icon
+    margin-right: 8px
+    &:last-child
+      margin-right: 0

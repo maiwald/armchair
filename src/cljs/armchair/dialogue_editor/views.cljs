@@ -225,9 +225,15 @@
                    option-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
     [:div {:class "content-wrapper"}
      [:div {:class "new-item-button"}
-      [slds/add-button "New Player Line" #(>evt [:create-player-line dialogue-id])]
-      [slds/add-button "New NPC Line" #(>evt [:create-npc-line dialogue-id])]
-      [slds/add-button "New Trigger Node" #(>evt [:create-trigger-node dialogue-id])]]
+      [c/button {:title "New Player Line"
+                 :icon "plus"
+                 :on-click #(>evt [:create-player-line dialogue-id])}]
+      [c/button {:title "New NPC Line"
+                 :icon "plus"
+                 :on-click #(>evt [:create-npc-line dialogue-id])}]
+      [c/button {:title "New Trigger Node"
+                 :icon "plus"
+                 :on-click #(>evt [:create-trigger-node dialogue-id])}]]
      [drag-canvas {:kind "line"
                    :nodes {npc-line-component npc-line-ids
                            player-line-component player-line-ids
