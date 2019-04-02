@@ -1,17 +1,23 @@
+# BUGS
+- fix placing location triggers, player, etc.
+
 # TODO
 - directed location connections
 - trees! (multiple texture layers)
-- information dependency invariants
 - texture sprite support
 - (multiple?) decorative textures
 - sprite animations
 - zoom in dialogue editor
+- sounds & music
+- information dependency invariants
+- save file for game state
 
 # nice things
+- change default collision to walkable
+- local storage
+- show debug state variables
 - typing animation for dialogue screens
 - restrict camera to location edges and fix tile scale
-- local storage
-- change default collision to walkable
 - movement behaviour when holding and releasing arrow key
 - location preview in map
 - stage direction dialogue nodes
