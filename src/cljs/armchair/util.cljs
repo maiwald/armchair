@@ -122,7 +122,11 @@
   e)
 
 (defn e-> [handler]
-  (comp handler stop-e!))
+  (fn [e]
+    (.stopPropagation e)
+    (.preventDefault e)
+    (handler e)
+    nil))
 
 (defn e->val [e]
   (let [target (.-target e)]

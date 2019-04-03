@@ -1,5 +1,4 @@
 # BUGS
-- fix placing location triggers, player, etc.
 
 # TODO
 - directed location connections

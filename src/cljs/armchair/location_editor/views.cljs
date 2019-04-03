@@ -157,10 +157,9 @@
           [icon "trash" "Drop here to remove."]]
          [:span {:class "tile-list__item__label"} "Drop here to remove."]])]
      (if (empty? available-npcs) "All Characters are placed in locations.")
-     [:div.button
-      [c/button {:title "Create Character"
-                 :icon "plus"
-                 :on-click #(>evt [:open-character-modal])}]]]))
+     [c/button {:title "Create Character"
+                :icon "plus"
+                :on-click #(>evt [:open-character-modal])}]]))
 
 (defn sidebar-connections [location-id]
   [:div
@@ -218,7 +217,7 @@
   (do-all-tiles dimension "dropzone"
                 (fn [tile]
                   [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-                         :on-drag-over stop-e!
+                         :on-drag-over #(.preventDefault %)
                          :on-drag-enter (e-> #(>evt [:location-editor/set-highlight tile]))
                          :on-drop (e-> #(on-drop tile))}])))
 
