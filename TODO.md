@@ -13,6 +13,7 @@
 - save file for game state
 
 # nice things
+- allow creating switches in dialogue editor
 - change default collision to walkable
 - local storage
 - show debug state variables
