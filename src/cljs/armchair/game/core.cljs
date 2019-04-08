@@ -89,8 +89,8 @@
 (defn tile-visible? [camera [x y]]
   (u/rect-intersects?
     camera
-    [(u/tile->coord [x y])
-     (u/tile->coord [(inc x) (inc y)])]))
+    [(u/tile->coord [(- x 1) (- y 1)])
+     (u/tile->coord [(+ x 2) (+ y 2)])]))
 
 (defn draw-texture [ctx texture coord]
   (when (some? @texture-atlas)
@@ -181,9 +181,14 @@
 
 (defn draw-camera [[left-top right-bottom]]
   (when (some? @ctx)
+    (c/set-stroke-style! @ctx "rgb(255, 0, 0)")
     (c/stroke-rect! @ctx
                     left-top
-                    right-bottom)))
+                    right-bottom)
+    (c/set-stroke-style! @ctx "rgb(255, 255, 0)")
+    (c/stroke-rect! @ctx
+                    (u/translate-point left-top [(- tile-size) (- tile-size)])
+                    (u/translate-point right-bottom [tile-size tile-size]))))
 
 (defn render [view-state]
   (when (some? @ctx)
@@ -194,11 +199,14 @@
       (c/set-fill-style! @ctx "rgb(0, 0, 0)")
       (c/fill-rect! @ctx [0 0] (c/width @ctx) (c/height @ctx))
       ;; NOTE: try copying drawn tiles to prevent gaps
-      (let [a (/ (c/width @ctx) (u/rect-width camera))
-            d (/ (c/height @ctx) (u/rect-height camera))
-            e (* a (- left))
-            f (* d (- top))]
-        (c/set-transform! @ctx a 0 0 d e f))
+      (let [w-scale (/ (c/width @ctx) (u/rect-width camera))
+            h-scale (/ (c/height @ctx) (u/rect-height camera))
+            scale (max w-scale h-scale)
+            w-offset (quot (- (c/width @ctx) (* scale (u/rect-width camera))) 2)
+            h-offset (quot (- (c/height @ctx) (* scale (u/rect-height camera))) 2)
+            e (+ (* scale (- left)) w-offset)
+            f (+ (* scale (- top)) h-offset)]
+        (c/set-transform! @ctx scale 0 0 scale e f))
       (draw-background @ctx dimension background camera)
       (draw-player @ctx (get-in view-state [:player :position]))
       (draw-npcs @ctx npcs camera)
