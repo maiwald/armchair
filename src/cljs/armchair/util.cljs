@@ -121,10 +121,14 @@
   (.stopPropagation e)
   e)
 
+(defn prevent-e! [e]
+  (.preventDefault e)
+  e)
+
 (defn e-> [handler]
   (fn [e]
-    (.stopPropagation e)
-    (.preventDefault e)
+    (stop-e! e)
+    (prevent-e! e)
     (handler e)
     nil))
 

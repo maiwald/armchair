@@ -1,7 +1,7 @@
 (ns armchair.game.views
   (:require [clojure.core.async :refer [put!]]
             [reagent.core :as r]
-            [armchair.util :refer [<sub]]
+            [armchair.util :refer [<sub prevent-e!]]
             [armchair.components :refer [icon]]
             [armchair.game.core :refer [start-game end-game]]))
 
@@ -19,7 +19,7 @@
                                     ("ArrowLeft" "KeyA" "KeyH") [:move :left]
                                     ("Space" "Enter") [:interact]
                                     nil)]
-                  (.preventDefault e)
+                  (prevent-e! e)
                   (when (not (contains? @keypresses keycode))
                     (swap! keypresses conj keycode)
                     (put! (:input @game-handle) action)))))
