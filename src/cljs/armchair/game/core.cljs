@@ -279,19 +279,48 @@
 
 ;; state updates and view state
 
-(defn camera-rect [player-coord]
-  (let [h 9
-        w 15
-        camera-delta [(* (quot w -2) tile-size)
-                      (* (quot h -2) tile-size)]
-        left-top (u/translate-point
-                   player-coord
-                   camera-delta)
-        right-bottom (u/translate-point
-                       player-coord
-                       (mapv - camera-delta)
-                       [tile-size tile-size])]
-    [left-top right-bottom]))
+(defn camera-rect [player-coord location-id]
+  (let [h (* 9 tile-size)
+        w (* 17 tile-size)
+        [[loc-left loc-top]
+         [loc-right loc-bottom] :as loc-dim] (get-in @data [:locations
+                                                            location-id
+                                                            :dimension])
+        loc-w (* (u/rect-width loc-dim) tile-size)
+        loc-h (* (u/rect-height loc-dim) tile-size)
+        [left right] (if (<= loc-w w)
+                       (let [offset (quot (+ tile-size (- w loc-w)) 2)]
+                         [(- (* tile-size loc-left) offset)
+                          (+ (* tile-size (inc loc-right)) offset -1)])
+                       (let [p (first player-coord)]
+                         (cond
+                           ; close to left edge
+                           (< p (+ (* tile-size loc-left) (quot w 2)))
+                           [loc-left (+ (* tile-size (inc loc-left)) w -1)]
+
+                           ; close to right edge
+                           (> p (- (* tile-size loc-right) (quot w 2)))
+                           [(- (* tile-size loc-right) w -1) (* tile-size (inc loc-right))]
+
+                           :else
+                           [(- p (quot w 2)) (+ p (quot w 2) tile-size -1)])))
+        [top bottom] (if (<= loc-h h)
+                       (let [offset (quot (+ tile-size (- h loc-h)) 2)]
+                         [(- (* tile-size loc-top) offset)
+                          (+ (* tile-size (inc loc-bottom)) offset -1)])
+                       (let [p (second player-coord)]
+                         (cond
+                           ; close to top edge
+                           (< p (+ (* tile-size loc-top) (quot h 2)))
+                           [(* tile-size loc-top) (+ (* tile-size (inc loc-top)) h -1)]
+
+                           ; close to bottom edge
+                           (> p (- (* tile-size loc-bottom) (quot h 2)))
+                           [(- (* tile-size loc-bottom) h -1) (* tile-size (inc loc-bottom))]
+
+                           :else
+                           [(- p (quot h 2)) (+ p (quot h 2) tile-size -1)])))]
+    [[left top] [right bottom]]))
 
 (defn update-state-animation [state now]
   (if-let [{:keys [start destination]} (:animation state)]
@@ -342,7 +371,8 @@
                                         (u/tile->coord destination)
                                         now)
                      player-coord))))
-    (assoc s :camera (camera-rect (get-in s [:player :position])))))
+    (let [{:keys [position location-id]} (:player s)]
+      (assoc s :camera (camera-rect position location-id)))))
 
 ;; Game Loop
 

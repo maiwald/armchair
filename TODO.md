@@ -17,7 +17,6 @@
 - local storage
 - show debug state variables
 - typing animation for dialogue screens
-- restrict camera to location edges and fix tile scale
 - movement behaviour when holding and releasing arrow key
 - location preview in map
 - stage direction dialogue nodes
