@@ -10,18 +10,20 @@
             [armchair.game.canvas :as c]
             [armchair.game.pathfinding :as path]
             [armchair.config :refer [tile-size]]
-            [armchair.textures :refer [texture-set load-textures]]
-            [armchair.util :as u]))
+            [armchair.textures :refer [texture-set load-textures sprite-lookup]]
+            [armchair.util :as u]
+            [com.rpl.specter
+             :refer [nthpath ALL]
+             :refer-macros [select]]))
 
 ;; Definitions
 
 (def time-factor 1)
-(def tile-move-time 150) ; milliseconds
+(def tile-move-time 200) ; milliseconds
 (def direction-map {:up [0 -1]
                     :down [0 1]
                     :left [-1 0]
                     :right [1 0]})
-
 
 (s/def ::state (s/and (s/keys :req-un [::player ::dialogue-states ::switches]
                               :opt-un [::interaction ::animation])))
@@ -96,6 +98,13 @@
   (when (some? @texture-atlas)
     (c/draw-image! ctx (get @texture-atlas texture (@texture-atlas :missing_texture)) coord)))
 
+(defn draw-sprite-texture [ctx texture dest-coord]
+  (when (some? @texture-atlas)
+    (let [[file sprite-coord] (get sprite-lookup texture)]
+      (if-let [sprite-sheet (get @texture-atlas file)]
+        (c/draw-image! ctx sprite-sheet sprite-coord dest-coord)
+        (c/draw-image! ctx (@texture-atlas :missing_texture) dest-coord)))))
+
 (defn draw-texture-rotated [ctx texture coord deg]
   (when (some? @texture-atlas)
     (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
@@ -107,8 +116,8 @@
           :let [texture (get background [x y])]]
     (draw-texture ctx texture (u/tile->coord [x y]))))
 
-(defn draw-player [ctx player]
-  (draw-texture ctx :player player))
+(defn draw-player [ctx {:keys [position texture]}]
+  (draw-sprite-texture ctx texture position))
 
 (defn draw-npcs [ctx npcs camera]
   (doseq [[tile {texture :texture}] npcs]
@@ -190,6 +199,40 @@
                     (u/translate-point left-top [(- tile-size) (- tile-size)])
                     (u/translate-point right-bottom [tile-size tile-size]))))
 
+(def player-animations
+  {:idle
+   {:up :guy_up_idle
+    :down :guy_down_idle
+    :left :guy_left_idle
+    :right :guy_right_idle}
+   :walking
+   {:up
+    [[:guy_up_walking1 (quot tile-move-time 2)]
+     [:guy_up_walking2 (quot tile-move-time 2)]]
+    :down
+    [[:guy_down_walking1 (quot tile-move-time 2)]
+     [:guy_down_walking2 (quot tile-move-time 2)]]
+    :left
+    [[:guy_left_walking1 (quot tile-move-time 2)]
+     [:guy_left_walking2 (quot tile-move-time 2)]]
+    :right
+    [[:guy_right_walking1 (quot tile-move-time 2)]
+     [:guy_right_walking2 (quot tile-move-time 2)]]}})
+
+(defn anim->data [now frames]
+  {:start (u/round now)
+   :frames frames
+   :total-duration (apply + (select [ALL (nthpath 1)] frames))})
+
+(defn animation-texture [now {:keys [start frames total-duration]}]
+  (let [animation-frame (mod (u/round (- now start)) total-duration)]
+    (reduce (fn [duration-sum [texture duration]]
+              (if (<= duration-sum animation-frame (+ duration-sum duration -1))
+                (reduced texture)
+                (+ duration-sum duration)))
+            0
+            frames)))
+
 (defn render [view-state]
   (when (some? @ctx)
     (let [l (get-in view-state [:player :location-id])
@@ -208,9 +251,9 @@
             f (+ (* scale (- top)) h-offset)]
         (c/set-transform! @ctx scale 0 0 scale e f))
       (draw-background @ctx dimension background camera)
-      (draw-player @ctx (get-in view-state [:player :position]))
+      (draw-player @ctx (:player view-state))
       (draw-npcs @ctx npcs camera)
-      (draw-direction-indicator @ctx view-state)
+      ; (draw-direction-indicator @ctx view-state)
       (c/reset-transform! @ctx)
       (when (interacting? view-state)
         (draw-dialogue-box @ctx (dialogue-data view-state))))))
@@ -360,15 +403,17 @@
 
 (defn view-state [state now]
   (as-> state s
-    (update-in s [:player :position]
-               (fn [player-tile]
-                 (let [player-coord (u/tile->coord player-tile)]
-                   (if-let [{:keys [start destination]} (:animation state)]
-                     (animated-position start
-                                        player-coord
-                                        (u/tile->coord destination)
-                                        now)
-                     player-coord))))
+    (update s :player
+            (fn [{:keys [position direction] :as player}]
+              (merge player
+                     (if-let [{:keys [start destination]} (:animation state)]
+                       {:position (animated-position start
+                                                     (u/tile->coord position)
+                                                     (u/tile->coord destination)
+                                                     now)
+                        :texture (animation-texture now (anim->data start (get-in player-animations [:walking direction])))}
+                       {:position (u/tile->coord position)
+                        :texture (get-in player-animations [:idle direction])}))))
     (let [{:keys [position location-id]} (:player s)]
       (assoc s :camera (camera-rect position location-id)))))
 
