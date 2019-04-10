@@ -264,12 +264,10 @@
 
 ;; Animations
 
-(defn round [x] (.round js/Math x))
-
 (defn animated-position [start [fx fy] [tx ty] now]
   (let [passed (- now start)
         pct (/ passed tile-move-time)
-        transform (fn [f t] (+ f (round (* pct (- t f)))))]
+        transform (fn [f t] (+ f (u/round (* pct (- t f)))))]
     (if (< pct 1)
       [(transform fx tx) (transform fy ty)]
       [tx ty])))

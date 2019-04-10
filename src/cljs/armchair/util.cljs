@@ -6,8 +6,8 @@
              :refer [must ALL NONE MAP-VALS MAP-KEYS]
              :refer-macros [transform]]))
 
-(defn px [v]
-  (str v "px"))
+(defn px [v] (str v "px"))
+(defn round [x] (.round js/Math x))
 
 (defn upload-json! [callback]
   (let [file-input (doto (js/document.createElement "input")
