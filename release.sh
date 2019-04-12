@@ -1,7 +1,9 @@
-#!/bin/bash -e
+#!/bin/bash
 
 VERSION=$(git rev-parse HEAD)
 RELEASE_FOLDER=build
+
+set -e
 
 source .env
 
