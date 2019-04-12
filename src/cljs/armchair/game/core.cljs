@@ -10,7 +10,7 @@
             [armchair.game.canvas :as c]
             [armchair.game.pathfinding :as path]
             [armchair.config :refer [tile-size]]
-            [armchair.textures :refer [texture-set load-textures sprite-lookup]]
+            [armchair.textures :refer [load-textures sprite-lookup]]
             [armchair.util :as u]
             [com.rpl.specter
              :refer [nthpath ALL]
