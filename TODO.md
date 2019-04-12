@@ -3,9 +3,7 @@
 # TODO
 - directed location connections
 - trees! (multiple texture layers)
-- texture sprite support
 - (multiple?) decorative textures
-- sprite animations
 - zoom in dialogue editor
 - sounds & music
 - information dependency invariants
