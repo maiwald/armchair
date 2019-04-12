@@ -9,7 +9,6 @@
             [armchair.util :as u :refer [<sub >evt stop-e! e-> e->left? e->val]]
             [armchair.config :as config]
             [armchair.routes :refer [routes >navigate]]
-            [armchair.textures :refer [texture-path]]
             [armchair.game.views :refer [game-view]]
             [bidi.bidi :refer [match-route]]))
 
@@ -24,7 +23,7 @@
                                 [:a {:on-click #(>evt [:open-character-modal id])}
                                  display-name])
                    :texture (fn [texture]
-                              [:img {:src (texture-path texture)}])
+                              [c/sprite-texture texture])
                    :synopsis (fn [synopsis {id :id}]
                                [:a {:on-click #(>navigate :dialogue-edit :id id)}
                                 synopsis])
@@ -45,7 +44,7 @@
       :collection (vals characters)
       :cell-views {:color (fn [color] [slds/badge color color])
                    :texture (fn [texture]
-                              [:img {:src (texture-path texture)}])
+                              [c/sprite-texture texture])
                    :actions (fn [_ {:keys [id line-count]}]
                               [:div {:class "slds-text-align_right"}
                                (when (zero? line-count)

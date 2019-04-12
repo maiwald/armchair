@@ -100,10 +100,11 @@
 
 (defn draw-sprite-texture [ctx texture dest-coord]
   (when (some? @texture-atlas)
-    (let [[file sprite-coord] (get sprite-lookup texture)]
+    (if-let [[file sprite-coord] (get sprite-lookup texture)]
       (if-let [sprite-sheet (get @texture-atlas file)]
         (c/draw-image! ctx sprite-sheet sprite-coord dest-coord)
-        (c/draw-image! ctx (@texture-atlas :missing_texture) dest-coord)))))
+        (c/draw-image! ctx (@texture-atlas :missing_texture) dest-coord))
+      (c/draw-image! ctx (@texture-atlas :missing_texture) dest-coord))))
 
 (defn draw-texture-rotated [ctx texture coord deg]
   (when (some? @texture-atlas)
@@ -114,7 +115,7 @@
           y (range top (inc bottom))
           :when (tile-visible? camera [x y])
           :let [texture (get background [x y])]]
-    (draw-texture ctx texture (u/tile->coord [x y]))))
+    (draw-sprite-texture ctx texture (u/tile->coord [x y]))))
 
 (defn draw-player [ctx {:keys [position texture]}]
   (draw-sprite-texture ctx texture position))
@@ -122,7 +123,7 @@
 (defn draw-npcs [ctx npcs camera]
   (doseq [[tile {texture :texture}] npcs]
     (when (tile-visible? camera tile)
-      (draw-texture ctx texture (u/tile->coord tile)))))
+      (draw-sprite-texture ctx texture (u/tile->coord tile)))))
 
 ; (defn draw-highlight [ctx highlight-coord]
 ;   (c/save! ctx)
