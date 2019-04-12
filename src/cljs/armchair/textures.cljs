@@ -320,10 +320,7 @@
               [tile sprite] sprites]
           [sprite [file (u/tile->coord tile)]])))
 
-(def texture-set (set (-> [:arrow
-                           :exit
-                           :missing_texture]
-                          (into (keys sprite-sheets)))))
+(def texture-set (set (select [MAP-VALS MAP-VALS] sprite-sheets)))
 
 (def background-textures
   (sort (select [(multi-path :adobe
@@ -335,8 +332,12 @@
 (def character-textures
   (sort (select [:characters MAP-VALS] sprite-sheets)))
 
+(def image-files
+  (set (into [:arrow :exit :missing_texture]
+             (keys sprite-sheets))))
+
 (defn texture-path [texture-name]
-  (if (contains? texture-set texture-name)
+  (if (contains? image-files texture-name)
     (str "images/" (name texture-name) ".png")
     (str "images/missing_texture.png")))
 
@@ -347,9 +348,9 @@
             (let [image (js/Image.)]
               (set! (.-onload image) #(put! loaded [texture-name image]))
               (set! (.-src image) (texture-path texture-name))))
-          texture-set)
+          image-files)
     (take! (go
-             (while (not= (count @atlas) (count texture-set))
+             (while (not= (count @atlas) (count image-files))
                (let [[texture-name texture-image] (<! loaded)]
                  (swap! atlas assoc texture-name texture-image)))
              @atlas)
