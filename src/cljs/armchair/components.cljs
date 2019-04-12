@@ -1,6 +1,7 @@
 (ns armchair.components
   (:require [reagent.core :as r]
             [armchair.config :as config]
+            [armchair.textures :refer [texture-path sprite-lookup]]
             [armchair.util :as u :refer [stop-e! >evt <sub e-> e->left?]]))
 
 ;; Drag & Drop
@@ -139,3 +140,21 @@
             :on-click on-click}
    (when (some? glyph) [:div {:class "button__icon"} [icon glyph title]])
    (when (some? title) [:div {:class "button__title"} title])])
+
+;; Sprite Texture
+
+(defn sprite-texture [texture title]
+  (if-let [[file sprite-coord] (get sprite-lookup texture)]
+    [:div.sprite-texture
+     {:title title
+      :style {:width (u/px config/tile-size)
+              :height (u/px config/tile-size)
+              :background-image
+              (str "url(" (texture-path file) ")")
+              :background-position
+              (str (u/px (- (first sprite-coord)))
+                   " "
+                   (u/px (- (second sprite-coord))))}}]
+    [:img {:src (texture-path :missing_texture)
+           :width (u/px config/tile-size)
+           :height (u/px config/tile-size)}]))

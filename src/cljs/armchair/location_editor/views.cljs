@@ -74,7 +74,7 @@
               :class ["tile-grid__item"
                       (when (= texture active-texture) "tile-grid__item_active")]}
          [:a {:on-click #(>evt [:location-editor/set-active-texture texture])}
-          [:img {:src (texture-path texture)}]]])]]))
+          [c/sprite-texture texture]]])]]))
 
 (defn sidebar-collision [location-id]
   (let [{:keys [active-walk-state]} (<sub [:location-editor/ui])]
@@ -127,7 +127,7 @@
        [:span {:class "tile-list__item__image"
                :style {:width (str config/tile-size "px")
                        :height (str config/tile-size "px")}}
-        [:img {:title "Player" :src (texture-path :player)}]]
+        [c/sprite-texture :human "Player"]]
        [:span {:class "tile-list__item__label"} "Player"]]]
 
      [:div "Available Characters"]
@@ -144,7 +144,7 @@
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
                          :height (str config/tile-size "px")}}
-          [:img {:title display-name :src (texture-path texture)}]]
+          [c/sprite-texture texture display-name]]
          [:span {:class "tile-list__item__label"} display-name]])
       (when (and (some? dnd-character-id)
                  (not (contains? available-npcs dnd-character-id)))
@@ -174,7 +174,8 @@
                              (.setData (.-dataTransfer e) "text/plain" display-name)
                              (>evt [:location-editor/start-entity-drag {:connection-trigger target-loctation-id}]))}
        [dnd-texture :exit]
-       [:img {:title display-name :src (texture-path :exit)}]
+       [:img {:src (texture-path :exit)
+              :title display-name}]
        [:span display-name]])]])
 
 (defn sidebar [location-id]
@@ -224,7 +225,7 @@
 (defn background-tiles [rect background]
   (do-all-tiles rect "background"
                 (fn [tile]
-                  [:img {:src (texture-path (get background tile))}])))
+                  [c/sprite-texture (get background tile)])))
 
 (defn do-some-tiles [rect coll layer-title f]
   [:div {:class "level-layer"}
@@ -237,14 +238,12 @@
 (defn player-layer [rect position]
   (do-some-tiles rect {position :player} "player"
                  (fn []
-                   [:img {:src (texture-path :player)
-                          :title "Player"}])))
+                   [c/sprite-texture :human "Player"])))
 
 (defn npc-layer [rect npcs]
   (do-some-tiles rect npcs "npc"
                  (fn [tile {:keys [display-name texture]}]
-                   [:img {:src (texture-path texture)
-                          :title display-name}])))
+                   [c/sprite-texture texture display-name])))
 
 (defn conntection-trigger-layer [rect connection-triggers]
   (do-some-tiles rect connection-triggers "connection-trigger"

@@ -4,7 +4,7 @@
             [armchair.components :as c :refer [icon]]
             [armchair.config :as config]
             [armchair.util :as u :refer [<sub >evt stop-e! e->val]]
-            [armchair.textures :refer [character-textures texture-path]]))
+            [armchair.textures :refer [character-textures]]))
 
 (defn dialogue-creation-modal [{:keys [character-id synopsis]}]
   [slds/modal {:title "Create Dialogue"
@@ -63,7 +63,7 @@
                     :options (mapv #(vector % %) character-textures)
                     :value texture
                     :on-change #(>evt [:character-form/update :texture (keyword (e->val %))])}]
-     [:img {:src (texture-path texture)}]]))
+     [c/sprite-texture texture]]))
 
 (defn location-creation-modal [display-name]
   (let [update-name #(>evt [:update-location-creation-name (e->val %)])]
