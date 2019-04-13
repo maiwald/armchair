@@ -1,7 +1,7 @@
 (ns armchair.game.views
   (:require [clojure.core.async :refer [put!]]
             [reagent.core :as r]
-            [armchair.util :refer [<sub prevent-e!]]
+            [armchair.util :refer [<sub prevent-e! px]]
             [armchair.components :refer [icon]]
             [armchair.game.core :refer [start-game end-game]]))
 
@@ -43,12 +43,14 @@
 
          :reagent-render
          (fn []
-           [:div {:id "game"
-                  :style {:width (str 800 "px")
-                          :height (str 444 "px")}}
-            [:canvas {:height 444
-                      :width 800
-                      :ref (fn [el] (reset! canvas el))}]])}))))
+           (let [w 800
+                 h 444]
+             [:div {:id "game"
+                    :style {:width (px w)
+                            :height (px h)}}
+              [:canvas {:width w
+                        :height h
+                        :ref (fn [el] (reset! canvas el))}]]))}))))
 
 (defn game-view []
   [:div {:class "content-wrapper"}
