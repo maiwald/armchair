@@ -25,3 +25,4 @@
 - prevent placing npcs on taken/non-walkable tiles
 - remove slds dependency
 - validation error notifications and form states
+- rendering: check rect-width, rounding and off-by-one issues
