@@ -14,7 +14,7 @@
             [armchair.util :as u]
             [com.rpl.specter
              :refer [nthpath ALL]
-             :refer-macros [select]]))
+             :refer-macros [select transform]]))
 
 ;; Definitions
 
@@ -208,8 +208,8 @@
       (c/clear! @ctx)
       (c/set-fill-style! @ctx "rgb(0, 0, 0)")
       (c/fill-rect! @ctx [0 0] (c/width @ctx) (c/height @ctx))
-      (let [w-offset (- (quot (- (c/width @ctx) cam-width) 2) cam-left)
-            h-offset (- (quot (- (c/height @ctx) cam-height) 2) cam-top)]
+      (let [w-offset (- (/ (- (c/width @ctx) cam-width) 2) cam-left)
+            h-offset (- (/ (- (c/height @ctx) cam-height) 2) cam-top)]
         (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
       (let [l (get-in view-state [:player :location-id])
             {:keys [npcs dimension background]} (get-in @data [:locations l])]
@@ -221,14 +221,14 @@
       (c/reset-transform! @ctx)
       (let [scale (min (/ (c/width @ctx) cam-width)
                        (/ (c/height @ctx) cam-height))
-            w-offset (quot (- (c/width @ctx) cam-width) 2)
-            h-offset (quot (- (c/height @ctx) cam-height) 2)]
+            w-offset (/ (- (c/width @ctx) cam-width) 2)
+            h-offset (/ (- (c/height @ctx) cam-height) 2)]
         (c/draw-image! @ctx
                        (.-canvas @ctx)
                        [w-offset h-offset]
                        [cam-width cam-height]
-                       [(- (quot (c/width @ctx) 2) (* (quot cam-width 2) scale))
-                        (- (quot (c/height @ctx) 2) (* (quot cam-height 2) scale))]
+                       [(- (/ (c/width @ctx) 2) (* (/ cam-width 2) scale))
+                        (- (/ (c/height @ctx) 2) (* (/ cam-height 2) scale))]
                        [(* scale cam-width) (* scale cam-height)]))
       (when (interacting? view-state)
         (draw-dialogue-box @ctx (dialogue-data view-state))))))
@@ -330,48 +330,45 @@
 ;; state updates and view state
 
 (defn camera-rect [player-coord location-id]
-  (let [h (* 9 tile-size)
-        w (* 17 tile-size)
+  (let [w (* 17 tile-size) w2 (/ w 2)
+        h (* 9 tile-size) h2 (/ h 2)
+        loc-dim (get-in @data [:locations location-id :dimension])
         [[loc-left loc-top]
-         [loc-right loc-bottom] :as loc-dim] (get-in @data [:locations
-                                                            location-id
-                                                            :dimension])
+         [loc-right loc-bottom]] (transform [ALL ALL] #(* % tile-size) loc-dim)
         loc-w (* (u/rect-width loc-dim) tile-size)
         loc-h (* (u/rect-height loc-dim) tile-size)
         [left right] (if (<= loc-w w)
-                       (let [offset (quot (+ tile-size (- w loc-w)) 2)]
-                         [(- (* tile-size loc-left) offset)
-                          (+ (* tile-size (inc loc-right)) offset -1)])
+                       (let [offset (/ (+ tile-size (- w loc-w)) 2)]
+                         [(- loc-left offset)
+                          (+ loc-right tile-size offset -1)])
                        (let [p (first player-coord)]
                          (cond
                            ; close to left edge
-                           (< p (+ (* tile-size loc-left) (quot w 2)))
-                           [loc-left (+ (* tile-size (inc loc-left)) w -1)]
+                           (< p (+ loc-left w2))
+                           [loc-left (+ loc-left tile-size w -1)]
 
                            ; close to right edge
-                           (> p (- (* tile-size loc-right) (quot w 2)))
-                           [(- (* tile-size loc-right) w)
-                            (- (* tile-size (inc loc-right)) 1)]
+                           (> p (- loc-right w2))
+                           [(- loc-right w) (+ loc-right tile-size -1)]
 
                            :else
-                           [(- p (quot w 2)) (+ p (quot w 2) tile-size -1)])))
+                           [(- p w2) (+ p w2 tile-size -1)])))
         [top bottom] (if (<= loc-h h)
-                       (let [offset (quot (+ tile-size (- h loc-h)) 2)]
-                         [(- (* tile-size loc-top) offset)
-                          (+ (* tile-size (inc loc-bottom)) offset -1)])
+                       (let [offset (/ (+ tile-size (- h loc-h)) 2)]
+                         [(- loc-top offset)
+                          (+ loc-bottom tile-size offset -1)])
                        (let [p (second player-coord)]
                          (cond
                            ; close to top edge
-                           (< p (+ (* tile-size loc-top) (quot h 2)))
-                           [(* tile-size loc-top) (+ (* tile-size (inc loc-top)) h -1)]
+                           (< p (+ loc-top h2))
+                           [loc-top (+ loc-top tile-size h -1)]
 
                            ; close to bottom edge
-                           (> p (- (* tile-size loc-bottom) (quot h 2)))
-                           [(- (* tile-size loc-bottom) h)
-                            (- (* tile-size (inc loc-bottom)) 1)]
+                           (> p (- loc-bottom h2))
+                           [(- loc-bottom h) (+ loc-bottom tile-size -1)]
 
                            :else
-                           [(- p (quot h 2)) (+ p (quot h 2) tile-size -1)])))]
+                           [(- p h2) (+ p h2 tile-size -1)])))]
     [[left top] [right bottom]]))
 
 (defn update-state-animation [state now]
