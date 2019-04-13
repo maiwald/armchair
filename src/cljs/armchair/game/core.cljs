@@ -189,40 +189,47 @@
                      options))))))
     (c/restore! ctx)))
 
-(defn draw-camera [[left-top right-bottom]]
-  (when (some? @ctx)
-    (c/set-stroke-style! @ctx "rgb(255, 0, 0)")
-    (c/stroke-rect! @ctx
-                    left-top
-                    right-bottom)
-    (c/set-stroke-style! @ctx "rgb(255, 255, 0)")
-    (c/stroke-rect! @ctx
-                    (u/translate-point left-top [(- tile-size) (- tile-size)])
-                    (u/translate-point right-bottom [tile-size tile-size]))))
+(defn draw-camera [ctx [left-top right-bottom]]
+  (c/set-stroke-style! ctx "rgb(255, 0, 0)")
+  (c/stroke-rect! ctx
+                  left-top
+                  right-bottom)
+  (c/set-stroke-style! ctx "rgb(255, 255, 0)")
+  (c/stroke-rect! ctx
+                  (u/translate-point left-top [(- tile-size) (- tile-size)])
+                  (u/translate-point right-bottom [tile-size tile-size])))
 
 
 (defn render [view-state]
   (when (some? @ctx)
-    (let [l (get-in view-state [:player :location-id])
-          [[left top] :as camera] (:camera view-state)
-          {:keys [npcs dimension background]} (get-in @data [:locations l])]
+    (let [[[cam-left cam-top] _ :as camera] (:camera view-state)
+          cam-width (u/rect-width camera)
+          cam-height (u/rect-height camera)]
       (c/clear! @ctx)
       (c/set-fill-style! @ctx "rgb(0, 0, 0)")
       (c/fill-rect! @ctx [0 0] (c/width @ctx) (c/height @ctx))
-      ;; NOTE: try copying drawn tiles to prevent gaps
-      (let [w-scale (/ (c/width @ctx) (u/rect-width camera))
-            h-scale (/ (c/height @ctx) (u/rect-height camera))
-            scale (max w-scale h-scale)
-            w-offset (quot (- (c/width @ctx) (* scale (u/rect-width camera))) 2)
-            h-offset (quot (- (c/height @ctx) (* scale (u/rect-height camera))) 2)
-            e (+ (* scale (- left)) w-offset)
-            f (+ (* scale (- top)) h-offset)]
-        (c/set-transform! @ctx scale 0 0 scale e f))
-      (draw-background @ctx dimension background camera)
-      (draw-player @ctx (:player view-state))
-      (draw-npcs @ctx npcs camera)
+      (let [w-offset (- (quot (- (c/width @ctx) cam-width) 2) cam-left)
+            h-offset (- (quot (- (c/height @ctx) cam-height) 2) cam-top)]
+        (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
+      (let [l (get-in view-state [:player :location-id])
+            {:keys [npcs dimension background]} (get-in @data [:locations l])]
+        (draw-background @ctx dimension background camera)
+        (draw-player @ctx (:player view-state))
+        (draw-npcs @ctx npcs camera))
       ; (draw-direction-indicator @ctx view-state)
+      ; (draw-camera @ctx camera)
       (c/reset-transform! @ctx)
+      (let [scale (min (/ (c/width @ctx) cam-width)
+                       (/ (c/height @ctx) cam-height))
+            w-offset (quot (- (c/width @ctx) cam-width) 2)
+            h-offset (quot (- (c/height @ctx) cam-height) 2)]
+        (c/draw-image! @ctx
+                       (.-canvas @ctx)
+                       [w-offset h-offset]
+                       [cam-width cam-height]
+                       [(- (quot (c/width @ctx) 2) (* (quot cam-width 2) scale))
+                        (- (quot (c/height @ctx) 2) (* (quot cam-height 2) scale))]
+                       [(* scale cam-width) (* scale cam-height)]))
       (when (interacting? view-state)
         (draw-dialogue-box @ctx (dialogue-data view-state))))))
 
@@ -343,7 +350,8 @@
 
                            ; close to right edge
                            (> p (- (* tile-size loc-right) (quot w 2)))
-                           [(- (* tile-size loc-right) w -1) (* tile-size (inc loc-right))]
+                           [(- (* tile-size loc-right) w)
+                            (- (* tile-size (inc loc-right)) 1)]
 
                            :else
                            [(- p (quot w 2)) (+ p (quot w 2) tile-size -1)])))
@@ -359,7 +367,8 @@
 
                            ; close to bottom edge
                            (> p (- (* tile-size loc-bottom) (quot h 2)))
-                           [(- (* tile-size loc-bottom) h -1) (* tile-size (inc loc-bottom))]
+                           [(- (* tile-size loc-bottom) h)
+                            (- (* tile-size (inc loc-bottom)) 1)]
 
                            :else
                            [(- p (quot h 2)) (+ p (quot h 2) tile-size -1)])))]
