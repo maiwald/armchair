@@ -200,39 +200,6 @@
                     (u/translate-point left-top [(- tile-size) (- tile-size)])
                     (u/translate-point right-bottom [tile-size tile-size]))))
 
-(def player-animations
-  {:idle
-   {:up :guy_up_idle
-    :down :guy_down_idle
-    :left :guy_left_idle
-    :right :guy_right_idle}
-   :walking
-   {:up
-    [[:guy_up_walking1 (quot tile-move-time 2)]
-     [:guy_up_walking2 (quot tile-move-time 2)]]
-    :down
-    [[:guy_down_walking1 (quot tile-move-time 2)]
-     [:guy_down_walking2 (quot tile-move-time 2)]]
-    :left
-    [[:guy_left_walking1 (quot tile-move-time 2)]
-     [:guy_left_walking2 (quot tile-move-time 2)]]
-    :right
-    [[:guy_right_walking1 (quot tile-move-time 2)]
-     [:guy_right_walking2 (quot tile-move-time 2)]]}})
-
-(defn anim->data [now frames]
-  {:start (u/round now)
-   :frames frames
-   :total-duration (apply + (select [ALL (nthpath 1)] frames))})
-
-(defn animation-texture [now {:keys [start frames total-duration]}]
-  (let [animation-frame (mod (u/round (- now start)) total-duration)]
-    (reduce (fn [duration-sum [texture duration]]
-              (if (<= duration-sum animation-frame (+ duration-sum duration -1))
-                (reduced texture)
-                (+ duration-sum duration)))
-            0
-            frames)))
 
 (defn render [view-state]
   (when (some? @ctx)
@@ -307,6 +274,40 @@
                (recur (<! channel))))))
 
 ;; Animations
+
+(def player-animations
+  {:idle
+   {:up :guy_up_idle
+    :down :guy_down_idle
+    :left :guy_left_idle
+    :right :guy_right_idle}
+   :walking
+   {:up
+    [[:guy_up_walking1 (quot tile-move-time 2)]
+     [:guy_up_walking2 (quot tile-move-time 2)]]
+    :down
+    [[:guy_down_walking1 (quot tile-move-time 2)]
+     [:guy_down_walking2 (quot tile-move-time 2)]]
+    :left
+    [[:guy_left_walking1 (quot tile-move-time 2)]
+     [:guy_left_walking2 (quot tile-move-time 2)]]
+    :right
+    [[:guy_right_walking1 (quot tile-move-time 2)]
+     [:guy_right_walking2 (quot tile-move-time 2)]]}})
+
+(defn anim->data [now frames]
+  {:start (u/round now)
+   :frames frames
+   :total-duration (apply + (select [ALL (nthpath 1)] frames))})
+
+(defn animation-texture [now {:keys [start frames total-duration]}]
+  (let [animation-frame (mod (u/round (- now start)) total-duration)]
+    (reduce (fn [duration-sum [texture duration]]
+              (if (<= duration-sum animation-frame (+ duration-sum duration -1))
+                (reduced texture)
+                (+ duration-sum duration)))
+            0
+            frames)))
 
 (defn animated-position [start [fx fy] [tx ty] now]
   (let [passed (- now start)
