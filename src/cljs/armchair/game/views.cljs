@@ -45,8 +45,8 @@
          (fn []
            [:div {:id "game"
                   :style {:width (str 800 "px")
-                          :height (str 448 "px")}}
-            [:canvas {:height 448
+                          :height (str 444 "px")}}
+            [:canvas {:height 444
                       :width 800
                       :ref (fn [el] (reset! canvas el))}]])}))))
 

@@ -21,7 +21,9 @@
   ([ctx image [x y]]
    (.drawImage ctx image 0 0 tile-size tile-size x y tile-size tile-size))
   ([ctx image [sx sy] [dx dy]]
-   (.drawImage ctx image sx sy tile-size tile-size dx dy tile-size tile-size)))
+   (.drawImage ctx image sx sy tile-size tile-size dx dy tile-size tile-size))
+  ([ctx image [sx sy] [sw sh] [dx dy] [dw dh]]
+   (.drawImage ctx image sx sy sw sh dx dy dw dh)))
 
 (defn draw-image-rotated! [ctx image [x y] deg]
   (let [offset (/ tile-size 2)]
