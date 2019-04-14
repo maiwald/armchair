@@ -7,7 +7,19 @@
 
 (def sprite-sheets
   (merge
-    {:guy_sprite_sheet {[0 0] :guy_up_walking1
+    {:hare {[0 0] :hare_up_walking1
+            [1 0] :hare_up_walking2
+            [2 0] :hare_down_walking1
+            [3 0] :hare_down_walking2
+            [4 0] :hare_up_idle1
+            [5 0] :hare_up_idle2
+            [6 0] :hare_down_idle1
+            [7 0] :hare_down_idle2
+            [8 0] :hare_left_walking1
+            [9 0] :hare_left_walking2
+            [10 0] :hare_right_walking1
+            [11 0] :hare_right_walking2}
+     :guy_sprite_sheet {[0 0] :guy_up_walking1
                         [1 0] :guy_up_idle
                         [2 0] :guy_up_walking2
                         [0 1] :guy_right_walking1
