@@ -174,4 +174,4 @@
      :locations locations
      :initial-state {:dialogue-states (u/map-values :initial-line-id dialogues)
                      :switches (u/map-values (constantly nil) switches)
-                     :player (merge player-data {:direction :right})}}))
+                     :player (merge player-data {:direction :down})}}))
