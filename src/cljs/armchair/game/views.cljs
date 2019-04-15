@@ -2,6 +2,10 @@
   (:require [clojure.core.async :refer [put!]]
             [reagent.core :as r]
             [armchair.util :refer [<sub prevent-e! px]]
+            [armchair.config :refer [tile-size
+                                     camera-tile-width
+                                     camera-tile-height
+                                     camera-scale]]
             [armchair.components :refer [icon]]
             [armchair.game.core :refer [start-game end-game]]))
 
@@ -43,13 +47,13 @@
 
          :reagent-render
          (fn []
-           (let [w 800
-                 h 444]
-             [:div {:id "game"
-                    :style {:width (px w)
-                            :height (px h)}}
+           (let [w (* tile-size camera-tile-width camera-scale)
+                 h (* tile-size camera-tile-height camera-scale)]
+             [:div {:id "game"}
               [:canvas {:width w
                         :height h
+                        :style {:width (px w)
+                                :height (px h)}
                         :ref (fn [el] (reset! canvas el))}]]))}))))
 
 (defn game-view []
