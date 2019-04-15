@@ -1,16 +1,13 @@
 (ns armchair.dialogue-editor.events
   (:require [clojure.spec.alpha :as s]
-            [re-frame.core :refer [reg-event-db reg-event-fx]]
             [armchair.db :as db]
             [armchair.config :as config]
-            [armchair.events :refer [validate]]
+            [armchair.events :refer [reg-event-data reg-event-meta]]
             [armchair.undo :refer [record-undo]]
             [armchair.util :as u]))
 
-(reg-event-db
+(reg-event-data
   :create-npc-line
-  [validate
-   record-undo]
   (fn [db [_ dialogue-id]]
     (let [id (random-uuid)
           character-id (get-in db [:dialogues dialogue-id :character-id])]
@@ -24,10 +21,8 @@
                                  :text nil
                                  :next-line-id nil})))))
 
-(reg-event-db
+(reg-event-data
   :create-player-line
-  [validate
-   record-undo]
   (fn [db [_ dialogue-id]]
     (let [id (random-uuid)
           option-id (random-uuid)]
@@ -43,10 +38,8 @@
                                                  :text ""
                                                  :next-line-id nil})))))
 
-(reg-event-db
+(reg-event-data
   :create-trigger-node
-  [validate
-   record-undo]
   (fn [db [_ dialogue-id]]
     (let [id (random-uuid)]
       (-> db
@@ -57,10 +50,8 @@
                                  :dialogue-id dialogue-id
                                  :next-line-id nil})))))
 
-(reg-event-db
+(reg-event-data
   :dialogue-editor/delete-trigger
-  [validate
-   record-undo]
   (fn [db [_ trigger-node-id trigger-id]]
     (-> db
         (update :triggers dissoc trigger-id)
@@ -74,10 +65,8 @@
       (= (:next-line-id item) id)
       (assoc :next-line-id nil))))
 
-(reg-event-db
+(reg-event-data
   :dialogue-editor/delete-trigger-node
-  [validate
-   record-undo]
   (fn [db [_ id]]
     (let [trigger-ids (get-in db [:lines id :trigger-ids])
           clear-line (next-line-clearer id)]
@@ -92,20 +81,16 @@
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
     (= line-id (get-in db [:dialogues dialogue-id :initial-line-id]))))
 
-(reg-event-db
+(reg-event-data
   :update-line
-  [validate
-   record-undo]
   (fn [db [_ id field value]]
     (assert (not (and (= field :character-id)
                       (initial-line? db id)))
             "Cannot modify initial line's character!")
     (assoc-in db [:lines id field] value)))
 
-(reg-event-db
+(reg-event-data
   :delete-line
-  [validate
-   record-undo]
   (fn [db [_ id]]
     (assert (not (initial-line? db id))
             "Initial lines cannot be deleted!")
@@ -119,16 +104,13 @@
           (u/update-values :player-options clear-line)
           (u/update-values :lines clear-line)))))
 
-(reg-event-db
+(reg-event-data
   :dialogue-editor/delete-dialogue-state
-  [validate
-   record-undo]
   (fn [db [_ id]]
     (db/clear-dialogue-state db id)))
 
-(reg-event-db
+(reg-event-meta
   :start-connecting-lines
-  [validate]
   (fn [db [_ line-id cursor index]]
     (assert (not (contains? db :connecting))
             "Attempting to start connecting lines while already in progress!")
@@ -138,10 +120,8 @@
                         :line-id line-id}
            :cursor cursor)))
 
-(reg-event-db
+(reg-event-data
   :end-connecting-lines
-  [validate
-   record-undo]
   (fn [db [_ end-id]]
     (assert (s/valid? :armchair.db/connecting-lines (:connecting db))
             "Attempting to end connecting with missing or invalid state!")
@@ -152,19 +132,15 @@
       (cond-> (dissoc db :connecting :cursor)
         (not= start-id end-id) (assoc-in id-path end-id)))))
 
-(reg-event-db
+(reg-event-data
   :dialogue-editor/disconnect-line
-  [validate
-   record-undo]
   (fn [db [_ id]]
     (assoc-in db [:lines id :next-line-id] nil)))
 
 ;; Option events
 
-(reg-event-db
+(reg-event-data
   :dialogue-editor/move-option
-  [validate
-   record-undo]
   (fn [db [_ line-id s-index direction]]
     (let [t-index (case direction
                     :up (dec s-index)
@@ -175,10 +151,8 @@
                                  options))]
       (update-in db [:lines line-id :options] swap-option))))
 
-(reg-event-db
+(reg-event-data
   :dialogue-editor/add-option
-  [validate
-   record-undo]
   (fn [db [_ line-id]]
     (let [option-id (random-uuid)]
       (-> db
@@ -188,28 +162,22 @@
                                                  :text ""
                                                  :next-line-id nil})))))
 
-(reg-event-db
+(reg-event-data
   :dialogue-editor/update-option
-  [validate
-   record-undo]
   (fn [db [_ line-id index text]]
     (let [option-id (get-in db [:lines line-id :options index])]
       (assoc-in db [:player-options option-id :text] text))))
 
-(reg-event-db
+(reg-event-data
   :dialogue-editor/delete-option
-  [validate
-   record-undo]
   (fn [db [_ line-id index]]
     (let [option-id (get-in db [:lines line-id :options index])]
       (-> db
           (update-in [:lines line-id :options] #(u/removev % index))
           (update :player-options dissoc option-id)))))
 
-(reg-event-db
+(reg-event-data
   :dialogue-editor/disconnect-option
-  [validate
-   record-undo]
   (fn [db [_ id index]]
     (let [option-id (get-in db [:lines id :options index])]
       (assoc-in db [:player-options option-id :next-line-id] nil))))

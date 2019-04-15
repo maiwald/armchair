@@ -6,6 +6,7 @@
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
+            [armchair.local-storage :as ls]
             [armchair.db :as db :refer [default-db
                                         content-data
                                         serialize-db
@@ -20,19 +21,31 @@
              (let [explain (s/explain-data :armchair.db/state db)]
                (js/console.log (:cljs.spec.alpha/problems explain)))))))
 
+(defn reg-event-data [id handler]
+  (reg-event-db id
+                [validate record-undo ls/store]
+                handler))
+
+(defn reg-event-meta [id handler]
+  (reg-event-db id [validate] handler))
+
 ;; Initializer
 
 (reg-event-db
   :initialize-db
-  [validate]
   (fn [_ _] default-db))
 
-(reg-event-db
+(reg-event-data
   :reset-db
-  [validate
-   record-undo]
   (fn [db]
     (merge db (content-data default-db))))
+
+(reg-event-meta
+  :load-storage-state
+  (fn [db]
+    (if-let [serialized (ls/get-data)]
+      (merge db (migrate (deserialize-db serialized)))
+      db)))
 
 (reg-event-fx
   :download-state
@@ -48,19 +61,15 @@
       (js/saveAs blob filename))
     {}))
 
-(reg-event-db
+(reg-event-data
   :upload-state
-  [validate
-   record-undo]
   (fn [db [_ json]]
     (merge db (migrate (deserialize-db json)))))
 
 ;; Character CRUD
 
-(reg-event-db
+(reg-event-data
   :delete-character
-  [validate
-   record-undo]
   (fn [db [_ id]]
     (let [line-count (->> (:lines db)
                           (u/filter-map #(= (:character-id %) id))
@@ -71,10 +80,8 @@
 
 ;; Location CRUD
 
-(reg-event-db
+(reg-event-data
   :delete-location
-  [validate
-   record-undo]
   (fn [db [_ id]]
     (let [location-connections (filter #(contains? % id)
                                        (:location-connections db))
@@ -92,10 +99,8 @@
           (u/update-in-map :dialogues location-dialogue-ids
                            dissoc :location-id :location-position)))))
 
-(reg-event-db
+(reg-event-data
   :delete-switch
-  [validate
-   record-undo]
   (fn [db [_ switch-id]]
     (let [switch-value-ids (get-in db [:switches switch-id :value-ids])
           belongs-to-switch? (fn [i] (= (:switch-id i) switch-id))
@@ -115,10 +120,8 @@
 
 ;; Dialogue CRUD
 
-(reg-event-db
+(reg-event-data
   :delete-dialogue
-  [validate
-   record-undo]
   (fn [db [_ dialogue-id]]
     (let [dialogue-states (get-in db [:dialogues dialogue-id :states])]
       (-> (loop [db db
@@ -132,23 +135,20 @@
 
 ;; Page
 
-(reg-event-db
+(reg-event-meta
   :show-page
-  [validate]
   (fn [db [_ path]]
     (assoc db :current-page path)))
 
 ;; Mouse, Drag & Drop
 
-(reg-event-db
+(reg-event-meta
   :move-cursor
-  [validate]
   (fn [db [_ cursor]]
     (assoc db :cursor cursor)))
 
-(reg-event-db
+(reg-event-meta
   :start-connecting-locations
-  [validate]
   (fn [db [_ location-id cursor]]
     (assert (not (contains? db :connecting))
             "Attempting to start connecting locations while already in progress!")
@@ -157,10 +157,8 @@
                         :location-id location-id}
            :cursor cursor)))
 
-(reg-event-db
+(reg-event-data
   :end-connecting-locations
-  [validate
-   record-undo]
   (fn [db [_ end-id]]
     (assert (some? (:connecting db))
             "Attempting to end connecting while not in progress!")
@@ -171,24 +169,20 @@
         new-db))))
 
 
-(reg-event-db
+(reg-event-meta
   :abort-connecting
-  [validate]
   (fn [db] (dissoc db :connecting)))
 
-(reg-event-db
+(reg-event-meta
   :start-dragging
-  [validate]
   (fn [db [_ ids cursor]]
     (cond-> db
       (not (contains? db :dragging)) (assoc :dragging {:ids ids
                                                        :cursor-start cursor}
                                             :cursor cursor))))
 
-(reg-event-db
+(reg-event-data
   :end-dragging
-  [validate
-   record-undo]
   (fn [{:keys [dragging cursor] :as db}]
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")

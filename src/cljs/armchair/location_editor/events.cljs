@@ -1,62 +1,50 @@
 (ns armchair.location-editor.events
-  (:require [re-frame.core :refer [reg-event-db]]
-            [armchair.events :refer [validate]]
+  (:require [armchair.events :refer [reg-event-data reg-event-meta]]
             [armchair.undo :refer [record-undo]]
             [armchair.util :as u]))
 
-(reg-event-db
+(reg-event-data
   :location-editor/update-name
-  [validate
-   record-undo]
   (fn [db [_ id value]]
     (assoc-in db [:locations id :display-name] value)))
 
-(reg-event-db
+(reg-event-meta
   :location-editor/set-tool
-  [validate]
   (fn [db [_ tool]]
     (assoc-in db [:location-editor :tool] tool)))
 
-(reg-event-db
+(reg-event-meta
   :location-editor/set-active-texture
-  [validate]
   (fn [db [_ texture]]
     (assoc-in db [:location-editor :active-texture] texture)))
 
-(reg-event-db
+(reg-event-meta
   :location-editor/set-active-walk-state
-  [validate]
   (fn [db [_ value]]
     (assoc-in db [:location-editor :active-walk-state] value)))
 
-(reg-event-db
+(reg-event-meta
   :location-editor/set-highlight
-  [validate]
   (fn [db [_ tile]]
     (assoc-in db [:location-editor :highlight] tile)))
 
-(reg-event-db
+(reg-event-meta
   :location-editor/unset-highlight
-  [validate]
   (fn [db]
     (update db :location-editor dissoc :highlight)))
 
-(reg-event-db
+(reg-event-meta
   :location-editor/start-entity-drag
-  [validate]
   (fn [db [_ payload]]
     (assoc db :dnd-payload payload)))
 
-(reg-event-db
+(reg-event-meta
   :location-editor/stop-entity-drag
-  [validate]
   (fn [db]
     (dissoc db :dnd-payload)))
 
-(reg-event-db
+(reg-event-data
   :location-editor/move-player
-  [validate
-   record-undo]
   (fn [db [_ location-id position]]
     (-> db
        (dissoc :dnd-payload)
@@ -64,10 +52,8 @@
        (assoc :player {:location-id location-id
                        :location-position position}))))
 
-(reg-event-db
+(reg-event-data
   :location-editor/move-character
-  [validate
-   record-undo]
   (fn [db [_ location-id character-id to]]
     (let [new-db (-> db
                      (dissoc :dnd-payload)
@@ -88,10 +74,8 @@
                    :location-id location-id
                    :location-position to})))))
 
-(reg-event-db
+(reg-event-data
   :location-editor/remove-character
-  [validate
-   record-undo]
   (fn [db [_ character-id]]
     (let [dialogue-lookup (->> (:dialogues db)
                                vals
@@ -104,10 +88,8 @@
           (update-in [:dialogues (dialogue-lookup character-id)]
                      dissoc :location-id :location-position)))))
 
-(reg-event-db
+(reg-event-data
   :location-editor/move-trigger
-  [validate
-   record-undo]
   (fn [db [_ location target to]]
     (-> db
         (dissoc :dnd-payload)
@@ -116,26 +98,20 @@
                                                                  (u/filter-map (fn [v] (not= v target)) new-db)
                                                                  (assoc new-db to target))))))
 
-(reg-event-db
+(reg-event-data
   :location-editor/paint
-  [validate
-   record-undo]
   (fn [db [_ location-id tile]]
     (let [{:keys [active-texture]} (:location-editor db)]
       (assoc-in db [:locations location-id :background tile] active-texture))))
 
-(reg-event-db
+(reg-event-data
   :location-editor/set-walkable
-  [validate
-   record-undo]
   (fn [db [_ location-id tile]]
     (let [add (get-in db [:location-editor :active-walk-state])]
       (update-in db [:locations location-id :walk-set] (if add conj disj) tile))))
 
-(reg-event-db
+(reg-event-data
   :location-editor/resize-smaller
-  [validate
-   record-undo]
   (fn [db [_ location-id direction]]
     (let [[shift-index shift-delta] (case direction
                                       :up [0 [0 1]]
@@ -155,10 +131,8 @@
                        (update :connection-triggers remove-oob)
                        (update :walk-set (comp set #(filter in-bounds? %)))))))))
 
-(reg-event-db
+(reg-event-data
   :location-editor/resize-larger
-  [validate
-   record-undo]
   (fn [db [_ location-id direction]]
     (let [[shift-index shift-delta] (case direction
                                       :up [0 [0 -1]]

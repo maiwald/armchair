@@ -28,6 +28,7 @@
 
 (defn ^:export init []
   (re-frame/dispatch-sync [:initialize-db])
+  (re-frame/dispatch-sync [:load-storage-state])
   (when (empty? js/location.hash)
     (js/history.replaceState #js{} "" routes/root))
   (re-frame/dispatch-sync [:show-page (subs js/location.hash 1)])

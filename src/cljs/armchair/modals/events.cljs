@@ -1,9 +1,8 @@
 (ns armchair.modals.events
-  (:require [re-frame.core :refer [reg-event-db]]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
             [clojure.string :refer [blank?]]
             [armchair.config :as config]
-            [armchair.events :refer [validate]]
+            [armchair.events :refer [reg-event-data reg-event-meta]]
             [armchair.undo :refer [record-undo]]
             [armchair.util :as u]))
 
@@ -15,15 +14,13 @@
   (assert (contains? (:modal db) :conditions-form)
           "No conditions form open. Cannot set value!"))
 
-(reg-event-db
+(reg-event-meta
   :close-modal
-  [validate]
   (fn [db [_ modal-fn | args]]
     (dissoc db :modal)))
 
-(reg-event-db
+(reg-event-meta
   :modal/open-condition-modal
-  [validate]
   (fn [db [_ line-id index]]
     (assert-no-open-modal db)
     (let [option-id (get-in db [:lines line-id :options index])
@@ -35,56 +32,48 @@
                  :conjunction conjunction
                  :terms terms}))))
 
-(reg-event-db
+(reg-event-meta
   :modal/update-condition-conjunction
-  [validate]
   (fn [db [_ value]]
     (assert-conditions-modal db)
     (assoc-in db [:modal :conditions-form :conjunction] value)))
 
-(reg-event-db
+(reg-event-meta
   :modal/add-condition-term
-  [validate]
   (fn [db]
     (assert-conditions-modal db)
     (update-in db [:modal :conditions-form :terms]
                conj {})))
 
-(reg-event-db
+(reg-event-meta
   :modal/remove-condition-term
-  [validate]
   (fn [db [_ index]]
     (assert-conditions-modal db)
     (update-in db [:modal :conditions-form :terms]
                u/removev index)))
 
-(reg-event-db
+(reg-event-meta
   :modal/update-condition-term-switch
-  [validate]
   (fn [db [_ index value]]
     (assert-conditions-modal db)
     (-> db
         (assoc-in [:modal :conditions-form :terms index :switch-id] value)
         (update-in [:modal :conditions-form :terms index] dissoc :switch-value-id))))
 
-(reg-event-db
+(reg-event-meta
   :modal/update-condition-term-operator
-  [validate]
   (fn [db [_ index value]]
     (assert-conditions-modal db)
     (assoc-in db [:modal :conditions-form :terms index :operator] value)))
 
-(reg-event-db
+(reg-event-meta
   :modal/update-condition-term-value
-  [validate]
   (fn [db [_ index value]]
     (assert-conditions-modal db)
     (assoc-in db [:modal :conditions-form :terms index :switch-value-id] value)))
 
-(reg-event-db
+(reg-event-data
   :modal/save-condition
-  [validate
-   record-undo]
   (fn [db]
     (assert-conditions-modal db)
     (let [{:keys [player-option-id conjunction terms]} (get-in db [:modal :conditions-form])
@@ -99,9 +88,8 @@
   (assert (contains? (:modal db) :switch-form)
           "No switch form open. Cannot set value!"))
 
-(reg-event-db
+(reg-event-meta
   :modal/open-switch-modal
-  [validate]
   (fn [db [_ id]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :switch-form]
@@ -117,30 +105,26 @@
                                   :entity/type :switch-value
                                   :display-name "OFF"})}))))
 
-(reg-event-db
+(reg-event-meta
   :modal/update-switch-name
-  [validate]
   (fn [db [_ value]]
     (assert-switch-modal db)
     (assoc-in db [:modal :switch-form :display-name] value)))
 
-(reg-event-db
+(reg-event-meta
   :modal/update-switch-value
-  [validate]
   (fn [db [_ index value]]
     (assert-switch-modal db)
     (assoc-in db [:modal :switch-form :values index :display-name] value)))
 
-(reg-event-db
+(reg-event-meta
   :modal/remove-switch-value
-  [validate]
   (fn [db [_ index]]
     (assert-switch-modal db)
     (assoc-in db [:modal :switch-form :values index :deleted] true)))
 
-(reg-event-db
+(reg-event-meta
   :modal/add-switch-value
-  [validate]
   (fn [db _]
     (assert-switch-modal db)
     (let [value-id (random-uuid)]
@@ -149,10 +133,8 @@
                                                          :entity/type :switch-value
                                                          :display-name ""})))))
 
-(reg-event-db
+(reg-event-data
   :modal/save-switch
-  [validate
-   record-undo]
   (fn [db _]
     (assert-switch-modal db)
     (let [modal-data (get-in db [:modal :switch-form])
@@ -178,18 +160,16 @@
   (assert (contains? (:modal db) :trigger-creation)
           "No trigger creation initiated. Cannot set value!"))
 
-(reg-event-db
+(reg-event-meta
   :modal/open-trigger-creation
-  [validate]
   (fn [db [_ node-id]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :trigger-creation]
               {:trigger-node-id node-id
                :switch-kind :dialogue-state})))
 
-(reg-event-db
+(reg-event-meta
   :modal/update-trigger-kind
-  [validate]
   (fn [db [_ kind]]
     (assert-trigger-modal db)
     (update-in db [:modal :trigger-creation]
@@ -197,9 +177,8 @@
                            (assoc :switch-kind kind)
                            (dissoc :switch-id :switch-value))))))
 
-(reg-event-db
+(reg-event-meta
   :modal/update-trigger-switch-id
-  [validate]
   (fn [db [_ id]]
     (assert-trigger-modal db)
     (update-in db [:modal :trigger-creation]
@@ -207,17 +186,14 @@
                            (assoc :switch-id id)
                            (dissoc :switch-value))))))
 
-(reg-event-db
+(reg-event-meta
   :modal/update-trigger-value
-  [validate]
   (fn [db [_ value]]
     (assert-trigger-modal db)
     (assoc-in db [:modal :trigger-creation :switch-value] value)))
 
-(reg-event-db
+(reg-event-data
   :modal/save-trigger
-  [validate
-   record-undo]
   (fn [db]
     (assert-trigger-modal db)
     (let [trigger-id (random-uuid)
@@ -234,9 +210,8 @@
             (assoc-in [:triggers trigger-id] trigger)
             (dissoc :modal))))))
 
-(reg-event-db
+(reg-event-meta
   :open-character-modal
-  [validate]
   (fn [db [_ id]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :character-form]
@@ -252,18 +227,14 @@
   (assert (contains? (:modal db) :character-form)
           "No character creation initiated. Cannot set value!"))
 
-(reg-event-db
+(reg-event-data
   :character-form/update
-  [validate
-   record-undo]
   (fn [db [_ field value]]
     (assert-character-modal db)
     (assoc-in db [:modal :character-form field] value)))
 
-(reg-event-db
+(reg-event-data
   :character-form/save
-  [validate
-   record-undo]
   (fn [db]
     (assert-character-modal db)
     (let [{:keys [id display-name texture color]} (get-in db [:modal :character-form])
@@ -279,9 +250,8 @@
         (-> (assoc-in [:characters id] character)
             (dissoc :modal))))))
 
-(reg-event-db
+(reg-event-meta
   :open-location-creation
-  [validate]
   (fn [db]
     (assert-no-open-modal db)
     (assoc-in db [:modal :location-creation] "")))
@@ -290,17 +260,14 @@
   (assert (contains? (:modal db) :location-creation)
           "No Location creation modal present. Cannot create!"))
 
-(reg-event-db
+(reg-event-meta
   :update-location-creation-name
-  [validate]
   (fn [db [_ display-name]]
     (assert-location-creation-modal db)
     (assoc-in db [:modal :location-creation] display-name)))
 
-(reg-event-db
+(reg-event-data
   :create-location
-  [validate
-   record-undo]
   (fn [db]
     (assert-location-creation-modal db)
     (let [id (random-uuid)
@@ -316,25 +283,22 @@
                                      :connection-triggers {}
                                      :display-name display-name})))))
 
-(reg-event-db
+(reg-event-meta
   :open-npc-line-modal
-  [validate]
   (fn [db [_ payload]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :npc-line-id] payload)))
 
-(reg-event-db
+(reg-event-meta
   :open-dialogue-creation-modal
-  [validate]
   (fn [db _]
     (assert-no-open-modal db)
     (assoc-in db [:modal :dialogue-creation] {:character-id nil
                                               :synopsis nil})))
 ;; Dialogue state modal
 
-(reg-event-db
+(reg-event-meta
   :open-dialogue-state-modal
-  [validate]
   (fn [db [_ line-id]]
     (assert-no-open-modal db)
     (let [dialogue-id (get-in db [:lines line-id :dialogue-id])
@@ -346,17 +310,14 @@
   (assert (contains? (:modal db) :dialogue-state)
           "No dialogue state modal open. Cannot set value!"))
 
-(reg-event-db
+(reg-event-meta
   :dialogue-state-update
-  [validate]
   (fn [db [_ description]]
     (assert-dialogue-state-modal db)
     (assoc-in db [:modal :dialogue-state :description] description)))
 
-(reg-event-db
+(reg-event-data
   :create-dialogue-state
-  [validate
-   record-undo]
   (fn [db]
     (assert-dialogue-state-modal db)
     (let [{:keys [line-id description]} (get-in db [:modal :dialogue-state])
@@ -369,17 +330,14 @@
   (assert (contains? (:modal db) :dialogue-creation)
           "No dialogue creation initiated. Cannot set value!"))
 
-(reg-event-db
+(reg-event-meta
   :dialogue-creation-update
-  [validate]
   (fn [db [_ field value]]
     (assert-dialogue-creation-modal db)
     (assoc-in db [:modal :dialogue-creation field] value)))
 
-(reg-event-db
+(reg-event-data
   :create-dialogue
-  [validate
-   record-undo]
   (fn [db]
     (assert-dialogue-creation-modal db)
     (let [dialogue-id (random-uuid)
