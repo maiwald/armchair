@@ -9,7 +9,10 @@
             [clojure.set :refer [subset? union]]
             [armchair.game.canvas :as c]
             [armchair.game.pathfinding :as path]
-            [armchair.config :refer [tile-size]]
+            [armchair.config :refer [tile-size
+                                     camera-tile-width
+                                     camera-tile-height
+                                     camera-scale]]
             [armchair.textures :refer [load-textures sprite-lookup]]
             [armchair.util :as u]
             [com.rpl.specter
@@ -91,8 +94,8 @@
 (defn tile-visible? [camera [x y]]
   (u/rect-intersects?
     camera
-    [(u/tile->coord [(- x 1) (- y 1)])
-     (u/tile->coord [(+ x 2) (+ y 2)])]))
+    [(u/tile->coord [x y])
+     (u/tile->coord [(+ x 1) (+ y 1)])]))
 
 (defn draw-texture [ctx texture coord]
   (when (some? @texture-atlas)
@@ -219,17 +222,15 @@
       ; (draw-direction-indicator @ctx view-state)
       ; (draw-camera @ctx camera)
       (c/reset-transform! @ctx)
-      (let [scale (min (/ (c/width @ctx) cam-width)
-                       (/ (c/height @ctx) cam-height))
-            w-offset (/ (- (c/width @ctx) cam-width) 2)
+      (let [w-offset (/ (- (c/width @ctx) cam-width) 2)
             h-offset (/ (- (c/height @ctx) cam-height) 2)]
         (c/draw-image! @ctx
                        (.-canvas @ctx)
                        [w-offset h-offset]
                        [cam-width cam-height]
-                       [(- (/ (c/width @ctx) 2) (* (/ cam-width 2) scale))
-                        (- (/ (c/height @ctx) 2) (* (/ cam-height 2) scale))]
-                       [(* scale cam-width) (* scale cam-height)]))
+                       [(- (/ (c/width @ctx) 2) (* (/ cam-width 2) camera-scale))
+                        (- (/ (c/height @ctx) 2) (* (/ cam-height 2) camera-scale))]
+                       [(* camera-scale cam-width) (* camera-scale cam-height)]))
       (when (interacting? view-state)
         (draw-dialogue-box @ctx (dialogue-data view-state))))))
 
@@ -337,8 +338,9 @@
 ;; state updates and view state
 
 (defn camera-rect [player-coord location-id]
-  (let [w (* 17 tile-size) w2 (/ w 2)
-        h (* 9 tile-size) h2 (/ h 2)
+  (let [; dec camera size to account for player in center
+        w (* (dec camera-tile-width) tile-size) w2 (/ w 2)
+        h (* (dec camera-tile-height) tile-size) h2 (/ h 2)
         loc-dim (get-in @data [:locations location-id :dimension])
         [[loc-left loc-top]
          [loc-right loc-bottom]] (transform [ALL ALL] #(* % tile-size) loc-dim)

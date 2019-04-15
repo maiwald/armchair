@@ -7,6 +7,9 @@
 (def line-width 260)
 (def line-height 100)
 (def tile-size 32)
+(def camera-tile-width 18)
+(def camera-tile-height 10)
+(def camera-scale 1.5)
 
 (def color-grid
   ["#000000" "#330000" "#331900" "#333300" "#193300" "#003300" "#003319" "#003333" "#001933" "#000033" "#190033" "#330033" "#330019"
