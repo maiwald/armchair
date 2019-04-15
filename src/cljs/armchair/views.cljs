@@ -188,8 +188,7 @@
            [:li
             [:a {:on-click #(u/upload-json! (fn [json] (>evt [:upload-state json])))}
              [icon "upload"] "load from file"]]
-           (when config/debug?
-             [:li [:a {:on-click #(>evt [:reset-db])} "reset"]])
+           [:li [:a {:on-click #(>evt [:reset-db])} "reset"]]
            (when-not config/debug?
              [:li [:a {:href "https://github.com/maiwald/armchair"
                        :target "_blank"}

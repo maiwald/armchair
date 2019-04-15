@@ -1,7 +1,8 @@
 (ns armchair.undo
   (:require [re-frame.core :refer [after reg-event-db reg-sub]]
             [re-frame.db :refer [app-db]]
-            [armchair.db :refer [content-data]]))
+            [armchair.db :refer [content-data]]
+            [armchair.local-storage :as ls]))
 
 (defonce undo-list (atom []))
 (defonce redo-list (atom []))
@@ -25,6 +26,7 @@
 
 (reg-event-db
   :undo
+  [ls/store]
   (fn [db]
     (if (can-undo?)
       (let [prev-db (peek @undo-list)]
@@ -35,6 +37,7 @@
 
 (reg-event-db
   :redo
+  [ls/store]
   (fn [db]
     (if (can-redo?)
       (let [next-db (peek @redo-list)]
