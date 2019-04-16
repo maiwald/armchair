@@ -11,6 +11,8 @@
             [armchair.config :as config]
             [armchair.util :as u]))
 
+;; Migrations
+
 (def db-version 4)
 
 (def migrations
@@ -59,29 +61,6 @@
       (recur
         (inc version)
         ((get migrations version) payload)))))
-
-(defn content-data [db]
-  (let [content-keys [:ui/positions
-                      :player
-                      :locations
-                      :characters
-                      :dialogues
-                      :player-options
-                      :location-connections
-                      :lines
-                      :triggers
-                      :switches
-                      :switch-values]]
-    (select-keys db content-keys)))
-
-(defn serialize-db [db]
-  (let [w (t/writer :json)]
-    (t/write w {:version db-version
-                :payload (content-data db)})))
-
-(defn deserialize-db [json]
-  (let [r (t/reader :json {:handlers {"u" uuid}})]
-    (t/read r json)))
 
 ;; Types
 
@@ -369,6 +348,33 @@
                 NONE db)
         (update-in [:dialogues dialogue-id :states] dissoc line-id)
         (update :triggers #(apply dissoc % trigger-ids)))))
+
+;; Serialization
+
+(defn content-data [db]
+  (let [content-keys [:ui/positions
+                      :player
+                      :locations
+                      :characters
+                      :dialogues
+                      :player-options
+                      :location-connections
+                      :lines
+                      :triggers
+                      :switches
+                      :switch-values]]
+    (select-keys db content-keys)))
+
+(defn serialize-db [db]
+  (let [w (t/writer :json)]
+    (t/write w {:version db-version
+                :payload (content-data db)})))
+
+(defn deserialize-db [json]
+  (let [r (t/reader :json {:handlers {"u" uuid}})]
+    (t/read r json)))
+
+;; Default DB
 
 (def default-db
   (merge {:location-editor {:tool :info
