@@ -58,10 +58,31 @@
                             :left (px x)}}]))]))))
 
 (defn sidebar-info [location-id]
-  (let [{:keys [display-name]} (<sub [:location-editor/location location-id])]
-    [input/text {:label "Name"
-                 :on-change #(>evt [:location-editor/update-name location-id (e->val %)])
-                 :value display-name}]))
+  (let [display-name (<sub [:location-editor/display-name location-id])]
+    [input/text
+     {:label "Name"
+      :on-change #(>evt [:location-editor/update-name location-id (e->val %)])
+      :value display-name}]))
+
+(defn sidebar-resize [location-id]
+  (let [{:keys [width height]} (<sub [:location-editor/dimensions location-id])]
+    [:div
+     (str "Size: " width "x" height)
+     [:div {:class "resize-container"}
+      [:div {:class "resize-container__reference"}
+       [:div {:class "resizer resizer_horizontal resizer_top"}
+        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :up])} [icon "arrow-up" "extend"]]
+        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :up])} [icon "arrow-down" "shrink"]]]
+       [:div {:class "resizer resizer_horizontal resizer_bottom"}
+        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :down])} [icon "arrow-up" "shrink"]]
+        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :down])} [icon "arrow-down" "extend"]]]
+       [:div {:class "resizer resizer_vertical resizer_left"}
+        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :left])} [icon "arrow-left" "extend"]]
+        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :left])} [icon "arrow-right" "shrink"]]]
+       [:div {:class "resizer resizer_vertical resizer_right"}
+        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [icon "arrow-left" "shrink"]]
+        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [icon "arrow-right" "extend"]]]]]]))
+
 
 (defn sidebar-paint [location-id]
   (let [{:keys [active-texture]} (<sub [:location-editor/ui])]
@@ -92,24 +113,6 @@
                       :background-color (if walk-state
                                           "rgba(0, 255, 0, .2"
                                           "rgba(255, 0, 0, .2")}}]])]]))
-
-(defn sidebar-resize [location-id]
-  [:div
-   "Resize level"
-   [:div {:class "resize-container"}
-    [:div {:class "resize-container__reference"}
-     [:div {:class "resizer resizer_horizontal resizer_top"}
-      [:a {:on-click #(>evt [:location-editor/resize-larger location-id :up])} [icon "arrow-up" "extend"]]
-      [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :up])} [icon "arrow-down" "shrink"]]]
-     [:div {:class "resizer resizer_horizontal resizer_bottom"}
-      [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :down])} [icon "arrow-up" "shrink"]]
-      [:a {:on-click #(>evt [:location-editor/resize-larger location-id :down])} [icon "arrow-down" "extend"]]]
-     [:div {:class "resizer resizer_vertical resizer_left"}
-      [:a {:on-click #(>evt [:location-editor/resize-larger location-id :left])} [icon "arrow-left" "extend"]]
-      [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :left])} [icon "arrow-right" "shrink"]]]
-     [:div {:class "resizer resizer_vertical resizer_right"}
-      [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [icon "arrow-left" "shrink"]]
-      [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [icon "arrow-right" "extend"]]]]]])
 
 (defn sidebar-npcs [location-id]
   (let [available-npcs (<sub [:location-editor/available-npcs location-id])
@@ -183,16 +186,16 @@
     [:div
      [slds/radio-button-group {:options [[:info [icon "info" "Info"]]
                                          [:background-painter [icon "paint-roller" "Background"]]
-                                         [:resize [icon "expand" "Resize"]]
                                          [:collision [icon "walking" "Collision"]]
                                          [:npcs-select [icon "users" "Characters"]]
                                          [:connection-select [icon "external-link-alt" "Connections"]]]
                                :active tool
                                :on-change #(>evt [:location-editor/set-tool %])}]
      (case tool
-       :info [sidebar-info location-id]
+       :info [:div
+              [sidebar-info location-id]
+              [sidebar-resize location-id]]
        :background-painter [sidebar-paint location-id]
-       :resize [sidebar-resize location-id]
        :collision [sidebar-collision location-id]
        :npcs-select [sidebar-npcs location-id]
        :connection-select [sidebar-connections location-id]
