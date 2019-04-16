@@ -58,6 +58,20 @@
                   characters))))
 
 (reg-sub
+  :location-editor/display-name
+  :<- [:db-locations]
+  (fn [locations [_ location-id]]
+    (get-in locations [location-id :display-name])))
+
+(reg-sub
+  :location-editor/dimensions
+  :<- [:db-locations]
+  (fn [locations [_ location-id]]
+    (let [dimension (get-in locations [location-id :dimension])]
+      {:width (u/rect-width dimension)
+       :height (u/rect-height dimension)})))
+
+(reg-sub
   :location-editor/connected-locations
   :<- [:db-locations]
   :<- [:db-location-connections]
