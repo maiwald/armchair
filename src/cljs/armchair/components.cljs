@@ -3,7 +3,7 @@
             [reagent.core :as r]
             [armchair.config :as config]
             [armchair.textures :refer [texture-path sprite-lookup]]
-            [armchair.util :as u :refer [stop-e! >evt <sub e-> e->left?]]))
+            [armchair.util :as u :refer [stop-e! >evt <sub e->left?]]))
 
 ;; Drag & Drop
 
@@ -13,9 +13,10 @@
                            (aget 0))))
 
 (defn start-dragging-handler [ids]
-  (e-> (fn [e]
-         (when (e->left? e)
-           (>evt [:start-dragging ids (e->graph-cursor e)])))))
+  (fn [e]
+    (when (e->left? e)
+      (u/prevent-e! e)
+      (>evt [:start-dragging ids (e->graph-cursor e)]))))
 
 (defn connection [{kind :kind
                    [x1 y1] :start
@@ -58,11 +59,11 @@
   (let [connecting? (some? (<sub [:connector]))
         dragging? (<sub [:dragging?])
         mouse-down (start-dragging-handler (-> nodes vals flatten set))
-        mouse-move (e-> #(when (or dragging? connecting?)
-                           (>evt [:move-cursor (e->graph-cursor %)])))
+        mouse-move (when (or dragging? connecting?)
+                     #(>evt [:move-cursor (e->graph-cursor %)]))
         mouse-up (cond
-                   connecting? (e-> #(>evt [:abort-connecting]))
-                   dragging? (e-> #(>evt [:end-dragging])))]
+                   connecting? #(>evt [:abort-connecting])
+                   dragging? #(>evt [:end-dragging]))]
     [:div {:class (cond-> ["graph"]
                     dragging? (conj "graph_is-dragging")
                     connecting? (conj "graph_is-connecting"))
@@ -126,7 +127,10 @@
 (defn graph-node [{id :item-id}]
   (let [dragging? (<sub [:dragging-item? id])
         start-dragging (start-dragging-handler #{id})
-        stop-dragging (when dragging? (e-> #(>evt [:end-dragging])))]
+        stop-dragging (when dragging?
+                        (fn [e]
+                          (u/prevent-e! e)
+                          (>evt [:end-dragging])))]
     (fn [{:keys [title color actions on-connect-end]}]
       [:div {:class "graph-node"
              :on-mouse-up (when (some? (<sub [:connector])) on-connect-end)

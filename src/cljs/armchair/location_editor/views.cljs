@@ -5,7 +5,7 @@
             [armchair.components :as c]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
-            [armchair.util :as u :refer [px <sub >evt prevent-e! e-> e->val]]
+            [armchair.util :as u :refer [px <sub >evt e-> e->val]]
             [armchair.textures :refer [texture-path background-textures]]))
 
 (defn icon [glyph title]
@@ -152,7 +152,7 @@
       (when (and (some? dnd-character-id)
                  (not (contains? available-npcs dnd-character-id)))
         [:li {:class "tile-list__item tile-list__item_dropzone"
-              :on-drag-over prevent-e!
+              :on-drag-over u/prevent-e!
               :on-drop (e-> #(>evt [:location-editor/remove-character dnd-character-id]))}
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
@@ -221,7 +221,7 @@
   [do-all-tiles dimension "dropzone"
    (fn [tile]
      [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-            :on-drag-over prevent-e!
+            :on-drag-over u/prevent-e!
             :on-drag-enter (e-> #(>evt [:location-editor/set-highlight tile]))
             :on-drop (e-> #(on-drop tile))}])])
 

@@ -6,7 +6,7 @@
             [armchair.location-editor.views :refer [location-editor]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
             [armchair.modals.views :refer [modal]]
-            [armchair.util :as u :refer [<sub >evt stop-e! e-> e->left? e->val]]
+            [armchair.util :as u :refer [<sub >evt]]
             [armchair.config :as config]
             [armchair.routes :refer [routes >navigate]]
             [armchair.game.views :refer [game-view]]
@@ -83,14 +83,16 @@
                                   (>evt [:delete-location location-id]))]]}
       [c/action-wrapper {:actions
                          [[:div {:class "action action_connect"
-                                 :on-mouse-down (e-> #(when (e->left? %)
-                                                        (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
+                                 :on-mouse-down (fn [e]
+                                                  (when (u/e->left? e)
+                                                    (u/prevent-e! e)
+                                                    (>evt [:start-connecting-locations location-id (e->graph-cursor e)])))}
                            [icon "project-diagram" "Connect"]]]}
        [:ul {:class "location__characters"}
         (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
           [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
            [:a {:style {:background-color npc-color}
-                :on-mouse-down stop-e!
+                :on-mouse-down u/stop-e!
                 :on-click #(>navigate :dialogue-edit :id dialogue-id)}
             npc-name]])]]]]))
 
