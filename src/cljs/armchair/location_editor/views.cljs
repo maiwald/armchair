@@ -274,9 +274,11 @@
             :style {:width (str (* config/tile-size (u/rect-width dimension)) "px")
                     :height (str (* config/tile-size (u/rect-height dimension)) "px")}}
       [background-tiles dimension background]
-      [npc-layer dimension npcs]
-      (when player-position [player-layer dimension player-position])
-      [conntection-trigger-layer dimension connection-triggers]
+      (when-not (contains? #{:background-painter :collision} tool)
+        [:div
+          (when player-position [player-layer dimension player-position])
+          [npc-layer dimension npcs]
+          [conntection-trigger-layer dimension connection-triggers]])
 
       (case tool
         :background-painter
