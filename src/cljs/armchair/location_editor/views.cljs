@@ -111,13 +111,14 @@
         [:li {:key (str "walk-state-select:" walk-state)
               :title (if walk-state "walkable" "not walkable")
               :class ["tile-grid__item"
-                      (when (= walk-state active-walk-state) "tile-grid__item_active")]}
+                      (when (= walk-state active-walk-state) "tile-grid__item_active")]
+              :style {:background-color "#fff"}}
          [:a {:on-click #(>evt [:location-editor/set-active-walk-state walk-state])
               :style {:height (px config/tile-size)
                       :width (px config/tile-size)
                       :background-color (if walk-state
-                                          "rgba(0, 255, 0, .2"
-                                          "rgba(255, 0, 0, .2")}}]])]]))
+                                          "rgba(0, 255, 0, .4)"
+                                          "rgba(255, 0, 0, .4)")}}]])]]))
 
 (defn sidebar-player []
   [sidebar-widget {:title "Player"}
