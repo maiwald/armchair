@@ -1,4 +1,5 @@
 # BUGS
+- flickering inputs in character modal
 
 # TODO
 - directed location connections

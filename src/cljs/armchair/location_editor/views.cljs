@@ -44,10 +44,8 @@
         [:div {:class "level-layer"
                :on-mouse-enter set-current-tile
                :on-mouse-leave clear-current-tile
-               :on-mouse-down #(do (start-painting)
-                                   (paint %))
-               :on-mouse-move #(do (set-current-tile %)
-                                   (paint %))
+               :on-mouse-down #(do (start-painting) (paint %))
+               :on-mouse-move #(do (set-current-tile %) (paint %))
                :on-mouse-up stop-painting}
          (when-let [tile @current-tile]
            (let [[x y] (u/tile->coord tile)]
@@ -57,17 +55,21 @@
                             :top (px y)
                             :left (px x)}}]))]))))
 
+(defn sidebar-widget [{title :title}]
+  (into [:div {:class "location-editor__sidebar-widget"}
+         [:div {:class "location-editor__sidebar-widget__title"} title]]
+        (r/children (r/current-component))))
+
 (defn sidebar-info [location-id]
   (let [display-name (<sub [:location-editor/display-name location-id])]
-    [input/text
-     {:label "Name"
-      :on-change #(>evt [:location-editor/update-name location-id (e->val %)])
-      :value display-name}]))
+    [sidebar-widget {:title "Location Name"}
+     [input/text
+      {:on-change #(>evt [:location-editor/update-name location-id (e->val %)])
+       :value display-name}]]))
 
 (defn sidebar-resize [location-id]
   (let [{:keys [width height]} (<sub [:location-editor/dimensions location-id])]
-    [:div
-     (str "Size: " width "x" height)
+    [sidebar-widget {:title (str "Size: " width "x" height)}
      [:div {:class "resize-container"}
       [:div {:class "resize-container__reference"}
        [:div {:class "resizer resizer_horizontal resizer_top"}
@@ -86,8 +88,7 @@
 
 (defn sidebar-paint [location-id]
   (let [{:keys [active-texture]} (<sub [:location-editor/ui])]
-    [:div
-     "Background Textures"
+    [sidebar-widget {:title "Background Textures"}
      [:ul {:class "tile-grid"}
       (for [texture background-textures]
         [:li {:key (str "texture-select:" texture)
@@ -99,8 +100,7 @@
 
 (defn sidebar-collision [location-id]
   (let [{:keys [active-walk-state]} (<sub [:location-editor/ui])]
-    [:div
-     "Collision State"
+    [sidebar-widget {:title "Collision State"}
      [:ul {:class "tile-grid"}
       (for [walk-state (list true false)]
         [:li {:key (str "walk-state-select:" walk-state)
@@ -114,26 +114,26 @@
                                           "rgba(0, 255, 0, .2"
                                           "rgba(255, 0, 0, .2")}}]])]]))
 
+(defn sidebar-player []
+  [sidebar-widget {:title "Player"}
+   [:ul {:class "tile-list"}
+    [:li {:class "tile-list__item"
+          :draggable true
+          :on-drag-start (fn [e]
+                           (set-dnd-texture! e)
+                           (.setData (.-dataTransfer e) "text/plain" ":player")
+                           (>evt [:location-editor/start-entity-drag :player]))}
+     [dnd-texture :player]
+     [:span {:class "tile-list__item__image"
+             :style {:width (str config/tile-size "px")
+                     :height (str config/tile-size "px")}}
+      [c/sprite-texture :human "Player"]]
+     [:span {:class "tile-list__item__label"} "Player"]]]])
+
 (defn sidebar-npcs [location-id]
   (let [available-npcs (<sub [:location-editor/available-npcs location-id])
         dnd-character-id (:character-id (<sub [:dnd-payload]))]
-    [:div
-     [:div "Player"]
-     [:ul {:class "tile-list"}
-      [:li {:class "tile-list__item"
-            :draggable true
-            :on-drag-start (fn [e]
-                             (set-dnd-texture! e)
-                             (.setData (.-dataTransfer e) "text/plain" ":player")
-                             (>evt [:location-editor/start-entity-drag :player]))}
-       [dnd-texture :player]
-       [:span {:class "tile-list__item__image"
-               :style {:width (str config/tile-size "px")
-                       :height (str config/tile-size "px")}}
-        [c/sprite-texture :human "Player"]]
-       [:span {:class "tile-list__item__label"} "Player"]]]
-
-     [:div "Available Characters"]
+    [sidebar-widget {:title "Available Characters"}
      [:ul {:class "tile-list"}
       (for [[character-id {:keys [display-name texture]}] available-npcs]
         [:li {:key (str "character-select" display-name)
@@ -165,8 +165,7 @@
                 :on-click #(>evt [:open-character-modal])}]]))
 
 (defn sidebar-connections [location-id]
-  [:div
-   "Assigned Connections"
+  [sidebar-widget {:title "Assigned Connections"}
    [:ul {:class "tile-list"}
     (for [[target-loctation-id {:keys [display-name]}] (<sub [:location-editor/connected-locations location-id])]
       [:li {:key (str "connection-select" display-name)
@@ -184,21 +183,22 @@
 (defn sidebar [location-id]
   (let [{:keys [tool]} (<sub [:location-editor/ui])]
     [:div
-     [slds/radio-button-group {:options [[:info [icon "info" "Info"]]
-                                         [:background-painter [icon "paint-roller" "Background"]]
-                                         [:collision [icon "walking" "Collision"]]
-                                         [:npcs-select [icon "users" "Characters"]]
-                                         [:connection-select [icon "external-link-alt" "Connections"]]]
-                               :active tool
-                               :on-change #(>evt [:location-editor/set-tool %])}]
+     [c/tabs {:items [[:info "Info"]
+                      [:background-painter "Background"]
+                      [:collision "Collision"]
+                      [:npcs-select "Entities"]]
+              :active tool
+              :on-change #(>evt [:location-editor/set-tool %])}]
      (case tool
        :info [:div
               [sidebar-info location-id]
               [sidebar-resize location-id]]
        :background-painter [sidebar-paint location-id]
-       :collision [sidebar-collision location-id]
-       :npcs-select [sidebar-npcs location-id]
-       :connection-select [sidebar-connections location-id]
+       :collision [sidebar-collision]
+       :npcs-select [:div
+                     [sidebar-player]
+                     [sidebar-npcs location-id]
+                     [sidebar-connections location-id]]
        nil)]))
 
 (defn tile-style [x y]
@@ -218,41 +218,43 @@
       (f tile)])])
 
 (defn dropzone [{:keys [dimension highlight on-drop]}]
-  (do-all-tiles dimension "dropzone"
-                (fn [tile]
-                  [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-                         :on-drag-over prevent-e!
-                         :on-drag-enter (e-> #(>evt [:location-editor/set-highlight tile]))
-                         :on-drop (e-> #(on-drop tile))}])))
+  [do-all-tiles dimension "dropzone"
+   (fn [tile]
+     [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
+            :on-drag-over prevent-e!
+            :on-drag-enter (e-> #(>evt [:location-editor/set-highlight tile]))
+            :on-drop (e-> #(on-drop tile))}])])
 
 (defn background-tiles [rect background]
-  (do-all-tiles rect "background"
-                (fn [tile]
-                  [c/sprite-texture (get background tile)])))
+  [do-all-tiles rect "background"
+   (fn [tile]
+     [c/sprite-texture (get background tile)])])
 
 (defn do-some-tiles [rect coll layer-title f]
-  [:div {:class "level-layer"}
-   (for [[tile item] coll]
-     [:div {:key (str "location-cell:" layer-title ":" tile)
-            :class "level-layer__tile"
-            :style (apply tile-style (u/rect->0 rect tile))}
-      (f tile item)])])
+  (for [[tile item] coll]
+    [:div {:key (str "location-cell:" layer-title ":" tile)
+           :class "level-layer__tile"
+           :style (apply tile-style (u/rect->0 rect tile))}
+     (f tile item)]))
 
 (defn player-layer [rect position]
-  (do-some-tiles rect {position :player} "player"
-                 (fn []
-                   [c/sprite-texture :human "Player"])))
+  [:div {:class "level-layer"}
+   (do-some-tiles rect {position :player} "player"
+                  (fn []
+                    [c/sprite-texture :human "Player"]))])
 
 (defn npc-layer [rect npcs]
-  (do-some-tiles rect npcs "npc"
-                 (fn [tile {:keys [display-name texture]}]
-                   [c/sprite-texture texture display-name])))
+  [:div {:class "level-layer"}
+   (do-some-tiles rect npcs "npc"
+                  (fn [tile {:keys [display-name texture]}]
+                    [c/sprite-texture texture display-name]))])
 
 (defn conntection-trigger-layer [rect connection-triggers]
-  (do-some-tiles rect connection-triggers "connection-trigger"
-                 (fn [tile {:keys [id display-name]}]
-                   [:img {:src (texture-path :exit)
-                          :title (str "to " display-name)}])))
+  [:div {:class "level-layer"}
+   (do-some-tiles rect connection-triggers "connection-trigger"
+                  (fn [tile {:keys [id display-name]}]
+                    [:img {:src (texture-path :exit)
+                           :title (str "to " display-name)}]))])
 
 (defn canvas [location-id]
   (let [{:keys [dimension background walk-set connection-triggers]} (<sub [:location-editor/location location-id])
@@ -278,28 +280,40 @@
 
         :collision
         [:div
-         (do-all-tiles dimension "walkable-area"
-                       (fn [tile]
-                         [:div {:class ["interactor"
-                                        (if (contains? walk-set tile)
-                                          "interactor_walkable"
-                                          "interactor_not-walkable")]}]))
+         [do-all-tiles dimension "walkable-area"
+          (fn [tile]
+            [:div {:class ["interactor"
+                           (if (contains? walk-set tile)
+                             "interactor_walkable"
+                             "interactor_not-walkable")]}])]
          [tile-paint-canvas
           {:dimension dimension
            :on-paint #(>evt [:location-editor/set-walkable location-id %])}]]
         :npcs-select
         [:div
-         (do-some-tiles dimension npcs "npc-select"
-                        (fn [_ {:keys [id dialogue-id texture display-name]}]
-                          [:div {:class "interactor interactor_draggable"
-                                 :title display-name
-                                 :draggable true
-                                 :on-click #(>navigate :dialogue-edit :id dialogue-id)
-                                 :on-drag-start (fn [e]
-                                                  (set-dnd-texture! e)
-                                                  (.setData (.-dataTransfer e) "text/plain" display-name)
-                                                  (>evt [:location-editor/start-entity-drag {:character-id id}]))}
-                           [dnd-texture texture]]))
+         [:div {:class "level-layer"}
+          (do-some-tiles dimension npcs "npc-select"
+                         (fn [_ {:keys [id dialogue-id texture display-name]}]
+                           [:div {:class "interactor interactor_draggable"
+                                  :title display-name
+                                  :draggable true
+                                  :on-click #(>navigate :dialogue-edit :id dialogue-id)
+                                  :on-drag-start (fn [e]
+                                                   (set-dnd-texture! e)
+                                                   (.setData (.-dataTransfer e) "text/plain" display-name)
+                                                   (>evt [:location-editor/start-entity-drag {:character-id id}]))}
+                            [dnd-texture texture]]))
+          (do-some-tiles dimension connection-triggers "connection-select"
+                         (fn [tile {id :entity/id :keys [display-name]}]
+                           [:div {:class "interactor interactor_draggable"
+                                  :title (str "to " display-name)
+                                  :draggable true
+                                  :on-click #(>navigate :location-edit :id id)
+                                  :on-drag-start (fn [e]
+                                                   (set-dnd-texture! e)
+                                                   (.setData (.-dataTransfer e) "text/plain" display-name)
+                                                   (>evt [:location-editor/start-entity-drag {:connection-trigger id}]))}
+                            [dnd-texture :exit]]))]
          (when-let [character-id (:character-id dnd-payload)]
            [dropzone {:dimension dimension
                       :highlight highlight
@@ -308,21 +322,8 @@
          (when (= dnd-payload :player)
            [dropzone {:dimension dimension
                       :highlight highlight
-                      :on-drop #(>evt [:location-editor/move-player location-id %])}])]
+                      :on-drop #(>evt [:location-editor/move-player location-id %])}])
 
-        :connection-select
-        [:div
-         (do-some-tiles dimension connection-triggers "connection-select"
-                        (fn [tile {id :entity/id :keys [display-name]}]
-                          [:div {:class "interactor interactor_draggable"
-                                 :title (str "to " display-name)
-                                 :draggable true
-                                 :on-click #(>navigate :location-edit :id id)
-                                 :on-drag-start (fn [e]
-                                                  (set-dnd-texture! e)
-                                                  (.setData (.-dataTransfer e) "text/plain" display-name)
-                                                  (>evt [:location-editor/start-entity-drag {:connection-trigger id}]))}
-                           [dnd-texture :exit]]))
          (when-let [target (:connection-trigger dnd-payload)]
            [dropzone {:dimension dimension
                       :highlight highlight
