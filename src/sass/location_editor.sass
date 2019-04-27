@@ -1,0 +1,140 @@
+@import "colors"
+
+.location-editor
+  display: flex
+  position: relative
+  flex-grow: 1
+
+  &__sidebar
+    width: 300px
+    min-width: 300px
+    margin: 10px
+    background: #f0f0f0
+
+  &__sidebar-widget
+    padding: 10px
+    border-bottom: 2px solid white
+
+    &:last-child
+      border: 0
+
+    &__title
+      font-size: .9rem
+      line-height: 1rem
+      color: $text-light
+      margin-bottom: 6px
+
+  $resizer-offset: 18px
+  .resize-container
+    display: flex
+    justify-content: center
+    align-items: center
+    padding: 20px + $resizer-offset
+
+    &__reference
+      position: relative
+      height: 80px
+      width: 80px
+      border: 1px solid black
+
+  .resizer
+    position: absolute
+    display: flex
+    align-items: center
+    justify-content: center
+
+    a
+      display: flex
+      width: 18px
+      height: 18px
+      align-items: center
+      justify-content: center
+
+      &:hover
+        background-color: rgba(255, 255, 0, .2)
+        text-decoration: none
+
+    &_horizontal
+      width: 100%
+      flex-direction: column
+
+      a
+        width: 100%
+
+    &_vertical
+      height: 100%
+      flex-direction: row
+
+      a
+        height: 100%
+
+    &_left
+      left: -$resizer-offset
+
+    &_right
+      right: -$resizer-offset
+
+    &_top
+      top: -$resizer-offset
+
+    &_bottom
+      bottom: -$resizer-offset
+
+  &__canvas
+    position: relative
+    flex-grow: 1
+
+  .level-wrap
+    display: flex
+    justify-content: center
+    align-items: center
+    overflow: scroll
+    position: absolute
+    top: 40px
+    right: 40px
+    bottom: 40px
+    left: 40px
+    overflow: auto
+
+  .level
+    position: relative
+
+  .level-layer
+    position: absolute
+    width: 100%
+    height: 100%
+    user-select: none
+
+    &__tile
+      user-select: none
+      position: absolute
+      box-sizing: content-box
+
+      [draggable=true]
+        cursor: grab
+
+    .interactor
+      position: relative
+      overflow: visible
+      width: 100%
+      height: 100%
+
+      &_paint
+        border: 2px solid yellow
+        border-radius: 5px
+
+      &_walkable
+        background-color: rgba(0, 255, 0, .2)
+
+      &_not-walkable
+        background-color: rgba(255, 0, 0, .2)
+
+      &_draggable
+        cursor: grab
+        border: 2px solid yellow
+        border-radius: 5px
+
+      &_dropzone
+        background-color: rgba(255, 255, 0, .4)
+        border-radius: 5px
+

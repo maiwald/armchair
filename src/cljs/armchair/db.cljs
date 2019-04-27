@@ -99,11 +99,9 @@
 ;; Location Editor
 
 (s/def ::tool #{:info
-                :npcs-select
-                :resize
-                :collision
                 :background-painter
-                :connection-select})
+                :collision
+                :npcs-select})
 (s/def ::highlight :type/point)
 (s/def ::active-texture ::texture)
 (s/def ::active-walk-state boolean?)

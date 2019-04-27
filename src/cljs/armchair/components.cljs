@@ -179,3 +179,15 @@
     [:img {:src (texture-path :missing_texture)
            :width (u/px config/tile-size)
            :height (u/px config/tile-size)}]))
+
+;; Tabs
+
+(defn tabs [{:keys [items active on-change]}]
+  [:ul {:class "tabs"}
+   (for [[id title] items]
+     [:li {:key (str (hash items) id)
+           :class ["tabs__item"
+                   (when (= id active) "is-active")]
+           :on-click #(on-change id)}
+      title])])
+

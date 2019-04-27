@@ -134,3 +134,19 @@ $graph-node-border-radius: 5px
 
 .sprite-texture
   background-repeat: no-repeat
+
+.tabs
+  display: flex
+  border-bottom: 2px solid white
+  color: $text-regular
+
+  &__item
+    padding: 6px 8px
+    cursor: pointer
+
+    &:hover
+      background-color: $primary-light
+
+    &.is-active
+      background-color: $primary-light
+      border-bottom: 2px solid $primary

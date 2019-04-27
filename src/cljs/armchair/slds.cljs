@@ -78,8 +78,9 @@
 
 (defn modal [{:keys [title close-handler confirm-handler width]}]
   [:div
-   [:section {:class (cond-> ["slds-modal" "slds-fade-in-open"]
-                       (= width :medium) (conj "slds-modal_medium"))}
+   [:section {:class ["slds-modal"
+                      "slds-fade-in-open"
+                      (when (= width :medium) "slds-modal_medium")]}
     [:div {:class "slds-modal__container"}
      [:header {:class "slds-modal__header"}
       [:button {:class "slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
