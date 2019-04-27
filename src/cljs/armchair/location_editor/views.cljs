@@ -8,9 +8,6 @@
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
             [armchair.textures :refer [texture-path background-textures]]))
 
-(defn icon [glyph title]
-  [:i {:class (str "fas fa-" glyph)
-       :title title}])
 
 (defn dnd-texture [texture]
   [:div.dnd-texture
@@ -78,17 +75,17 @@
      [:div {:class "resize-container"}
       [:div {:class "resize-container__reference"}
        [:div {:class "resizer resizer_horizontal resizer_top"}
-        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :up])} [icon "arrow-up" "extend"]]
-        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :up])} [icon "arrow-down" "shrink"]]]
+        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :up])} [c/icon "arrow-up" "extend"]]
+        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :up])} [c/icon "arrow-down" "shrink"]]]
        [:div {:class "resizer resizer_horizontal resizer_bottom"}
-        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :down])} [icon "arrow-up" "shrink"]]
-        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :down])} [icon "arrow-down" "extend"]]]
+        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :down])} [c/icon "arrow-up" "shrink"]]
+        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :down])} [c/icon "arrow-down" "extend"]]]
        [:div {:class "resizer resizer_vertical resizer_left"}
-        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :left])} [icon "arrow-left" "extend"]]
-        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :left])} [icon "arrow-right" "shrink"]]]
+        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :left])} [c/icon "arrow-left" "extend"]]
+        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :left])} [c/icon "arrow-right" "shrink"]]]
        [:div {:class "resizer resizer_vertical resizer_right"}
-        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [icon "arrow-left" "shrink"]]
-        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [icon "arrow-right" "extend"]]]]]]))
+        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [c/icon "arrow-left" "shrink"]]
+        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [c/icon "arrow-right" "extend"]]]]]]))
 
 
 (defn sidebar-paint [location-id]
@@ -163,7 +160,7 @@
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
                          :height (str config/tile-size "px")}}
-          [icon "trash" "Drop here to remove."]]
+          [c/icon "trash" "Drop here to remove."]]
          [:span {:class "tile-list__item__label"} "Drop here to remove."]])]
      (if (empty? available-npcs) "All Characters are placed in locations.")
      [c/button {:title "Create Character"
