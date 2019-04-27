@@ -44,8 +44,13 @@
         [:div {:class "level-layer"
                :on-mouse-enter set-current-tile
                :on-mouse-leave clear-current-tile
-               :on-mouse-down #(do (start-painting) (paint %))
-               :on-mouse-move #(do (set-current-tile %) (paint %))
+               :on-mouse-down (fn [e]
+                                (when (u/e->left? e)
+                                  (start-painting)
+                                  (paint e)))
+               :on-mouse-move (fn [e]
+                                (set-current-tile e)
+                                (paint e))
                :on-mouse-up stop-painting}
          (when-let [tile @current-tile]
            (let [[x y] (u/tile->coord tile)]
