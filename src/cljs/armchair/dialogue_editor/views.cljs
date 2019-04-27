@@ -6,7 +6,7 @@
             [armchair.routes :refer [>navigate]]
             [armchair.config :as config]
             [armchair.slds :as slds]
-            [armchair.util :as u :refer [<sub >evt stop-e! prevent-e! e-> e->val e->left?]]))
+            [armchair.util :as u :refer [<sub >evt stop-e! prevent-e! e->val e->left?]]))
 
 (def option-position-lookup (r/atom {}))
 
@@ -51,9 +51,10 @@
            :on-click disconnector}
      [icon "times-circle" "Disconnect"]]
     [:div {:class "action action_connect"
-           :on-mouse-down (e-> #(when (e->left? %)
-                                  (prevent-e! %)
-                                  (connector %)))}
+           :on-mouse-down (fn [e]
+                            (when (e->left? e)
+                              (prevent-e! e)
+                              (connector e)))}
      [icon "circle-notch" "Connect"]]))
 
 (defn npc-line-component [line-id]
