@@ -193,12 +193,12 @@
               :active tool
               :on-change #(>evt [:location-editor/set-tool %])}]
      (case tool
-       :info [:div
+       :info [:<>
               [sidebar-info location-id]
               [sidebar-resize location-id]]
        :background-painter [sidebar-paint location-id]
        :collision [sidebar-collision]
-       :npcs-select [:div
+       :npcs-select [:<>
                      [sidebar-player]
                      [sidebar-npcs location-id]
                      [sidebar-connections location-id]]
@@ -234,30 +234,30 @@
      [c/sprite-texture (get background tile)])])
 
 (defn do-some-tiles [rect coll layer-title f]
-  (for [[tile item] coll]
-    [:div {:key (str "location-cell:" layer-title ":" tile)
-           :class "level-layer__tile"
-           :style (apply tile-style (u/rect->0 rect tile))}
-     (f tile item)]))
+  [:<> (for [[tile item] coll]
+         [:div {:key (str "location-cell:" layer-title ":" tile)
+                :class "level-layer__tile"
+                :style (apply tile-style (u/rect->0 rect tile))}
+          (f tile item)])])
 
 (defn player-layer [rect position]
   [:div {:class "level-layer"}
-   (do-some-tiles rect {position :player} "player"
-                  (fn []
-                    [c/sprite-texture :human "Player"]))])
+   [do-some-tiles rect {position :player} "player"
+    (fn []
+      [c/sprite-texture :human "Player"])]])
 
 (defn npc-layer [rect npcs]
   [:div {:class "level-layer"}
-   (do-some-tiles rect npcs "npc"
-                  (fn [tile {:keys [display-name texture]}]
-                    [c/sprite-texture texture display-name]))])
+   [do-some-tiles rect npcs "npc"
+    (fn [tile {:keys [display-name texture]}]
+      [c/sprite-texture texture display-name])]])
 
 (defn conntection-trigger-layer [rect connection-triggers]
   [:div {:class "level-layer"}
-   (do-some-tiles rect connection-triggers "connection-trigger"
-                  (fn [tile {:keys [id display-name]}]
-                    [:img {:src (texture-path :exit)
-                           :title (str "to " display-name)}]))])
+   [do-some-tiles rect connection-triggers "connection-trigger"
+    (fn [tile {:keys [id display-name]}]
+      [:img {:src (texture-path :exit)
+             :title (str "to " display-name)}])]])
 
 (defn canvas [location-id]
   (let [{:keys [dimension background walk-set connection-triggers]} (<sub [:location-editor/location location-id])
@@ -272,7 +272,7 @@
                     :height (str (* config/tile-size (u/rect-height dimension)) "px")}}
       [background-tiles dimension background]
       (when-not (contains? #{:background-painter :collision} tool)
-        [:div
+        [:<>
           (when player-position [player-layer dimension player-position])
           [npc-layer dimension npcs]
           [conntection-trigger-layer dimension connection-triggers]])
@@ -284,7 +284,7 @@
           :on-paint #(>evt [:location-editor/paint location-id %])}]
 
         :collision
-        [:div
+        [:<>
          [do-all-tiles dimension "walkable-area"
           (fn [tile]
             [:div {:class ["interactor"
@@ -295,30 +295,32 @@
           {:dimension dimension
            :on-paint #(>evt [:location-editor/set-walkable location-id %])}]]
         :npcs-select
-        [:div
+        [:<>
          [:div {:class "level-layer"}
-          (do-some-tiles dimension npcs "npc-select"
-                         (fn [_ {:keys [id dialogue-id texture display-name]}]
-                           [:div {:class "interactor interactor_draggable"
-                                  :title display-name
-                                  :draggable true
-                                  :on-click #(>navigate :dialogue-edit :id dialogue-id)
-                                  :on-drag-start (fn [e]
-                                                   (set-dnd-texture! e)
-                                                   (.setData (.-dataTransfer e) "text/plain" display-name)
-                                                   (>evt [:location-editor/start-entity-drag {:character-id id}]))}
-                            [dnd-texture texture]]))
-          (do-some-tiles dimension connection-triggers "connection-select"
-                         (fn [tile {id :entity/id :keys [display-name]}]
-                           [:div {:class "interactor interactor_draggable"
-                                  :title (str "to " display-name)
-                                  :draggable true
-                                  :on-click #(>navigate :location-edit :id id)
-                                  :on-drag-start (fn [e]
-                                                   (set-dnd-texture! e)
-                                                   (.setData (.-dataTransfer e) "text/plain" display-name)
-                                                   (>evt [:location-editor/start-entity-drag {:connection-trigger id}]))}
-                            [dnd-texture :exit]]))]
+          [do-some-tiles dimension npcs "npc-select"
+           (fn [_ {:keys [id dialogue-id texture display-name]}]
+             [:div {:class "interactor interactor_draggable"
+                    :title display-name
+                    :draggable true
+                    :on-click #(>navigate :dialogue-edit :id dialogue-id)
+                    :on-drag-start (fn [e]
+                                     (set-dnd-texture! e)
+                                     (.setData (.-dataTransfer e) "text/plain" display-name)
+                                     (>evt [:location-editor/start-entity-drag {:character-id id}]))}
+              [dnd-texture texture]])]
+
+          [do-some-tiles dimension connection-triggers "connection-select"
+           (fn [tile {id :entity/id :keys [display-name]}]
+             [:div {:class "interactor interactor_draggable"
+                    :title (str "to " display-name)
+                    :draggable true
+                    :on-click #(>navigate :location-edit :id id)
+                    :on-drag-start (fn [e]
+                                     (set-dnd-texture! e)
+                                     (.setData (.-dataTransfer e) "text/plain" display-name)
+                                     (>evt [:location-editor/start-entity-drag {:connection-trigger id}]))}
+              [dnd-texture :exit]])]]
+
          (when-let [character-id (:character-id dnd-payload)]
            [dropzone {:dimension dimension
                       :highlight highlight
