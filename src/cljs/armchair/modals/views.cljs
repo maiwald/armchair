@@ -10,7 +10,7 @@
   [slds/modal {:title "Create Dialogue"
                :confirm-handler #(>evt [:create-dialogue])
                :close-handler #(>evt [:close-modal])}
-   [:div
+   [:<>
     [input/select {:label "Character *"
                    :on-change #(>evt [:dialogue-creation-update :character-id (uuid (e->val %))])
                    :options (<sub [:dialogue-creation/character-options])
@@ -31,7 +31,7 @@
   (let [line (<sub [:dialogue/modal-line line-id])]
     [slds/modal {:title "NPC Line"
                  :close-handler #(>evt [:close-modal])}
-     [:div
+     [:<>
       [input/select {:label "Character"
                      :disabled (:initial-line? line)
                      :on-change #(>evt [:update-line line-id :character-id (uuid (e->val %))])
