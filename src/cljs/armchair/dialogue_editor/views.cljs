@@ -29,11 +29,8 @@
                      :value @text-state}])})))
 
 (defn get-rect [elem]
-  (let [graph (-> js/document
-                  (.getElementsByClassName "graph")
-                  (aget 0))]
-    (if (and (some? elem)
-             (some? graph))
+  (let [graph (aget (js/document.getElementsByClassName "graph") 0)]
+    (when (and (some? elem) (some? graph))
       (let [rect (.getBoundingClientRect elem)
             top-offset (.-top (.getBoundingClientRect graph))]
         {:top (- (.-top rect) top-offset)
@@ -41,8 +38,7 @@
          :bottom (- (.-bottom rect) top-offset)
          :right (.-right rect)
          :width (.-width rect)
-         :height (.-height rect)})
-      nil)))
+         :height (.-height rect)}))))
 
 (defn connector [{:keys [connected? connector disconnector]}]
   (if connected?
