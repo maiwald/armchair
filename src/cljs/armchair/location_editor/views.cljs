@@ -185,7 +185,7 @@
 
 (defn sidebar [location-id]
   (let [{:keys [tool]} (<sub [:location-editor/ui])]
-    [:div
+    [:<>
      [c/tabs {:items [[:info "Info"]
                       [:background-painter "Background"]
                       [:collision "Collision"]
@@ -211,7 +211,7 @@
    :left (* x config/tile-size)})
 
 (defn do-all-tiles [[[x1 y1] [x2 y2] :as rect] layer-title f]
-  [:div {:class "level-layer"}
+  [:<>
    (for [x (range x1 (inc x2))
          y (range y1 (inc y2))
          :let [tile [x y]]]
@@ -221,17 +221,19 @@
       (f tile)])])
 
 (defn dropzone [{:keys [dimension highlight on-drop]}]
-  [do-all-tiles dimension "dropzone"
-   (fn [tile]
-     [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-            :on-drag-over u/prevent-e!
-            :on-drag-enter (e-> #(>evt [:location-editor/set-highlight tile]))
-            :on-drop (e-> #(on-drop tile))}])])
+  [:div {:class "level-layer"}
+   [do-all-tiles dimension "dropzone"
+    (fn [tile]
+      [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
+             :on-drag-over u/prevent-e!
+             :on-drag-enter (e-> #(>evt [:location-editor/set-highlight tile]))
+             :on-drop (e-> #(on-drop tile))}])]])
 
 (defn background-tiles [rect background]
-  [do-all-tiles rect "background"
-   (fn [tile]
-     [c/sprite-texture (get background tile)])])
+  [:div {:class "level-layer"}
+   [do-all-tiles rect "background"
+    (fn [tile]
+      [c/sprite-texture (get background tile)])]])
 
 (defn do-some-tiles [rect coll layer-title f]
   [:<> (for [[tile item] coll]
@@ -267,15 +269,14 @@
         player-position (<sub [:location-editor/player-position location-id])]
     [:div {:class "level-wrap"}
      [:div {:class "level"
-            :on-mouse-leave #(>evt [:location-editor/unset-highlight])
             :style {:width (str (* config/tile-size (u/rect-width dimension)) "px")
                     :height (str (* config/tile-size (u/rect-height dimension)) "px")}}
       [background-tiles dimension background]
       (when-not (contains? #{:background-painter :collision} tool)
         [:<>
-          (when player-position [player-layer dimension player-position])
-          [npc-layer dimension npcs]
-          [conntection-trigger-layer dimension connection-triggers]])
+         (when player-position [player-layer dimension player-position])
+         [npc-layer dimension npcs]
+         [conntection-trigger-layer dimension connection-triggers]])
 
       (case tool
         :background-painter
@@ -285,12 +286,13 @@
 
         :collision
         [:<>
-         [do-all-tiles dimension "walkable-area"
-          (fn [tile]
-            [:div {:class ["interactor"
-                           (if (contains? walk-set tile)
-                             "interactor_walkable"
-                             "interactor_not-walkable")]}])]
+         [:div {:class "level-layer"}
+          [do-all-tiles dimension "walkable-area"
+           (fn [tile]
+             [:div {:class ["interactor"
+                            (if (contains? walk-set tile)
+                              "interactor_walkable"
+                              "interactor_not-walkable")]}])]]
          [tile-paint-canvas
           {:dimension dimension
            :on-paint #(>evt [:location-editor/set-walkable location-id %])}]]

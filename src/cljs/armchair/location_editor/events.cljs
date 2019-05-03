@@ -29,11 +29,6 @@
     (assoc-in db [:location-editor :highlight] tile)))
 
 (reg-event-meta
-  :location-editor/unset-highlight
-  (fn [db]
-    (update db :location-editor dissoc :highlight)))
-
-(reg-event-meta
   :location-editor/start-entity-drag
   (fn [db [_ payload]]
     (assoc db :dnd-payload payload)))
@@ -41,7 +36,9 @@
 (reg-event-meta
   :location-editor/stop-entity-drag
   (fn [db]
-    (dissoc db :dnd-payload)))
+    (-> db
+      (dissoc :dnd-payload)
+      (update :location-editor dissoc :highlight))))
 
 (reg-event-data
   :location-editor/move-player
