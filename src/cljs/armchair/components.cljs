@@ -193,3 +193,49 @@
            :on-click #(on-change id)}
       title])])
 
+;; Popover
+
+(defn popover-trigger [{content :popover}]
+  (into [:div {:style {:width "100%"
+                       :height "100%"}
+               :on-mouse-up u/stop-e!
+               :on-click #(>evt [:open-popover (.-currentTarget %) content])}]
+        (r/children (r/current-component))))
+
+(defn popover-positioned []
+  (let [position (r/atom [-9999 -9999])
+        get-position (fn [this]
+                       (let [offset 4
+                             rect (u/get-rect (r/dom-node this))
+                             ref-rect (u/get-rect (:reference (r/props this)))]
+                         [(+ (- (:left ref-rect)
+                                (/ (:width rect) 2))
+                             (/ (:width ref-rect) 2))
+                          (- (:top ref-rect)
+                             (:height rect)
+                             offset)]))]
+    (r/create-class
+      {:display-name "popover-positioned"
+       :component-did-mount
+       (fn [this]
+         (reset! position (get-position this)))
+
+       :component-did-update
+       (fn [this]
+         (let [new-position (get-position this)]
+           (if (not= @position new-position)
+             (reset! position new-position))))
+
+       :reagent-render
+       (fn [{:keys [content reference]}]
+         [:div {:on-mouse-up u/stop-e!
+                :style {:position "absolute"
+                        :left (u/px (first @position))
+                        :top (u/px (second @position))
+                        :background-color "red"
+                        :z-index 200}}
+          content])})))
+
+(defn popover []
+  (when-let [data (<sub [:popover])]
+    [popover-positioned data]))
