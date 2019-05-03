@@ -9,10 +9,8 @@
             [armchair.components :refer [icon]]
             [armchair.game.core :refer [start-game end-game]]))
 
-(defn game-canvas []
-  (let [game-data (<sub [:game/data])
-        canvas (atom nil)
-        game-handle (atom nil)
+(defn game-canvas [game-data]
+  (let [game-handle (atom nil)
         keypresses (atom #{})]
     (letfn [(on-key-down [e]
               (let [keycode (.-code e)]
@@ -32,33 +30,37 @@
       (r/create-class
         {:display-name "game-canvas"
          :component-did-mount
-         (fn []
-           (reset! game-handle (start-game (.getContext @canvas "2d")
-                                           game-data))
+         (fn [this]
+           (reset! game-handle (start-game (.getContext (r/dom-node this) "2d")
+                                           (r/props this)))
            (.addEventListener js/document "keydown" on-key-down)
            (.addEventListener js/document "keyup" on-key-up))
 
          :component-will-unmount
-         (fn []
+         (fn [this]
            (.removeEventListener js/document "keydown" on-key-down)
            (.removeEventListener js/document "keyup" on-key-up)
+           (end-game @game-handle))
+
+         :component-did-update
+         (fn [this]
            (end-game @game-handle)
-           (reset! canvas nil))
+           (reset! game-handle (start-game (.getContext (r/dom-node this) "2d")
+                                           (r/props this))))
 
          :reagent-render
          (fn []
            (let [w (* tile-size camera-tile-width camera-scale)
                  h (* tile-size camera-tile-height camera-scale)]
-             [:div {:id "game"}
-              [:canvas {:width w
-                        :height h
-                        :style {:width (px w)
-                                :height (px h)}
-                        :ref (fn [el] (reset! canvas el))}]]))}))))
+             [:canvas {:id "game"
+                       :width w
+                       :height h
+                       :style {:width (px w)
+                               :height (px h)}}]))}))))
 
 (defn game-view []
   [:div {:class "content-wrapper"}
-   [game-canvas]
+   [game-canvas (<sub [:game/data])]
    [:div {:id "game-help"}
     [:p
      "Use "
