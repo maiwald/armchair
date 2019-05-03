@@ -139,6 +139,15 @@
       "checkbox" (.-checked target)
       (.-value target))))
 
+(defn get-rect [elem]
+  (let [rect (.getBoundingClientRect elem)]
+    {:top (.-top rect)
+     :left (.-left rect)
+     :bottom (.-bottom rect)
+     :right (.-right rect)
+     :width (.-width rect)
+     :height (.-height rect)}))
+
 (defn relative-cursor [e elem]
   (let [rect (.getBoundingClientRect elem)]
     [(- (.-clientX e) (.-left rect))
