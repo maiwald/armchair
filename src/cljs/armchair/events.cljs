@@ -191,3 +191,13 @@
       (-> db
           (u/update-in-map :ui/positions ids u/translate-point delta)
           (dissoc :dragging :cursor)))))
+
+(reg-event-meta
+  :open-popover
+  (fn [db [_ reference content]]
+    (assoc db :popover {:reference reference
+                        :content content})))
+
+(reg-event-meta
+  :close-popover
+  (fn [db] (dissoc db :popover)))

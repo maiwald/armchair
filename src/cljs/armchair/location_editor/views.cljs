@@ -8,7 +8,6 @@
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
             [armchair.textures :refer [texture-path background-textures]]))
 
-
 (defn dnd-texture [texture]
   [:div.dnd-texture
    [:img {:src (texture-path texture)
@@ -304,11 +303,11 @@
              [:div {:class "interactor interactor_draggable"
                     :title display-name
                     :draggable true
-                    :on-click #(>navigate :dialogue-edit :id dialogue-id)
                     :on-drag-start (fn [e]
                                      (set-dnd-texture! e)
                                      (.setData (.-dataTransfer e) "text/plain" display-name)
                                      (>evt [:location-editor/start-entity-drag {:character-id id}]))}
+              [c/popover-trigger {:popover [:div display-name]}]
               [dnd-texture texture]])]
 
           [do-some-tiles dimension connection-triggers "connection-select"

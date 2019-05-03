@@ -23,6 +23,7 @@
 
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
+(reg-sub :popover #(:popover %))
 
 (reg-sub :dnd-payload #(:dnd-payload %))
 

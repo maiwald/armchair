@@ -203,6 +203,7 @@
          page-params :route-params} (match-route routes (<sub [:current-page]))]
     [:div {:id "page"}
      [modal]
+     [c/popover]
      [navigation]
      [:div {:id "content"}
       (case page-name
