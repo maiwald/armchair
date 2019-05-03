@@ -28,17 +28,12 @@
                      :on-blur #(handle-text-blur @text-state)
                      :value @text-state}])})))
 
-(defn get-rect [elem]
+(defn get-option-start-position [elem]
   (let [graph (aget (js/document.getElementsByClassName "graph") 0)]
     (when (and (some? elem) (some? graph))
-      (let [rect (.getBoundingClientRect elem)
-            top-offset (.-top (.getBoundingClientRect graph))]
-        {:top (- (.-top rect) top-offset)
-         :left (.-left rect)
-         :bottom (- (.-bottom rect) top-offset)
-         :right (.-right rect)
-         :width (.-width rect)
-         :height (.-height rect)}))))
+      (let [{:keys [right top]} (u/get-rect elem)
+            top-offset (:top (u/get-rect graph))]
+        [right (- top top-offset)]))))
 
 (defn connector [{:keys [connected? connector disconnector]}]
   (if connected?
@@ -204,10 +199,9 @@
 (defn option-connection [start index end]
   (let [_ (<sub [:ui/position start])
         [end-x end-y] (<sub [:ui/position end])]
-    (when-let [{start-right :right
-                start-top :top} (get-rect (get @option-position-lookup [start index]))]
+    (when-let [start (get-option-start-position (get @option-position-lookup [start index]))]
       [curved-connection
-       {:start (u/translate-point [start-right start-top] [35 20])
+       {:start (u/translate-point start [35 20])
         :end (u/translate-point [end-x end-y] [0 top-offset])}])))
 
 (defn dialogue-editor [dialogue-id]
