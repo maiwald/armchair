@@ -4,12 +4,14 @@
 - directed location connections
 - trees! (multiple texture layers)
 - (multiple?) decorative textures
+- rethink relationship between character and dialogue
 - zoom in dialogue editor
 - sounds & music
 - information dependency invariants
 - save file for game state
 
 # nice things
+- curved dialogue node connections
 - allow creating switches in dialogue editor
 - change default collision to walkable
 - show debug state variables
