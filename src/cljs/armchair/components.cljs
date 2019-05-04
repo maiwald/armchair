@@ -160,8 +160,11 @@
 
 ;; Button
 
-(defn button [{glyph :icon :keys [title on-click]}]
-  [:button {:class "button"
+(defn button [{glyph :icon btn-type :type
+               :keys [title on-click danger fill]}]
+  [:button {:class ["button"
+                    (when fill "button_fill")
+                    (when (= btn-type :danger) "button_danger")]
             :on-click on-click}
    (when (some? glyph) [:div {:class "button__icon"} [icon glyph title]])
    (when (some? title) [:div {:class "button__title"} title])])
@@ -205,7 +208,7 @@
 (defn popover-positioned []
   (let [position (r/atom [-9999 -9999])
         get-position (fn [this]
-                       (let [offset 4
+                       (let [offset 8
                              rect (u/get-rect (r/dom-node this))
                              ref-rect (u/get-rect (:reference (r/props this)))]
                          [(+ (- (:left ref-rect)
@@ -229,11 +232,9 @@
        :reagent-render
        (fn [{:keys [content reference]}]
          [:div {:on-mouse-up u/stop-e!
-                :style {:position "absolute"
-                        :left (u/px (first @position))
-                        :top (u/px (second @position))
-                        :background-color "red"
-                        :z-index 200}}
+                :class "popover"
+                :style {:left (u/px (first @position))
+                        :top (u/px (second @position))}}
           content])})))
 
 (defn popover []

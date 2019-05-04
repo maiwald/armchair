@@ -150,17 +150,7 @@
                  :style {:width (str config/tile-size "px")
                          :height (str config/tile-size "px")}}
           [c/sprite-texture texture display-name]]
-         [:span {:class "tile-list__item__label"} display-name]])
-      (when (and (some? dnd-character-id)
-                 (not (contains? available-npcs dnd-character-id)))
-        [:li {:class "tile-list__item tile-list__item_dropzone"
-              :on-drag-over u/prevent-e!
-              :on-drop (e-> #(>evt [:location-editor/remove-character dnd-character-id]))}
-         [:span {:class "tile-list__item__image"
-                 :style {:width (str config/tile-size "px")
-                         :height (str config/tile-size "px")}}
-          [c/icon "trash" "Drop here to remove."]]
-         [:span {:class "tile-list__item__label"} "Drop here to remove."]])]
+         [:span {:class "tile-list__item__label"} display-name]])]
      (if (empty? available-npcs) "All Characters are placed in locations.")
      [c/button {:title "Create Character"
                 :icon "plus"
@@ -299,7 +289,7 @@
         [:<>
          [:div {:class "level-layer"}
           [do-some-tiles dimension npcs "npc-select"
-           (fn [_ {:keys [id dialogue-id texture display-name]}]
+           (fn [_ {:keys [id display-name texture dialogue-id dialogue-synopsis]}]
              [:div {:class "interactor interactor_draggable"
                     :title display-name
                     :draggable true
@@ -307,7 +297,25 @@
                                      (set-dnd-texture! e)
                                      (.setData (.-dataTransfer e) "text/plain" display-name)
                                      (>evt [:location-editor/start-entity-drag {:character-id id}]))}
-              [c/popover-trigger {:popover [:div display-name]}]
+              [c/popover-trigger
+               {:popover [:div {:class "character-popover"}
+                          [:header
+                           display-name " "
+                           [:a.edit {:on-click #(do (>evt [:close-popover])
+                                                    (>evt [:open-character-modal id]))}
+                            [c/icon "edit" (str "Edit " display-name)]]]
+                          [:ul
+                           [:li.character-popover__reference
+                            [:span.character-popover__reference__title "Dialogue"]
+                            [:span.character-popover__reference__payload
+                             [:a {:on-click #(do (>evt [:close-popover])
+                                                 (>navigate :dialogue-edit :id dialogue-id))}
+                              dialogue-synopsis]]]]
+                          [c/button {:title "Remove Character"
+                                     :type :danger
+                                     :fill true
+                                     :on-click #(do (>evt [:close-popover])
+                                                    (>evt [:location-editor/remove-character id]))}]]}]
               [dnd-texture texture]])]
 
           [do-some-tiles dimension connection-triggers "connection-select"

@@ -38,11 +38,14 @@
   (fn [[dialogues characters] [_ location-id]]
     (->> (vals dialogues)
          (where :location-id location-id)
-         (map (fn [dialogue]
-                (let [character (characters (:character-id dialogue))]
-                  [(:location-position dialogue)
+         (map (fn [{dialogue-id :entity/id
+                    dialogue-synopsis :synopsis
+                    :keys [character-id location-position]}]
+                (let [character (characters character-id)]
+                  [location-position
                    (merge {:id (:entity/id character)
-                           :dialogue-id (:entity/id dialogue)}
+                           :dialogue-id dialogue-id
+                           :dialogue-synopsis dialogue-synopsis}
                           (select-keys character [:texture :display-name]))])))
          (into {}))))
 
