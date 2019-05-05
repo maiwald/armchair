@@ -23,15 +23,14 @@
                          "slds-form-element__label"]} label])
      [:div {:class "slds-form-element__control"}
       [:div {:class "slds-radio_button-group"}
-       (for [[option option-label & attrs] options]
+       (for [[option option-label] options]
          [:span {:key (str id option)
                  :class "slds-button slds-radio_button"}
-          [:input (merge {:type "radio"
-                          :name id
-                          :id (str id option)
-                          :checked (= active option)
-                          :on-change #(on-change option)}
-                         (into {} (map #(vector % %) attrs)))]
+          [:input {:type "radio"
+                   :name id
+                   :id (str id option)
+                   :checked (= active option)
+                   :on-change #(on-change option)}]
           [:label {:class "slds-radio_button__label"
                    :for (str id option)}
            [:span {:class "slds-radio_faux"}
