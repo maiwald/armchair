@@ -25,11 +25,17 @@
 (reg-sub
   :location-editor/location
   :<- [:db-locations]
-  :<- [:db-characters]
-  (fn [[locations characters] [_ location-id]]
+  (fn [locations [_ location-id]]
     (-> (locations location-id)
-        (u/update-values :connection-triggers
-                         #(assoc (locations %) :id %)))))
+        (u/update-values
+          :connection-triggers
+          (fn [id]
+            (let [{:keys [connection-triggers dimension display-name]} (locations id)
+                  target ((u/reverse-map connection-triggers) location-id)]
+              {:id id
+               :target target
+               :target-normalized (u/rect->0 dimension target)
+               :display-name display-name}))))))
 
 (reg-sub
   :location-editor/npcs
@@ -83,4 +89,3 @@
                                    :when (contains? connection location-id)]
                                (first (disj connection location-id)))]
       (select-keys locations other-location-ids))))
-

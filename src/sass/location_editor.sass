@@ -84,62 +84,64 @@
     position: relative
     flex-grow: 1
 
-  .level-wrap
-    display: flex
-    justify-content: center
-    align-items: center
-    overflow: scroll
-    position: absolute
-    top: 40px
-    right: 40px
-    bottom: 40px
-    left: 40px
-    overflow: auto
+.level-wrap
+  display: flex
+  justify-content: center
+  align-items: center
+  overflow: scroll
+  position: absolute
+  top: 40px
+  right: 40px
+  bottom: 40px
+  left: 40px
+  overflow: auto
 
-  .level
+.level
+  position: relative
+  background-color: #000
+
+.level-layer
+  position: absolute
+  width: 100%
+  height: 100%
+  user-select: none
+
+  &__tile
+    user-select: none
+    position: absolute
+    box-sizing: content-box
+
+    [draggable=true]
+      cursor: grab
+
+  .interactor
     position: relative
-    background-color: #000
-
-  .level-layer
-    position: absolute
+    overflow: visible
     width: 100%
     height: 100%
-    user-select: none
 
-    &__tile
-      user-select: none
-      position: absolute
-      box-sizing: content-box
+    &_paint
+      border: 2px solid yellow
+      border-radius: 5px
 
-      [draggable=true]
-        cursor: grab
+    &_walkable
+      background-color: rgba(0, 255, 0, .4)
 
-    .interactor
-      position: relative
-      overflow: visible
-      width: 100%
-      height: 100%
+    &_not-walkable
+      background-color: rgba(255, 0, 0, .4)
 
-      &_paint
-        border: 2px solid yellow
-        border-radius: 5px
+    &_draggable
+      cursor: grab
+      border: 2px solid yellow
+      border-radius: 5px
 
-      &_walkable
-        background-color: rgba(0, 255, 0, .4)
+    &_dropzone
+      background-color: rgba(255, 255, 0, .4)
+      border-radius: 5px
 
-      &_not-walkable
-        background-color: rgba(255, 0, 0, .4)
+.level-popover
+  max-width: 230px
 
-      &_draggable
-        cursor: grab
-        border: 2px solid yellow
-        border-radius: 5px
-
-      &_dropzone
-        background-color: rgba(255, 255, 0, .4)
-        border-radius: 5px
-
-.character-popover
   header
     font-family: Verdana
     font-size: .9rem
