@@ -24,7 +24,8 @@
              (callback content)))
     (.click file-input)))
 
-;; Conversion Helpers
+(defn clip [u-bound value]
+  (min u-bound (max 0 value)))
 
 (defn tile->coord [[tx ty]]
   [(* tile-size tx) (* tile-size ty)])

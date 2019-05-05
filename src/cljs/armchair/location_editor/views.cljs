@@ -258,8 +258,8 @@
         player-position (<sub [:location-editor/player-position location-id])]
     [:div {:class "level-wrap"}
      [:div {:class "level"
-            :style {:width (str (* config/tile-size (u/rect-width dimension)) "px")
-                    :height (str (* config/tile-size (u/rect-height dimension)) "px")}}
+            :style {:width (u/px (* config/tile-size (u/rect-width dimension)))
+                    :height (u/px (* config/tile-size (u/rect-height dimension)))}}
       [background-tiles dimension background]
       (when-not (contains? #{:background-painter :collision} tool)
         [:<>
