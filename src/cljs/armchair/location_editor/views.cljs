@@ -244,7 +244,10 @@
      [background-tiles dimension background true]
      (when player-position [player-layer dimension player-position])
      [npc-layer dimension npcs]
-     [conntection-trigger-layer dimension connection-triggers]]))
+     [conntection-trigger-layer dimension connection-triggers]
+     [:div {:key "location-cell:highlight"
+            :class "level__tile level__tile_highlight"
+            :style (apply tile-style [tiles-around tiles-around])}]]))
 
 (defn npc-popover [{:keys [id display-name dialogue-id dialogue-synopsis]}]
   [:div {:class "level-popover"}
