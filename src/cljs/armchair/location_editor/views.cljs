@@ -153,6 +153,7 @@
      (if (empty? available-npcs) "All Characters are placed in locations.")
      [c/button {:title "Create Character"
                 :icon "plus"
+                :fill true
                 :on-click #(>evt [:open-character-modal])}]]))
 
 (defn sidebar [location-id]
@@ -328,6 +329,18 @@
 
         :npcs-select
         [:<>
+         (when player-position
+           [do-some-tiles dimension {player-position :player} "player-select"
+            (fn [_ _]
+              [:div {:class "interactor interactor_draggable"
+                     :title "Player"
+                     :draggable true
+                     :on-drag-start (fn [e]
+                                      (set-dnd-texture! e)
+                                      (.setData (.-dataTransfer e) "text/plain" ":player")
+                                      (>evt [:location-editor/start-entity-drag :player]))}
+               [dnd-texture :human]])])
+
          [do-some-tiles dimension npcs "npc-select"
           (fn [_ {:keys [id display-name texture dialogue-id dialogue-synopsis] :as npc}]
             [:div {:class "interactor interactor_draggable"
