@@ -155,22 +155,6 @@
                 :icon "plus"
                 :on-click #(>evt [:open-character-modal])}]]))
 
-(defn sidebar-connections [location-id]
-  [sidebar-widget {:title "Assigned Connections"}
-   [:ul {:class "tile-list"}
-    (for [[target-loctation-id {:keys [display-name]}] (<sub [:location-editor/connected-locations location-id])]
-      [:li {:key (str "connection-select" display-name)
-            :class "tile-list__item"
-            :draggable true
-            :on-drag-start (fn [e]
-                             (set-dnd-texture! e)
-                             (.setData (.-dataTransfer e) "text/plain" display-name)
-                             (>evt [:location-editor/start-entity-drag {:connection-trigger target-loctation-id}]))}
-       [dnd-texture :exit]
-       [:img {:src (texture-path :exit)
-              :title display-name}]
-       [:span display-name]])]])
-
 (defn sidebar [location-id]
   (let [{:keys [tool]} (<sub [:location-editor/ui])]
     [:<>
@@ -188,8 +172,7 @@
        :collision [sidebar-collision]
        :npcs-select [:<>
                      [sidebar-player]
-                     [sidebar-npcs location-id]
-                     [sidebar-connections location-id]]
+                     [sidebar-npcs location-id]]
        nil)]))
 
 (defn tile-style [x y]
@@ -282,7 +265,7 @@
               :on-click #(do (>evt [:close-popover])
                              (>evt [:location-editor/remove-character id]))}]])
 
-(defn trigger-popover [{:keys [id display-name target target-normalized]}]
+(defn trigger-popover [location-id tile {:keys [id display-name target target-normalized]}]
   [:div {:class "level-popover"}
    [:ul
     [:li.level-popover__reference
@@ -295,7 +278,8 @@
    [c/button {:title "Remove Trigger"
               :type :danger
               :fill true
-              :on-click #(do (>evt [:close-popover]))}]])
+              :on-click #(do (>evt [:close-popover])
+                             (>evt [:location-editor/remove-trigger location-id tile]))}]])
 
 (defn canvas [location-id]
   (let [{:keys [dimension background walk-set connection-triggers]} (<sub [:location-editor/location location-id])
@@ -364,8 +348,8 @@
                    :on-drag-start (fn [e]
                                     (set-dnd-texture! e)
                                     (.setData (.-dataTransfer e) "text/plain" display-name)
-                                    (>evt [:location-editor/start-entity-drag {:connection-trigger id}]))}
-             [c/popover-trigger {:popover [trigger-popover trigger]}]
+                                    (>evt [:location-editor/start-entity-drag {:connection-trigger tile}]))}
+             [c/popover-trigger {:popover [trigger-popover location-id tile trigger]}]
              [dnd-texture :exit]])]
 
          (when (fn? dropzone-fn)

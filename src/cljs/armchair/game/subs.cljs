@@ -22,7 +22,6 @@
                                                              :game/background
                                                              :game/walk-set
                                                              :game/outbound-connections
-                                                             :game/inbound-connections
                                                              :game/npcs])))
 (s/def :game/triggers (s/keys :opt-un [:game-triggers/dialogue-states
                                        :game-triggers/switches]))
@@ -32,8 +31,7 @@
 
 (s/def :game/dimension :type/rect)
 (s/def :game/walk-set (s/coll-of :type/point :kind set?))
-(s/def :game/outbound-connections (s/map-of :type/point :game/location-id))
-(s/def :game/inbound-connections (s/map-of :game/location-id :type/point))
+(s/def :game/outbound-connections (s/map-of :type/point (s/tuple :game/location-id :type/point)))
 (s/def :game/location-id :entity/id)
 (s/def :game/position :type/point)
 (s/def :game/npcs (s/nilable (s/map-of :type/point (s/keys :req-un [:game/texture :game/dialogue-id]))))
@@ -155,7 +153,6 @@
         {:dimension dimension
          :background background
          :outbound-connections connection-triggers
-         :inbound-connections (u/reverse-map connection-triggers)
          :walk-set walk-set
          :npcs (npcs-by-location id)})
       locations)))

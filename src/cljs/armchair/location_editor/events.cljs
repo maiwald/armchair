@@ -1,5 +1,6 @@
 (ns armchair.location-editor.events
   (:require [armchair.events :refer [reg-event-data reg-event-meta]]
+            [clojure.set :refer [rename-keys]]
             [armchair.undo :refer [record-undo]]
             [armchair.util :as u]))
 
@@ -81,19 +82,22 @@
                                          (assoc acc c-id d-id))
                                        {}))]
       (-> db
-          (dissoc :dnd-payload)
           (update-in [:dialogues (dialogue-lookup character-id)]
                      dissoc :location-id :location-position)))))
 
 (reg-event-data
   :location-editor/move-trigger
-  (fn [db [_ location target to]]
+  (fn [db [_ location from to]]
     (-> db
         (dissoc :dnd-payload)
         (update :location-editor dissoc :highlight)
-        (update-in [:locations location :connection-triggers] #(as-> % new-db
-                                                                 (u/filter-map (fn [v] (not= v target)) new-db)
-                                                                 (assoc new-db to target))))))
+        (update-in [:locations location :connection-triggers]
+                   (fn [cts] (rename-keys cts {from to}))))))
+
+(reg-event-data
+  :location-editor/remove-trigger
+  (fn [db [_ location from]]
+    (update-in db [:locations location :connection-triggers] #(dissoc % from))))
 
 (reg-event-data
   :location-editor/paint

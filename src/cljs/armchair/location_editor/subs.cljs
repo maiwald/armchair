@@ -29,10 +29,9 @@
     (-> (locations location-id)
         (u/update-values
           :connection-triggers
-          (fn [id]
-            (let [{:keys [connection-triggers dimension display-name]} (locations id)
-                  target ((u/reverse-map connection-triggers) location-id)]
-              {:id id
+          (fn [[target-id target]]
+            (let [{:keys [dimension display-name]} (locations target-id)]
+              {:id target-id
                :target target
                :target-normalized (u/rect->0 dimension target)
                :display-name display-name}))))))
@@ -79,13 +78,3 @@
     (let [dimension (get-in locations [location-id :dimension])]
       {:width (u/rect-width dimension)
        :height (u/rect-height dimension)})))
-
-(reg-sub
-  :location-editor/connected-locations
-  :<- [:db-locations]
-  :<- [:db-location-connections]
-  (fn [[locations connections] [_ location-id]]
-    (let [other-location-ids (for [connection connections
-                                   :when (contains? connection location-id)]
-                               (first (disj connection location-id)))]
-      (select-keys locations other-location-ids))))

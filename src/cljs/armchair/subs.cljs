@@ -1,6 +1,9 @@
 (ns armchair.subs
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
             [clojure.string :refer [join]]
+            [com.rpl.specter
+             :refer [collect-one ALL FIRST LAST MAP-VALS]
+             :refer-macros [select]]
             [armchair.routes :refer [routes]]
             [bidi.bidi :refer [match-route]]
             [armchair.util :as u]))
@@ -14,8 +17,6 @@
 (reg-sub :db-triggers #(:triggers %))
 (reg-sub :db-switches #(:switches %))
 (reg-sub :db-switch-values #(:switch-values %))
-
-(reg-sub :db-location-connections #(:location-connections %))
 
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-connecting #(:connecting %))
@@ -155,10 +156,14 @@
 (reg-sub
   :location-map
   :<- [:db-locations]
-  :<- [:db-location-connections]
-  (fn [[locations connections] _]
-    {:location-ids (keys locations)
-     :connections (map sort connections)}))
+  (fn [locations _]
+    (let [connections (->> locations
+                           (select [ALL (collect-one FIRST) LAST :connection-triggers MAP-VALS FIRST])
+                           (map set)
+                           distinct
+                           (map sort))]
+      {:location-ids (keys locations)
+       :connections connections})))
 
 (reg-sub
   :location-map/location
