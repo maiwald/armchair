@@ -385,14 +385,9 @@
     (if (animation-done? start now)
       (let [new-state (dissoc state :animation)
             location-id (get-in state [:player :location-id])]
-        (if-let [new-location-id (get-in @data [:locations
-                                                location-id
-                                                :outbound-connections
-                                                destination])]
-          (let [new-position (get-in @data [:locations
-                                            new-location-id
-                                            :inbound-connections
-                                            location-id])]
+        (if-let [[new-location-id new-position]
+                 (get-in @data [:locations location-id :outbound-connections destination])]
+          (do
             (reset! move-q #queue [])
             (update new-state :player merge {:location-id new-location-id
                                              :position new-position}))
