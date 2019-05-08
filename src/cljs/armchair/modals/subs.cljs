@@ -1,5 +1,5 @@
 (ns armchair.modals.subs
-  (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
+  (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [armchair.config :as config]
             [armchair.util :as u]))
 
@@ -40,15 +40,6 @@
                              :operator-options operator-options
                              :switch-value-options value-options)]))
            terms)}))))
-
-(reg-sub
-  :modal/connection-trigger-location-options
-  :<- [:modal]
-  :<- [:db-locations]
-  (fn [[modal locations]]
-    (if-let [{:keys [location-id]} (:connection-trigger-creation modal)]
-      (->> (dissoc locations location-id)
-           (u/map-values :display-name)))))
 
 
 (reg-sub
