@@ -211,6 +211,28 @@
             (dissoc :modal))))))
 
 (reg-event-meta
+  :modal/update-connection-trigger-target
+  (fn [db [_ target-id]]
+    (assoc-in db [:modal :connection-trigger-creation :target-id] target-id)))
+
+(reg-event-meta
+  :modal/update-connection-trigger-position
+  (fn [db [_ position]]
+    (assoc-in db [:modal :connection-trigger-creation :target-position] position)))
+
+(reg-event-meta
+  :modal/save-connection-trigger
+  (fn [db]
+    (let [{:keys [location-id
+                  location-position
+                  target-id
+                  target-position]} (get-in db [:modal :connection-trigger-creation])]
+      (-> db
+          (dissoc :modal)
+          (assoc-in [:locations location-id :connection-triggers location-position]
+                    [target-id target-position])))))
+
+(reg-event-meta
   :open-character-modal
   (fn [db [_ id]]
     (assert-no-open-modal db)

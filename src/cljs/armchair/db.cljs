@@ -148,8 +148,15 @@
 (s/def :location/dimension :type/rect)
 (s/def :location/background (s/map-of :type/point ::texture))
 (s/def :location/walk-set (s/coll-of :type/point :kind set?))
-(s/def :location/connection-triggers (s/map-of :type/point :location/connection-target))
-(s/def :location/connection-target (s/tuple ::location-id :location/position))
+(s/def :location/connection-triggers
+  (s/map-of :type/point :location/connection-trigger-target))
+
+(s/def :location/connection-trigger-target
+  (s/tuple :connection-trigger/target-id
+           :connection-trigger/target-position))
+
+(s/def :connection-trigger/target-id ::location-id)
+(s/def :connection-trigger/target-position :location/position)
 
 (s/def ::locations (s/and ::entity-map
                           (s/map-of ::location-id ::location)))
@@ -269,6 +276,7 @@
                                 :modal/trigger-creation
                                 :modal/switch-form
                                 :modal/conditions-form
+                                :modal/connection-trigger-creation
                                 ::npc-line-id
                                 ::dialogue-state]))
 
@@ -301,6 +309,12 @@
   (s/keys :req-un [::player-option-id
                    :condition/terms
                    :condition/conjunction]))
+
+(s/def :modal/connection-trigger-creation
+  (s/keys :req-un [::location-id
+                   ::location-position
+                   :connection-trigger/target-id
+                   :connection-trigger/target-position]))
 
 (s/def ::dialogue-state
   (s/keys :req-un [::line-id]

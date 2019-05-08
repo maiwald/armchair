@@ -4,7 +4,8 @@
             [armchair.components :as c :refer [icon]]
             [armchair.config :as config]
             [armchair.util :as u :refer [<sub >evt stop-e! e->val]]
-            [armchair.textures :refer [character-textures]]))
+            [armchair.textures :refer [character-textures]]
+            [armchair.location-editor.views :refer [position-select]]))
 
 (defn dialogue-creation-modal [{:keys [character-id synopsis]}]
   [slds/modal {:title "Create Dialogue"
@@ -173,14 +174,33 @@
                     :icon "plus"
                     :on-click add-condition}]]))))
 
+(defn connection-trigger-creation-modal [{:keys [target-id target-position]}]
+  (letfn [(close-modal [e] (>evt [:close-modal]))
+          (update-target [e]
+            (>evt [:modal/update-connection-trigger-target (uuid (e->val e))]))
+          (update-position [position]
+            (>evt [:modal/update-connection-trigger-position position]))
+          (save-connection-trigger []
+            (>evt [:modal/save-connection-trigger]))]
+    (fn [{:keys [target-id target-position]}]
+      (let [location-options (<sub [:modal/connection-trigger-location-options])]
+        [slds/modal {:title "New Exit"
+                     :close-handler close-modal
+                     :confirm-handler save-connection-trigger}
+         [input/select {:on-change update-target
+                        :options location-options
+                        :value target-id}]
+         (when target-id [position-select target-id update-position target-position])]))))
+
 (defn modal []
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
-      :dialogue-creation [dialogue-creation-modal (:dialogue-creation modal)]
-      :dialogue-state    [dialogue-state-modal (:dialogue-state modal)]
-      :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
-      :character-form    [character-form-modal (:character-form modal)]
-      :location-creation [location-creation-modal (:location-creation modal)]
-      :trigger-creation  [trigger-creation-modal (:trigger-creation modal)]
-      :switch-form       [switch-form-modal]
-      :conditions-form   [conditions-form-modal])))
+      :dialogue-creation           [dialogue-creation-modal (:dialogue-creation modal)]
+      :dialogue-state              [dialogue-state-modal (:dialogue-state modal)]
+      :npc-line-id                 [npc-line-form-modal (:npc-line-id modal)]
+      :character-form              [character-form-modal (:character-form modal)]
+      :location-creation           [location-creation-modal (:location-creation modal)]
+      :trigger-creation            [trigger-creation-modal (:trigger-creation modal)]
+      :switch-form                 [switch-form-modal]
+      :conditions-form             [conditions-form-modal]
+      :connection-trigger-creation [connection-trigger-creation-modal (:connection-trigger-creation modal)])))

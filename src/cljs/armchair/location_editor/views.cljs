@@ -155,6 +155,24 @@
                 :fill true
                 :on-click #(>evt [:open-character-modal])}]]))
 
+(defn sidebar-triggers []
+  [sidebar-widget {:title "Exits"}
+   [:ul {:class "tile-list"}
+    [:li {:class "tile-list__item"
+          :draggable true
+          :on-drag-start (fn [e]
+                           (set-dnd-texture! e)
+                           (.setData (.-dataTransfer e) "text/plain" ":exit")
+                           (>evt [:location-editor/start-entity-drag [:connection-trigger]]))}
+     [dnd-texture :exit]
+     [:span {:class "tile-list__item__image"
+             :style {:width (str config/tile-size "px")
+                     :height (str config/tile-size "px")}}
+      [:img {:src (texture-path :exit)
+             :title "Exit"}]]
+     [:span {:class "tile-list__item__label"} "Place new Exit"]]]])
+
+
 (defn sidebar [location-id]
   (let [{:keys [tool]} (<sub [:location-editor/ui])]
     [:<>
@@ -172,7 +190,8 @@
        :collision [sidebar-collision]
        :npcs-select [:<>
                      [sidebar-player]
-                     [sidebar-npcs location-id]]
+                     [sidebar-npcs location-id]
+                     [sidebar-triggers]]
        nil)]))
 
 (defn tile-style [x y]
@@ -247,6 +266,32 @@
      [:div {:key "location-cell:highlight"
             :class "level__tile level__tile_highlight"
             :style (apply tile-style [tiles-around tiles-around])}]]))
+
+(defn position-select [location-id on-select selected]
+  (let [{:keys [dimension
+                background
+                connection-triggers]} (<sub [:location-editor/location location-id])
+        npcs (<sub [:location-editor/npcs location-id])
+        player-position (<sub [:location-editor/player-position location-id])]
+    [:div {:style {:overflow "scroll"
+                   :background-color "#000"
+                   :max-width (u/px 600)
+                   :max-height (u/px 400)}}
+     [:div {:class "level"
+            :style {:width (u/px (* config/tile-size (u/rect-width dimension)))
+                    :height (u/px (* config/tile-size (u/rect-height dimension)))
+                    :margin "0 auto"}}
+      [background-tiles dimension background true]
+      (when player-position [player-layer dimension player-position])
+      [npc-layer dimension npcs]
+      [conntection-trigger-layer dimension connection-triggers]
+      (when selected
+        [:div {:key "location-cell:selected"
+               :class "level__tile level__tile_highlight"
+               :style (apply tile-style (u/rect->0 dimension selected))}])
+      [do-all-tiles dimension "selectors"
+       (fn [tile] [:div {:class "interactor"
+                         :on-click #(on-select tile)}])]]]))
 
 (defn npc-popover [{:keys [id display-name dialogue-id dialogue-synopsis]}]
   [:div {:class "level-popover"}

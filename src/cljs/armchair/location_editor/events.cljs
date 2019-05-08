@@ -88,11 +88,17 @@
 (reg-event-data
   :location-editor/move-trigger
   (fn [db [_ location from to]]
-    (-> db
-        (dissoc :dnd-payload)
-        (update :location-editor dissoc :highlight)
-        (update-in [:locations location :connection-triggers]
-                   (fn [cts] (rename-keys cts {from to}))))))
+    (let [new-db (-> db
+                     (dissoc :dnd-payload)
+                     (update :location-editor dissoc :highlight))]
+      (if (some? from)
+        (update-in new-db
+                   [:locations location :connection-triggers]
+                   (fn [cts] (rename-keys cts {from to})))
+        (assoc-in new-db
+                  [:modal :connection-trigger-creation]
+                  {:location-id location
+                   :location-position to})))))
 
 (reg-event-data
   :location-editor/remove-trigger
