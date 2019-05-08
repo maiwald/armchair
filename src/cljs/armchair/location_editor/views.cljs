@@ -123,7 +123,7 @@
           :on-drag-start (fn [e]
                            (set-dnd-texture! e)
                            (.setData (.-dataTransfer e) "text/plain" ":player")
-                           (>evt [:location-editor/start-entity-drag :player]))}
+                           (>evt [:location-editor/start-entity-drag [:player]]))}
      [dnd-texture :player]
      [:span {:class "tile-list__item__image"
              :style {:width (str config/tile-size "px")
@@ -132,8 +132,7 @@
      [:span {:class "tile-list__item__label"} "Player"]]]])
 
 (defn sidebar-npcs [location-id]
-  (let [available-npcs (<sub [:location-editor/available-npcs location-id])
-        dnd-character-id (:character-id (<sub [:dnd-payload]))]
+  (let [available-npcs (<sub [:location-editor/available-npcs location-id])]
     [sidebar-widget {:title "Available Characters"}
      [:ul {:class "tile-list"}
       (for [[character-id {:keys [display-name texture]}] available-npcs]
@@ -143,7 +142,7 @@
               :on-drag-start (fn [e]
                                (set-dnd-texture! e)
                                (.setData (.-dataTransfer e) "text/plain" display-name)
-                               (>evt [:location-editor/start-entity-drag {:character-id character-id}]))}
+                               (>evt [:location-editor/start-entity-drag [:character character-id]]))}
          [dnd-texture texture]
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
@@ -279,7 +278,7 @@
                           (>navigate :location-edit :id id))}
        display-name " " (str target-normalized)]
       [location-preview id target]]]]
-   [c/button {:title "Remove Trigger"
+   [c/button {:title "Remove Exit"
               :type :danger
               :fill true
               :on-click #(do (>evt [:close-popover])
@@ -290,16 +289,12 @@
         npcs (<sub [:location-editor/npcs location-id])
         {:keys [tool highlight painting?]} (<sub [:location-editor/ui])
         player-position (<sub [:location-editor/player-position location-id])
-        dnd-payload (<sub [:dnd-payload])
-        dropzone-fn (cond
-                      (= dnd-payload :player)
-                      #(>evt [:location-editor/move-player location-id %])
-
-                      (contains? dnd-payload :character-id)
-                      #(>evt [:location-editor/move-character location-id (:character-id dnd-payload) %])
-
-                      (contains? dnd-payload :connection-trigger)
-                      #(>evt [:location-editor/move-trigger location-id (:connection-trigger dnd-payload) %]))]
+        [dnd-type dnd-payload] (<sub [:dnd-payload])
+        dropzone-fn (case dnd-type
+                      :player             #(>evt [:location-editor/move-player location-id %])
+                      :character          #(>evt [:location-editor/move-character location-id dnd-payload %])
+                      :connection-trigger #(>evt [:location-editor/move-trigger location-id dnd-payload %])
+                      nil)]
 
     [:div {:class "level-wrap"}
      [:div {:class "level"
@@ -341,7 +336,7 @@
                      :on-drag-start (fn [e]
                                       (set-dnd-texture! e)
                                       (.setData (.-dataTransfer e) "text/plain" ":player")
-                                      (>evt [:location-editor/start-entity-drag :player]))}
+                                      (>evt [:location-editor/start-entity-drag [:player]]))}
                [dnd-texture :human]])])
 
          [do-some-tiles dimension npcs "npc-select"
@@ -352,7 +347,7 @@
                    :on-drag-start (fn [e]
                                     (set-dnd-texture! e)
                                     (.setData (.-dataTransfer e) "text/plain" display-name)
-                                    (>evt [:location-editor/start-entity-drag {:character-id id}]))}
+                                    (>evt [:location-editor/start-entity-drag [:character id]]))}
              [c/popover-trigger {:popover [npc-popover npc]}]
              [dnd-texture texture]])]
 
@@ -364,7 +359,7 @@
                    :on-drag-start (fn [e]
                                     (set-dnd-texture! e)
                                     (.setData (.-dataTransfer e) "text/plain" display-name)
-                                    (>evt [:location-editor/start-entity-drag {:connection-trigger tile}]))}
+                                    (>evt [:location-editor/start-entity-drag [:connection-trigger tile]]))}
              [c/popover-trigger {:popover [trigger-popover location-id tile trigger]}]
              [dnd-texture :exit]])]
 
