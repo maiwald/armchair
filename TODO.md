@@ -3,6 +3,9 @@
 
 # TODO
 - directed location connections
+  - prevent placing triggers on used tiles
+  - refactor and consolidate drawing locations
+  - show incoming connections
 - trees! (multiple texture layers)
 - (multiple?) decorative textures
 - rethink relationship between character and dialogue
@@ -23,7 +26,7 @@
 - make modal changes apply on submit
 - copy and paste for background texture sets
 - organize and cluster background textures
-- prevent placing npcs on taken/non-walkable tiles
+- prevent placing npcs on taken tiles
 - remove slds dependency
 - validation error notifications and form states
 - redesign dialogue screen to use pixel font
