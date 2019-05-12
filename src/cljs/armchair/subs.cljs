@@ -87,7 +87,9 @@
   :character-options
   :<- [:db-characters]
   (fn [characters _]
-    (u/map-values :display-name characters)))
+    (->> characters
+         (u/map-values :display-name)
+         (sort-by second))))
 
 (reg-sub
   :dialogue-creation/character-options
@@ -100,7 +102,8 @@
                           (vals dialogues))]
       (->> characters
            (u/filter-map #(not (contains? with-dialogue (:entity/id %))))
-           (u/map-values :display-name)))))
+           (u/map-values :display-name)
+           (sort-by second)))))
 
 (reg-sub
   :character
@@ -151,7 +154,9 @@
   :location-options
   :<- [:db-locations]
   (fn [locations _]
-    (u/map-values :display-name locations)))
+    (->> locations
+         (u/map-values :display-name)
+         (sort-by second))))
 
 (reg-sub
   :location-map

@@ -39,7 +39,8 @@
   (fn [[modal locations]]
     (if-let [{:keys [location-id]} (:connection-trigger-creation modal)]
       (->> (dissoc locations location-id)
-           (u/map-values :display-name)))))
+           (u/map-values :display-name)
+           (sort-by second)))))
 
 ;; Views
 
