@@ -3,7 +3,6 @@
 
 # TODO
 - directed location connections
-  - refactor and consolidate drawing locations
   - show incoming connections
 - trees! (multiple texture layers)
 - (multiple?) decorative textures

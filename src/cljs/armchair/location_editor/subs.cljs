@@ -1,5 +1,5 @@
 (ns armchair.location-editor.subs
-  (:require [re-frame.core :refer [reg-sub]]
+  (:require [re-frame.core :refer [reg-sub subscribe]]
             [com.rpl.specter
              :refer [keypath ALL MAP-KEYS MAP-VALS]
              :refer-macros [select]]
@@ -26,20 +26,6 @@
     (contains? locations location-id)))
 
 (reg-sub
-  :location-editor/location
-  :<- [:db-locations]
-  (fn [locations [_ location-id]]
-    (-> (locations location-id)
-        (u/update-values
-          :connection-triggers
-          (fn [[target-id target]]
-            (let [{:keys [dimension display-name]} (locations target-id)]
-              {:id target-id
-               :target target
-               :target-normalized (u/rect->0 dimension target)
-               :display-name display-name}))))))
-
-(reg-sub
   :location-editor/npcs
   :<- [:db-dialogues]
   :<- [:db-characters]
@@ -56,6 +42,27 @@
                            :dialogue-synopsis dialogue-synopsis}
                           (select-keys character [:texture :display-name]))])))
          (into {}))))
+
+(reg-sub
+  :location-editor/location
+  (fn [[_ location-id]]
+    [(subscribe [:db-locations])
+     (subscribe [:location-editor/npcs location-id])
+     (subscribe [:location-editor/player-position location-id])])
+  (fn [[locations npcs player-position] [_ location-id]]
+    (-> (locations location-id)
+        (cond->
+          (some? player-position)
+          (assoc :player-position player-position))
+        (assoc :npcs npcs)
+        (u/update-values
+          :connection-triggers
+          (fn [[target-id target]]
+            (let [{:keys [dimension display-name]} (locations target-id)]
+              {:id target-id
+               :target target
+               :target-normalized (u/rect->0 dimension target)
+               :display-name display-name}))))))
 
 (reg-sub
   :location-editor/available-npcs
