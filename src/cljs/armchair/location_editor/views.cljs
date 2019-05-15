@@ -218,13 +218,18 @@
                 :style (apply tile-style (u/rect->0 rect tile))}
           (f tile item)])])
 
-(defn dropzone [{:keys [dimension highlight on-drop]}]
+(defn dropzone [{:keys [dimension highlight occupied on-drop]}]
   [do-all-tiles dimension "dropzone"
    (fn [tile]
-     [:div {:class ["interactor" (when (= tile highlight) "interactor_dropzone")]
-            :on-drag-over u/prevent-e!
-            :on-drag-enter (e-> #(>evt [:location-editor/set-highlight tile]))
-            :on-drop (e-> #(on-drop tile))}])])
+     (let [occupied? (contains? occupied tile)]
+       [:div {:class ["interactor"
+                      (when (= tile highlight) "interactor_dropzone")
+                      (when occupied? "interactor_disabled")]
+              :on-drag-over u/prevent-e!
+              :on-drag-enter (e-> #(if occupied?
+                                     (>evt [:location-editor/unset-highlight])
+                                     (>evt [:location-editor/set-highlight tile])))
+              :on-drop (when-not occupied? (e-> #(on-drop tile)))}]))])
 
 (defn background-tiles [rect background black?]
   [do-all-tiles rect "background"
@@ -272,7 +277,8 @@
                 background
                 connection-triggers]} (<sub [:location-editor/location location-id])
         npcs (<sub [:location-editor/npcs location-id])
-        player-position (<sub [:location-editor/player-position location-id])]
+        player-position (<sub [:location-editor/player-position location-id])
+        occupied (<sub [:location-editor/physically-occupied-tiles location-id])]
     [:div {:style {:overflow "scroll"
                    :background-color "#000"
                    :max-width (u/px 600)
@@ -290,8 +296,11 @@
                :class "level__tile level__tile_highlight"
                :style (apply tile-style (u/rect->0 dimension selected))}])
       [do-all-tiles dimension "selectors"
-       (fn [tile] [:div {:class "interactor"
-                         :on-click #(on-select tile)}])]]]))
+       (fn [tile]
+         (let [occupied? (contains? occupied tile)]
+           [:div {:class ["interactor"
+                          (when occupied? "interactor_disabled")]
+                  :on-click (when-not occupied? #(on-select tile))}]))]]]))
 
 (defn npc-popover [{:keys [id display-name dialogue-id dialogue-synopsis]}]
   [:div {:class "level-popover"}
@@ -411,6 +420,7 @@
          (when (fn? dropzone-fn)
            [dropzone {:dimension dimension
                       :highlight highlight
+                      :occupied (<sub [:location-editor/occupied-tiles location-id])
                       :on-drop dropzone-fn}])]
 
         nil)]]))

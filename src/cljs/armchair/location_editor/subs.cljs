@@ -1,5 +1,8 @@
 (ns armchair.location-editor.subs
   (:require [re-frame.core :refer [reg-sub]]
+            [com.rpl.specter
+             :refer [keypath ALL MAP-KEYS MAP-VALS]
+             :refer-macros [select]]
             [armchair.util :as u :refer [where filter-map]]))
 
 (reg-sub
@@ -78,3 +81,36 @@
     (let [dimension (get-in locations [location-id :dimension])]
       {:width (u/rect-width dimension)
        :height (u/rect-height dimension)})))
+
+(reg-sub
+  :location-editor/occupied-tiles
+  :<- [:db-locations]
+  :<- [:db-dialogues]
+  :<- [:db-player]
+  (fn [[locations dialogues player] [_ location-id]]
+    (let [triggers (select [(keypath location-id)
+                            :connection-triggers
+                            MAP-KEYS]
+                           locations)
+          npcs (select [MAP-VALS
+                        #(= location-id (:location-id %))
+                        :location-position]
+                       dialogues)
+          player (when (= location-id (:location-id player))
+                   [(:location-position player)])]
+      (set (concat triggers npcs player)))))
+
+(reg-sub
+  :location-editor/physically-occupied-tiles
+  :<- [:db-locations]
+  :<- [:db-dialogues]
+  :<- [:db-player]
+  (fn [[locations dialogues player] [_ location-id]]
+    (let [blocked (get-in locations [location-id :blocked])
+          npcs (select [MAP-VALS
+                        #(= location-id (:location-id %))
+                        :location-position]
+                       dialogues)
+          player (when (= location-id (:location-id player))
+                   [(:location-position player)])]
+      (set (concat blocked npcs player)))))

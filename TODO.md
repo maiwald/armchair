@@ -3,7 +3,6 @@
 
 # TODO
 - directed location connections
-  - prevent placing triggers on used tiles
   - refactor and consolidate drawing locations
   - show incoming connections
 - trees! (multiple texture layers)
