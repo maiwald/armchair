@@ -238,10 +238,12 @@
        (if-let [t (get background tile)] [c/sprite-texture t])
        [c/sprite-texture (get background tile)]))])
 
-(defn player-layer [rect position]
-  [do-some-tiles rect {position :player} "player"
-   (fn []
-     [c/sprite-texture :human "Player"])])
+(defn player-tile [rect position]
+  (when (u/rect-contains? rect position)
+    [:div {:key (str "location-cell:player:" position)
+           :class "level__tile"
+           :style (apply tile-style (u/rect->0 rect position))}
+     [c/sprite-texture :human "Player"]]))
 
 (defn npc-layer [rect npcs]
   [do-some-tiles rect npcs "npc"
@@ -254,18 +256,19 @@
      [:img {:src (texture-path :exit)
             :title (str "to " display-name)}])])
 
-(defn location-preview [location-id tile]
+(defn location-preview [location-id preview-tile]
   (let [tiles-around 3
-        dimension [(u/translate-point tile [(- tiles-around) (- tiles-around)])
-                   (u/translate-point tile [tiles-around tiles-around])]
-        {:keys [background connection-triggers]} (<sub [:location-editor/location location-id])
-        npcs (<sub [:location-editor/npcs location-id])
-        player-position (<sub [:location-editor/player-position location-id])]
+        dimension [(u/translate-point preview-tile [(- tiles-around) (- tiles-around)])
+                   (u/translate-point preview-tile [tiles-around tiles-around])]
+        {:keys [background
+                connection-triggers
+                npcs
+                player-position]} (<sub [:location-editor/location location-id])]
     [:div {:class "level"
            :style {:width (u/px (* config/tile-size (inc (* tiles-around 2))))
                    :height (u/px (* config/tile-size (inc (* tiles-around 2))))}}
      [background-tiles dimension background true]
-     (when player-position [player-layer dimension player-position])
+     (when player-position [player-tile dimension player-position])
      [npc-layer dimension npcs]
      [conntection-trigger-layer dimension connection-triggers]
      [:div {:key "location-cell:highlight"
@@ -275,9 +278,9 @@
 (defn position-select [location-id on-select selected]
   (let [{:keys [dimension
                 background
-                connection-triggers]} (<sub [:location-editor/location location-id])
-        npcs (<sub [:location-editor/npcs location-id])
-        player-position (<sub [:location-editor/player-position location-id])
+                connection-triggers
+                player-position
+                npcs]} (<sub [:location-editor/location location-id])
         occupied (<sub [:location-editor/physically-occupied-tiles location-id])]
     [:div {:style {:overflow "scroll"
                    :background-color "#000"
@@ -288,7 +291,7 @@
                     :height (u/px (* config/tile-size (u/rect-height dimension)))
                     :margin "0 auto"}}
       [background-tiles dimension background true]
-      (when player-position [player-layer dimension player-position])
+      (when player-position [player-tile dimension player-position])
       [npc-layer dimension npcs]
       [conntection-trigger-layer dimension connection-triggers]
       (when selected
@@ -339,10 +342,13 @@
                              (>evt [:location-editor/remove-trigger location-id tile]))}]])
 
 (defn canvas [location-id]
-  (let [{:keys [dimension background blocked connection-triggers]} (<sub [:location-editor/location location-id])
-        npcs (<sub [:location-editor/npcs location-id])
+  (let [{:keys [dimension
+                background
+                blocked
+                npcs
+                connection-triggers
+                player-position]} (<sub [:location-editor/location location-id])
         {:keys [tool highlight painting?]} (<sub [:location-editor/ui])
-        player-position (<sub [:location-editor/player-position location-id])
         [dnd-type dnd-payload] (<sub [:dnd-payload])
         dropzone-fn (case dnd-type
                       :player             #(>evt [:location-editor/move-player location-id %])
@@ -357,7 +363,7 @@
       [background-tiles dimension background]
       (when-not (contains? #{:background-painter :collision} tool)
         [:<>
-         (when player-position [player-layer dimension player-position])
+         (when player-position [player-tile dimension player-position])
          [npc-layer dimension npcs]
          [conntection-trigger-layer dimension connection-triggers]])
 
