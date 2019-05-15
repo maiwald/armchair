@@ -150,8 +150,8 @@
   :<- [:game/npcs-by-location]
   (fn [[locations npcs-by-location]]
     (u/map-values
-      (fn [{:keys [dimension background connection-triggers walk-set
-                   id :entity/id]}]
+      (fn [{:keys [dimension background connection-triggers walk-set]
+            id :entity/id}]
         {:dimension dimension
          :background background
          :outbound-connections connection-triggers
