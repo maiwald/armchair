@@ -115,7 +115,7 @@
   :location-editor/set-walkable
   (fn [db [_ location-id tile]]
     (let [add (get-in db [:location-editor :active-walk-state])]
-      (update-in db [:locations location-id :walk-set] (if add conj disj) tile))))
+      (update-in db [:locations location-id :blocked] (if add disj conj) tile))))
 
 (reg-event-data
   :location-editor/resize-smaller
@@ -136,7 +136,7 @@
                        (update :background remove-oob)
                        (update :npcs remove-oob)
                        (update :connection-triggers remove-oob)
-                       (update :walk-set (comp set #(filter in-bounds? %)))))))))
+                       (update :blocked (comp set #(filter in-bounds? %)))))))))
 
 (reg-event-data
   :location-editor/resize-larger

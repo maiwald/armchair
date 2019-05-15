@@ -13,7 +13,7 @@
 
 ;; Migrations
 
-(def db-version 5)
+(def db-version 6)
 
 (def migrations
   "Map of migrations. Key is the version we are coming from."
@@ -61,7 +61,22 @@
          (->> (dissoc db :location-connections)
               (transform [:locations ALL (collect-one FIRST) LAST :connection-triggers MAP-VALS]
                          (fn [location-id target-id]
-                           [target-id (get-in incoming [target-id location-id])])))))})
+                           [target-id (get-in incoming [target-id location-id])])))))
+
+   5 (fn [db]
+       "Store blocked tiles instead of walkable"
+       (letfn [(inverse [[[x1 y1] [x2 y2]] tiles]
+                 (set (for [x (range x1 (inc x2))
+                            y (range y1 (inc y2))
+                            :let [tile [x y]]
+                            :when (not (contains? tiles tile))]
+                        tile)))]
+         (transform [:locations MAP-VALS]
+           (fn [{:keys [dimension walk-set] :as location}]
+             (-> location
+                 (dissoc :walk-set)
+                 (assoc :blocked (inverse dimension walk-set))))
+           db)))})
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)
@@ -141,13 +156,13 @@
                           :req-un [:location/dimension
                                    ::display-name
                                    :location/background
-                                   :location/walk-set
+                                   :location/blocked
                                    :location/connection-triggers]))
 
 (s/def :location/position :type/point)
 (s/def :location/dimension :type/rect)
 (s/def :location/background (s/map-of :type/point ::texture))
-(s/def :location/walk-set (s/coll-of :type/point :kind set?))
+(s/def :location/blocked (s/coll-of :type/point :kind set?))
 (s/def :location/connection-triggers
   (s/map-of :type/point :location/connection-trigger-target))
 

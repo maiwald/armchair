@@ -16,7 +16,6 @@
 
 # nice things
 - allow creating switches in dialogue editor
-- change default collision to walkable
 - show debug state variables
 - typing animation for dialogue screens
 - movement behaviour when holding and releasing arrow key
