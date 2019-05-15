@@ -52,9 +52,11 @@
 
 (defn walkable? [tile]
   (let [{l :location-id} (:player @state)
-        {:keys [walk-set npcs]} (get-in @data [:locations l])]
-    (and (contains? walk-set tile)
-         (not (contains? npcs tile)))))
+        {:keys [dimension blocked npcs]} (get-in @data [:locations l])]
+    (and
+      (u/rect-contains? dimension tile)
+      (not (or (contains? blocked tile)
+               (contains? npcs tile))))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
   (u/translate-point

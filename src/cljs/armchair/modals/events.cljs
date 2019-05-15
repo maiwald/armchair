@@ -279,7 +279,7 @@
                                      :entity/type :location
                                      :dimension [[0 0] [2 2]]
                                      :background {}
-                                     :walk-set #{}
+                                     :blocked #{}
                                      :connection-triggers {}
                                      :display-name display-name})))))
 

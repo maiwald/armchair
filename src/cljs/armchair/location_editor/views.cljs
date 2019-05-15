@@ -330,7 +330,7 @@
                              (>evt [:location-editor/remove-trigger location-id tile]))}]])
 
 (defn canvas [location-id]
-  (let [{:keys [dimension background walk-set connection-triggers]} (<sub [:location-editor/location location-id])
+  (let [{:keys [dimension background blocked connection-triggers]} (<sub [:location-editor/location location-id])
         npcs (<sub [:location-editor/npcs location-id])
         {:keys [tool highlight painting?]} (<sub [:location-editor/ui])
         player-position (<sub [:location-editor/player-position location-id])
@@ -363,9 +363,9 @@
          [do-all-tiles dimension "walkable-area"
           (fn [tile]
             [:div {:class ["interactor"
-                           (if (contains? walk-set tile)
-                             "interactor_walkable"
-                             "interactor_not-walkable")]}])]
+                           (if (contains? blocked tile)
+                             "interactor_not-walkable"
+                             "interactor_walkable")]}])]
          [tile-paint-canvas
           {:dimension dimension
            :on-paint #(>evt [:location-editor/set-walkable location-id %])}]]

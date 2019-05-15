@@ -20,7 +20,7 @@
                                 :kind vector?))
 (s/def :game/locations (s/map-of :entity/id (s/keys :req-un [:game/dimension
                                                              :game/background
-                                                             :game/walk-set
+                                                             :game/blocked
                                                              :game/outbound-connections
                                                              :game/npcs])))
 (s/def :game/triggers (s/keys :opt-un [:game-triggers/dialogue-states
@@ -30,7 +30,7 @@
 (s/def :game-triggers/switches :game/trigger-map)
 
 (s/def :game/dimension :type/rect)
-(s/def :game/walk-set (s/coll-of :type/point :kind set?))
+(s/def :game/blocked (s/coll-of :type/point :kind set?))
 (s/def :game/outbound-connections (s/map-of :type/point (s/tuple :game/location-id :type/point)))
 (s/def :game/location-id :entity/id)
 (s/def :game/position :type/point)
@@ -148,12 +148,12 @@
   :<- [:game/npcs-by-location]
   (fn [[locations npcs-by-location]]
     (u/map-values
-      (fn [{:keys [dimension background connection-triggers walk-set]
+      (fn [{:keys [dimension background connection-triggers blocked]
             id :entity/id}]
         {:dimension dimension
          :background background
          :outbound-connections connection-triggers
-         :walk-set walk-set
+         :blocked blocked
          :npcs (npcs-by-location id)})
       locations)))
 
