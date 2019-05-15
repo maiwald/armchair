@@ -252,7 +252,7 @@
 
 (defn conntection-trigger-layer [rect connection-triggers]
   [do-some-tiles rect connection-triggers "connection-trigger"
-   (fn [tile {:keys [id display-name]}]
+   (fn [tile {:keys [display-name]}]
      [:img {:src (texture-path :exit)
             :title (str "to " display-name)}])])
 
@@ -400,7 +400,7 @@
                [dnd-texture :human]])])
 
          [do-some-tiles dimension npcs "npc-select"
-          (fn [_ {:keys [id display-name texture dialogue-id dialogue-synopsis] :as npc}]
+          (fn [_ {:keys [id texture display-name] :as npc}]
             [:div {:class "interactor interactor_draggable"
                    :title display-name
                    :draggable true
@@ -412,7 +412,7 @@
              [dnd-texture texture]])]
 
          [do-some-tiles dimension connection-triggers "connection-select"
-          (fn [tile {:keys [id display-name target target-normalized] :as trigger}]
+          (fn [tile {:keys [display-name] :as trigger}]
             [:div {:class "interactor interactor_draggable"
                    :title (str "to " display-name)
                    :draggable true
