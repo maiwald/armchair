@@ -8,6 +8,7 @@
 
 (defn px [v] (str v "px"))
 (defn round [x] (.round js/Math x))
+(defn abs [x] (.abs js/Math x))
 
 (defn upload-json! [callback]
   (let [file-input (doto (js/document.createElement "input")

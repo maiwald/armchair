@@ -1,5 +1,6 @@
 (ns armchair.components
-  (:require [reagent.core :as r]
+  (:require [clojure.string :refer [join]]
+            [reagent.core :as r]
             [armchair.config :as config]
             [armchair.textures :refer [texture-path sprite-lookup]]
             [armchair.util :as u :refer [stop-e! >evt <sub e-> e->left?]]))
@@ -16,13 +17,33 @@
          (when (e->left? e)
            (>evt [:start-dragging ids (e->graph-cursor e)])))))
 
-(defn connection [{kind :kind [x1 y1] :start [x2 y2] :end}]
+(defn connection [{kind :kind
+                   [x1 y1] :start
+                   [x2 y2] :end}]
   [:line {:class ["graph__connection"
                   (when (= kind :connector) "graph__connection_is-connector")]
           :x1 x1
           :y1 y1
           :x2 x2
           :y2 y2}])
+
+(defn curved-connection [{kind :kind
+                          [x1 y1 :as start] :start
+                          [x2 y2 :as end] :end}]
+  (let [[dx dy] (u/point-delta start end)
+        [mx my] (u/translate-point start [(/ dx 2) (/ dy 2)])
+        [ctrl-x ctrl-y] [(if (pos? dx)
+                           (+ x1 (max (/ (u/abs dx) 6)
+                                      30))
+                           (max (- (+ x1 (u/abs dx)) (/ (u/abs dx) 6))
+                                (+ x1 30)))
+                         (+ y1 (/ (- my y1) 4))]]
+    [:path {:class ["graph__connection"
+                    (when (= kind :connector) "graph__connection_is-connector")]
+            :d (join " " (concat ["M" x1 y1]
+                                 (if (< 20 (u/abs dy))
+                                   ["Q" ctrl-x ctrl-y mx my "T" x2 y2]
+                                   ["L" x2 y2])))}]))
 
 (defn drag-item [item-id component]
   (let [[left top] (<sub [:ui/position item-id])
