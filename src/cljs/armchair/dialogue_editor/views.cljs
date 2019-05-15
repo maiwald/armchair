@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [armchair.components
              :as c
-             :refer [icon drag-canvas connection e->graph-cursor]]
+             :refer [icon drag-canvas curved-connection connection e->graph-cursor]]
             [armchair.routes :refer [>navigate]]
             [armchair.config :as config]
             [armchair.slds :as slds]
@@ -196,26 +196,22 @@
              [trigger-component id trigger-id])]]]))))
 
 (def top-offset 55)
-(def left-offset 20)
 
 (defn line-connection [start end]
   (let [[start-x start-y] (<sub [:ui/position start])
         [end-x end-y] (<sub [:ui/position end])]
-    [connection {:start (u/translate-point [start-x start-y]
-                                           [(+ config/line-width 15) top-offset])
-
-                 :end (u/translate-point [end-x end-y]
-                                         [left-offset top-offset])}]))
+    [curved-connection
+     {:start (u/translate-point [start-x start-y] [(+ config/line-width 15) top-offset])
+      :end (u/translate-point [end-x end-y] [0 top-offset])}]))
 
 (defn option-connection [start index end]
   (let [_ (<sub [:ui/position start])
         [end-x end-y] (<sub [:ui/position end])]
     (when-let [{start-right :right
                 start-top :top} (get-rect (get @option-position-lookup [start index]))]
-      [connection {:start (u/translate-point [start-right start-top]
-                                             [35 20])
-                   :end (u/translate-point [end-x end-y]
-                                           [left-offset top-offset])}])))
+      [curved-connection
+       {:start (u/translate-point [start-right start-top] [35 20])
+        :end (u/translate-point [end-x end-y] [0 top-offset])}])))
 
 (defn dialogue-editor [dialogue-id]
   (if-let [{:keys [npc-line-ids

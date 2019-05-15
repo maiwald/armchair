@@ -11,7 +11,6 @@
 - save file for game state
 
 # nice things
-- curved dialogue node connections
 - allow creating switches in dialogue editor
 - change default collision to walkable
 - show debug state variables
