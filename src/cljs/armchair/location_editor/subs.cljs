@@ -2,8 +2,8 @@
   (:require [re-frame.core :refer [reg-sub subscribe]]
             [com.rpl.specter
              :refer [keypath ALL MAP-KEYS MAP-VALS]
-             :refer-macros [select]]
-            [armchair.util :as u :refer [where filter-map]]))
+             :refer-macros [select select-one!]]
+            [armchair.util :as u]))
 
 (reg-sub
   :location-editor/ui
@@ -31,15 +31,11 @@
   :<- [:db-characters]
   (fn [[dialogues characters] [_ location-id]]
     (->> (vals dialogues)
-         (where :location-id location-id)
-         (map (fn [{dialogue-id :entity/id
-                    dialogue-synopsis :synopsis
-                    :keys [character-id location-position]}]
+         (u/where :location-id location-id)
+         (map (fn [{:keys [character-id location-position]}]
                 (let [character (characters character-id)]
                   [location-position
-                   (merge {:id (:entity/id character)
-                           :dialogue-id dialogue-id
-                           :dialogue-synopsis dialogue-synopsis}
+                   (merge {:id character-id}
                           (select-keys character [:texture :display-name]))])))
          (into {}))))
 
@@ -57,12 +53,8 @@
         (assoc :npcs npcs)
         (u/update-values
           :connection-triggers
-          (fn [[target-id target]]
-            (let [{:keys [dimension display-name]} (locations target-id)]
-              {:id target-id
-               :target target
-               :target-normalized (u/rect->0 dimension target)
-               :display-name display-name}))))))
+          (fn [[target-id _]]
+            (get-in locations [target-id :display-name]))))))
 
 (reg-sub
   :location-editor/available-npcs
@@ -72,8 +64,8 @@
     (let [placed-characters (->> (vals dialogues)
                                  (filter #(contains? % :location-id))
                                  (reduce #(conj %1 (:character-id %2)) #{}))]
-      (filter-map #(not (contains? placed-characters (:entity/id %)))
-                  characters))))
+      (u/filter-map #(not (contains? placed-characters (:entity/id %)))
+                    characters))))
 
 (reg-sub
   :location-editor/display-name
@@ -88,6 +80,33 @@
     (let [dimension (get-in locations [location-id :dimension])]
       {:width (u/rect-width dimension)
        :height (u/rect-height dimension)})))
+
+(reg-sub
+  :location-editor/npc-popover
+  :<- [:db-dialogues]
+  :<- [:db-characters]
+  (fn [[dialogues characters] [_ location-id tile]]
+    (let [{:keys [character-id]
+           dialogue-id :entity/id
+           dialogue-synopsis :synopsis}
+          (select-one! [MAP-VALS #(u/submap? {:location-id location-id :location-position tile} %)]
+                       dialogues)
+          character (characters character-id)]
+      (merge {:id (:entity/id character)
+              :dialogue-id dialogue-id
+              :dialogue-synopsis dialogue-synopsis}
+             (select-keys character [:texture :display-name])))))
+
+(reg-sub
+  :location-editor/trigger-popover
+  :<- [:db-locations]
+  (fn [locations [_ location-id tile]]
+    (let [[target-id position] (get-in locations [location-id :connection-triggers tile])
+          {:keys [dimension display-name]} (locations target-id)]
+      {:id target-id
+       :position position
+       :position-normalized (u/rect->0 dimension position)
+       :display-name display-name})))
 
 (reg-sub
   :location-editor/occupied-tiles
