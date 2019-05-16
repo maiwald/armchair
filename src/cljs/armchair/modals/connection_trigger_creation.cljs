@@ -54,8 +54,9 @@
         [slds/modal {:title "New Exit"
                      :close-handler close-modal
                      :confirm-handler save}
-         [input/select {:on-change update-target
+         [input/select {:label "Location"
+                        :on-change update-target
                         :options location-options
                         :value target-id}]
-         (when (some? target-id)
-           [position-select target-id update-position target-position])]))))
+         [input/label "Position"]
+         [position-select target-id update-position target-position]]))))
