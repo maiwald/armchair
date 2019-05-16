@@ -1,6 +1,9 @@
 (ns armchair.input
   (:require [cljsjs.react-select]))
 
+(defn label [text]
+  [:label {:class "input__label"} text])
+
 (defn text [{:keys [label on-change value]}]
   (let [id (gensym "input-text")]
     [:div {:class "input input-text"}

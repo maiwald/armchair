@@ -284,12 +284,14 @@
         occupied (<sub [:location-editor/physically-occupied-tiles location-id])]
     [:div {:style {:overflow "scroll"
                    :background-color "#000"
+                   :width (u/px 600)
+                   :height (u/px 400)
                    :max-width (u/px 600)
                    :max-height (u/px 400)}}
      [:div {:class "level"
             :style {:width (u/px (* config/tile-size (u/rect-width dimension)))
                     :height (u/px (* config/tile-size (u/rect-height dimension)))
-                    :margin "0 auto"}}
+                    :margin "auto"}}
       [background-tiles dimension background]
       (when player-position [player-tile dimension player-position])
       [npc-layer dimension npcs]
