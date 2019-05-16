@@ -1,5 +1,5 @@
 (ns armchair.util
-  (:require [clojure.set :refer [intersection]]
+  (:require [clojure.set :refer [intersection subset?]]
             [re-frame.core :as re-frame]
             [armchair.config :refer [tile-size]]
             [com.rpl.specter
@@ -87,6 +87,9 @@
 
 (defn update-values [m k f]
   (transform [k MAP-VALS] f m))
+
+(defn submap? [a-map b-map]
+  (subset? (set a-map) (set b-map)))
 
 (defn where
   ([property value coll]
