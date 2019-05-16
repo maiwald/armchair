@@ -118,9 +118,11 @@
 (defn draw-background [ctx [[left top] [right bottom]] background camera]
   (doseq [x (range left (inc right))
           y (range top (inc bottom))
-          :when (tile-visible? camera [x y])
-          :let [texture (get background [x y])]]
-    (draw-sprite-texture ctx texture (u/tile->coord [x y]))))
+          :let [tile [x y]
+                texture (get background tile)]
+          :when (and (some? texture)
+                     (tile-visible? camera tile))]
+    (draw-sprite-texture ctx texture (u/tile->coord tile))))
 
 (defn draw-player [ctx {:keys [position texture]}]
   (draw-sprite-texture ctx texture position))
