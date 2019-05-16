@@ -205,10 +205,11 @@
    (for [x (range x1 (inc x2))
          y (range y1 (inc y2))
          :let [tile [x y]]]
-     [:div {:key (str "location-cell:" layer-title ":" tile)
-            :class "level__tile"
-            :style (apply tile-style (u/rect->0 rect tile))}
-      (f tile)])])
+     (if-let [tile-data (f tile)]
+       [:div {:key (str "location-cell:" layer-title ":" tile)
+              :class "level__tile"
+              :style (apply tile-style (u/rect->0 rect tile))}
+        tile-data]))])
 
 (defn do-some-tiles [rect coll layer-title f]
   [:<> (for [[tile item] coll
@@ -231,12 +232,11 @@
                                      (>evt [:location-editor/set-highlight tile])))
               :on-drop (when-not occupied? (e-> #(on-drop tile)))}]))])
 
-(defn background-tiles [rect background black?]
+(defn background-tiles [rect background]
   [do-all-tiles rect "background"
    (fn [tile]
-     (if black?
-       (if-let [t (get background tile)] [c/sprite-texture t])
-       [c/sprite-texture (get background tile)]))])
+     (when-let [t (get background tile)]
+       [c/sprite-texture t]))])
 
 (defn player-tile [rect position]
   (when (u/rect-contains? rect position)
@@ -267,7 +267,7 @@
     [:div {:class "level"
            :style {:width (u/px (* config/tile-size (inc (* tiles-around 2))))
                    :height (u/px (* config/tile-size (inc (* tiles-around 2))))}}
-     [background-tiles dimension background true]
+     [background-tiles dimension background]
      (when player-position [player-tile dimension player-position])
      [npc-layer dimension npcs]
      [conntection-trigger-layer dimension connection-triggers]
@@ -290,7 +290,7 @@
             :style {:width (u/px (* config/tile-size (u/rect-width dimension)))
                     :height (u/px (* config/tile-size (u/rect-height dimension)))
                     :margin "0 auto"}}
-      [background-tiles dimension background true]
+      [background-tiles dimension background]
       (when player-position [player-tile dimension player-position])
       [npc-layer dimension npcs]
       [conntection-trigger-layer dimension connection-triggers]
