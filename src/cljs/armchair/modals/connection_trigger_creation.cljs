@@ -18,17 +18,27 @@
   (fn [db [_ position]]
     (assoc-in db [:modal :connection-trigger-creation :target-position] position)))
 
+(reg-event-meta
+  ::update-symmetric
+  (fn [db [_ value]]
+    (assoc-in db [:modal :connection-trigger-creation :symmetric?] value)))
+
 (reg-event-data
   ::save
   (fn [db]
     (let [{:keys [location-id
                   location-position
                   target-id
-                  target-position]} (get-in db [:modal :connection-trigger-creation])]
+                  target-position
+                  symmetric?]} (get-in db [:modal :connection-trigger-creation])]
       (-> db
           (dissoc :modal)
           (assoc-in [:locations location-id :connection-triggers location-position]
-                    [target-id target-position])))))
+                    [target-id target-position])
+          (cond->
+            symmetric?
+            (assoc-in [:locations target-id :connection-triggers target-position]
+                      [location-id location-position]))))))
 
 ;; Subscriptions
 
@@ -44,9 +54,10 @@
 
 ;; Views
 
-(defn modal [{:keys [target-id target-position]}]
+(defn modal [{:keys [target-id target-position symmetric?]}]
   (letfn [(close-modal [e] (>evt [:close-modal]))
           (update-target [e] (>evt [::update-target-id (uuid (e->val e))]))
+          (update-symmetric [e] (>evt [::update-symmetric (e->val e)]))
           (update-position [position] (>evt [::update-target-position position]))
           (save [] (>evt [::save]))]
     (fn [{:keys [target-id target-position]}]
@@ -58,5 +69,8 @@
                         :on-change update-target
                         :options location-options
                         :value target-id}]
+         [input/checkbox {:label "Also add reverse exit"
+                          :on-change update-symmetric
+                          :checked? symmetric?}]
          [input/label "Position"]
          [position-select target-id update-position target-position]]))))
