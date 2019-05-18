@@ -6,7 +6,7 @@
             [armchair.location-editor.views :refer [location-editor]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
             [armchair.modals.views :refer [modal]]
-            [armchair.util :as u :refer [<sub >evt stop-e! e-> e->left? e->val]]
+            [armchair.util :as u :refer [<sub >evt]]
             [armchair.config :as config]
             [armchair.routes :refer [routes >navigate]]
             [armchair.game.views :refer [game-view]]
@@ -71,28 +71,21 @@
       :new-resource #(>evt [:modal/open-switch-modal])}]))
 
 (defn location-component [location-id]
-  (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])
-        connecting? (some? (<sub [:connector]))]
+  (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])]
     [:div.location
      [c/graph-node {:title [:a {:on-click #(>navigate :location-edit :id location-id)}
                             display-name]
                     :item-id location-id
-                    :on-connect-end #(>evt [:end-connecting-locations location-id])
                     :actions [["trash" "Delete"
                                #(when (js/confirm "Are you sure you want to delete this location?")
                                   (>evt [:delete-location location-id]))]]}
-      [c/action-wrapper {:actions
-                         [[:div {:class "action action_connect"
-                                 :on-mouse-down (e-> #(when (e->left? %)
-                                                        (>evt [:start-connecting-locations location-id (e->graph-cursor %)])))}
-                           [icon "project-diagram" "Connect"]]]}
-       [:ul {:class "location__characters"}
-        (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
-          [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
-           [:a {:style {:background-color npc-color}
-                :on-mouse-down stop-e!
-                :on-click #(>navigate :dialogue-edit :id dialogue-id)}
-            npc-name]])]]]]))
+      [:ul {:class "location__characters"}
+       (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
+         [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
+          [:a {:style {:background-color npc-color}
+               :on-mouse-down u/stop-e!
+               :on-click #(>navigate :dialogue-edit :id dialogue-id)}
+           npc-name]])]]]))
 
 (defn location-connection [start end]
   (let [start-pos (<sub [:ui/position start])
@@ -112,8 +105,6 @@
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
-       (when-let [connector (<sub [:connector])]
-         [connection connector])
        (for [[start end] connections]
          ^{:key (str "location-connection" start "->" end)}
          [location-connection start end])]]]))
@@ -201,6 +192,7 @@
          page-params :route-params} (match-route routes (<sub [:current-page]))]
     [:div {:id "page"}
      [modal]
+     [c/popover]
      [navigation]
      [:div {:id "content"}
       (case page-name

@@ -1,5 +1,5 @@
 (ns armchair.util
-  (:require [clojure.set :refer [intersection]]
+  (:require [clojure.set :refer [intersection subset?]]
             [re-frame.core :as re-frame]
             [armchair.config :refer [tile-size]]
             [com.rpl.specter
@@ -24,7 +24,8 @@
              (callback content)))
     (.click file-input)))
 
-;; Conversion Helpers
+(defn clip [u-bound value]
+  (min u-bound (max 0 value)))
 
 (defn tile->coord [[tx ty]]
   [(* tile-size tx) (* tile-size ty)])
@@ -87,6 +88,9 @@
 (defn update-values [m k f]
   (transform [k MAP-VALS] f m))
 
+(defn submap? [a-map b-map]
+  (subset? (set a-map) (set b-map)))
+
 (defn where
   ([property value coll]
    (filter #(= (property %) value)
@@ -138,6 +142,15 @@
     (case (.-type target)
       "checkbox" (.-checked target)
       (.-value target))))
+
+(defn get-rect [elem]
+  (let [rect (.getBoundingClientRect elem)]
+    {:top (.-top rect)
+     :left (.-left rect)
+     :bottom (.-bottom rect)
+     :right (.-right rect)
+     :width (.-width rect)
+     :height (.-height rect)}))
 
 (defn relative-cursor [e elem]
   (let [rect (.getBoundingClientRect elem)]

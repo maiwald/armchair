@@ -52,9 +52,11 @@
 
 (defn walkable? [tile]
   (let [{l :location-id} (:player @state)
-        {:keys [walk-set npcs]} (get-in @data [:locations l])]
-    (and (contains? walk-set tile)
-         (not (contains? npcs tile)))))
+        {:keys [dimension blocked npcs]} (get-in @data [:locations l])]
+    (and
+      (u/rect-contains? dimension tile)
+      (not (or (contains? blocked tile)
+               (contains? npcs tile))))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
   (u/translate-point
@@ -116,9 +118,11 @@
 (defn draw-background [ctx [[left top] [right bottom]] background camera]
   (doseq [x (range left (inc right))
           y (range top (inc bottom))
-          :when (tile-visible? camera [x y])
-          :let [texture (get background [x y])]]
-    (draw-sprite-texture ctx texture (u/tile->coord [x y]))))
+          :let [tile [x y]
+                texture (get background tile)]
+          :when (and (some? texture)
+                     (tile-visible? camera tile))]
+    (draw-sprite-texture ctx texture (u/tile->coord tile))))
 
 (defn draw-player [ctx {:keys [position texture]}]
   (draw-sprite-texture ctx texture position))
@@ -385,14 +389,9 @@
     (if (animation-done? start now)
       (let [new-state (dissoc state :animation)
             location-id (get-in state [:player :location-id])]
-        (if-let [new-location-id (get-in @data [:locations
-                                                location-id
-                                                :outbound-connections
-                                                destination])]
-          (let [new-position (get-in @data [:locations
-                                            new-location-id
-                                            :inbound-connections
-                                            location-id])]
+        (if-let [[new-location-id new-position]
+                 (get-in @data [:locations location-id :outbound-connections destination])]
+          (do
             (reset! move-q #queue [])
             (update new-state :player merge {:location-id new-location-id
                                              :position new-position}))

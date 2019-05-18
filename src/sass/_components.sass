@@ -102,27 +102,39 @@ $graph-node-border-radius: 5px
 .button
   display: inline-flex
   flex-direction: row
-  background: #fff
+  justify-content: center
   border: 1px solid #ddd
   border-radius: .25rem
   padding: 0 12px
 
-  color: $text-link
   font-family: Verdana
   font-size: .75rem
   line-height: 1.75rem
 
+  &_fill
+    width: 100%
+
+  // Button colors
+
+  color: $text-link
+  background: #fff
+  &:hover, &:focus
+    background: #f4f6f9
+
+  &_danger
+    color: #fff
+    background: $color-danger
+    &:hover, &:focus
+      background: darken($color-danger, 10%)
+
+
   &:focus
     outline: 0
     box-shadow: 0 0 3px $text-link
-    background: #f4f6f9
 
   margin-right: 6px
   &:last-child
     margin-right: 0
-
-  &:hover
-    background: #f4f6f9
 
   &__icon
     margin-right: 8px
@@ -134,3 +146,50 @@ $graph-node-border-radius: 5px
 
 .sprite-texture
   background-repeat: no-repeat
+
+.tabs
+  display: flex
+  border-bottom: 2px solid white
+  color: $text-regular
+
+  &__item
+    padding: 6px 8px
+    cursor: pointer
+
+    &:hover
+      background-color: $primary-light
+
+    &.is-active
+      background-color: $primary-light
+      border-bottom: 2px solid $primary
+
+.popover
+  position: absolute
+  display: block
+  background: #fff
+  min-width: 180px
+  padding: 4px
+  border-radius: 5px
+  border: 1px solid #eee
+  box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, .4)
+  box-sizing: border-box
+  z-index: 4
+
+  &::after
+    $arrow-size: 4px
+    content: ""
+    position: absolute
+    left: 50%
+    width: 0
+    height: 0
+    margin-left: - $arrow-size
+    bottom: - 2 * $arrow-size
+    box-sizing: border-box
+
+    border: $arrow-size solid black
+    border-color: transparent transparent #fff #fff
+
+    transform-origin: 0 0
+    transform: rotate(-45deg)
+
+    box-shadow: -3px 3px 3px 1px rgba(0, 0, 0, 0.4)

@@ -23,15 +23,14 @@
                          "slds-form-element__label"]} label])
      [:div {:class "slds-form-element__control"}
       [:div {:class "slds-radio_button-group"}
-       (for [[option option-label & attrs] options]
+       (for [[option option-label] options]
          [:span {:key (str id option)
                  :class "slds-button slds-radio_button"}
-          [:input (merge {:type "radio"
-                          :name id
-                          :id (str id option)
-                          :checked (= active option)
-                          :on-change #(on-change option)}
-                         (into {} (map #(vector % %) attrs)))]
+          [:input {:type "radio"
+                   :name id
+                   :id (str id option)
+                   :checked (= active option)
+                   :on-change #(on-change option)}]
           [:label {:class "slds-radio_button__label"
                    :for (str id option)}
            [:span {:class "slds-radio_faux"}
@@ -78,8 +77,9 @@
 
 (defn modal [{:keys [title close-handler confirm-handler width]}]
   [:div
-   [:section {:class (cond-> ["slds-modal" "slds-fade-in-open"]
-                       (= width :medium) (conj "slds-modal_medium"))}
+   [:section {:class ["slds-modal"
+                      "slds-fade-in-open"
+                      (when (= width :medium) "slds-modal_medium")]}
     [:div {:class "slds-modal__container"}
      [:header {:class "slds-modal__header"}
       [:button {:class "slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"

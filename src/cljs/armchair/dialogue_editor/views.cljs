@@ -6,7 +6,7 @@
             [armchair.routes :refer [>navigate]]
             [armchair.config :as config]
             [armchair.slds :as slds]
-            [armchair.util :as u :refer [<sub >evt stop-e! prevent-e! e-> e->val e->left?]]))
+            [armchair.util :as u :refer [<sub >evt stop-e! prevent-e! e->val e->left?]]))
 
 (def option-position-lookup (r/atom {}))
 
@@ -28,21 +28,12 @@
                      :on-blur #(handle-text-blur @text-state)
                      :value @text-state}])})))
 
-(defn get-rect [elem]
-  (let [graph (-> js/document
-                  (.getElementsByClassName "graph")
-                  (aget 0))]
-    (if (and (some? elem)
-             (some? graph))
-      (let [rect (.getBoundingClientRect elem)
-            top-offset (.-top (.getBoundingClientRect graph))]
-        {:top (- (.-top rect) top-offset)
-         :left (.-left rect)
-         :bottom (- (.-bottom rect) top-offset)
-         :right (.-right rect)
-         :width (.-width rect)
-         :height (.-height rect)})
-      nil)))
+(defn get-option-start-position [elem]
+  (let [graph (aget (js/document.getElementsByClassName "graph") 0)]
+    (when (and (some? elem) (some? graph))
+      (let [{:keys [right top]} (u/get-rect elem)
+            top-offset (:top (u/get-rect graph))]
+        [right (- top top-offset)]))))
 
 (defn connector [{:keys [connected? connector disconnector]}]
   (if connected?
@@ -51,9 +42,10 @@
            :on-click disconnector}
      [icon "times-circle" "Disconnect"]]
     [:div {:class "action action_connect"
-           :on-mouse-down (e-> #(when (e->left? %)
-                                  (prevent-e! %)
-                                  (connector %)))}
+           :on-mouse-down (fn [e]
+                            (when (e->left? e)
+                              (prevent-e! e)
+                              (connector e)))}
      [icon "circle-notch" "Connect"]]))
 
 (defn npc-line-component [line-id]
@@ -207,10 +199,9 @@
 (defn option-connection [start index end]
   (let [_ (<sub [:ui/position start])
         [end-x end-y] (<sub [:ui/position end])]
-    (when-let [{start-right :right
-                start-top :top} (get-rect (get @option-position-lookup [start index]))]
+    (when-let [start (get-option-start-position (get @option-position-lookup [start index]))]
       [curved-connection
-       {:start (u/translate-point [start-right start-top] [35 20])
+       {:start (u/translate-point start [35 20])
         :end (u/translate-point [end-x end-y] [0 top-offset])}])))
 
 (defn dialogue-editor [dialogue-id]

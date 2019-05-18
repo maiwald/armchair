@@ -2,6 +2,8 @@
 @import "input"
 @import "components"
 
+@import "location_editor"
+
 =fill-container
   position: absolute
   top: 0
@@ -235,133 +237,6 @@
   .add
     align-self: flex-end
 
-.location-editor
-  display: flex
-  position: relative
-  flex-grow: 1
-
-  &__sidebar
-    width: 300px
-    min-width: 300px
-    padding: 10px
-    background: rgba(230, 230, 230, .8)
-
-
-  .resize-container
-    display: flex
-    justify-content: center
-    align-items: center
-    margin: 40px
-
-    &__reference
-      position: relative
-      height: 80px
-      width: 80px
-      border: 1px solid black
-
-  .resizer
-    $offset: 18px
-    position: absolute
-    display: flex
-    align-items: center
-    justify-content: center
-
-    a
-      display: flex
-      width: 18px
-      height: 18px
-      align-items: center
-      justify-content: center
-
-      &:hover
-        background-color: rgba(255, 255, 0, .2)
-        text-decoration: none
-
-    &_horizontal
-      width: 100%
-      flex-direction: column
-
-      a
-        width: 100%
-
-    &_vertical
-      height: 100%
-      flex-direction: row
-
-      a
-        height: 100%
-
-    &_left
-      left: -$offset
-
-    &_right
-      right: -$offset
-
-    &_top
-      top: -$offset
-
-    &_bottom
-      bottom: -$offset
-
-  &__canvas
-    position: relative
-    flex-grow: 1
-
-  .level-wrap
-    display: flex
-    justify-content: center
-    align-items: center
-    overflow: scroll
-    position: absolute
-    top: 40px
-    right: 40px
-    bottom: 40px
-    left: 40px
-    overflow: auto
-
-  .level
-    position: relative
-
-  .level-layer
-    position: absolute
-    width: 100%
-    height: 100%
-
-    &__tile
-      $selection-border: 2px
-
-      user-select: none
-      position: absolute
-      box-sizing: content-box
-
-      [draggable=true]
-        cursor: grab
-
-    .interactor
-      position: relative
-      overflow: visible
-      width: 100%
-      height: 100%
-
-      &_paint
-        border: 2px solid yellow
-        border-radius: 5px
-
-      &_walkable
-        background-color: rgba(0, 255, 0, .2)
-
-      &_not-walkable
-        background-color: rgba(255, 0, 0, .2)
-
-      &_draggable
-        cursor: grab
-        border: 2px solid yellow
-        border-radius: 5px
-
-      &_dropzone
-        background-color: rgba(255, 255, 0, .4)
-        border-radius: 5px
-
 .tile-list
   &__item
     display: flex
@@ -388,17 +263,18 @@
   flex-wrap: wrap
   justify-content: flex-start
 
+  $gutter: 2px
   &__item
     border: 1px solid grey
-    margin: 0 5px 5px 0
+    background-color: #000
+    margin: 0 $gutter $gutter 0
 
     &_active
-      border: 2px solid yellow
-      margin: -1px 4px 4px -1px
+      border: 2px solid red
+      margin: -1px $gutter - 1 $gutter - 1 -1px
 
     > *
       display: block
-
 
 .dnd-texture
   position: relative
@@ -460,7 +336,6 @@
 header#global-header
   $height: 56px
   $border-color: #1589ee
-  $highlight-color: rgba(21, 137, 238, .1)
 
   display: flex
   flex-direction: row
@@ -469,7 +344,7 @@ header#global-header
   min-height: $height
   border-bottom: 3px solid $border-color
   font-family: Verdana, sans-serif
-  color: #555
+  color: $text-regular
 
   .logo
     display: flex
@@ -495,10 +370,10 @@ header#global-header
       user-select: none
 
       & > a:hover
-        background: $highlight-color
+        background: $primary-light
 
       &.is-active > a
-        background: $highlight-color
+        background: $primary-light
 
       a
         display: flex
@@ -536,15 +411,15 @@ header#global-header
           margin-left: .4rem
 
       &.is-active > a
-        background: $highlight-color
+        background: $primary-light
 
       &__dropdown-list
-        z-index: 999
+        z-index: 4
         position: absolute
         justify-content: stretch
         align-items: stretch
         background: white
-        border: 1px solid $highlight-color
+        border: 1px solid #eee
         border-radius: 5px
         box-shadow: 1px 1px 0 0 rgba(0, 0, 0, .2)
         left: 0
@@ -565,7 +440,7 @@ header#global-header
             padding: .5rem .75rem
 
             &:hover
-              background: $highlight-color
+              background: $primary-light
 
     ul.functions
       margin: 10px

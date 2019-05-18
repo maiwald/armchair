@@ -4,13 +4,14 @@
             [armchair.components :as c :refer [icon]]
             [armchair.config :as config]
             [armchair.util :as u :refer [<sub >evt stop-e! e->val]]
-            [armchair.textures :refer [character-textures]]))
+            [armchair.textures :refer [character-textures]]
+            [armchair.modals.connection-trigger-creation :as connection-trigger-creation]))
 
 (defn dialogue-creation-modal [{:keys [character-id synopsis]}]
   [slds/modal {:title "Create Dialogue"
                :confirm-handler #(>evt [:create-dialogue])
                :close-handler #(>evt [:close-modal])}
-   [:div
+   [:<>
     [input/select {:label "Character *"
                    :on-change #(>evt [:dialogue-creation-update :character-id (uuid (e->val %))])
                    :options (<sub [:dialogue-creation/character-options])
@@ -31,7 +32,7 @@
   (let [line (<sub [:dialogue/modal-line line-id])]
     [slds/modal {:title "NPC Line"
                  :close-handler #(>evt [:close-modal])}
-     [:div
+     [:<>
       [input/select {:label "Character"
                      :disabled (:initial-line? line)
                      :on-change #(>evt [:update-line line-id :character-id (uuid (e->val %))])
@@ -176,11 +177,12 @@
 (defn modal []
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
-      :dialogue-creation [dialogue-creation-modal (:dialogue-creation modal)]
-      :dialogue-state    [dialogue-state-modal (:dialogue-state modal)]
-      :npc-line-id       [npc-line-form-modal (:npc-line-id modal)]
-      :character-form    [character-form-modal (:character-form modal)]
-      :location-creation [location-creation-modal (:location-creation modal)]
-      :trigger-creation  [trigger-creation-modal (:trigger-creation modal)]
-      :switch-form       [switch-form-modal]
-      :conditions-form   [conditions-form-modal])))
+      :dialogue-creation           [dialogue-creation-modal (:dialogue-creation modal)]
+      :dialogue-state              [dialogue-state-modal (:dialogue-state modal)]
+      :npc-line-id                 [npc-line-form-modal (:npc-line-id modal)]
+      :character-form              [character-form-modal (:character-form modal)]
+      :location-creation           [location-creation-modal (:location-creation modal)]
+      :trigger-creation            [trigger-creation-modal (:trigger-creation modal)]
+      :switch-form                 [switch-form-modal]
+      :conditions-form             [conditions-form-modal]
+      :connection-trigger-creation [connection-trigger-creation/modal (:connection-trigger-creation modal)])))

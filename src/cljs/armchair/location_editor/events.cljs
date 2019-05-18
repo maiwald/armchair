@@ -1,5 +1,6 @@
 (ns armchair.location-editor.events
   (:require [armchair.events :refer [reg-event-data reg-event-meta]]
+            [clojure.set :refer [rename-keys]]
             [armchair.undo :refer [record-undo]]
             [armchair.util :as u]))
 
@@ -30,7 +31,7 @@
 
 (reg-event-meta
   :location-editor/unset-highlight
-  (fn [db]
+  (fn [db [_ tile]]
     (update db :location-editor dissoc :highlight)))
 
 (reg-event-meta
@@ -41,7 +42,9 @@
 (reg-event-meta
   :location-editor/stop-entity-drag
   (fn [db]
-    (dissoc db :dnd-payload)))
+    (-> db
+      (dissoc :dnd-payload)
+      (update :location-editor dissoc :highlight))))
 
 (reg-event-data
   :location-editor/move-player
@@ -84,19 +87,28 @@
                                          (assoc acc c-id d-id))
                                        {}))]
       (-> db
-          (dissoc :dnd-payload)
           (update-in [:dialogues (dialogue-lookup character-id)]
                      dissoc :location-id :location-position)))))
 
 (reg-event-data
   :location-editor/move-trigger
-  (fn [db [_ location target to]]
-    (-> db
-        (dissoc :dnd-payload)
-        (update :location-editor dissoc :highlight)
-        (update-in [:locations location :connection-triggers] #(as-> % new-db
-                                                                 (u/filter-map (fn [v] (not= v target)) new-db)
-                                                                 (assoc new-db to target))))))
+  (fn [db [_ location from to]]
+    (let [new-db (-> db
+                     (dissoc :dnd-payload)
+                     (update :location-editor dissoc :highlight))]
+      (if (some? from)
+        (update-in new-db
+                   [:locations location :connection-triggers]
+                   (fn [cts] (rename-keys cts {from to})))
+        (assoc-in new-db
+                  [:modal :connection-trigger-creation]
+                  {:location-id location
+                   :location-position to})))))
+
+(reg-event-data
+  :location-editor/remove-trigger
+  (fn [db [_ location from]]
+    (update-in db [:locations location :connection-triggers] #(dissoc % from))))
 
 (reg-event-data
   :location-editor/paint
@@ -108,7 +120,7 @@
   :location-editor/set-walkable
   (fn [db [_ location-id tile]]
     (let [add (get-in db [:location-editor :active-walk-state])]
-      (update-in db [:locations location-id :walk-set] (if add conj disj) tile))))
+      (update-in db [:locations location-id :blocked] (if add disj conj) tile))))
 
 (reg-event-data
   :location-editor/resize-smaller
@@ -129,7 +141,7 @@
                        (update :background remove-oob)
                        (update :npcs remove-oob)
                        (update :connection-triggers remove-oob)
-                       (update :walk-set (comp set #(filter in-bounds? %)))))))))
+                       (update :blocked (comp set #(filter in-bounds? %)))))))))
 
 (reg-event-data
   :location-editor/resize-larger

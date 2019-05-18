@@ -1,6 +1,9 @@
 (ns armchair.input
   (:require [cljsjs.react-select]))
 
+(defn label [text]
+  [:label {:class "input__label"} text])
+
 (defn text [{:keys [label on-change value]}]
   (let [id (gensym "input-text")]
     [:div {:class "input input-text"}
@@ -10,6 +13,16 @@
               :id id
               :on-change on-change
               :value value}]]))
+
+(defn checkbox [{:keys [label on-change checked?]}]
+  (let [id (gensym "input-checkbox")]
+    [:div {:class "input input-checkbox"}
+     [:input {:class "input-checkbox__input"
+              :id id
+              :type "checkbox"
+              :on-change on-change
+              :checked checked?}]
+     [:label {:class "input-checkbox__label input__label" :for id} label]]))
 
 (defn select [{:keys [label disabled on-change value options]}]
   (let [id (gensym "input-select")]
