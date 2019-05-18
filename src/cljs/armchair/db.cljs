@@ -3,8 +3,8 @@
             [clojure.string :as string]
             [clojure.set :refer [union subset?]]
             [com.rpl.specter
-             :refer [must ALL NONE MAP-VALS]
-             :refer-macros [setval]]
+             :refer [collect-one must FIRST LAST ALL NONE MAP-VALS]
+             :refer-macros [select setval transform]]
             [cognitect.transit :as t]
             [armchair.dummy-data :refer [dummy-data]]
             [armchair.textures :refer [background-textures texture-set]]
@@ -13,7 +13,7 @@
 
 ;; Migrations
 
-(def db-version 4)
+(def db-version 6)
 
 (def migrations
   "Map of migrations. Key is the version we are coming from."
@@ -49,7 +49,34 @@
            (u/update-values :lines
                             #(dissoc % :state-triggers :info-ids))
            (u/update-values :player-options
-                            #(dissoc % :state-triggers :required-info-ids))))})
+                            #(dissoc % :state-triggers :required-info-ids))))
+
+   4 (fn [db]
+       "Make location connections unidirectional"
+       (let [incoming (->> db
+                           (select [:locations ALL (collect-one FIRST) LAST :connection-triggers ALL])
+                           (reduce (fn [acc [location-id [target-position target-id]]]
+                                     (update acc location-id assoc target-id target-position))
+                                   {}))]
+         (->> (dissoc db :location-connections)
+              (transform [:locations ALL (collect-one FIRST) LAST :connection-triggers MAP-VALS]
+                         (fn [location-id target-id]
+                           [target-id (get-in incoming [target-id location-id])])))))
+
+   5 (fn [db]
+       "Store blocked tiles instead of walkable"
+       (letfn [(inverse [[[x1 y1] [x2 y2]] tiles]
+                 (set (for [x (range x1 (inc x2))
+                            y (range y1 (inc y2))
+                            :let [tile [x y]]
+                            :when (not (contains? tiles tile))]
+                        tile)))]
+         (transform [:locations MAP-VALS]
+           (fn [{:keys [dimension walk-set] :as location}]
+             (-> location
+                 (dissoc :walk-set)
+                 (assoc :blocked (inverse dimension walk-set))))
+           db)))})
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)
@@ -79,7 +106,6 @@
                      (fn [[[x1 y1] [x2 y2]]] (and (< x1 x2)
                                                   (< y1 y2)))))
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:entity/id v)))))
-(s/def ::undirected-connection (s/coll-of :entity/id :kind set? :count 2))
 (s/def ::texture (s/nilable #(contains? texture-set %)))
 
 (s/def :ui/cursor :type/point)
@@ -99,11 +125,9 @@
 ;; Location Editor
 
 (s/def ::tool #{:info
-                :npcs-select
-                :resize
-                :collision
                 :background-painter
-                :connection-select})
+                :collision
+                :npcs-select})
 (s/def ::highlight :type/point)
 (s/def ::active-texture ::texture)
 (s/def ::active-walk-state boolean?)
@@ -127,21 +151,30 @@
 (s/def ::color ::text)
 (s/def ::description ::text)
 
-(s/def ::dimension :type/rect)
-(s/def ::background (s/map-of :type/point ::texture))
-(s/def ::walk-set (s/coll-of :type/point :kind set?))
-(s/def ::connection-triggers (s/map-of :type/point ::location-id))
 (s/def ::location (s/keys :req [:entity/id
                                 :entity/type]
-                          :req-un [::dimension
+                          :req-un [:location/dimension
                                    ::display-name
-                                   ::background
-                                   ::walk-set
-                                   ::connection-triggers]))
+                                   :location/background
+                                   :location/blocked
+                                   :location/connection-triggers]))
+
+(s/def :location/position :type/point)
+(s/def :location/dimension :type/rect)
+(s/def :location/background (s/map-of :type/point ::texture))
+(s/def :location/blocked (s/coll-of :type/point :kind set?))
+(s/def :location/connection-triggers
+  (s/map-of :type/point :location/connection-trigger-target))
+
+(s/def :location/connection-trigger-target
+  (s/tuple :connection-trigger/target-id
+           :connection-trigger/target-position))
+
+(s/def :connection-trigger/target-id ::location-id)
+(s/def :connection-trigger/target-position :location/position)
 
 (s/def ::locations (s/and ::entity-map
                           (s/map-of ::location-id ::location)))
-(s/def ::location-connections (s/coll-of ::undirected-connection :kind set?))
 
 (s/def ::character (s/keys :req [:entity/id :entity/type]
                            :req-un [::display-name ::color ::texture]))
@@ -214,8 +247,8 @@
 
 (s/def ::lines (s/and ::entity-map
                       (s/map-of ::line-id ::npc-or-player-line)))
-(s/def ::location-position :type/point)
 
+(s/def ::location-position :location/position)
 (s/def ::dialogue (s/keys :req [:entity/id
                                 :entity/type]
                           :req-un [::character-id
@@ -258,6 +291,7 @@
                                 :modal/trigger-creation
                                 :modal/switch-form
                                 :modal/conditions-form
+                                :modal/connection-trigger-creation
                                 ::npc-line-id
                                 ::dialogue-state]))
 
@@ -290,6 +324,12 @@
   (s/keys :req-un [::player-option-id
                    :condition/terms
                    :condition/conjunction]))
+
+(s/def :modal/connection-trigger-creation
+  (s/keys :req-un [::location-id
+                   ::location-position
+                   :connection-trigger/target-id
+                   :connection-trigger/target-position]))
 
 (s/def ::dialogue-state
   (s/keys :req-un [::line-id]
@@ -324,7 +364,6 @@
                                        ::triggers
                                        ::location-editor
                                        ::locations
-                                       ::location-connections
                                        ::switches
                                        ::switch-values]
                               :opt-un [::connecting
@@ -358,7 +397,6 @@
                       :characters
                       :dialogues
                       :player-options
-                      :location-connections
                       :lines
                       :triggers
                       :switches
@@ -383,7 +421,6 @@
           :ui/positions {}
           :characters {}
           :locations {}
-          :location-connections #{}
           :dialogues {}
           :lines {}
           :triggers {}

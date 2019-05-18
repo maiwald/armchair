@@ -1,6 +1,9 @@
 (ns armchair.subs
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
             [clojure.string :refer [join]]
+            [com.rpl.specter
+             :refer [collect-one ALL FIRST LAST MAP-VALS]
+             :refer-macros [select]]
             [armchair.routes :refer [routes]]
             [bidi.bidi :refer [match-route]]
             [armchair.util :as u]))
@@ -15,14 +18,13 @@
 (reg-sub :db-switches #(:switches %))
 (reg-sub :db-switch-values #(:switch-values %))
 
-(reg-sub :db-location-connections #(:location-connections %))
-
 (reg-sub :db-dragging #(:dragging %))
 (reg-sub :db-connecting #(:connecting %))
 (reg-sub :db-cursor #(:cursor %))
 
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
+(reg-sub :popover #(:popover %))
 
 (reg-sub :dnd-payload #(:dnd-payload %))
 
@@ -85,7 +87,9 @@
   :character-options
   :<- [:db-characters]
   (fn [characters _]
-    (u/map-values :display-name characters)))
+    (->> characters
+         (u/map-values :display-name)
+         (sort-by second))))
 
 (reg-sub
   :dialogue-creation/character-options
@@ -98,7 +102,8 @@
                           (vals dialogues))]
       (->> characters
            (u/filter-map #(not (contains? with-dialogue (:entity/id %))))
-           (u/map-values :display-name)))))
+           (u/map-values :display-name)
+           (sort-by second)))))
 
 (reg-sub
   :character
@@ -149,15 +154,21 @@
   :location-options
   :<- [:db-locations]
   (fn [locations _]
-    (u/map-values :display-name locations)))
+    (->> locations
+         (u/map-values :display-name)
+         (sort-by second))))
 
 (reg-sub
   :location-map
   :<- [:db-locations]
-  :<- [:db-location-connections]
-  (fn [[locations connections] _]
-    {:location-ids (keys locations)
-     :connections (map sort connections)}))
+  (fn [locations _]
+    (let [connections (->> locations
+                           (select [ALL (collect-one FIRST) LAST :connection-triggers MAP-VALS FIRST])
+                           (map set)
+                           distinct
+                           (map sort))]
+      {:location-ids (keys locations)
+       :connections connections})))
 
 (reg-sub
   :location-map/location

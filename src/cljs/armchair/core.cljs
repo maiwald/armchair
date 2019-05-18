@@ -11,7 +11,7 @@
             [armchair.location-editor.events]
             [armchair.location-editor.subs]
             [armchair.game.subs]
-            [armchair.util :refer [>evt]]
+            [armchair.util :refer [>evt <sub]]
             [armchair.routes :as routes]
             [armchair.views :as views]
             [armchair.config :as config]))
@@ -36,6 +36,7 @@
   (mount-root))
 
 ;; Undo/Redo key bindings
+
 (set! (.-onkeyup js/window)
       (fn [e]
         (when (= "Escape" (.-code e))
@@ -46,3 +47,11 @@
             "KeyY" (>evt [:redo])
             nil))))
 
+;; Popover
+
+(defn close-popover []
+  (when (some? (<sub [:popover]))
+    (re-frame/dispatch [:close-popover])))
+
+(set! (.-onmouseup js/window) close-popover)
+(set! (.-ondragstart js/window) close-popover)

@@ -3,7 +3,7 @@
             [reagent.core :as r]
             [armchair.config :as config]
             [armchair.textures :refer [texture-path sprite-lookup]]
-            [armchair.util :as u :refer [stop-e! >evt <sub e-> e->left?]]))
+            [armchair.util :as u :refer [stop-e! >evt <sub e->left?]]))
 
 ;; Drag & Drop
 
@@ -13,9 +13,10 @@
                            (aget 0))))
 
 (defn start-dragging-handler [ids]
-  (e-> (fn [e]
-         (when (e->left? e)
-           (>evt [:start-dragging ids (e->graph-cursor e)])))))
+  (fn [e]
+    (when (e->left? e)
+      (u/prevent-e! e)
+      (>evt [:start-dragging ids (e->graph-cursor e)]))))
 
 (defn connection [{kind :kind
                    [x1 y1] :start
@@ -58,11 +59,11 @@
   (let [connecting? (some? (<sub [:connector]))
         dragging? (<sub [:dragging?])
         mouse-down (start-dragging-handler (-> nodes vals flatten set))
-        mouse-move (e-> #(when (or dragging? connecting?)
-                           (>evt [:move-cursor (e->graph-cursor %)])))
+        mouse-move (when (or dragging? connecting?)
+                     #(>evt [:move-cursor (e->graph-cursor %)]))
         mouse-up (cond
-                   connecting? (e-> #(>evt [:abort-connecting]))
-                   dragging? (e-> #(>evt [:end-dragging])))]
+                   connecting? #(>evt [:abort-connecting])
+                   dragging? #(>evt [:end-dragging]))]
     [:div {:class (cond-> ["graph"]
                     dragging? (conj "graph_is-dragging")
                     connecting? (conj "graph_is-connecting"))
@@ -126,7 +127,10 @@
 (defn graph-node [{id :item-id}]
   (let [dragging? (<sub [:dragging-item? id])
         start-dragging (start-dragging-handler #{id})
-        stop-dragging (when dragging? (e-> #(>evt [:end-dragging])))]
+        stop-dragging (when dragging?
+                        (fn [e]
+                          (u/prevent-e! e)
+                          (>evt [:end-dragging])))]
     (fn [{:keys [title color actions on-connect-end]}]
       [:div {:class "graph-node"
              :on-mouse-up (when (some? (<sub [:connector])) on-connect-end)
@@ -156,8 +160,11 @@
 
 ;; Button
 
-(defn button [{glyph :icon :keys [title on-click]}]
-  [:button {:class "button"
+(defn button [{glyph :icon btn-type :type
+               :keys [title on-click danger fill]}]
+  [:button {:class ["button"
+                    (when fill "button_fill")
+                    (when (= btn-type :danger) "button_danger")]
             :on-click on-click}
    (when (some? glyph) [:div {:class "button__icon"} [icon glyph title]])
    (when (some? title) [:div {:class "button__title"} title])])
@@ -165,17 +172,74 @@
 ;; Sprite Texture
 
 (defn sprite-texture [texture title]
-  (if-let [[file sprite-coord] (get sprite-lookup texture)]
+  (if-let [[file [x-offset y-offset]] (get sprite-lookup texture)]
     [:div.sprite-texture
      {:title title
       :style {:width (u/px config/tile-size)
               :height (u/px config/tile-size)
-              :background-image
-              (str "url(" (texture-path file) ")")
-              :background-position
-              (str (u/px (- (first sprite-coord)))
-                   " "
-                   (u/px (- (second sprite-coord))))}}]
+              :background-image (str "url(" (texture-path file) ")")
+              :background-position (str (u/px (- x-offset))
+                                        " "
+                                        (u/px (- y-offset)))}}]
     [:img {:src (texture-path :missing_texture)
            :width (u/px config/tile-size)
            :height (u/px config/tile-size)}]))
+
+;; Tabs
+
+(defn tabs [{:keys [items active on-change]}]
+  [:ul {:class "tabs"}
+   (for [[id title] items]
+     [:li {:key (str (hash items) id)
+           :class ["tabs__item"
+                   (when (= id active) "is-active")]
+           :on-click #(on-change id)}
+      title])])
+
+;; Popover
+
+(defn popover-trigger [{content :popover}]
+  (into [:div {:style {:width "100%"
+                       :height "100%"}
+               :on-mouse-up u/stop-e!
+               :on-click #(>evt [:open-popover (.-currentTarget %) content])}]
+        (r/children (r/current-component))))
+
+(defn popover-positioned []
+  (let [position (r/atom [-9999 -9999])
+        get-position (fn [this]
+                       (let [offset 8
+                             rect (u/get-rect (r/dom-node this))
+                             ref-rect (u/get-rect (:reference (r/props this)))]
+                         [(u/clip
+                            (- (.-innerWidth js/window) (:width rect))
+                            (+ (- (:left ref-rect) (/ (:width rect) 2))
+                               (/ (:width ref-rect) 2)))
+                          (u/clip
+                            (- (.-innerHeight js/window) (:height rect))
+                            (- (:top ref-rect)
+                               (:height rect)
+                               offset))]))]
+    (r/create-class
+      {:display-name "popover-positioned"
+       :component-did-mount
+       (fn [this]
+         (reset! position (get-position this)))
+
+       :component-did-update
+       (fn [this]
+         (let [new-position (get-position this)]
+           (if (not= @position new-position)
+             (reset! position new-position))))
+
+       :reagent-render
+       (fn [{:keys [content reference]}]
+         [:div {:on-mouse-up u/stop-e!
+                :class "popover"
+                :style {:left (u/px (first @position))
+                        :top (u/px (second @position))}}
+          content])})))
+
+(defn popover []
+  (when-let [data (<sub [:popover])]
+    [popover-positioned data]))

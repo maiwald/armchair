@@ -83,19 +83,17 @@
 (reg-event-data
   :delete-location
   (fn [db [_ id]]
-    (let [location-connections (filter #(contains? % id)
-                                       (:location-connections db))
-          location-dialogue-ids (->> (:dialogues db)
+    (let [location-dialogue-ids (->> (:dialogues db)
                                      (u/where-map :location-id id)
                                      keys)
           connected-location-ids (->> (:locations db)
-                                      (u/filter-map #(contains? (-> % :connection-triggers vals set) id))
+                                      (u/filter-map #(contains? (->> % :connection-triggers vals (map first) set) id))
                                       keys)]
       (-> db
           (update :locations dissoc id)
-          (update :location-connections difference location-connections)
+          (update :ui/positions dissoc id)
           (u/update-in-map :locations connected-location-ids
-                           update :connection-triggers (fn [cts] (u/filter-map #(not= id %) cts)))
+                           update :connection-triggers (fn [cts] (u/filter-map #(not= id (first %)) cts)))
           (u/update-in-map :dialogues location-dialogue-ids
                            dissoc :location-id :location-position)))))
 
@@ -148,28 +146,6 @@
     (assoc db :cursor cursor)))
 
 (reg-event-meta
-  :start-connecting-locations
-  (fn [db [_ location-id cursor]]
-    (assert (not (contains? db :connecting))
-            "Attempting to start connecting locations while already in progress!")
-    (assoc db
-           :connecting {:cursor-start cursor
-                        :location-id location-id}
-           :cursor cursor)))
-
-(reg-event-data
-  :end-connecting-locations
-  (fn [db [_ end-id]]
-    (assert (some? (:connecting db))
-            "Attempting to end connecting while not in progress!")
-    (let [start-id (get-in db [:connecting :location-id])
-          new-db (dissoc db :connecting :cursor)]
-      (if-not (= start-id end-id)
-        (update new-db :location-connections conj #{start-id end-id})
-        new-db))))
-
-
-(reg-event-meta
   :abort-connecting
   (fn [db] (dissoc db :connecting)))
 
@@ -191,3 +167,13 @@
       (-> db
           (u/update-in-map :ui/positions ids u/translate-point delta)
           (dissoc :dragging :cursor)))))
+
+(reg-event-meta
+  :open-popover
+  (fn [db [_ reference content]]
+    (assoc db :popover {:reference reference
+                        :content content})))
+
+(reg-event-meta
+  :close-popover
+  (fn [db] (dissoc db :popover)))
