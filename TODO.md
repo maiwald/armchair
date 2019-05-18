@@ -2,8 +2,6 @@
 - flickering inputs in character modal
 
 # TODO
-- directed location connections
-  - show incoming connections
 - trees! (multiple texture layers)
 - (multiple?) decorative textures
 - rethink relationship between character and dialogue
@@ -13,6 +11,7 @@
 - save file for game state
 
 # nice things
+- show incoming connections
 - allow creating switches in dialogue editor
 - show debug state variables
 - typing animation for dialogue screens
