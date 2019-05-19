@@ -165,7 +165,8 @@
   [:button {:class ["button"
                     (when fill "button_fill")
                     (when (= btn-type :danger) "button_danger")]
-            :on-click on-click}
+            :on-click on-click
+            :type "button"}
    (when (some? glyph) [:div {:class "button__icon"} [icon glyph title]])
    (when (some? title) [:div {:class "button__title"} title])])
 
