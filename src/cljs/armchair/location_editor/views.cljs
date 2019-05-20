@@ -391,14 +391,14 @@
       (when (show-layer? :background)
         [background-tiles dimension background])
 
+      (when (show-layer? :collision)
+        [collision-layer dimension blocked])
+
       (when (show-layer? :entities)
         [:<>
           (when player-position [player-tile dimension player-position])
           [npc-layer dimension npcs]
           [conntection-trigger-layer dimension connection-triggers]])
-
-      (when (show-layer? :collision)
-        [collision-layer dimension blocked])
 
       (case active-layer
         :background
