@@ -259,11 +259,17 @@
       flex-grow: 1
 
 .tile-grid
+  $gutter: 2px
+
   display: flex
   flex-wrap: wrap
   justify-content: flex-start
+  align-content: flex-start
+  overflow-y: auto
+  flex-grow: 1
 
-  $gutter: 2px
+  padding: $gutter / 2
+
   &__item
     border: 1px solid grey
     background-color: #000

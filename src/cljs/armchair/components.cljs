@@ -77,9 +77,11 @@
 
 ;; Icon
 
-(defn icon [glyph title]
-  [:i {:class (str "fas fa-" glyph)
-       :title title}])
+(defn icon [glyph title options]
+  (let [[title options] (when (map? title) [nil title])]
+    [:i {:class [(str "fas fa-" glyph)
+                 (when (:fixed? options) "fa-fw")]
+         :title title}]))
 
 ;; Tag
 

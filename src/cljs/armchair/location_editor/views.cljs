@@ -61,6 +61,23 @@
          [:div {:class "location-editor__sidebar-widget__title"} title]]
         (r/children (r/current-component))))
 
+(defn sidebar-layers []
+  (let [{:keys [active-layer visible-layers]} (<sub [:location-editor/ui])]
+    [sidebar-widget {:title "Layers"}
+     [:ol.level-layers
+      (for [[layer-id layer-name] config/location-editor-layers]
+        [:li {:key (str "layer" layer-id)
+              :class ["level-layers__item"
+                      (when (= active-layer layer-id) "level-layers__item_active")]}
+         [:span.level-layers__item__name
+          {:on-click #(>evt [:location-editor/set-active-layer layer-id])}
+          layer-name]
+         [:span.level-layers__item__visibility
+          {:on-click #(>evt [:location-editor/toggle-layer-visibility layer-id])}
+          (if (contains? visible-layers layer-id)
+            [c/icon "eye" "Hide layer"]
+            [c/icon "eye-slash" "Show layer"])]])]]))
+
 (defn sidebar-info [location-id]
   (let [display-name (<sub [:location-editor/display-name location-id])]
     [sidebar-widget {:title "Location Name"}
@@ -115,8 +132,8 @@
                                           "rgba(0, 255, 0, .4)"
                                           "rgba(255, 0, 0, .4)")}}]])]]))
 
-(defn sidebar-player []
-  [sidebar-widget {:title "Player"}
+(defn sidebar-player-and-exit []
+  [sidebar-widget
    [:ul {:class "tile-list"}
     [:li {:class "tile-list__item"
           :draggable true
@@ -129,7 +146,21 @@
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
       [c/sprite-texture :human "Player"]]
-     [:span {:class "tile-list__item__label"} "Player"]]]])
+     [:span {:class "tile-list__item__label"} "Place Player"]]
+    [:li {:class "tile-list__item"
+          :draggable true
+          :on-drag-start (fn [e]
+                           (set-dnd-texture! e)
+                           (.setData (.-dataTransfer e) "text/plain" ":exit")
+                           (>evt [:location-editor/start-entity-drag [:connection-trigger]]))}
+     [dnd-texture :exit]
+     [:span {:class "tile-list__item__image"
+             :style {:width (str config/tile-size "px")
+                     :height (str config/tile-size "px")}}
+      [:img {:src (texture-path :exit)
+             :title "Exit"}]]
+     [:span {:class "tile-list__item__label"} "Place new Exit"]]]])
+
 
 (defn sidebar-npcs [location-id]
   (let [available-npcs (<sub [:location-editor/available-npcs location-id])]
@@ -155,44 +186,25 @@
                 :fill true
                 :on-click #(>evt [:open-character-modal])}]]))
 
-(defn sidebar-triggers []
-  [sidebar-widget {:title "Exits"}
-   [:ul {:class "tile-list"}
-    [:li {:class "tile-list__item"
-          :draggable true
-          :on-drag-start (fn [e]
-                           (set-dnd-texture! e)
-                           (.setData (.-dataTransfer e) "text/plain" ":exit")
-                           (>evt [:location-editor/start-entity-drag [:connection-trigger]]))}
-     [dnd-texture :exit]
-     [:span {:class "tile-list__item__image"
-             :style {:width (str config/tile-size "px")
-                     :height (str config/tile-size "px")}}
-      [:img {:src (texture-path :exit)
-             :title "Exit"}]]
-     [:span {:class "tile-list__item__label"} "Place new Exit"]]]])
-
-
 (defn sidebar [location-id]
-  (let [{:keys [tool]} (<sub [:location-editor/ui])]
+  (let [{:keys [active-pane active-layer]} (<sub [:location-editor/ui])]
     [:<>
      [c/tabs {:items [[:info "Info"]
-                      [:background-painter "Background"]
-                      [:collision "Collision"]
-                      [:npcs-select "Entities"]]
-              :active tool
-              :on-change #(>evt [:location-editor/set-tool %])}]
-     (case tool
+                      [:paint "Level"]]
+              :active active-pane
+              :on-change #(>evt [:location-editor/set-active-pane %])}]
+     (case active-pane
        :info [:<>
               [sidebar-info location-id]
               [sidebar-resize location-id]]
-       :background-painter [sidebar-paint location-id]
-       :collision [sidebar-collision]
-       :npcs-select [:<>
-                     [sidebar-player]
-                     [sidebar-npcs location-id]
-                     [sidebar-triggers]]
-       nil)]))
+       :paint [:<>
+               [sidebar-layers]
+               (case active-layer
+                 :background [sidebar-paint location-id]
+                 :collision [sidebar-collision]
+                 :entities [:<>
+                            [sidebar-player-and-exit]
+                            [sidebar-npcs location-id]])])]))
 
 (defn tile-style [x y]
   {:width (str config/tile-size "px")
@@ -255,6 +267,14 @@
    (fn [tile {:keys [display-name]}]
      [:img {:src (texture-path :exit)
             :title (str "to " display-name)}])])
+
+(defn collision-layer [rect blocked]
+  [do-all-tiles rect "collision"
+   (fn [tile]
+     [:div {:class ["interactor"
+                    (if (contains? blocked tile)
+                      "interactor_not-walkable"
+                      "interactor_walkable")]}])])
 
 (defn location-preview [location-id preview-tile]
   (let [tiles-around 3
@@ -354,8 +374,10 @@
                 npcs
                 connection-triggers
                 player-position]} (<sub [:location-editor/location location-id])
-        {:keys [tool highlight painting?]} (<sub [:location-editor/ui])
+        {:keys [active-layer visible-layers highlight]} (<sub [:location-editor/ui])
         [dnd-type dnd-payload] (<sub [:dnd-payload])
+        show-layer? (fn [layer] (or (= active-layer layer)
+                                    (contains? visible-layers layer)))
         dropzone-fn (case dnd-type
                       :player             #(>evt [:location-editor/move-player location-id %])
                       :character          #(>evt [:location-editor/move-character location-id dnd-payload %])
@@ -366,30 +388,30 @@
      [:div {:class "level"
             :style {:width (u/px (* config/tile-size (u/rect-width dimension)))
                     :height (u/px (* config/tile-size (u/rect-height dimension)))}}
-      [background-tiles dimension background]
-      (when player-position [player-tile dimension player-position])
-      [npc-layer dimension npcs]
-      [conntection-trigger-layer dimension connection-triggers]
+      (when (show-layer? :background)
+        [background-tiles dimension background])
 
-      (case tool
-        :background-painter
+      (when (show-layer? :entities)
+        [:<>
+          (when player-position [player-tile dimension player-position])
+          [npc-layer dimension npcs]
+          [conntection-trigger-layer dimension connection-triggers]])
+
+      (when (show-layer? :collision)
+        [collision-layer dimension blocked])
+
+      (case active-layer
+        :background
         [tile-paint-canvas
          {:dimension dimension
           :on-paint #(>evt [:location-editor/paint location-id %])}]
 
         :collision
-        [:<>
-         [do-all-tiles dimension "walkable-area"
-          (fn [tile]
-            [:div {:class ["interactor"
-                           (if (contains? blocked tile)
-                             "interactor_not-walkable"
-                             "interactor_walkable")]}])]
-         [tile-paint-canvas
-          {:dimension dimension
-           :on-paint #(>evt [:location-editor/set-walkable location-id %])}]]
+        [tile-paint-canvas
+         {:dimension dimension
+          :on-paint #(>evt [:location-editor/set-walkable location-id %])}]
 
-        :npcs-select
+        :entities
         [:<>
          (when player-position
            [do-some-tiles dimension {player-position :player} "player-select"
