@@ -29,3 +29,7 @@
 (def condition-conjunctions
   {:and {:display-name "and" :func every?}
    :or {:display-name "or" :func some}})
+
+(def location-editor-layers [[:collision "Collision"]
+                             [:entities "Entities & Triggers"]
+                             [:background "Background"]])

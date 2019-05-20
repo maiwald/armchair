@@ -10,7 +10,9 @@
   (fn [db]
     (select-keys (:location-editor db)
                  [:highlight
-                  :tool
+                  :active-pane
+                  :visible-layers
+                  :active-layer
                   :active-walk-state
                   :active-texture])))
 

@@ -10,11 +10,6 @@
     (assoc-in db [:locations id :display-name] value)))
 
 (reg-event-meta
-  :location-editor/set-tool
-  (fn [db [_ tool]]
-    (assoc-in db [:location-editor :tool] tool)))
-
-(reg-event-meta
   :location-editor/set-active-texture
   (fn [db [_ texture]]
     (assoc-in db [:location-editor :active-texture] texture)))
@@ -33,6 +28,25 @@
   :location-editor/unset-highlight
   (fn [db [_ tile]]
     (update db :location-editor dissoc :highlight)))
+
+(reg-event-meta
+  :location-editor/set-active-pane
+  (fn [db [_ pane]]
+    (assoc-in db [:location-editor :active-pane] pane)))
+
+(reg-event-meta
+  :location-editor/set-active-layer
+  (fn [db [_ layer-id]]
+    (assoc-in db [:location-editor :active-layer] layer-id)))
+
+(reg-event-meta
+  :location-editor/toggle-layer-visibility
+  (fn [db [_ layer-id]]
+    (update-in db [:location-editor :visible-layers]
+               (fn [visible-layers]
+                 (if (contains? visible-layers layer-id)
+                   (disj visible-layers layer-id)
+                   (conj visible-layers layer-id))))))
 
 (reg-event-meta
   :location-editor/start-entity-drag

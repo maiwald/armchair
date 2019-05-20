@@ -124,17 +124,22 @@
 
 ;; Location Editor
 
-(s/def ::tool #{:info
-                :background-painter
-                :collision
-                :npcs-select})
-(s/def ::highlight :type/point)
-(s/def ::active-texture ::texture)
-(s/def ::active-walk-state boolean?)
-(s/def ::location-editor (s/keys :req-un [::tool
-                                          ::active-walk-state
-                                          ::active-texture]
-                                 :opt-un [::highlight]))
+
+(s/def ::location-editor
+  (s/keys :req-un [:location-editor/visible-layers
+                   :location-editor/active-layer
+                   :location-editor/active-pane
+                   :location-editor/active-walk-state
+                   :location-editor/active-texture]
+          :opt-un [:location-editor/highlight]))
+
+(s/def :location-editor/pane #{:info :paint})
+(s/def :location-editor/layers (set (map first config/location-editor-layers)))
+(s/def :location-editor/visible-layers (s/coll-of :location-editor/layers :kind set?))
+(s/def :location-editor/active-layer :location-editor/layers)
+(s/def :location-editor/highlight :type/point)
+(s/def :location-editor/active-texture ::texture)
+(s/def :location-editor/active-walk-state boolean?)
 
 ;; Data
 
@@ -415,7 +420,9 @@
 ;; Default DB
 
 (def default-db
-  (merge {:location-editor {:tool :info
+  (merge {:location-editor {:active-pane :info
+                            :active-layer :background
+                            :visible-layers #{:background :entities}
                             :active-walk-state true
                             :active-texture (first background-textures)}
           :ui/positions {}
