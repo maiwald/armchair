@@ -113,7 +113,9 @@
         [:li {:key (str "texture-select:" texture)
               :title texture
               :class ["tile-grid__item"
-                      (when (= texture active-texture) "tile-grid__item_active")]}
+                      (when (= texture active-texture) "tile-grid__item_active")]
+              :style {:width (u/px config/tile-size)
+                      :height (u/px config/tile-size)}}
          [:a {:on-click #(>evt [:location-editor/set-active-texture texture])}
           [c/sprite-texture texture]]])]]))
 
@@ -126,7 +128,9 @@
               :title (if walk-state "walkable" "not walkable")
               :class ["tile-grid__item"
                       (when (= walk-state active-walk-state) "tile-grid__item_active")]
-              :style {:background-color "#fff"}}
+              :style {:width (u/px config/tile-size)
+                      :height (u/px config/tile-size)
+                      :background-color "#fff"}}
          [:a {:on-click #(>evt [:location-editor/set-active-walk-state walk-state])
               :style {:height (px config/tile-size)
                       :width (px config/tile-size)
