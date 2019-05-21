@@ -30,31 +30,33 @@
             (clear-current-tile [] (reset! current-tile nil))
             (start-painting [] (reset! painted-tiles #{}))
             (stop-painting [] (reset! painted-tiles nil))
-            (paint [e]
-              (let [tile (u/translate-point (get-tile e) delta)]
-                (when (and (some? @painted-tiles)
-                           (not (contains? @painted-tiles tile)))
-                  (swap! painted-tiles conj tile)
-                  (on-paint tile))))]
-      (fn []
-        [:div {:class "level__layer"
-               :on-mouse-enter set-current-tile
-               :on-mouse-leave clear-current-tile
-               :on-mouse-down (fn [e]
-                                (when (u/e->left? e)
-                                  (start-painting)
-                                  (paint e)))
-               :on-mouse-move (fn [e]
-                                (set-current-tile e)
-                                (paint e))
-               :on-mouse-up stop-painting}
-         (when-let [tile @current-tile]
-           (let [[x y] (u/tile->coord tile)]
-             [:div {:class "interactor interactor_paint"
-                    :style {:height (px config/tile-size)
-                            :width (px config/tile-size)
-                            :top (px y)
-                            :left (px x)}}]))]))))
+            (make-paint [paint-fn]
+              (fn [e]
+                (let [tile (u/translate-point (get-tile e) delta)]
+                  (when (and (some? @painted-tiles)
+                             (not (contains? @painted-tiles tile)))
+                    (swap! painted-tiles conj tile)
+                    (paint-fn tile)))))]
+      (fn [{:keys [on-paint]}]
+        (let [paint (make-paint on-paint)]
+          [:div {:class "level__layer"
+                 :on-mouse-enter set-current-tile
+                 :on-mouse-leave clear-current-tile
+                 :on-mouse-down (fn [e]
+                                  (when (u/e->left? e)
+                                    (start-painting)
+                                    (paint e)))
+                 :on-mouse-move (fn [e]
+                                  (set-current-tile e)
+                                  (paint e))
+                 :on-mouse-up stop-painting}
+           (when-let [tile @current-tile]
+             (let [[x y] (u/tile->coord tile)]
+               [:div {:class "interactor interactor_paint"
+                      :style {:height (px config/tile-size)
+                              :width (px config/tile-size)
+                              :top (px y)
+                              :left (px x)}}]))])))))
 
 (defn sidebar-widget [{title :title}]
   (into [:div {:class "location-editor__sidebar-widget"}
