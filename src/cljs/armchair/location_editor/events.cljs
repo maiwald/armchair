@@ -1,6 +1,9 @@
 (ns armchair.location-editor.events
   (:require [armchair.events :refer [reg-event-data reg-event-meta]]
             [clojure.set :refer [rename-keys]]
+            [com.rpl.specter
+             :refer [multi-path ALL NONE MAP-KEYS MAP-VALS]
+             :refer-macros [setval transform]]
             [armchair.undo :refer [record-undo]]
             [armchair.util :as u]))
 
@@ -146,16 +149,26 @@
                                       :down [1 [0 -1]])
           new-dimension (update (get-in db [:locations location-id :dimension])
                                 shift-index u/translate-point shift-delta)
-          in-bounds? (partial u/rect-contains? new-dimension)
-          remove-oob (fn [coll] (u/filter-keys in-bounds? coll))]
-      (update-in db [:locations location-id]
-                 (fn [location]
-                   (-> location
-                       (assoc :dimension new-dimension)
-                       (update :background remove-oob)
-                       (update :npcs remove-oob)
-                       (update :connection-triggers remove-oob)
-                       (update :blocked (comp set #(filter in-bounds? %)))))))))
+          out-of-bounds? (fn [point] (not (u/rect-contains? new-dimension point)))
+          loc-and-out-of-bounds? (fn [id point] (and (= location-id id)
+                                                     (out-of-bounds? point)))]
+      (->> (update-in db [:locations location-id]
+                      (fn [location]
+                        (->> (assoc location :dimension new-dimension)
+                             (setval [(multi-path :background :connection-triggers) MAP-KEYS out-of-bounds?] NONE)
+                             (setval [:blocked ALL out-of-bounds?] NONE))))
+
+           ;; remove OOB dialogues
+           (transform [:dialogues
+                       MAP-VALS
+                       #(loc-and-out-of-bounds? (:location-id %) (:location-position %))]
+                      #(dissoc % :location-id :location-position))
+
+           ;; remove incoming OOB connections
+           (setval [:locations MAP-VALS :connection-triggers ALL
+                    (fn [[_ [target-id target-position]]]
+                      (loc-and-out-of-bounds? target-id target-position))]
+                   NONE)))))
 
 (reg-event-data
   :location-editor/resize-larger
