@@ -444,7 +444,8 @@
                                               :background2
                                               :foreground1
                                               :foreground2
-                                              :entities}
+                                              :entities
+                                              :triggers}
                             :active-walk-state true
                             :active-texture (first background-textures)}
           :ui/positions {}
