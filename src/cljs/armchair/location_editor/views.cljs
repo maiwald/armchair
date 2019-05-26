@@ -262,7 +262,7 @@
                                      (>evt [:location-editor/set-highlight tile])))
               :on-drop (when-not occupied? (e-> #(on-drop tile)))}]))])
 
-(defn background-tiles [rect layer-id background]
+(defn texture-layer [rect layer-id background]
   [do-all-tiles rect (str "background:" layer-id)
    (fn [tile]
      (when-let [t (get background tile)]
@@ -308,10 +308,10 @@
     [:div {:class "level"
            :style {:width (u/px (* config/tile-size (inc (* tiles-around 2))))
                    :height (u/px (* config/tile-size (inc (* tiles-around 2))))}}
-     [background-tiles dimension :background1 background1]
-     [background-tiles dimension :background2 background2]
-     [background-tiles dimension :foreground1 foreground1]
-     [background-tiles dimension :foreground2 foreground2]
+     [texture-layer dimension :background1 background1]
+     [texture-layer dimension :background2 background2]
+     [texture-layer dimension :foreground1 foreground1]
+     [texture-layer dimension :foreground2 foreground2]
      (when player-position [player-tile dimension player-position])
      [npc-layer dimension npcs]
      [conntection-trigger-layer dimension connection-triggers]
@@ -339,10 +339,10 @@
             :style {:width (u/px (* config/tile-size (u/rect-width dimension)))
                     :height (u/px (* config/tile-size (u/rect-height dimension)))
                     :margin "auto"}}
-      [background-tiles dimension :background1 background1]
-      [background-tiles dimension :background2 background2]
-      [background-tiles dimension :foreground1 foreground1]
-      [background-tiles dimension :foreground2 foreground2]
+      [texture-layer dimension :background1 background1]
+      [texture-layer dimension :background2 background2]
+      [texture-layer dimension :foreground1 foreground1]
+      [texture-layer dimension :foreground2 foreground2]
       (when player-position [player-tile dimension player-position])
       [npc-layer dimension npcs]
       [conntection-trigger-layer dimension connection-triggers]
@@ -399,21 +399,16 @@
 
 (defn canvas [location-id]
   (let [{:keys [dimension
-                background1
-                background2
-                foreground1
-                foreground2
                 blocked
                 npcs
                 connection-triggers
-                player-position]} (<sub [:location-editor/location location-id])
+                player-position]
+         :as location} (<sub [:location-editor/location location-id])
         {:keys [active-pane
                 active-layer
                 visible-layers
                 highlight]} (<sub [:location-editor/ui])
         [dnd-type dnd-payload] (<sub [:dnd-payload])
-        show-layer? (fn [layer] (or (= active-layer layer)
-                                    (contains? visible-layers layer)))
         dropzone-fn (case dnd-type
                       :player             #(>evt [:location-editor/move-player location-id %])
                       :character          #(>evt [:location-editor/move-character location-id dnd-payload %])
@@ -424,28 +419,27 @@
      [:div {:class "level"
             :style {:width (u/px (* config/tile-size (u/rect-width dimension)))
                     :height (u/px (* config/tile-size (u/rect-height dimension)))}}
-      (when (show-layer? :background1)
-        [background-tiles dimension :background1 background1])
 
-      (when (show-layer? :background2)
-        [background-tiles dimension :background2 background2])
+      (for [[layer-id] (reverse config/location-editor-layers)
+            :when (contains? visible-layers layer-id)]
+        (case layer-id
+          :entities
+          ^{:key "entities"}
+          [:<>
+           (when player-position [player-tile dimension player-position])
+           [npc-layer dimension npcs]]
 
-      (when (show-layer? :collision)
-        [collision-layer dimension blocked])
+          :collision
+          ^{:key "collision"}
+          [collision-layer dimension blocked]
 
-      (when (show-layer? :entities)
-        [:<>
-          (when player-position [player-tile dimension player-position])
-          [npc-layer dimension npcs]])
+          :triggers
+          ^{:key "triggers"}
+          [conntection-trigger-layer dimension connection-triggers]
 
-      (when (show-layer? :foreground1)
-        [background-tiles dimension :foreground1 foreground1])
-
-      (when (show-layer? :foreground2)
-        [background-tiles dimension :foreground2 foreground2])
-
-      (when (show-layer? :triggers)
-        [conntection-trigger-layer dimension connection-triggers])
+          (:background1 :background2 :foreground1 :foreground2)
+          ^{:key (str "layer:" layer-id)}
+          [texture-layer dimension layer-id (get location layer-id)]))
 
       (when (= :paint active-pane)
         (case active-layer
