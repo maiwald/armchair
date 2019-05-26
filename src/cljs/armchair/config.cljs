@@ -30,6 +30,9 @@
   {:and {:display-name "and" :func every?}
    :or {:display-name "or" :func some}})
 
-(def location-editor-layers [[:entities "Entities & Triggers"]
+(def location-editor-layers [[:foreground2 "Foreground 2"]
+                             [:foreground1 "Foreground 1"]
+                             [:entities "Entities & Triggers"]
                              [:collision "Collision"]
-                             [:background "Background"]])
+                             [:background2 "Background 2"]
+                             [:background1 "Background 1"]])

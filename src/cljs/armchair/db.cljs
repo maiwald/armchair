@@ -1,7 +1,7 @@
 (ns armchair.db
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as string]
-            [clojure.set :refer [union subset?]]
+            [clojure.set :refer [union subset? rename-keys]]
             [com.rpl.specter
              :refer [collect-one must FIRST LAST ALL NONE MAP-VALS]
              :refer-macros [select setval transform]]
@@ -13,7 +13,7 @@
 
 ;; Migrations
 
-(def db-version 6)
+(def db-version 7)
 
 (def migrations
   "Map of migrations. Key is the version we are coming from."
@@ -76,7 +76,17 @@
              (-> location
                  (dissoc :walk-set)
                  (assoc :blocked (inverse dimension walk-set))))
-           db)))})
+           db)))
+
+   6 (fn [db]
+       "Rename :background to :background1"
+       (transform [:locations MAP-VALS]
+                  #(-> %
+                       (assoc :background2 {}
+                              :foreground1 {}
+                              :foreground2 {})
+                       (rename-keys {:background :background1}))
+                  db))})
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)
@@ -160,13 +170,21 @@
                                 :entity/type]
                           :req-un [:location/dimension
                                    ::display-name
-                                   :location/background
+                                   :location/background1
+                                   :location/background2
+                                   :location/foreground1
+                                   :location/foreground2
                                    :location/blocked
                                    :location/connection-triggers]))
 
 (s/def :location/position :type/point)
+(s/def :location/texture-layer (s/map-of :type/point ::texture))
+
 (s/def :location/dimension :type/rect)
-(s/def :location/background (s/map-of :type/point ::texture))
+(s/def :location/background1 :location/texture-layer)
+(s/def :location/background2 :location/texture-layer)
+(s/def :location/foreground1 :location/texture-layer)
+(s/def :location/foreground1 :location/texture-layer)
 (s/def :location/blocked (s/coll-of :type/point :kind set?))
 (s/def :location/connection-triggers
   (s/map-of :type/point :location/connection-trigger-target))
@@ -421,8 +439,12 @@
 
 (def default-db
   (merge {:location-editor {:active-pane :info
-                            :active-layer :background
-                            :visible-layers #{:background :entities}
+                            :active-layer :background1
+                            :visible-layers #{:background1
+                                              :background2
+                                              :foreground1
+                                              :foreground2
+                                              :entities}
                             :active-walk-state true
                             :active-texture (first background-textures)}
           :ui/positions {}
