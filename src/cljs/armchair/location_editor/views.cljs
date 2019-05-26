@@ -138,7 +138,7 @@
                                           "rgba(0, 255, 0, .4)"
                                           "rgba(255, 0, 0, .4)")}}]])]]))
 
-(defn sidebar-player-and-exit []
+(defn sidebar-player []
   [sidebar-widget
    [:ul {:class "tile-list"}
     [:li {:class "tile-list__item"
@@ -152,7 +152,11 @@
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
       [c/sprite-texture :human "Player"]]
-     [:span {:class "tile-list__item__label"} "Place Player"]]
+     [:span {:class "tile-list__item__label"} "Place Player"]]]])
+
+(defn sidebar-triggers []
+  [sidebar-widget
+   [:ul {:class "tile-list"}
     [:li {:class "tile-list__item"
           :draggable true
           :on-drag-start (fn [e]
@@ -206,11 +210,19 @@
        :paint [:<>
                [sidebar-layers]
                (case active-layer
-                 (:background1 :background2 :foreground1 :foreground2) [sidebar-paint location-id]
-                 :collision [sidebar-collision]
-                 :entities [:<>
-                            [sidebar-player-and-exit]
-                            [sidebar-npcs location-id]])])]))
+                 (:background1 :background2 :foreground1 :foreground2)
+                 [sidebar-paint location-id]
+
+                 :collision
+                 [sidebar-collision]
+
+                 :triggers
+                 [sidebar-triggers]
+
+                 :entities
+                 [:<>
+                  [sidebar-player]
+                  [sidebar-npcs location-id]])])]))
 
 (defn tile-style [x y]
   {:width (str config/tile-size "px")
@@ -432,7 +444,7 @@
       (when (show-layer? :foreground2)
         [background-tiles dimension :foreground2 foreground2])
 
-      (when (show-layer? :entities)
+      (when (show-layer? :triggers)
         [conntection-trigger-layer dimension connection-triggers])
 
       (when (= :paint active-pane)
@@ -473,6 +485,14 @@
                [c/popover-trigger {:popover [npc-popover location-id tile]}]
                [dnd-texture texture]])]
 
+           (when (fn? dropzone-fn)
+             [dropzone {:dimension dimension
+                        :highlight highlight
+                        :occupied (<sub [:location-editor/occupied-tiles location-id])
+                        :on-drop dropzone-fn}])]
+
+          :triggers
+          [:<>
            [do-some-tiles dimension connection-triggers "connection-select"
             (fn [tile display-name]
               [:div {:class "interactor interactor_draggable"
