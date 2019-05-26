@@ -129,9 +129,9 @@
 
 (reg-event-data
   :location-editor/paint
-  (fn [db [_ location-id tile]]
+  (fn [db [_ location-id layer-id tile]]
     (let [{:keys [active-texture]} (:location-editor db)]
-      (assoc-in db [:locations location-id :background tile] active-texture))))
+      (assoc-in db [:locations location-id layer-id tile] active-texture))))
 
 (reg-event-data
   :location-editor/set-walkable
@@ -155,7 +155,11 @@
       (->> (update-in db [:locations location-id]
                       (fn [location]
                         (->> (assoc location :dimension new-dimension)
-                             (setval [(multi-path :background :connection-triggers) MAP-KEYS out-of-bounds?] NONE)
+                             (setval [(multi-path :background1
+                                                  :background2
+                                                  :foreground1
+                                                  :foreground2
+                                                  :connection-triggers) MAP-KEYS out-of-bounds?] NONE)
                              (setval [:blocked ALL out-of-bounds?] NONE))))
 
            ;; remove OOB dialogues

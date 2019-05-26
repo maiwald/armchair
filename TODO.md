@@ -11,6 +11,7 @@
 - save file for game state
 
 # nice things
+- show player silhouette when behind foreground texture
 - show incoming connections
 - allow creating switches in dialogue editor
 - show debug state variables
