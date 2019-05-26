@@ -85,6 +85,13 @@
                         [1 0] :grass_stone_top
                         [2 0] :grass_stone_top-right
                         [10 1] :dirt
+                        [11 9] :potted_plant-yellow
+                        [7 13] :potted_plant-red
+                        [4 10] :logs-large
+                        [5 10] :logs-small
+                        [6 10] :logs-single
+                        [7 10] :grain-green
+                        [8 10] :grain-yellow
                         [1 1] :stone
                         [2 3] :stone_2
                         [2 4] :stone_bush
@@ -116,7 +123,22 @@
                            [3 21] :water2
                            [10 1] :wood_panel1
                            [10 2] :wood_panel2
-                           [7 1] :wood_panel3}
+                           [7 1] :wood_panel3
+                           [0 12] :tree1-bottom1
+                           [1 12] :tree1-bottom2
+                           [2 12] :tree1-top1
+                           [3 12] :tree1-top2
+                           [0 13] :tree1-trunk1
+                           [1 13] :tree1-trunk2}
+     :mountain_landscape {[7 13] :tree2_top-left
+                          [8 13] :tree2_top-right
+                          [7 14] :tree2_middle-left
+                          [8 14] :tree2_middle-right
+                          [7 15] :tree3_bottom-left
+                          [8 15] :tree3_bottom-right}
+     :Castle2 {[9 15] :crates-single
+               [10 14] :crates-tower1
+               [10 15] :crates-tower2}
      :characters {[0 0] :acid_blob
                   [1 0] :agent
                   [2 0] :agnes
@@ -338,7 +360,9 @@
   (sort (select [(multi-path :adobe
                              :misc
                              :PathAndObjects_0
-                             :32x32_map_tile_v3.1)
+                             :32x32_map_tile_v3.1
+                             :Castle2
+                             :mountain_landscape)
                  MAP-VALS] sprite-sheets)))
 
 (def character-textures
