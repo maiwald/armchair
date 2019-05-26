@@ -179,6 +179,7 @@
   &__item
     display: flex
     font-size: .7rem
+    color: $text-regular
 
     background: #fff
     margin: 4px 0
@@ -197,4 +198,8 @@
 
     &__name
       flex-grow: 1
+
+    &__visibility
+      &_visible
+        color: lighten($text-regular, 50%)
 
