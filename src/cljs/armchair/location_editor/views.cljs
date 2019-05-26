@@ -67,16 +67,20 @@
   (let [{:keys [active-layer visible-layers]} (<sub [:location-editor/ui])]
     [sidebar-widget {:title "Layers"}
      [:ol.level-layers
-      (for [[layer-id layer-name] config/location-editor-layers]
+      (for [[layer-id layer-name] config/location-editor-layers
+            :let [visible? (contains? visible-layers layer-id)]]
         [:li {:key (str "layer" layer-id)
               :class ["level-layers__item"
                       (when (= active-layer layer-id) "level-layers__item_active")]}
          [:span.level-layers__item__name
           {:on-click #(>evt [:location-editor/set-active-layer layer-id])}
           layer-name]
-         [:span.level-layers__item__visibility
-          {:on-click #(>evt [:location-editor/toggle-layer-visibility layer-id])}
-          (if (contains? visible-layers layer-id)
+         [:span
+          {:class ["level-layers__item__visibility"
+                   (str "level-layers__item__visibility_"
+                        (if visible? "visible" "not-visible"))]
+           :on-click #(>evt [:location-editor/toggle-layer-visibility layer-id])}
+          (if visible?
             [c/icon "eye" "Hide layer"]
             [c/icon "eye-slash" "Show layer"])]])]]))
 
