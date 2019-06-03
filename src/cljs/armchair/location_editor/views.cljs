@@ -204,14 +204,14 @@
   (let [{:keys [active-pane active-layer]} (<sub [:location-editor/ui])]
     [:<>
      [c/tabs {:items [[:info "Info"]
-                      [:paint "Level"]]
+                      [:level "Level"]]
               :active active-pane
               :on-change #(>evt [:location-editor/set-active-pane %])}]
      (case active-pane
        :info [:<>
               [sidebar-info location-id]
               [sidebar-resize location-id]]
-       :paint [:<>
+       :level [:<>
                [sidebar-layers]
                (case active-layer
                  (:background1 :background2 :foreground1 :foreground2)
@@ -445,7 +445,7 @@
           ^{:key (str "layer:" layer-id)}
           [texture-layer dimension layer-id (get location layer-id)]))
 
-      (when (= :paint active-pane)
+      (when (= :level active-pane)
         (case active-layer
           (:background1 :background2 :foreground1 :foreground2)
           [tile-paint-canvas
