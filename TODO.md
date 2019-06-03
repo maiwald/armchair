@@ -1,10 +1,12 @@
 # BUGS
 - flickering inputs in character modal
+- drag and drop preview images are broken
 
 # TODO
 - trees! (multiple texture layers)
 - (multiple?) decorative textures
 - rethink relationship between character and dialogue
+- restructure navigation
 - zoom in dialogue editor
 - sounds & music
 - information dependency invariants
@@ -14,7 +16,7 @@
 - show player silhouette when behind foreground texture
 - show incoming connections
 - allow creating switches in dialogue editor
-- show debug state variables
+- show debug state variables in game
 - typing animation for dialogue screens
 - movement behaviour when holding and releasing arrow key
 - location preview in map
@@ -27,3 +29,4 @@
 - remove slds dependency
 - validation error notifications and form states
 - redesign dialogue screen to use pixel font
+- brush sizes & fill tool
