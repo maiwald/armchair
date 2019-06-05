@@ -467,15 +467,15 @@
             :when (contains? visible-layers layer-id)]
         (case layer-id
           :entities
-          ^{:key "entities"}
+          ^{:key "layer::entities"}
           [entity-layer location-id]
 
           :collision
-          ^{:key "collision"}
+          ^{:key "layer::collision"}
           [collision-layer dimension blocked]
 
           :triggers
-          ^{:key "triggers"}
+          ^{:key "layer::triggers"}
           [conntection-trigger-layer dimension connection-triggers]
 
           (:background1 :background2 :foreground1 :foreground2)
