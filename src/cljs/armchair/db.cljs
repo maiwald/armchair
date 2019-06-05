@@ -139,11 +139,13 @@
   (s/keys :req-un [:location-editor/visible-layers
                    :location-editor/active-layer
                    :location-editor/active-pane
+                   :location-editor/active-tool
                    :location-editor/active-walk-state
                    :location-editor/active-texture]
           :opt-un [:location-editor/highlight]))
 
 (s/def :location-editor/active-pane #{:info :level})
+(s/def :location-editor/active-tool #{:brush :eraser})
 (s/def :location-editor/layers (set (map first config/location-editor-layers)))
 (s/def :location-editor/visible-layers (s/coll-of :location-editor/layers :kind set?))
 (s/def :location-editor/active-layer :location-editor/layers)
@@ -439,6 +441,7 @@
 
 (def default-db
   (merge {:location-editor {:active-pane :info
+                            :active-tool :brush
                             :active-layer :background1
                             :visible-layers #{:background1
                                               :background2
