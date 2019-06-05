@@ -143,7 +143,7 @@
                    :location-editor/active-texture]
           :opt-un [:location-editor/highlight]))
 
-(s/def :location-editor/pane #{:info :level})
+(s/def :location-editor/active-pane #{:info :level})
 (s/def :location-editor/layers (set (map first config/location-editor-layers)))
 (s/def :location-editor/visible-layers (s/coll-of :location-editor/layers :kind set?))
 (s/def :location-editor/active-layer :location-editor/layers)
