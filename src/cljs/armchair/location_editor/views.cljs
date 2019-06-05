@@ -84,6 +84,15 @@
             [c/icon "eye" "Hide layer"]
             [c/icon "eye-slash" "Show layer"])]])]]))
 
+(defn sidebar-tool []
+  (let [{:keys [active-tool]} (<sub [:location-editor/ui])]
+    [sidebar-widget {:title "Tool"}
+     [slds/radio-button-group
+      {:options [[:brush [c/icon "paint-brush" "Paint"]]
+                 [:eraser [c/icon "eraser" "Erase"]]]
+       :on-change #(>evt [:location-editor/set-active-tool %])
+       :active active-tool}]]))
+
 (defn sidebar-info [location-id]
   (let [display-name (<sub [:location-editor/display-name location-id])]
     [sidebar-widget {:title "Location Name"}
@@ -215,7 +224,9 @@
                [sidebar-layers]
                (case active-layer
                  (:background1 :background2 :foreground1 :foreground2)
-                 [sidebar-paint location-id]
+                 [:<>
+                  [sidebar-tool]
+                  [sidebar-paint location-id]]
 
                  :collision
                  [sidebar-collision]
