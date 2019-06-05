@@ -290,10 +290,17 @@
            :style (tile-style (u/rect->0 rect position))}
      [c/sprite-texture :human "Player"]]))
 
-(defn npc-layer [rect npcs]
-  [do-some-tiles rect npcs "npc"
-   (fn [tile {:keys [display-name texture]}]
-     [c/sprite-texture texture display-name])])
+(defn entity-layer [location-id override-rect]
+  (let [{:keys [player-position
+                npcs
+                dimension]} (<sub [:location-editor/entity-layer location-id])
+        rect (or override-rect dimension)]
+    [:<>
+     [do-some-tiles rect npcs "npc"
+      (fn [tile {:keys [display-name texture]}]
+        [c/sprite-texture texture display-name])]
+     (when (some? player-position)
+       [player-tile rect player-position])]))
 
 (defn conntection-trigger-layer [rect connection-triggers]
   [do-some-tiles rect connection-triggers "connection-trigger"
@@ -317,9 +324,7 @@
                 background2
                 foreground1
                 foreground2
-                connection-triggers
-                npcs
-                player-position]} (<sub [:location-editor/location location-id])]
+                connection-triggers]} (<sub [:location-editor/location location-id])]
     [:div {:class "level"
            :style {:width (u/px (* config/tile-size (inc (* tiles-around 2))))
                    :height (u/px (* config/tile-size (inc (* tiles-around 2))))}}
@@ -327,8 +332,7 @@
      [texture-layer dimension :background2 background2]
      [texture-layer dimension :foreground1 foreground1]
      [texture-layer dimension :foreground2 foreground2]
-     (when player-position [player-tile dimension player-position])
-     [npc-layer dimension npcs]
+     [entity-layer location-id dimension]
      [conntection-trigger-layer dimension connection-triggers]
      [:div {:key "location-cell:highlight"
             :class "level__tile level__tile_highlight"
@@ -340,9 +344,7 @@
                 background2
                 foreground1
                 foreground2
-                connection-triggers
-                player-position
-                npcs]} (<sub [:location-editor/location location-id])
+                connection-triggers]} (<sub [:location-editor/location location-id])
         occupied (<sub [:location-editor/physically-occupied-tiles location-id])]
     [:div {:style {:overflow "scroll"
                    :background-color "#000"
@@ -358,8 +360,7 @@
       [texture-layer dimension :background2 background2]
       [texture-layer dimension :foreground1 foreground1]
       [texture-layer dimension :foreground2 foreground2]
-      (when player-position [player-tile dimension player-position])
-      [npc-layer dimension npcs]
+      [entity-layer location-id]
       [conntection-trigger-layer dimension connection-triggers]
       (when selected
         [:div {:key "location-cell:selected"
@@ -412,12 +413,39 @@
                 :on-click #(do (>evt [:close-popover])
                                (>evt [:location-editor/remove-trigger location-id tile]))}]]))
 
+(defn edit-entity-layer [location-id]
+  (let [{:keys [player-position
+                npcs
+                dimension]} (<sub [:location-editor/entity-layer location-id])]
+    [:<>
+     (when player-position
+       [do-some-tiles dimension {player-position :player} "player-select"
+        (fn [_ _]
+          [:div {:class "interactor interactor_draggable"
+                 :title "Player"
+                 :draggable true
+                 :on-drag-start (fn [e]
+                                  (set-dnd-texture! e)
+                                  (.setData (.-dataTransfer e) "text/plain" ":player")
+                                  (>evt [:location-editor/start-entity-drag [:player]]))}
+           [dnd-texture :human]])])
+
+     [do-some-tiles dimension npcs "npc-select"
+      (fn [tile {:keys [id texture display-name]}]
+        [:div {:class "interactor interactor_draggable"
+               :title display-name
+               :draggable true
+               :on-drag-start (fn [e]
+                                (set-dnd-texture! e)
+                                (.setData (.-dataTransfer e) "text/plain" display-name)
+                                (>evt [:location-editor/start-entity-drag [:character id]]))}
+         [c/popover-trigger {:popover [npc-popover location-id tile]}]
+         [dnd-texture texture]])]]))
+
 (defn canvas [location-id]
   (let [{:keys [dimension
                 blocked
-                npcs
-                connection-triggers
-                player-position]
+                connection-triggers]
          :as location} (<sub [:location-editor/location location-id])
         {:keys [active-pane
                 active-layer
@@ -440,9 +468,7 @@
         (case layer-id
           :entities
           ^{:key "entities"}
-          [:<>
-           (when player-position [player-tile dimension player-position])
-           [npc-layer dimension npcs]]
+          [entity-layer location-id]
 
           :collision
           ^{:key "collision"}
@@ -469,36 +495,7 @@
             :on-paint #(>evt [:location-editor/set-walkable location-id %])}]
 
           :entities
-          [:<>
-           (when player-position
-             [do-some-tiles dimension {player-position :player} "player-select"
-              (fn [_ _]
-                [:div {:class "interactor interactor_draggable"
-                       :title "Player"
-                       :draggable true
-                       :on-drag-start (fn [e]
-                                        (set-dnd-texture! e)
-                                        (.setData (.-dataTransfer e) "text/plain" ":player")
-                                        (>evt [:location-editor/start-entity-drag [:player]]))}
-                 [dnd-texture :human]])])
-
-           [do-some-tiles dimension npcs "npc-select"
-            (fn [tile {:keys [id texture display-name]}]
-              [:div {:class "interactor interactor_draggable"
-                     :title display-name
-                     :draggable true
-                     :on-drag-start (fn [e]
-                                      (set-dnd-texture! e)
-                                      (.setData (.-dataTransfer e) "text/plain" display-name)
-                                      (>evt [:location-editor/start-entity-drag [:character id]]))}
-               [c/popover-trigger {:popover [npc-popover location-id tile]}]
-               [dnd-texture texture]])]
-
-           (when (fn? dropzone-fn)
-             [dropzone {:dimension dimension
-                        :highlight highlight
-                        :occupied (<sub [:location-editor/occupied-tiles location-id])
-                        :on-drop dropzone-fn}])]
+          [edit-entity-layer location-id]
 
           :triggers
           [:<>
@@ -512,13 +509,13 @@
                                       (.setData (.-dataTransfer e) "text/plain" display-name)
                                       (>evt [:location-editor/start-entity-drag [:connection-trigger tile]]))}
                [c/popover-trigger {:popover [trigger-popover location-id tile]}]
-               [dnd-texture :exit]])]
+               [dnd-texture :exit]])]]))
 
-           (when (fn? dropzone-fn)
-             [dropzone {:dimension dimension
-                        :highlight highlight
-                        :occupied (<sub [:location-editor/occupied-tiles location-id])
-                        :on-drop dropzone-fn}])]))]]))
+      (when (fn? dropzone-fn)
+        [dropzone {:dimension dimension
+                   :highlight highlight
+                   :occupied (<sub [:location-editor/occupied-tiles location-id])
+                   :on-drop dropzone-fn}])]]))
 
 (defn location-editor [location-id]
   (if (<sub [:location-editor/location-exists? location-id])
