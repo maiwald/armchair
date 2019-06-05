@@ -3,13 +3,11 @@
 - drag and drop preview images are broken
 
 # TODO
-- trees! (multiple texture layers)
-- (multiple?) decorative textures
 - rethink relationship between character and dialogue
 - restructure navigation
 - zoom in dialogue editor
 - sounds & music
-- information dependency invariants
+- state invariants
 - save file for game state
 
 # nice things
