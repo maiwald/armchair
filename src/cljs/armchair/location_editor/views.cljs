@@ -22,7 +22,7 @@
     (.setDragImage (.-dataTransfer e) image offset offset)))
 
 (defn tile-paint-canvas [{:keys [on-paint]
-                          [delta _] :dimension}]
+                          [tile-offset _] :dimension}]
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
     (letfn [(get-tile [e] (u/coord->tile (u/relative-cursor e (.-currentTarget e))))
@@ -32,7 +32,7 @@
             (stop-painting [] (reset! painted-tiles nil))
             (make-paint [paint-fn]
               (fn [e]
-                (let [tile (u/translate-point (get-tile e) delta)]
+                (let [tile (u/translate-point (get-tile e) tile-offset)]
                   (when (and (some? @painted-tiles)
                              (not (contains? @painted-tiles tile)))
                     (swap! painted-tiles conj tile)
@@ -239,7 +239,7 @@
                   [sidebar-player]
                   [sidebar-npcs location-id]])])]))
 
-(defn tile-style [x y]
+(defn tile-style [[x y]]
   {:width (str config/tile-size "px")
    :height (str config/tile-size "px")
    :top (* y config/tile-size)
@@ -253,7 +253,7 @@
      (if-let [tile-data (f tile)]
        [:div {:key (str "location-cell:" layer-title ":" tile)
               :class "level__tile"
-              :style (apply tile-style (u/rect->0 rect tile))}
+              :style (tile-style (u/rect->0 rect tile))}
         tile-data]))])
 
 (defn do-some-tiles [rect coll layer-title f]
@@ -261,7 +261,7 @@
              :when (u/rect-contains? rect tile)]
          [:div {:key (str "location-cell:" layer-title ":" tile)
                 :class "level__tile"
-                :style (apply tile-style (u/rect->0 rect tile))}
+                :style (tile-style (u/rect->0 rect tile))}
           (f tile item)])])
 
 (defn dropzone [{:keys [dimension highlight occupied on-drop]}]
@@ -287,7 +287,7 @@
   (when (u/rect-contains? rect position)
     [:div {:key (str "location-cell:player:" position)
            :class "level__tile"
-           :style (apply tile-style (u/rect->0 rect position))}
+           :style (tile-style (u/rect->0 rect position))}
      [c/sprite-texture :human "Player"]]))
 
 (defn npc-layer [rect npcs]
@@ -332,7 +332,7 @@
      [conntection-trigger-layer dimension connection-triggers]
      [:div {:key "location-cell:highlight"
             :class "level__tile level__tile_highlight"
-            :style (apply tile-style [tiles-around tiles-around])}]]))
+            :style (tile-style [tiles-around tiles-around])}]]))
 
 (defn position-select [location-id on-select selected]
   (let [{:keys [dimension
@@ -364,7 +364,7 @@
       (when selected
         [:div {:key "location-cell:selected"
                :class "level__tile level__tile_highlight"
-               :style (apply tile-style (u/rect->0 dimension selected))}])
+               :style (tile-style (u/rect->0 dimension selected))}])
       [do-all-tiles dimension "selectors"
        (fn [tile]
          (let [occupied? (contains? occupied tile)]
