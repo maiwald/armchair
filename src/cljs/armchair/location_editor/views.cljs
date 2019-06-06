@@ -277,11 +277,14 @@
                                      (>evt [:location-editor/set-highlight tile])))
               :on-drop (when-not occupied? (e-> #(on-drop tile)))}]))])
 
-(defn texture-layer [rect layer-id background]
-  [do-all-tiles rect (str "background:" layer-id)
-   (fn [tile]
-     (when-let [t (get background tile)]
-       [c/sprite-texture t]))])
+(defn texture-layer [location-id layer-id override-rect]
+  (let [location (<sub [:location-editor/location location-id])
+        rect (or override-rect (:dimension location))
+        layer (get location layer-id)]
+    [do-all-tiles rect (str "texture-layer:" layer-id)
+     (fn [tile]
+       (when-let [t (get layer tile)]
+         [c/sprite-texture t]))]))
 
 (defn player-tile [rect position]
   (when (u/rect-contains? rect position)
@@ -322,18 +325,14 @@
 (defn location-preview [location-id preview-tile]
   (let [tiles-around 3
         dimension [(u/translate-point preview-tile [(- tiles-around) (- tiles-around)])
-                   (u/translate-point preview-tile [tiles-around tiles-around])]
-        {:keys [background1
-                background2
-                foreground1
-                foreground2]} (<sub [:location-editor/location location-id])]
+                   (u/translate-point preview-tile [tiles-around tiles-around])]]
     [:div {:class "level"
            :style {:width (u/px (* config/tile-size (inc (* tiles-around 2))))
                    :height (u/px (* config/tile-size (inc (* tiles-around 2))))}}
-     [texture-layer dimension :background1 background1]
-     [texture-layer dimension :background2 background2]
-     [texture-layer dimension :foreground1 foreground1]
-     [texture-layer dimension :foreground2 foreground2]
+     [texture-layer location-id :background1 dimension]
+     [texture-layer location-id :background2 dimension]
+     [texture-layer location-id :foreground1 dimension]
+     [texture-layer location-id :foreground2 dimension]
      [entity-layer location-id dimension]
      [conntection-trigger-layer location-id dimension]
      [:div {:key "location-cell:highlight"
@@ -341,11 +340,7 @@
             :style (tile-style [tiles-around tiles-around])}]]))
 
 (defn position-select [location-id on-select selected]
-  (let [{:keys [dimension
-                background1
-                background2
-                foreground1
-                foreground2]} (<sub [:location-editor/location location-id])
+  (let [{:keys [dimension]} (<sub [:location-editor/location location-id])
         occupied (<sub [:location-editor/physically-occupied-tiles location-id])]
     [:div {:style {:overflow "scroll"
                    :background-color "#000"
@@ -357,10 +352,10 @@
             :style {:width (u/px (* config/tile-size (u/rect-width dimension)))
                     :height (u/px (* config/tile-size (u/rect-height dimension)))
                     :margin "auto"}}
-      [texture-layer dimension :background1 background1]
-      [texture-layer dimension :background2 background2]
-      [texture-layer dimension :foreground1 foreground1]
-      [texture-layer dimension :foreground2 foreground2]
+      [texture-layer location-id :background1]
+      [texture-layer location-id :background2]
+      [texture-layer location-id :foreground1]
+      [texture-layer location-id :foreground2]
       [entity-layer location-id]
       [conntection-trigger-layer location-id dimension]
       (when selected
@@ -494,7 +489,7 @@
 
           (:background1 :background2 :foreground1 :foreground2)
           ^{:key (str "layer:" layer-id)}
-          [texture-layer dimension layer-id (get location layer-id)]))
+          [texture-layer location-id layer-id]))
 
       (when (= :level active-pane)
         (case active-layer
