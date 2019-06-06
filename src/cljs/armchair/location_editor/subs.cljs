@@ -46,10 +46,18 @@
   :location-editor/location
   :<- [:db-locations]
   (fn [locations [_ location-id]]
-    (u/update-values (locations location-id)
-                     :connection-triggers
-                     (fn [[target-id _]]
-                       (get-in locations [target-id :display-name])))))
+    (locations location-id)))
+
+(reg-sub
+  :location-editor/connection-trigger-layer
+  :<- [:db-locations]
+  (fn [locations [_ location-id]]
+    (let [{:keys [dimension connection-triggers]} (locations location-id)]
+      {:dimension dimension
+       :connection-triggers (u/map-values
+                              (fn [[target-id _]]
+                                (get-in locations [target-id :display-name]))
+                              connection-triggers)})))
 
 (reg-sub
   :location-editor/entity-layer
