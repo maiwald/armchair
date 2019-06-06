@@ -302,11 +302,14 @@
      (when (some? player-position)
        [player-tile rect player-position])]))
 
-(defn conntection-trigger-layer [rect connection-triggers]
-  [do-some-tiles rect connection-triggers "connection-trigger"
-   (fn [tile {:keys [display-name]}]
-     [:img {:src (texture-path :exit)
-            :title (str "to " display-name)}])])
+(defn conntection-trigger-layer [location-id override-rect]
+  (let [{:keys [dimension
+                connection-triggers]} (<sub [:location-editor/connection-trigger-layer location-id])
+        rect (or override-rect dimension)]
+    [do-some-tiles rect connection-triggers "connection-trigger"
+     (fn [tile {:keys [display-name]}]
+       [:img {:src (texture-path :exit)
+              :title (str "to " display-name)}])]))
 
 (defn collision-layer [rect blocked]
   [do-all-tiles rect "collision"
@@ -323,8 +326,7 @@
         {:keys [background1
                 background2
                 foreground1
-                foreground2
-                connection-triggers]} (<sub [:location-editor/location location-id])]
+                foreground2]} (<sub [:location-editor/location location-id])]
     [:div {:class "level"
            :style {:width (u/px (* config/tile-size (inc (* tiles-around 2))))
                    :height (u/px (* config/tile-size (inc (* tiles-around 2))))}}
@@ -333,7 +335,7 @@
      [texture-layer dimension :foreground1 foreground1]
      [texture-layer dimension :foreground2 foreground2]
      [entity-layer location-id dimension]
-     [conntection-trigger-layer dimension connection-triggers]
+     [conntection-trigger-layer location-id dimension]
      [:div {:key "location-cell:highlight"
             :class "level__tile level__tile_highlight"
             :style (tile-style [tiles-around tiles-around])}]]))
@@ -343,8 +345,7 @@
                 background1
                 background2
                 foreground1
-                foreground2
-                connection-triggers]} (<sub [:location-editor/location location-id])
+                foreground2]} (<sub [:location-editor/location location-id])
         occupied (<sub [:location-editor/physically-occupied-tiles location-id])]
     [:div {:style {:overflow "scroll"
                    :background-color "#000"
@@ -361,7 +362,7 @@
       [texture-layer dimension :foreground1 foreground1]
       [texture-layer dimension :foreground2 foreground2]
       [entity-layer location-id]
-      [conntection-trigger-layer dimension connection-triggers]
+      [conntection-trigger-layer location-id dimension]
       (when selected
         [:div {:key "location-cell:selected"
                :class "level__tile level__tile_highlight"
@@ -442,10 +443,23 @@
          [c/popover-trigger {:popover [npc-popover location-id tile]}]
          [dnd-texture texture]])]]))
 
-(defn canvas [location-id]
+(defn edit-trigger-layer [location-id]
   (let [{:keys [dimension
-                blocked
-                connection-triggers]
+                connection-triggers]} (<sub [:location-editor/connection-trigger-layer location-id])]
+    [do-some-tiles dimension connection-triggers "connection-select"
+     (fn [tile display-name]
+       [:div {:class "interactor interactor_draggable"
+              :title (str "to " display-name)
+              :draggable true
+              :on-drag-start (fn [e]
+                               (set-dnd-texture! e)
+                               (.setData (.-dataTransfer e) "text/plain" display-name)
+                               (>evt [:location-editor/start-entity-drag [:connection-trigger tile]]))}
+        [c/popover-trigger {:popover [trigger-popover location-id tile]}]
+        [dnd-texture :exit]])]))
+
+(defn canvas [location-id]
+  (let [{:keys [dimension blocked]
          :as location} (<sub [:location-editor/location location-id])
         {:keys [active-pane
                 active-layer
@@ -476,7 +490,7 @@
 
           :triggers
           ^{:key "layer::triggers"}
-          [conntection-trigger-layer dimension connection-triggers]
+          [conntection-trigger-layer location-id]
 
           (:background1 :background2 :foreground1 :foreground2)
           ^{:key (str "layer:" layer-id)}
@@ -498,18 +512,7 @@
           [edit-entity-layer location-id]
 
           :triggers
-          [:<>
-           [do-some-tiles dimension connection-triggers "connection-select"
-            (fn [tile display-name]
-              [:div {:class "interactor interactor_draggable"
-                     :title (str "to " display-name)
-                     :draggable true
-                     :on-drag-start (fn [e]
-                                      (set-dnd-texture! e)
-                                      (.setData (.-dataTransfer e) "text/plain" display-name)
-                                      (>evt [:location-editor/start-entity-drag [:connection-trigger tile]]))}
-               [c/popover-trigger {:popover [trigger-popover location-id tile]}]
-               [dnd-texture :exit]])]]))
+          [edit-trigger-layer location-id]))
 
       (when (fn? dropzone-fn)
         [dropzone {:dimension dimension
