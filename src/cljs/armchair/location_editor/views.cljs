@@ -344,8 +344,6 @@
         occupied (<sub [:location-editor/physically-occupied-tiles location-id])]
     [:div {:style {:overflow "scroll"
                    :background-color "#000"
-                   :width (u/px 600)
-                   :height (u/px 400)
                    :max-width (u/px 600)
                    :max-height (u/px 400)}}
      [:div {:class "level"
