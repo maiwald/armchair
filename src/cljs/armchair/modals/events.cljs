@@ -278,7 +278,10 @@
           (assoc-in [:locations id] {:entity/id id
                                      :entity/type :location
                                      :dimension [[0 0] [2 2]]
-                                     :background {}
+                                     :background1 {}
+                                     :background2 {}
+                                     :foreground1 {}
+                                     :foreground2 {}
                                      :blocked #{}
                                      :connection-triggers {}
                                      :display-name display-name})))))

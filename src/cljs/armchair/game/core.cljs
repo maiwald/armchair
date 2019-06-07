@@ -116,13 +116,14 @@
     (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
 
 (defn draw-background [ctx [[left top] [right bottom]] background camera]
-  (doseq [x (range left (inc right))
-          y (range top (inc bottom))
-          :let [tile [x y]
-                texture (get background tile)]
-          :when (and (some? texture)
-                     (tile-visible? camera tile))]
-    (draw-sprite-texture ctx texture (u/tile->coord tile))))
+  (when (some? background)
+    (doseq [x (range left (inc right))
+            y (range top (inc bottom))
+            :let [tile [x y]
+                  texture (get background tile)]
+            :when (and (some? texture)
+                       (tile-visible? camera tile))]
+      (draw-sprite-texture ctx texture (u/tile->coord tile)))))
 
 (defn draw-player [ctx {:keys [position texture]}]
   (draw-sprite-texture ctx texture position))
@@ -219,10 +220,19 @@
             h-offset (- (/ (- (c/height @ctx) cam-height) 2) cam-top)]
         (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
       (let [l (get-in view-state [:player :location-id])
-            {:keys [npcs dimension background]} (get-in @data [:locations l])]
-        (draw-background @ctx dimension background camera)
+            player-tile (u/coord->tile (get-in view-state [:player :position]))
+            {:keys [npcs
+                    dimension
+                    background1
+                    background2
+                    foreground1
+                    foreground2]} (get-in @data [:locations l])]
+        (draw-background @ctx dimension background1 camera)
+        (draw-background @ctx dimension background2 camera)
         (draw-player @ctx (:player view-state))
-        (draw-npcs @ctx npcs camera))
+        (draw-npcs @ctx npcs camera)
+        (draw-background @ctx dimension foreground1 camera)
+        (draw-background @ctx dimension foreground2 camera))
       ; (draw-direction-indicator @ctx view-state)
       ; (draw-camera @ctx camera)
       (c/reset-transform! @ctx)
@@ -449,15 +459,15 @@
         (start-input-loop input-chan)
         (js/requestAnimationFrame
           (fn game-loop []
-            (let [now (* time-factor (.now js/performance))
-                  new-state (swap! state #(update-state % now))
-                  view-state (view-state new-state now)]
-              (when-not (s/valid? ::state new-state)
-                (s/explain ::state new-state))
-              (when-not (= @prev-view-state view-state)
-                (reset! prev-view-state view-state)
-                (render view-state))
-              (if-not @quit
+            (when-not @quit
+              (let [now (* time-factor (.now js/performance))
+                    new-state (swap! state #(update-state % now))
+                    view-state (view-state new-state now)]
+                (when-not (s/valid? ::state new-state)
+                  (s/explain ::state new-state))
+                (when-not (= @prev-view-state view-state)
+                  (reset! prev-view-state view-state)
+                  (render view-state))
                 (js/requestAnimationFrame game-loop)))))))
     {:input input-chan
      :quit quit}))

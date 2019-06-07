@@ -19,7 +19,10 @@
                                         :opt-un [:game/condition :game/triggers])
                                 :kind vector?))
 (s/def :game/locations (s/map-of :entity/id (s/keys :req-un [:game/dimension
-                                                             :game/background
+                                                             :game/background1
+                                                             :game/background2
+                                                             :game/foreground1
+                                                             :game/foreground1
                                                              :game/blocked
                                                              :game/outbound-connections
                                                              :game/npcs])))
@@ -148,13 +151,16 @@
   :<- [:game/npcs-by-location]
   (fn [[locations npcs-by-location]]
     (u/map-values
-      (fn [{:keys [dimension background connection-triggers blocked]
-            id :entity/id}]
-        {:dimension dimension
-         :background background
-         :outbound-connections connection-triggers
-         :blocked blocked
-         :npcs (npcs-by-location id)})
+      (fn [{id :entity/id :as location}]
+        (-> location
+            (select-keys [:dimension
+                          :background1
+                          :background2
+                          :foreground1
+                          :foreground2
+                          :blocked])
+            (assoc :outbound-connections (:connection-triggers location)
+                   :npcs (npcs-by-location id))))
       locations)))
 
 (reg-sub
@@ -166,7 +172,7 @@
   :<- [:db-switches]
   (fn [[player-data locations line-data dialogues switches] _]
     {:post [(or (s/valid? :game/data %)
-                (s/explain :game/data %))]}
+                (js/console.log (s/explain-data :game/data %)))]}
     {:lines line-data
      :locations locations
      :initial-state {:dialogue-states (u/map-values :initial-line-id dialogues)
