@@ -1,3 +1,7 @@
+# PRIVATE ALPHA BLOCKERS
+- unlock conditions modal ui
+- switch modal ui
+
 # BUGS
 - flickering inputs in character modal
 - drag and drop preview images are broken
@@ -6,6 +10,7 @@
 - rethink relationship between character and dialogue
 - restructure navigation
 - zoom in dialogue editor
+- consolidate dialogue states and switches
 - sounds & music
 - state invariants
 - save file for game state

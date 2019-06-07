@@ -98,7 +98,7 @@
       [:li
        [c/action-wrapper {:actions
                           [[:div.action {:on-click edit-condition}
-                            [icon "unlock" "Edit Unlock Condition"]]
+                            [icon "unlock" "Edit Unlock Conditions"]]
                            [:div.action {:on-click delete}
                             [icon "trash" "Delete"]]
                            (when-not (= 0 index)
