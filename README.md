@@ -7,21 +7,22 @@ game I am working on that an off-the-shelf editor was not an option. Let's see w
 
 Anyway, feel free to play around with what it can do so far: https://my-armchair.com/alpha
 
-## Development Mode
+## Development
 
-Start the dev server using 
+You need [leinigen](https://leiningen.org/) and [sass](https://sass-lang.com/) installed on your system.
+
+Then start the two processes:
 
 ```bash
 lein figwheel dev
-```
-
-Also start a sass watcher
-
-```bash
 sass --watch src/sass:resources/public/compiled/css
 ```
 
 Wait a bit, then browse to [http://localhost:3449](http://localhost:3449).
+
+### tmux
+
+You can also run ```./start_dev.sh``` to start everythin in one go!
 
 ## Production Build
 
