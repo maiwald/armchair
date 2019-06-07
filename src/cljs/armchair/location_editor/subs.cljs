@@ -11,6 +11,7 @@
     (select-keys (:location-editor db)
                  [:highlight
                   :active-pane
+                  :active-tool
                   :visible-layers
                   :active-layer
                   :active-walk-state
@@ -28,7 +29,7 @@
     (contains? locations location-id)))
 
 (reg-sub
-  :location-editor/npcs
+  :location-editor/characters
   :<- [:db-dialogues]
   :<- [:db-characters]
   (fn [[dialogues characters] [_ location-id]]
@@ -43,20 +44,31 @@
 
 (reg-sub
   :location-editor/location
+  :<- [:db-locations]
+  (fn [locations [_ location-id]]
+    (locations location-id)))
+
+(reg-sub
+  :location-editor/connection-trigger-layer
+  :<- [:db-locations]
+  (fn [locations [_ location-id]]
+    (let [{:keys [dimension connection-triggers]} (locations location-id)]
+      {:dimension dimension
+       :connection-triggers (u/map-values
+                              (fn [[target-id _]]
+                                (get-in locations [target-id :display-name]))
+                              connection-triggers)})))
+
+(reg-sub
+  :location-editor/entity-layer
   (fn [[_ location-id]]
     [(subscribe [:db-locations])
-     (subscribe [:location-editor/npcs location-id])
+     (subscribe [:location-editor/characters location-id])
      (subscribe [:location-editor/player-position location-id])])
-  (fn [[locations npcs player-position] [_ location-id]]
-    (-> (locations location-id)
-        (cond->
-          (some? player-position)
-          (assoc :player-position player-position))
-        (assoc :npcs npcs)
-        (u/update-values
-          :connection-triggers
-          (fn [[target-id _]]
-            (get-in locations [target-id :display-name]))))))
+  (fn [[locations characters player-position] [_ location-id]]
+    {:dimension (get-in locations [location-id :dimension])
+     :npcs characters
+     :player-position player-position}))
 
 (reg-sub
   :location-editor/available-npcs

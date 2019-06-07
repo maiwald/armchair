@@ -18,6 +18,11 @@
     (assoc-in db [:location-editor :active-texture] texture)))
 
 (reg-event-meta
+  :location-editor/set-active-tool
+  (fn [db [_ tool]]
+    (assoc-in db [:location-editor :active-tool] tool)))
+
+(reg-event-meta
   :location-editor/set-active-walk-state
   (fn [db [_ value]]
     (assoc-in db [:location-editor :active-walk-state] value)))
@@ -125,13 +130,15 @@
 (reg-event-data
   :location-editor/remove-trigger
   (fn [db [_ location from]]
-    (update-in db [:locations location :connection-triggers] #(dissoc % from))))
+    (update-in db [:locations location :connection-triggers] dissoc from)))
 
 (reg-event-data
   :location-editor/paint
-  (fn [db [_ location-id tile]]
-    (let [{:keys [active-texture]} (:location-editor db)]
-      (assoc-in db [:locations location-id :background tile] active-texture))))
+  (fn [db [_ location-id layer-id tile]]
+    (let [{:keys [active-tool active-texture]} (:location-editor db)]
+      (case active-tool
+        :brush (assoc-in db [:locations location-id layer-id tile] active-texture)
+        :eraser (update-in db [:locations location-id layer-id] dissoc tile)))))
 
 (reg-event-data
   :location-editor/set-walkable
@@ -155,7 +162,11 @@
       (->> (update-in db [:locations location-id]
                       (fn [location]
                         (->> (assoc location :dimension new-dimension)
-                             (setval [(multi-path :background :connection-triggers) MAP-KEYS out-of-bounds?] NONE)
+                             (setval [(multi-path :background1
+                                                  :background2
+                                                  :foreground1
+                                                  :foreground2
+                                                  :connection-triggers) MAP-KEYS out-of-bounds?] NONE)
                              (setval [:blocked ALL out-of-bounds?] NONE))))
 
            ;; remove OOB dialogues
