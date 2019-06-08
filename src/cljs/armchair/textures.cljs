@@ -98,7 +98,15 @@
                         [0 4] :stone_grass_bottom-left
                         [1 4] :stone_grass_bottom-right
                         [0 3] :stone_grass_top-left
-                        [1 3] :stone_grass_top-right}
+                        [1 3] :stone_grass_top-right
+                        [12 7] :market-crate1
+                        [13 7] :market-crate2
+                        [14 7] :market-crate3
+                        [15 7] :market-crate4
+                        [12 9] :market-crate5
+                        [13 9] :market-crate6
+                        [14 9] :market-crate7
+                        [15 9] :market-crate8}
      :misc {[21 0] :wall
             [20 0] :stairs
             [17 0] :red_wall-top-left

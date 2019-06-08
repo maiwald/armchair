@@ -11,13 +11,18 @@
 - restructure navigation
 - zoom in dialogue editor
 - consolidate dialogue states and switches
+- select and paint multiple texture sprites
 - sounds & music
 - state invariants
 - save file for game state
+- desktop version for easier file access
+- release to itch.io as free game ;)
 
 # nice things
+- custom layers and layer order
+- allow whole layers to be treated as not-walkable
 - show player silhouette when behind foreground texture
-- show incoming connections
+- show incoming connections in location editor
 - allow creating switches in dialogue editor
 - show debug state variables in game
 - typing animation for dialogue screens
@@ -25,11 +30,11 @@
 - location preview in map
 - stage direction dialogue nodes
 - separate moving viewport from moving dialogue node positions
-- make modal changes apply on submit
 - copy and paste for background texture sets
 - organize and cluster background textures
-- prevent placing npcs on taken tiles
 - remove slds dependency
 - validation error notifications and form states
 - redesign dialogue screen to use pixel font
-- brush sizes & fill tool
+- brush sizes & fill tool for location editor
+- show previews in character avatar selection
+- quick-add (with autofocus) for next dialogue node
