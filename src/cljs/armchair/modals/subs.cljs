@@ -4,16 +4,6 @@
             [armchair.util :as u]))
 
 (reg-sub
-  :modal/switch-form
-  :<- [:modal]
-  (fn [modal]
-    (if-let [{:keys [display-name values]} (:switch-form modal)]
-      {:display-name display-name
-       :values (for [[index v] (zipmap (range (count values)) values)
-                     :when (not (contains? v :deleted))]
-                 [index (:display-name v)])})))
-
-(reg-sub
   :modal/conditions-form
   :<- [:modal]
   :<- [:db-switches]
