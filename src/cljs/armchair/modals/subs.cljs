@@ -4,35 +4,6 @@
             [armchair.util :as u]))
 
 (reg-sub
-  :modal/conditions-form
-  :<- [:modal]
-  :<- [:db-switches]
-  :<- [:db-switch-values]
-  (fn [[modal switches switch-values]]
-    (if-let [{:keys [terms conjunction]} (:conditions-form modal)]
-      (let [switch-options (u/map-values :display-name switches)
-            used-switches (set (map :switch-id terms))
-            operator-options (u/map-values :display-name config/condition-operators)]
-        {:conjunction conjunction
-         :terms
-         (map-indexed
-           (fn [index {:keys [switch-id] :as c}]
-             (let [value-options (->> switch-id
-                                      switches
-                                      :value-ids
-                                      (map (fn [id]
-                                             [id (-> id
-                                                     switch-values
-                                                     :display-name)])))]
-               [index (assoc c
-                             :switch-options (apply dissoc switch-options
-                                                    (disj used-switches switch-id))
-                             :operator-options operator-options
-                             :switch-value-options value-options)]))
-           terms)}))))
-
-
-(reg-sub
   :dialogue/modal-line
   :<- [:db-lines]
   :<- [:db-dialogues]
