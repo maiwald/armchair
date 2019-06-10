@@ -18,7 +18,7 @@
   (let [dialogues (<sub [:dialogue-list])]
     [slds/resource-page "Dialogues"
      {:columns [:texture :character :synopsis :location :actions]
-      :collection (vals dialogues)
+      :collection dialogues
       :cell-views {:character (fn [{:keys [id display-name]}]
                                 [:a {:on-click #(>evt [:open-character-modal id])}
                                  display-name])
@@ -41,7 +41,7 @@
   (let [characters (<sub [:character-list])]
     [slds/resource-page "Characters"
      {:columns [:texture :display-name :color :line-count :actions]
-      :collection (vals characters)
+      :collection characters
       :cell-views {:color (fn [color] [slds/badge color color])
                    :texture (fn [texture]
                               [c/sprite-texture texture])
