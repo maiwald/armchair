@@ -60,14 +60,9 @@
                    :color character-color
                    :on-connect-end #(>evt [:end-connecting-lines line-id])
                    :actions [(when-not (or initial-line? (some? state))
-                               ["tag"
-                                "Create named state"
-                                #(>evt [:open-dialogue-state-modal line-id])])
+                               ["tag" "Create named state" #(>evt [:open-dialogue-state-modal line-id])])
                              (when-not initial-line?
-                               ["trash"
-                                "Delete"
-                                #(when (js/confirm "Are your sure you want to delete this line?")
-                                   (>evt [:delete-line line-id]))])
+                               ["trash" "Delete" #(>evt [:delete-line line-id])])
                              ["edit" "Edit" #(>evt [:open-npc-line-modal line-id])]]}
      (cond
        initial-line? [:div {:class "line__state"}
@@ -92,8 +87,7 @@
         edit-condition #(>evt [:armchair.modals.unlock-conditions-form/open line-id index])
         move-up #(>evt [:dialogue-editor/move-option line-id index :up])
         move-down #(>evt [:dialogue-editor/move-option line-id index :down])
-        delete #(when (js/confirm "Do you really want to delete this option?")
-                  (>evt [:dialogue-editor/delete-option line-id index]))]
+        delete #(>evt [:dialogue-editor/delete-option line-id index])]
     (fn [line-id index {:keys [text connected? conditions condition-conjunction]}]
       [:li
        [c/action-wrapper {:actions
@@ -129,11 +123,8 @@
                             :on-change handle-text-change}]]]]])))
 
 (defn player-line-component [line-id]
-  (letfn [(action-delete [e]
-            (when (js/confirm "Are your sure you want to delete this line?")
-              (>evt [:delete-line line-id])))
-          (action-add-option [e]
-            (>evt [:dialogue-editor/add-option line-id]))]
+  (letfn [(action-delete [e] (>evt [:delete-line line-id]))
+          (action-add-option [e] (>evt [:dialogue-editor/add-option line-id]))]
     (fn [line-id]
       (let [options (<sub [:dialogue-editor/player-line-options line-id])]
         [c/graph-node {:title "Player"
@@ -165,11 +156,8 @@
       [icon "times-circle"]]]))
 
 (defn trigger-node-component [id]
-  (letfn [(action-delete [e]
-            (when (js/confirm "Are your sure you want to delete this trigger node")
-              (>evt [:dialogue-editor/delete-trigger-node id])))
-          (action-add-trigger [e]
-            (>evt [:modal/open-trigger-creation id]))]
+  (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-trigger-node id]))
+          (action-add-trigger [e] (>evt [:modal/open-trigger-creation id]))]
     (fn [id]
       (let [{:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
         [c/graph-node {:title "Triggers"
