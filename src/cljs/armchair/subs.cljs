@@ -34,14 +34,14 @@
   :<- [:db-lines]
   (fn [[characters lines] _]
     (let [line-counts (->> (vals lines)
-                           (u/where :kind :npc)
                            (group-by :character-id)
                            (u/map-values count))]
-      (u/map-values (fn [{id :entity/id :as character}]
-                      (assoc character
-                             :id id
-                             :line-count (get line-counts id 0)))
-                    characters))))
+      (->> (vals characters)
+           (map (fn [{id :entity/id :as character}]
+                  (assoc character
+                         :id id
+                         :line-count (get line-counts id 0))))
+           (sort-by :display-name)))))
 
 (reg-sub
   :switch-list
@@ -49,12 +49,13 @@
   :<- [:db-switch-values]
   (fn [[switches switch-values] _]
     (let [value-name (comp :display-name switch-values)]
-      (map
-        (fn [[id {:keys [display-name value-ids]}]]
-          {:id id
-           :display-name display-name
-           :values (->> value-ids (map value-name) (join ", "))})
-        switches))))
+      (->> switches
+           (map
+             (fn [[id {:keys [display-name value-ids]}]]
+               {:id id
+                :display-name display-name
+                :values (->> value-ids (map value-name) (join ", "))}))
+           (sort-by :display-name)))))
 
 
 (reg-sub
@@ -139,16 +140,17 @@
   :<- [:db-locations]
   :<- [:db-characters]
   (fn [[dialogues locations characters]]
-    (u/map-values
-      (fn [{id :entity/id :keys [synopsis character-id location-id]}]
-        (let [character (characters character-id)
-              location (locations location-id)]
-          {:id id
-           :synopsis synopsis
-           :character (merge {:id character-id} character)
-           :texture (:texture character)
-           :location (merge {:id location-id} location)}))
-      dialogues)))
+    (->> (vals dialogues)
+         (map
+           (fn [{id :entity/id :keys [synopsis character-id location-id]}]
+             (let [character (characters character-id)
+                   location (locations location-id)]
+               {:id id
+                :synopsis synopsis
+                :character (merge {:id character-id} character)
+                :texture (:texture character)
+                :location (merge {:id location-id} location)})))
+         (sort-by #(get-in % [:character :display-name])))))
 
 (reg-sub
   :location-options
