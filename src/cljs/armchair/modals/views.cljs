@@ -5,7 +5,8 @@
             [armchair.config :as config]
             [armchair.util :as u :refer [<sub >evt stop-e! e->val]]
             [armchair.textures :refer [character-textures]]
-            [armchair.modals.connection-trigger-creation :as connection-trigger-creation]))
+            [armchair.modals.connection-trigger-creation :as connection-trigger-creation]
+            [armchair.modals.switch-form :as switch-form]))
 
 (defn dialogue-creation-modal [{:keys [character-id synopsis]}]
   [slds/modal {:title "Create Dialogue"
@@ -103,27 +104,6 @@
                     :disabled (nil? switch-id)
                     :on-change #(>evt [:modal/update-trigger-value (uuid (e->val %))])}]]))
 
-(defn switch-form-modal []
-  (let [{:keys [display-name values]} (<sub [:modal/switch-form])]
-    [slds/modal {:title "Switch"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [:modal/save-switch])}
-     [input/text {:label "Name"
-                  :on-change #(>evt [:modal/update-switch-name (e->val %)])
-                  :value display-name}]
-     (for [[index value-name] values]
-       ^{:key (str "switch-value" index)}
-       [:div
-        [input/text {:label "Value"
-                     :on-change #(>evt [:modal/update-switch-value index (e->val %)])
-                     :value value-name}]
-        [:a {:on-mouse-down stop-e!
-             :on-click #(>evt [:modal/remove-switch-value index])}
-         [icon "times-circle"]]])
-     [c/button {:title "Add Option"
-                :icon "plus"
-                :on-click #(>evt [:modal/add-switch-value])}]]))
-
 (defn conditions-form-term [index {:keys [switch-id switch-options
                                           operator operator-options
                                           switch-value-id switch-value-options]}]
@@ -183,6 +163,6 @@
       :character-form              [character-form-modal (:character-form modal)]
       :location-creation           [location-creation-modal (:location-creation modal)]
       :trigger-creation            [trigger-creation-modal (:trigger-creation modal)]
-      :switch-form                 [switch-form-modal]
+      :switch-form                 [switch-form/modal]
       :conditions-form             [conditions-form-modal]
       :connection-trigger-creation [connection-trigger-creation/modal (:connection-trigger-creation modal)])))

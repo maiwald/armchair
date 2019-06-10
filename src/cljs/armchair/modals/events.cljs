@@ -1,18 +1,23 @@
 (ns armchair.modals.events
   (:require [clojure.spec.alpha :as s]
             [clojure.string :refer [blank?]]
-            [armchair.config :as config]
             [armchair.events :refer [reg-event-data reg-event-meta]]
-            [armchair.undo :refer [record-undo]]
             [armchair.util :as u]))
 
 (defn assert-no-open-modal [db]
   (assert (not (contains? db :modal))
           "Attempting to open a modal while modal is open!"))
 
-(defn assert-conditions-modal [db]
-  (assert (contains? (:modal db) :conditions-form)
-          "No conditions form open. Cannot set value!"))
+(defn build-modal-assertion [modal-key]
+  (fn [db event-name]
+    (assert (contains? (:modal db) modal-key)
+            (str "Modal " modal-key " not present."
+                 (when event-name " Cannot execute " event-name "!")))))
+
+;; specific Modals
+
+(def assert-conditions-modal
+  (build-modal-assertion :conditions-form))
 
 (reg-event-meta
   :close-modal
@@ -83,78 +88,6 @@
         (s/valid? :player-option/condition condition)
         (-> (dissoc :modal)
             (assoc-in [:player-options player-option-id :condition] condition))))))
-
-(defn assert-switch-modal [db]
-  (assert (contains? (:modal db) :switch-form)
-          "No switch form open. Cannot set value!"))
-
-(reg-event-meta
-  :modal/open-switch-modal
-  (fn [db [_ id]]
-    (assert-no-open-modal db)
-    (assoc-in db [:modal :switch-form]
-              (if-let [{:keys [display-name value-ids]} (get-in db [:switches id])]
-                {:switch-id id
-                 :display-name display-name
-                 :values (mapv (:switch-values db) value-ids)}
-                {:display-name ""
-                 :values (vector {:entity/id (random-uuid)
-                                  :entity/type :switch-value
-                                  :display-name "ON"}
-                                 {:entity/id (random-uuid)
-                                  :entity/type :switch-value
-                                  :display-name "OFF"})}))))
-
-(reg-event-meta
-  :modal/update-switch-name
-  (fn [db [_ value]]
-    (assert-switch-modal db)
-    (assoc-in db [:modal :switch-form :display-name] value)))
-
-(reg-event-meta
-  :modal/update-switch-value
-  (fn [db [_ index value]]
-    (assert-switch-modal db)
-    (assoc-in db [:modal :switch-form :values index :display-name] value)))
-
-(reg-event-meta
-  :modal/remove-switch-value
-  (fn [db [_ index]]
-    (assert-switch-modal db)
-    (assoc-in db [:modal :switch-form :values index :deleted] true)))
-
-(reg-event-meta
-  :modal/add-switch-value
-  (fn [db _]
-    (assert-switch-modal db)
-    (let [value-id (random-uuid)]
-      (-> db
-          (update-in [:modal :switch-form :values] conj {:entity/id (random-uuid)
-                                                         :entity/type :switch-value
-                                                         :display-name ""})))))
-
-(reg-event-data
-  :modal/save-switch
-  (fn [db _]
-    (assert-switch-modal db)
-    (let [modal-data (get-in db [:modal :switch-form])
-          {values nil
-           deleted-values true} (group-by :deleted (:values modal-data))
-          {:keys [switch-id display-name]} modal-data
-          id (or switch-id (random-uuid))
-          value-map (into {} (for [v values] [(:entity/id v) v]))]
-      (cond-> db
-        (s/valid? :modal/switch-form {:switch-id id
-                                      :display-name display-name
-                                      :values values})
-        (-> (dissoc :modal)
-            (assoc-in [:switches id]
-                      {:entity/id id
-                       :entity/type :switch
-                       :display-name display-name
-                       :value-ids (mapv :entity/id values)})
-            (update :switch-values merge value-map)
-            (update :switch-values #(apply dissoc % (map :entity/id deleted-values))))))))
 
 (defn assert-trigger-modal [db]
   (assert (contains? (:modal db) :trigger-creation)

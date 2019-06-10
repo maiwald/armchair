@@ -1,6 +1,5 @@
 # PRIVATE ALPHA BLOCKERS
 - unlock conditions modal ui
-- switch modal ui
 
 # BUGS
 - flickering inputs in character modal

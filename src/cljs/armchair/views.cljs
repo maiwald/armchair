@@ -67,8 +67,8 @@
                                           :on-click #(when (js/confirm "Are you sure you want to delete this switch?")
                                                        (>evt [:delete-switch id]))}]
                                [c/button {:icon "edit"
-                                          :on-click #(>evt [:modal/open-switch-modal id])}]])}
-      :new-resource #(>evt [:modal/open-switch-modal])}]))
+                                          :on-click #(>evt [:armchair.modals.switch-form/open id])}]])}
+      :new-resource #(>evt [:armchair.modals.switch-form/open])}]))
 
 (defn location-component [location-id]
   (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])]
