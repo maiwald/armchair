@@ -5,8 +5,9 @@
             [armchair.config :as config]
             [armchair.util :as u :refer [<sub >evt stop-e! e->val]]
             [armchair.textures :refer [character-textures]]
-            [armchair.modals.connection-trigger-creation :as connection-trigger-creation]
-            [armchair.modals.switch-form :as switch-form]))
+            [armchair.modals.connection-trigger-creation]
+            [armchair.modals.switch-form]
+            [armchair.modals.unlock-conditions-form]))
 
 (defn dialogue-creation-modal [{:keys [character-id synopsis]}]
   [slds/modal {:title "Create Dialogue"
@@ -104,56 +105,6 @@
                     :disabled (nil? switch-id)
                     :on-change #(>evt [:modal/update-trigger-value (uuid (e->val %))])}]]))
 
-(defn conditions-form-term [index {:keys [switch-id switch-options
-                                          operator operator-options
-                                          switch-value-id switch-value-options]}]
-  (letfn [(update-switch [e]
-            (>evt [:modal/update-condition-term-switch index (uuid (e->val e))]))
-          (update-operator [e]
-            (>evt [:modal/update-condition-term-operator index (keyword (e->val e))]))
-          (update-value [e]
-            (>evt [:modal/update-condition-term-value index (uuid (e->val e))]))]
-    [:li {:class "condition-select"}
-     [:div {:class "condition-select__switch"}
-      [input/select {:on-change update-switch
-                     :options switch-options
-                     :value switch-id}]]
-     [:div {:class "condition-select__operator"}
-      [input/select {:on-change update-operator
-                     :options operator-options
-                     :value operator}]]
-     [:div {:class "condition-select__value"}
-      [input/select {:on-change update-value
-                     :disabled (empty? switch-value-options)
-                     :options switch-value-options
-                     :value switch-value-id}]]
-     [:div {:class "condition-select__delete"}
-      [:a {:on-click #(>evt [:modal/remove-condition-term index])}
-       [icon "trash" "Delete condition"]]]]))
-
-(defn conditions-form-modal []
-  (letfn [(close-modal [e] (>evt [:close-modal]))
-          (save-conditions [e] (>evt [:modal/save-condition]))
-          (add-condition [e] (>evt [:modal/add-condition-term]))
-          (update-conjunction [e]
-            (>evt [:modal/update-condition-conjunction (keyword (e->val e))]))]
-    (fn []
-      (let [{:keys [terms conjunction]} (<sub [:modal/conditions-form])]
-        [slds/modal {:title "Unlock Conditions"
-                     :close-handler close-modal
-                     :confirm-handler save-conditions}
-         (when (< 1 (count terms))
-           [input/select {:on-change update-conjunction
-                               :options (u/map-values :display-name config/condition-conjunctions)
-                               :value conjunction}])
-         [:ul
-          (for [[index term] terms]
-            ^{:key (str "condition-select" index)}
-            [conditions-form-term index term])]
-         [c/button {:title "Add Condition"
-                    :icon "plus"
-                    :on-click add-condition}]]))))
-
 (defn modal []
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
@@ -163,6 +114,6 @@
       :character-form              [character-form-modal (:character-form modal)]
       :location-creation           [location-creation-modal (:location-creation modal)]
       :trigger-creation            [trigger-creation-modal (:trigger-creation modal)]
-      :switch-form                 [switch-form/modal]
-      :conditions-form             [conditions-form-modal]
-      :connection-trigger-creation [connection-trigger-creation/modal (:connection-trigger-creation modal)])))
+      :switch-form                 [armchair.modals.switch-form/modal]
+      :unlock-conditions-form      [armchair.modals.unlock-conditions-form/modal]
+      :connection-trigger-creation [armchair.modals.connection-trigger-creation/modal (:connection-trigger-creation modal)])))

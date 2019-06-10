@@ -89,7 +89,7 @@
 
 (defn player-line-option-component [line-id index option total-count]
   (let [handle-text-change #(>evt [:dialogue-editor/update-option line-id index %])
-        edit-condition #(>evt [:modal/open-condition-modal line-id index])
+        edit-condition #(>evt [:armchair.modals.unlock-conditions-form/open line-id index])
         move-up #(>evt [:dialogue-editor/move-option line-id index :up])
         move-down #(>evt [:dialogue-editor/move-option line-id index :down])
         delete #(when (js/confirm "Do you really want to delete this option?")

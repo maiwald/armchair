@@ -1,6 +1,3 @@
-# PRIVATE ALPHA BLOCKERS
-- unlock conditions modal ui
-
 # BUGS
 - flickering inputs in character modal
 - drag and drop preview images are broken

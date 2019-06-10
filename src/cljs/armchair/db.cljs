@@ -315,7 +315,7 @@
                                 :modal/location-creation
                                 :modal/trigger-creation
                                 :modal/switch-form
-                                :modal/conditions-form
+                                :modal/unlock-conditions-form
                                 :modal/connection-trigger-creation
                                 ::npc-line-id
                                 ::dialogue-state]))
@@ -345,7 +345,7 @@
   (s/coll-of ::switch-value
              :min-count 2))
 
-(s/def :modal/conditions-form
+(s/def :modal/unlock-conditions-form
   (s/keys :req-un [::player-option-id
                    :condition/terms
                    :condition/conjunction]))

@@ -1,6 +1,7 @@
 (ns armchair.modals.events
   (:require [clojure.spec.alpha :as s]
             [clojure.string :refer [blank?]]
+            [armchair.config :as config]
             [armchair.events :refer [reg-event-data reg-event-meta]]
             [armchair.util :as u]))
 
@@ -16,78 +17,10 @@
 
 ;; specific Modals
 
-(def assert-conditions-modal
-  (build-modal-assertion :conditions-form))
-
 (reg-event-meta
   :close-modal
   (fn [db [_ modal-fn | args]]
     (dissoc db :modal)))
-
-(reg-event-meta
-  :modal/open-condition-modal
-  (fn [db [_ line-id index]]
-    (assert-no-open-modal db)
-    (let [option-id (get-in db [:lines line-id :options index])
-          {:keys [terms conjunction]
-           :or {terms (vector {})
-                conjunction :and}} (get-in db [:player-options option-id :condition])]
-      (assoc-in db [:modal :conditions-form]
-                {:player-option-id option-id
-                 :conjunction conjunction
-                 :terms terms}))))
-
-(reg-event-meta
-  :modal/update-condition-conjunction
-  (fn [db [_ value]]
-    (assert-conditions-modal db)
-    (assoc-in db [:modal :conditions-form :conjunction] value)))
-
-(reg-event-meta
-  :modal/add-condition-term
-  (fn [db]
-    (assert-conditions-modal db)
-    (update-in db [:modal :conditions-form :terms]
-               conj {})))
-
-(reg-event-meta
-  :modal/remove-condition-term
-  (fn [db [_ index]]
-    (assert-conditions-modal db)
-    (update-in db [:modal :conditions-form :terms]
-               u/removev index)))
-
-(reg-event-meta
-  :modal/update-condition-term-switch
-  (fn [db [_ index value]]
-    (assert-conditions-modal db)
-    (-> db
-        (assoc-in [:modal :conditions-form :terms index :switch-id] value)
-        (update-in [:modal :conditions-form :terms index] dissoc :switch-value-id))))
-
-(reg-event-meta
-  :modal/update-condition-term-operator
-  (fn [db [_ index value]]
-    (assert-conditions-modal db)
-    (assoc-in db [:modal :conditions-form :terms index :operator] value)))
-
-(reg-event-meta
-  :modal/update-condition-term-value
-  (fn [db [_ index value]]
-    (assert-conditions-modal db)
-    (assoc-in db [:modal :conditions-form :terms index :switch-value-id] value)))
-
-(reg-event-data
-  :modal/save-condition
-  (fn [db]
-    (assert-conditions-modal db)
-    (let [{:keys [player-option-id conjunction terms]} (get-in db [:modal :conditions-form])
-          condition {:conjunction conjunction
-                     :terms terms}]
-      (cond-> db
-        (s/valid? :player-option/condition condition)
-        (-> (dissoc :modal)
-            (assoc-in [:player-options player-option-id :condition] condition))))))
 
 (defn assert-trigger-modal [db]
   (assert (contains? (:modal db) :trigger-creation)
