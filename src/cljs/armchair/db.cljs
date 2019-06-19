@@ -13,7 +13,7 @@
 
 ;; Migrations
 
-(def db-version 7)
+(def db-version 8)
 
 (def migrations
   "Map of migrations. Key is the version we are coming from."
@@ -86,7 +86,10 @@
                               :foreground1 {}
                               :foreground2 {})
                        (rename-keys {:background :background1}))
-                  db))})
+                  db))
+   7 (fn [db]
+       "Remove nil as value for line text"
+       (setval [:lines MAP-VALS (must :text) nil?] "" db))})
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)
@@ -110,7 +113,7 @@
                       :trigger
                       :switch
                       :switch-value})
-(s/def ::text #(not (string/blank? %)))
+(s/def ::text string?)
 (s/def :type/point (s/tuple integer? integer?))
 (s/def :type/rect (s/and (s/tuple :type/point :type/point)
                      (fn [[[x1 y1] [x2 y2]]] (and (< x1 x2)

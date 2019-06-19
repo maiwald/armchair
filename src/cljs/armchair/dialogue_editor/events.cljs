@@ -18,7 +18,7 @@
                                  :kind :npc
                                  :character-id character-id
                                  :dialogue-id dialogue-id
-                                 :text nil
+                                 :text ""
                                  :next-line-id nil})))))
 
 (reg-event-data
