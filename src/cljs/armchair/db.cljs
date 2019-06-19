@@ -31,18 +31,19 @@
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:entity/id v)))))
 (s/def ::texture (s/nilable #(contains? texture-set %)))
 
-(s/def :ui/cursor :type/point)
-
 ;; UI State
 
 (s/def ::cursor-start :type/point)
 (s/def ::connecting-lines (s/keys :req-un [::cursor-start ::line-id]
                                   :opt-un [::index]))
 (s/def ::connecting-locations (s/keys :req-un [::cursor-start ::location-id]))
-(s/def ::connecting (s/or :lines ::connecting-lines
-                          :locations ::connecting-locations))
+(s/def :ui/connecting (s/or :lines ::connecting-lines
+                            :locations ::connecting-locations))
 
-(s/def ::dragging (s/keys :req-un [::cursor-start ::ids]))
+(s/def :ui/dragging (s/keys :req-un [::cursor-start ::ids]))
+
+(s/def :ui/cursor :type/point)
+
 (s/def ::current-page (s/nilable string?))
 
 ;; Location Editor
@@ -300,9 +301,9 @@
                                        :state/locations
                                        :state/switches
                                        ::switch-values]
-                              :opt-un [::connecting
-                                       ::dragging
-                                       ::cursor
+                              :opt-un [:ui/connecting
+                                       :ui/dragging
+                                       :ui/cursor
                                        :modal/modal])))
 
 (s/def :state/player
