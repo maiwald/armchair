@@ -212,15 +212,19 @@
 ;; Dialogue & Lines
 
 (s/def ::next-line-id (s/or :line-id (s/nilable ::line-id)))
+(s/def :node/kind keyword?)
 
-(s/def ::npc-line (s/and #(= (:kind %) :npc)
-                         (s/keys :req-un [::text
-                                          ::next-line-id
-                                          ::character-id])))
+(defmulti node-type :kind)
+(defmethod node-type :npc [_]
+  (s/keys :req-un [::text
+                   ::next-line-id
+                   ::character-id]))
 
-(s/def ::player-line (s/and #(= (:kind %) :player)
-                            (s/keys :req-un [::options])))
+(defmethod node-type :player [_]
+  (s/keys :req-un [::options]))
+
 (s/def ::options (s/coll-of ::player-option-id :kind vector?))
+
 
 (s/def ::player-options (s/and ::entity-map
                                (s/map-of ::player-option-id ::player-option)))
@@ -248,8 +252,9 @@
 (s/def :condition/operator
   (-> config/condition-operators keys set))
 
-(s/def ::trigger-node (s/and #(= (:kind %) :trigger)
-                             (s/keys :req-un [::trigger-ids ::next-line-id])))
+(defmethod node-type :trigger [_]
+  (s/keys :req-un [::trigger-ids ::next-line-id]))
+
 (s/def ::trigger-ids (s/coll-of ::trigger-id :kind vector?))
 
 (s/def ::triggers (s/and ::entity-map
@@ -264,17 +269,14 @@
                                   :trigger/switch-id
                                   :trigger/switch-value]))
 
-(s/def :dialogue-node/kind #{:npc :player :trigger})
-(s/def ::npc-or-player-line (s/and (s/keys :req [:entity/id
-                                                 :entity/type]
-                                           :req-un [::dialogue-id
-                                                    :dialogue-node/kind])
-                                   (s/or :npc ::npc-line
-                                         :player ::player-line
-                                         :trigger ::trigger-node)))
+(s/def :node/node (s/and (s/keys :req [:entity/id
+                                       :entity/type]
+                                 :req-un [::dialogue-id
+                                          :node/kind])
+                         (s/multi-spec node-type :kind)))
 
 (s/def ::lines (s/and ::entity-map
-                      (s/map-of ::line-id ::npc-or-player-line)))
+                      (s/map-of ::line-id :node/node)))
 
 (s/def ::location-position :location/position)
 (s/def ::dialogue (s/keys :req [:entity/id
