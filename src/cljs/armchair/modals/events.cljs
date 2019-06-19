@@ -70,7 +70,7 @@
                    :switch-id switch-id
                    :switch-value switch-value}]
       (cond-> db
-        (s/valid? :armchair.db/trigger trigger)
+        (s/valid? :trigger/trigger trigger)
         (-> (update-in [:lines trigger-node-id :trigger-ids]
                        (fn [ts] (conj (vec ts) trigger-id)))
             (assoc-in [:triggers trigger-id] trigger)
@@ -111,7 +111,7 @@
                      :texture texture
                      :color color}]
       (cond-> db
-        (and (s/valid? :armchair.db/character character)
+        (and (s/valid? :character/character character)
              (some? texture))
         (-> (assoc-in [:characters id] character)
             (dissoc :modal))))))

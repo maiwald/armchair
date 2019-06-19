@@ -81,16 +81,17 @@
 (s/def ::color ::text)
 (s/def ::description ::text)
 
-(s/def ::location (s/keys :req [:entity/id
-                                :entity/type]
-                          :req-un [:location/dimension
-                                   ::display-name
-                                   :location/background1
-                                   :location/background2
-                                   :location/foreground1
-                                   :location/foreground2
-                                   :location/blocked
-                                   :location/connection-triggers]))
+(s/def :location/location
+  (s/keys :req [:entity/id
+                :entity/type]
+          :req-un [:location/dimension
+                   ::display-name
+                   :location/background1
+                   :location/background2
+                   :location/foreground1
+                   :location/foreground2
+                   :location/blocked
+                   :location/connection-triggers]))
 
 (s/def :location/position :type/point)
 (s/def :location/texture-layer (s/map-of :type/point ::texture))
@@ -111,13 +112,10 @@
 (s/def :connection-trigger/target-id ::location-id)
 (s/def :connection-trigger/target-position :location/position)
 
-(s/def ::locations (s/and ::entity-map
-                          (s/map-of ::location-id ::location)))
 
-(s/def ::character (s/keys :req [:entity/id :entity/type]
-                           :req-un [::display-name ::color ::texture]))
-(s/def ::characters (s/and ::entity-map
-                           (s/map-of ::character-id ::character)))
+(s/def :character/character
+  (s/keys :req [:entity/id :entity/type]
+          :req-un [::display-name ::color ::texture]))
 
 ;; Dialogue & Lines
 
@@ -167,73 +165,69 @@
 
 (s/def ::trigger-ids (s/coll-of ::trigger-id :kind vector?))
 
-(s/def ::triggers (s/and ::entity-map
-                         (s/map-of ::trigger-id ::trigger)))
-
 (s/def :trigger/switch-kind #{:dialogue-state :switch})
 (s/def :trigger/switch-id :entity/id)
-(s/def :trigger/switch-value :entity/id)
-(s/def ::trigger (s/keys :req [:entity/id
-                               :entity/type]
-                         :req-un [:trigger/switch-kind
-                                  :trigger/switch-id
-                                  :trigger/switch-value]))
+(s/def :trigger/switch-value ::switch-value-id)
+(s/def :trigger/trigger
+  (s/keys :req [:entity/id
+                :entity/type]
+          :req-un [:trigger/switch-kind
+                   :trigger/switch-id
+                   :trigger/switch-value]))
 
-(s/def :node/node (s/and (s/keys :req [:entity/id
-                                       :entity/type]
-                                 :req-un [::dialogue-id
-                                          :node/kind])
-                         (s/multi-spec node-type :kind)))
+(s/def :node/node
+  (s/and (s/keys :req [:entity/id
+                       :entity/type]
+                 :req-un [::dialogue-id
+                          :node/kind])
+         (s/multi-spec node-type :kind)))
 
 (s/def ::lines (s/and ::entity-map
                       (s/map-of ::line-id :node/node)))
 
 (s/def ::location-position :location/position)
-(s/def ::dialogue (s/keys :req [:entity/id
-                                :entity/type]
-                          :req-un [::character-id
-                                   :dialogue/initial-line-id
-                                   ::location-id
-                                   ::location-position
-                                   ::synopsis]
-                          :opt-un [:dialogue/states]))
+(s/def :dialogue/dialogue
+  (s/keys :req [:entity/id
+                :entity/type]
+          :req-un [::character-id
+                   :dialogue/initial-line-id
+                   ::location-id
+                   ::location-position
+                   :dialogue/synopsis]
+          :opt-un [:dialogue/states]))
 
 (s/def :dialogue/states (s/map-of ::line-id ::text))
 (s/def :dialogue/initial-line-id ::line-id)
-(s/def ::dialogues (s/and ::entity-map
-                          (s/map-of ::dialogue-id ::dialogue)))
 
-(s/def ::switches (s/and ::entity-map
-                         (s/map-of ::switch-id ::switch)))
-
-(s/def ::switch (s/keys :req [:entity/id
-                              :entity/type]
-                        :req-un [::display-name
-                                 :switch/value-ids]))
+(s/def :switch/switch
+  (s/keys :req [:entity/id
+                :entity/type]
+          :req-un [::display-name
+                   :switch/value-ids]))
 
 (s/def :switch/value-ids (s/coll-of ::switch-value-id
                                     :kind vector?
                                     :min-count 2))
 
 (s/def ::switch-values (s/and ::entity-map
-                              (s/map-of ::switch-value-id ::switch-value)))
+                              (s/map-of ::switch-value-id :switch/value)))
 
-(s/def ::switch-value (s/keys :req [:entity/id
-                                    :entity/type]
-                              :req-un [::display-name]))
+(s/def :switch/value (s/keys :req [:entity/id
+                                   :entity/type]
+                             :req-un [::display-name]))
 
 ;; Modals
 
 (s/def ::npc-line-id ::line-id)
-(s/def ::modal (s/keys :opt-un [:modal/character-form
-                                :modal/dialogue-creation
-                                :modal/location-creation
-                                :modal/trigger-creation
-                                :modal/switch-form
-                                :modal/unlock-conditions-form
-                                :modal/connection-trigger-creation
-                                ::npc-line-id
-                                ::dialogue-state]))
+(s/def :modal/modal (s/keys :opt-un [:modal/character-form
+                                     :modal/dialogue-creation
+                                     :modal/location-creation
+                                     :modal/trigger-creation
+                                     :modal/switch-form
+                                     :modal/unlock-conditions-form
+                                     :modal/connection-trigger-creation
+                                     ::npc-line-id
+                                     ::dialogue-state]))
 
 (s/def :modal/location-creation ::display-name)
 
@@ -242,7 +236,7 @@
           :opt-un [:entity/id]))
 
 (s/def :modal/dialogue-creation
-  (s/keys :req-un [::character-id ::synopsis]
+  (s/keys :req-un [::character-id :dialogue/synopsis]
           :opt-un [::location-id ::location-position]))
 
 (s/def :modal/trigger-creation
@@ -257,7 +251,7 @@
           :opt-un [::switch-id]))
 
 (s/def :switch-form/values
-  (s/coll-of ::switch-value
+  (s/coll-of :switch/value
              :min-count 2))
 
 (s/def :modal/unlock-conditions-form
@@ -296,23 +290,44 @@
                       ::player-options-must-not-point-to-player-line
                       ::location-connection-validation
                       (s/keys :req-un [::current-page
-                                       ::player
-                                       ::characters
-                                       ::dialogues
+                                       :state/player
+                                       :state/characters
+                                       :state/dialogues
                                        ::player-options
                                        ::lines
-                                       ::triggers
+                                       :state/triggers
                                        ::location-editor
-                                       ::locations
-                                       ::switches
+                                       :state/locations
+                                       :state/switches
                                        ::switch-values]
                               :opt-un [::connecting
                                        ::dragging
                                        ::cursor
-                                       ::modal])))
+                                       :modal/modal])))
 
-(s/def ::player (s/keys :req-un [::location-id
-                                 ::location-position]))
+(s/def :state/player
+  (s/keys :req-un [::location-id
+                   ::location-position]))
+
+(s/def :state/dialogues
+  (s/and ::entity-map
+         (s/map-of ::dialogue-id :dialogue/dialogue)))
+
+(s/def :state/switches
+  (s/and ::entity-map
+         (s/map-of ::switch-id :switch/switch)))
+
+(s/def :state/locations
+  (s/and ::entity-map
+         (s/map-of ::location-id :location/location)))
+
+(s/def :state/characters
+  (s/and ::entity-map
+         (s/map-of ::character-id :character/character)))
+
+(s/def :state/triggers
+  (s/and ::entity-map
+         (s/map-of ::trigger-id :trigger/trigger)))
 
 (defn clear-dialogue-state [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])
