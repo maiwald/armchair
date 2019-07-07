@@ -266,7 +266,8 @@
   (if (interacting? @state)
     (let [current-line-id (get-in @state [:interaction :line-id])
           current-triggers (get-in @data [:lines current-line-id :triggers])
-          {option-triggers :triggers :keys [next-line-id]} (interaction-option @state)]
+          {option-triggers :triggers
+           :keys [next-line-id]} (interaction-option @state)]
       (swap! state
              #(-> %
                   (update :dialogue-states merge

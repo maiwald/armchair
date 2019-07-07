@@ -86,7 +86,7 @@
          :trigger-node-ids (map :entity/id (lines-by-kind :trigger))
          :line-connections (->> (concat (lines-by-kind :npc)
                                         (lines-by-kind :trigger))
-                                (filter #(some? (:next-line-id %)))
+                                (filter #(contains? % :next-line-id))
                                 (map #(vector (:entity/id %) (:next-line-id %))))
          :option-connections (reduce
                                (fn [acc {start :entity/id :keys [options]}]

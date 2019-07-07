@@ -226,7 +226,6 @@
                                         :kind :npc
                                         :character-id (:character-id modal-data)
                                         :dialogue-id dialogue-id
-                                        :text nil
-                                        :next-line-id nil})
+                                        :text ""})
             (dissoc :modal))))))
 
