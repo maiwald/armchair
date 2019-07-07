@@ -1,7 +1,7 @@
 (ns armchair.migrations
   (:require [clojure.set :refer [rename-keys]]
             [com.rpl.specter
-             :refer [collect-one must FIRST LAST ALL MAP-VALS]
+             :refer [collect-one must NONE FIRST LAST ALL MAP-VALS]
              :refer-macros [select setval transform]]
             [armchair.db :refer [db-version]]
             [armchair.util :as u]))
@@ -80,7 +80,13 @@
                   db))
    7 (fn [db]
        "Remove nil as value for line text"
-       (setval [:lines MAP-VALS (must :text) nil?] "" db))})
+       (setval [:lines MAP-VALS (must :text) nil?] "" db))
+
+   8 (fn [db]
+       "Remove next-line-id key instead of storing nil"
+       (->> db
+         (setval [:lines MAP-VALS #(nil? (:next-line-id %)) :next-line-id] NONE)
+         (setval [:player-options MAP-VALS #(nil? (:next-line-id %)) :next-line-id] NONE)))})
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)

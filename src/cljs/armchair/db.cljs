@@ -10,7 +10,7 @@
             [armchair.config :as config]
             [armchair.util :as u]))
 
-(def db-version 8)
+(def db-version 9)
 
 ;; Types
 
@@ -120,14 +120,14 @@
 
 ;; Dialogue & Lines
 
-(s/def ::next-line-id (s/or :line-id (s/nilable ::line-id)))
+(s/def ::next-line-id ::line-id)
 (s/def :node/kind keyword?)
 
 (defmulti node-type :kind)
 (defmethod node-type :npc [_]
   (s/keys :req-un [::text
-                   ::next-line-id
-                   ::character-id]))
+                   ::character-id]
+          :opt-un [::next-line-id]))
 
 (defmethod node-type :player [_]
   (s/keys :req-un [::options]))
@@ -139,8 +139,9 @@
                                (s/map-of ::player-option-id ::player-option)))
 
 (s/def ::player-option (s/keys :req [:entity/id :entity/type]
-                               :req-un [::text ::next-line-id]
-                               :opt-un [:player-option/condition]))
+                               :req-un [::text]
+                               :opt-un [:player-option/condition
+                                        ::next-line-id]))
 
 (s/def :player-option/condition
   (s/keys :req-un [:condition/conjunction
@@ -162,7 +163,8 @@
   (-> config/condition-operators keys set))
 
 (defmethod node-type :trigger [_]
-  (s/keys :req-un [::trigger-ids ::next-line-id]))
+  (s/keys :req-un [::trigger-ids]
+          :opt-un [::next-line-id]))
 
 (s/def ::trigger-ids (s/coll-of ::trigger-id :kind vector?))
 

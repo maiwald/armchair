@@ -18,8 +18,7 @@
                                  :kind :npc
                                  :character-id character-id
                                  :dialogue-id dialogue-id
-                                 :text ""
-                                 :next-line-id nil})))))
+                                 :text ""})))))
 
 (reg-event-data
   :create-player-line
@@ -35,8 +34,7 @@
                                  :options [option-id]})
           (assoc-in [:player-options option-id] {:entity/id option-id
                                                  :entity/type :player-option
-                                                 :text ""
-                                                 :next-line-id nil})))))
+                                                 :text ""})))))
 
 (reg-event-data
   :create-trigger-node
@@ -47,8 +45,7 @@
           (assoc-in [:lines id] {:entity/id id
                                  :entity/type :line
                                  :kind :trigger
-                                 :dialogue-id dialogue-id
-                                 :next-line-id nil})))))
+                                 :dialogue-id dialogue-id})))))
 
 (reg-event-data
   :dialogue-editor/delete-trigger
@@ -63,7 +60,7 @@
   (fn [item]
     (cond-> item
       (= (:next-line-id item) id)
-      (assoc :next-line-id nil))))
+      (dissoc :next-line-id))))
 
 (reg-event-data
   :dialogue-editor/delete-trigger-node
@@ -135,7 +132,7 @@
 (reg-event-data
   :dialogue-editor/disconnect-line
   (fn [db [_ id]]
-    (assoc-in db [:lines id :next-line-id] nil)))
+    (update-in db [:lines id] dissoc :next-line-id)))
 
 ;; Option events
 
@@ -159,8 +156,7 @@
           (update-in [:lines line-id :options] conj option-id)
           (assoc-in [:player-options option-id] {:entity/id option-id
                                                  :entity/type :player-option
-                                                 :text ""
-                                                 :next-line-id nil})))))
+                                                 :text ""})))))
 
 (reg-event-data
   :dialogue-editor/update-option
@@ -180,4 +176,4 @@
   :dialogue-editor/disconnect-option
   (fn [db [_ id index]]
     (let [option-id (get-in db [:lines id :options index])]
-      (assoc-in db [:player-options option-id :next-line-id] nil))))
+      (update-in db [:player-options option-id] dissoc :next-line-id))))
