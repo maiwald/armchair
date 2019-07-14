@@ -1,18 +1,17 @@
 (ns armchair.game.pathfinding
-  (:require [tailrecursion.priority-map :refer [priority-map]]))
+  (:require [tailrecursion.priority-map :refer [priority-map]]
+            [armchair.math :refer [abs translate-point]]))
 
-(defn abs [x]
-  (.abs js/Math x))
+(defn manhattan-distance [p1 p2]
+  (+ (abs (- (:x p2) (:x p1)))
+     (abs (- (:y p2) (:y p1)))))
 
-(defn manhattan-distance [[x1 y1] [x2 y2]]
-  (+ (abs (- x2 x1)) (abs (- y2 y1))))
-
-(defn neighbours [[x y]]
-  [[(+ x 1) y]
-   [(- x 1) y]
-   [x (+ y 1)]
-   [x (- y 1)]
-   ])
+(defn neighbours [point]
+  (map #(apply translate-point point %)
+       [[-1 0]
+        [+1 0]
+        [0 -1]
+        [0 +1]]))
 
 (defn a-star [walkable? start end]
   (when (walkable? end)
