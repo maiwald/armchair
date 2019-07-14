@@ -3,7 +3,7 @@
             [com.rpl.specter
              :refer [keypath ALL MAP-KEYS MAP-VALS]
              :refer-macros [select select-one!]]
-            [armchair.math :refer [rect->0]]
+            [armchair.math :refer [relative-point]]
             [armchair.util :as u]))
 
 (reg-sub
@@ -120,7 +120,7 @@
           {:keys [dimension display-name]} (locations target-id)]
       {:id target-id
        :position position
-       :position-normalized (rect->0 dimension position)
+       :position-normalized (relative-point position dimension)
        :display-name display-name})))
 
 (reg-sub

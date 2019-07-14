@@ -48,8 +48,8 @@
          :x (+ x dx)
          :y (+ y dy)))
 
-(defn rect->0
-  "Normalize a point relative to a rect to a 0,0 based rect"
-  [rect point]
-  (point-delta (rect-top-left rect) point))
-
+(defn relative-point
+  "Convert *global* point to a Point relative to rect"
+  [point rect]
+  (let [[dx dy] (point-delta (rect-top-left rect) point)]
+    (Point. dx dy)))
