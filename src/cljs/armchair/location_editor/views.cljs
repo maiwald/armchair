@@ -5,7 +5,7 @@
             [armchair.components :as c]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
-            [armchair.math :refer [Point Rect translate-point rect->0 rect-contains?]]
+            [armchair.math :refer [Point Rect translate-point relative-point rect-contains?]]
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
             [armchair.textures :refer [texture-path background-textures]]))
 
@@ -239,7 +239,7 @@
                   [sidebar-player]
                   [sidebar-npcs location-id]])])]))
 
-(defn tile-style [[x y]]
+(defn tile-style [{:keys [x y]}]
   {:width (str config/tile-size "px")
    :height (str config/tile-size "px")
    :top (* y config/tile-size)
@@ -253,7 +253,7 @@
      (if-let [tile-data (f tile)]
        [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
               :class "level__tile"
-              :style (tile-style (rect->0 rect tile))}
+              :style (tile-style (relative-point tile rect))}
         tile-data]))])
 
 (defn do-some-tiles [rect coll layer-title f]
@@ -261,7 +261,7 @@
              :when (rect-contains? rect tile)]
          [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
                 :class "level__tile"
-                :style (tile-style (rect->0 rect tile))}
+                :style (tile-style (relative-point tile rect))}
           (f tile item)])])
 
 (defn dropzone [{:keys [dimension highlight occupied on-drop]}]
@@ -290,7 +290,7 @@
   (when (rect-contains? rect position)
     [:div {:key (str "location-cell:player:" position)
            :class "level__tile"
-           :style (tile-style (rect->0 rect position))}
+           :style (tile-style (relative-point position rect))}
      [c/sprite-texture :human "Player"]]))
 
 (defn entity-layer [location-id override-rect]
@@ -324,9 +324,10 @@
 
 (defn location-preview [location-id preview-tile]
   (let [tiles-around 3
-        top-left (translate-point preview-tile (- tiles-around) (- tiles-around))
-        dimension (Rect. (:x top-left) (:y top-left)
-                         (inc (* 2 tiles-around)) (inc (* 2 tiles-around)))]
+        dimension (Rect. (- (:x preview-tile) tiles-around)
+                         (- (:y preview-tile) tiles-around)
+                         (inc (* 2 tiles-around))
+                         (inc (* 2 tiles-around)))]
     [:div {:class "level"
            :style {:width (u/px (* config/tile-size (:w dimension)))
                    :height (u/px (* config/tile-size (:h dimension)))}}
@@ -338,7 +339,7 @@
      [conntection-trigger-layer location-id dimension]
      [:div {:key "location-cell:highlight"
             :class "level__tile level__tile_highlight"
-            :style (tile-style [tiles-around tiles-around])}]]))
+            :style (tile-style (relative-point preview-tile dimension))}]]))
 
 (defn position-select [location-id on-select selected]
   (let [{:keys [dimension]} (<sub [:location-editor/location location-id])
@@ -360,7 +361,7 @@
       (when selected
         [:div {:key "location-cell:selected"
                :class "level__tile level__tile_highlight"
-               :style (tile-style (rect->0 dimension selected))}])
+               :style (tile-style (relative-point selected dimension))}])
       [do-all-tiles dimension "selectors"
        (fn [tile]
          (let [occupied? (contains? occupied tile)]
@@ -391,7 +392,8 @@
                                (>evt [:location-editor/remove-character id]))}]]))
 
 (defn trigger-popover [location-id tile]
-  (let [{:keys [id display-name position position-normalized]}
+  (let [{:keys [id display-name position]
+         {normalized-x :x normalized-y :y} :position-normalized}
         (<sub [:location-editor/trigger-popover location-id tile])]
     [:div {:class "level-popover"}
      [:ul
@@ -400,7 +402,7 @@
        [:span.level-popover__reference__payload
         [:a {:on-click #(do (>evt [:close-popover])
                             (>navigate :location-edit :id id))}
-         display-name " " (str position-normalized)]
+         (str display-name " [" normalized-x " " normalized-y "]")]
         [location-preview id position]]]]
      [c/button {:title "Remove Exit"
                 :type :danger
