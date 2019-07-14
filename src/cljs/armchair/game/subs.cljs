@@ -141,11 +141,9 @@
 (reg-sub
   :game/player-data
   :<- [:db-player]
-  :<- [:db-locations]
-  (fn [[{:keys [location-id location-position]} locations]]
-    (let [dimension (get-in locations [location-id :dimension])]
-      {:location-id location-id
-       :position location-position})))
+  (fn [{:keys [location-id location-position]}]
+    {:location-id location-id
+     :position location-position}))
 
 (reg-sub
   :game/locations

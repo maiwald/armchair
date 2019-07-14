@@ -3,6 +3,7 @@
             [com.rpl.specter
              :refer [keypath ALL MAP-KEYS MAP-VALS]
              :refer-macros [select select-one!]]
+            [armchair.math :refer [rect->0]]
             [armchair.util :as u]))
 
 (reg-sub
@@ -92,8 +93,8 @@
   :<- [:db-locations]
   (fn [locations [_ location-id]]
     (let [dimension (get-in locations [location-id :dimension])]
-      {:width (u/rect-width dimension)
-       :height (u/rect-height dimension)})))
+      {:width (:w dimension)
+       :height (:h dimension)})))
 
 (reg-sub
   :location-editor/npc-popover
@@ -119,7 +120,7 @@
           {:keys [dimension display-name]} (locations target-id)]
       {:id target-id
        :position position
-       :position-normalized (u/rect->0 dimension position)
+       :position-normalized (rect->0 dimension position)
        :display-name display-name})))
 
 (reg-sub

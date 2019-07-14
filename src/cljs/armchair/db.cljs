@@ -8,9 +8,10 @@
             [armchair.dummy-data :refer [dummy-data]]
             [armchair.textures :refer [background-textures texture-set]]
             [armchair.config :as config]
+            [armchair.math :refer [Point Rect]]
             [armchair.util :as u]))
 
-(def db-version 9)
+(def db-version 10)
 
 ;; Types
 
@@ -24,10 +25,15 @@
                       :switch
                       :switch-value})
 (s/def ::text string?)
-(s/def :type/point (s/tuple integer? integer?))
-(s/def :type/rect (s/and (s/tuple :type/point :type/point)
-                     (fn [[[x1 y1] [x2 y2]]] (and (< x1 x2)
-                                                  (< y1 y2)))))
+
+(s/def :type/x integer?)
+(s/def :type/y integer?)
+(s/def :type/w pos-int?)
+(s/def :type/h pos-int?)
+
+(s/def :type/point (s/keys :req-un [:type/x :type/y]))
+(s/def :type/rect (s/keys :req-un [:type/x :type/y :type/w :type/h]))
+
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:entity/id v)))))
 (s/def ::texture (s/nilable #(contains? texture-set %)))
 
@@ -43,6 +49,8 @@
 (s/def :ui/dragging (s/keys :req-un [::cursor-start ::ids]))
 
 (s/def :ui/cursor :type/point)
+
+(s/def :ui/positions (s/map-of uuid? :type/point))
 
 (s/def ::current-page (s/nilable string?))
 
@@ -95,16 +103,16 @@
                    :location/connection-triggers]))
 
 (s/def :location/position :type/point)
-(s/def :location/texture-layer (s/map-of :type/point ::texture))
+(s/def :location/texture-layer (s/map-of :location/position ::texture))
 
 (s/def :location/dimension :type/rect)
 (s/def :location/background1 :location/texture-layer)
 (s/def :location/background2 :location/texture-layer)
 (s/def :location/foreground1 :location/texture-layer)
 (s/def :location/foreground1 :location/texture-layer)
-(s/def :location/blocked (s/coll-of :type/point :kind set?))
+(s/def :location/blocked (s/coll-of :location/position :kind set?))
 (s/def :location/connection-triggers
-  (s/map-of :type/point :location/connection-trigger-target))
+  (s/map-of :location/position :location/connection-trigger-target))
 
 (s/def :location/connection-trigger-target
   (s/tuple :connection-trigger/target-id
@@ -292,7 +300,8 @@
 (s/def ::state (s/and ::dialogue-must-start-with-npc-line
                       ::player-options-must-not-point-to-player-line
                       ::location-connection-validation
-                      (s/keys :req-un [::current-page
+                      (s/keys :req [:ui/positions]
+                              :req-un [::current-page
                                        :state/player
                                        :state/characters
                                        :state/dialogues
@@ -362,12 +371,22 @@
     (select-keys db content-keys)))
 
 (defn serialize-db [db]
-  (let [w (t/writer :json)]
+  (let [w (t/writer :json
+                    {:handlers {Point (t/write-handler
+                                        (fn [] "point")
+                                        (fn [p] #js [(:x p) (:y p)]))
+                                Rect (t/write-handler
+                                       (fn [] "rect")
+                                       (fn [r] #js [(:x r) (:y r)
+                                                    (:w r) (:h r)]))}})]
     (t/write w {:version db-version
                 :payload (content-data db)})))
 
 (defn deserialize-db [json]
-  (let [r (t/reader :json {:handlers {"u" uuid}})]
+  (let [r (t/reader :json
+                    {:handlers {"u" uuid
+                                "point" (fn [[x y]] (Point. x y))
+                                "rect" (fn [[x y w h]] (Rect. x y w h))}})]
     (t/read r json)))
 
 ;; Default DB

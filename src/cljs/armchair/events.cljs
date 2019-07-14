@@ -13,6 +13,7 @@
                                         deserialize-db]]
             [armchair.migrations :refer [migrate]]
             [armchair.undo :refer [record-undo]]
+            [armchair.math :as m]
             [armchair.util :as u]))
 
 (def validate
@@ -163,9 +164,9 @@
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
     (let [{:keys [cursor-start ids]} dragging
-          delta (u/point-delta cursor-start cursor)]
+          [dx dy] (m/point-delta cursor-start cursor)]
       (-> db
-          (u/update-in-map :ui/positions ids u/translate-point delta)
+          (u/update-in-map :ui/positions ids m/translate-point dx dy)
           (dissoc :dragging :cursor)))))
 
 (reg-event-meta

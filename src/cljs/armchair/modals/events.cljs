@@ -3,6 +3,7 @@
             [clojure.string :refer [blank?]]
             [armchair.config :as config]
             [armchair.events :refer [reg-event-data reg-event-meta]]
+            [armchair.math :refer [Rect]]
             [armchair.util :as u]))
 
 (defn assert-no-open-modal [db]
@@ -143,7 +144,7 @@
           (assoc-in [:ui/positions id] config/default-ui-position)
           (assoc-in [:locations id] {:entity/id id
                                      :entity/type :location
-                                     :dimension [[0 0] [2 2]]
+                                     :dimension (Rect. 0 0 3 3)
                                      :background1 {}
                                      :background2 {}
                                      :foreground1 {}
