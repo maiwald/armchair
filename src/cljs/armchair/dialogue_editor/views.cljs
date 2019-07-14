@@ -6,6 +6,7 @@
             [armchair.routes :refer [>navigate]]
             [armchair.config :as config]
             [armchair.slds :as slds]
+            [armchair.math :refer [Point translate-point]]
             [armchair.util :as u :refer [<sub >evt stop-e! prevent-e! e->val e->left?]]))
 
 (def option-position-lookup (r/atom {}))
@@ -33,7 +34,7 @@
     (when (and (some? elem) (some? graph))
       (let [{:keys [right top]} (u/get-rect elem)
             top-offset (:top (u/get-rect graph))]
-        [right (- top top-offset)]))))
+        (Point. right (- top top-offset))))))
 
 (defn connector [{:keys [connected? connector disconnector]}]
   (if connected?
@@ -178,19 +179,19 @@
 (def top-offset 55)
 
 (defn line-connection [start end]
-  (let [[start-x start-y] (<sub [:ui/position start])
-        [end-x end-y] (<sub [:ui/position end])]
+  (let [start-pos (<sub [:ui/position start])
+        end-pos (<sub [:ui/position end])]
     [curved-connection
-     {:start (u/translate-point [start-x start-y] [(+ config/line-width 15) top-offset])
-      :end (u/translate-point [end-x end-y] [0 top-offset])}]))
+     {:start (translate-point start-pos (+ config/line-width 15) top-offset)
+      :end (translate-point end-pos 0 top-offset)}]))
 
 (defn option-connection [start index end]
   (let [_ (<sub [:ui/position start])
-        [end-x end-y] (<sub [:ui/position end])]
-    (when-let [start (get-option-start-position (get @option-position-lookup [start index]))]
+        end-pos (<sub [:ui/position end])]
+    (when-let [start-pos (get-option-start-position (get @option-position-lookup [start index]))]
       [curved-connection
-       {:start (u/translate-point start [35 20])
-        :end (u/translate-point [end-x end-y] [0 top-offset])}])))
+       {:start (translate-point start-pos 35 20)
+        :end (translate-point end-pos 0 top-offset)}])))
 
 (defn dialogue-editor [dialogue-id]
   (if-let [{:keys [npc-line-ids

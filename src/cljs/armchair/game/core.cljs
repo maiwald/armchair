@@ -14,6 +14,7 @@
                                      camera-tile-height
                                      camera-scale]]
             [armchair.textures :refer [load-textures sprite-lookup]]
+            [armchair.math :as m]
             [armchair.util :as u]
             [com.rpl.specter
              :refer [nthpath ALL]
@@ -54,12 +55,13 @@
   (let [{l :location-id} (:player @state)
         {:keys [dimension blocked npcs]} (get-in @data [:locations l])]
     (and
-      (u/rect-contains? dimension tile)
+      (m/rect-contains? dimension tile)
       (not (or (contains? blocked tile)
                (contains? npcs tile))))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
-  (u/translate-point
+  (apply
+    m/translate-point
     position
     (direction-map direction)))
 
@@ -93,11 +95,10 @@
 (def ctx (atom nil))
 (def texture-atlas (atom nil))
 
-(defn tile-visible? [camera [x y]]
-  (u/rect-intersects?
-    camera
-    [(u/tile->coord [x y])
-     (u/tile->coord [(+ x 1) (+ y 1)])]))
+(defn tile-visible? [camera {:keys [x y]}]
+  (m/rect-intersects? camera
+                      (m/Rect. (* x tile-size) (* y tile-size)
+                               tile-size tile-size)))
 
 (defn draw-texture [ctx texture coord]
   (when (some? @texture-atlas)
@@ -105,9 +106,9 @@
 
 (defn draw-sprite-texture [ctx texture dest-coord]
   (when (some? @texture-atlas)
-    (if-let [[file sprite-coord] (get sprite-lookup texture)]
+    (if-let [[file [x-offset y-offset]] (get sprite-lookup texture)]
       (if-let [sprite-sheet (get @texture-atlas file)]
-        (c/draw-image! ctx sprite-sheet sprite-coord dest-coord)
+        (c/draw-image! ctx sprite-sheet (m/Point. x-offset y-offset) dest-coord)
         (c/draw-image! ctx (@texture-atlas :missing_texture) dest-coord))
       (c/draw-image! ctx (@texture-atlas :missing_texture) dest-coord))))
 
@@ -115,11 +116,11 @@
   (when (some? @texture-atlas)
     (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
 
-(defn draw-background [ctx [[left top] [right bottom]] background camera]
+(defn draw-background [ctx rect background camera]
   (when (some? background)
-    (doseq [x (range left (inc right))
-            y (range top (inc bottom))
-            :let [tile [x y]
+    (doseq [x (range (:x rect) (+ (:x rect) (:w rect)))
+            y (range (:y rect) (+ (:y rect) (:h rect)))
+            :let [tile (m/Point. x y)
                   texture (get background tile)]
             :when (and (some? texture)
                        (tile-visible? camera tile))]
@@ -159,17 +160,18 @@
   (let [w 600
         h 300
         x (/ (- (c/width ctx) w) 2)
-        y (/ (- (c/height ctx) h) 2)]
+        y (/ (- (c/height ctx) h) 2)
+        dialogue-box-rect (m/Rect. x y w h)]
     (c/save! ctx)
     (c/set-fill-style! ctx "rgba(230, 230, 230, .9)")
-    (c/fill-rect! ctx [x y] w h)
+    (c/fill-rect! ctx dialogue-box-rect)
     (c/set-stroke-style! ctx "rgb(0, 0, 0)")
-    (c/stroke-rect! ctx [x y] w h)
+    (c/stroke-rect! ctx dialogue-box-rect)
 
     (c/set-fill-style! ctx "rgb(0, 0, 0)")
     (c/set-baseline! ctx "top")
     (c/set-font! ctx "23px serif")
-    (let [offset (c/draw-textbox! ctx text (u/translate-point [x y] [20 20]) (- w 40))]
+    (let [offset (c/draw-textbox! ctx text (m/translate-point (m/Point. x y) 20 20) (- w 40))]
       (c/set-font! ctx "18px serif")
       (let [w (- w 40)
             padding 6
@@ -182,42 +184,39 @@
             (if (= selected-option idx)
               (c/set-stroke-style! ctx "rgb(255, 0, 0)")
               (c/set-stroke-style! ctx "rgb(0, 0, 0)"))
-            (let [coord (u/translate-point [x y] [20 0])
-                  height (+ padding (c/draw-textbox! ctx option (u/translate-point coord [7 padding]) w))]
+            (let [coord (m/translate-point (m/Point. x y) 20 0)
+                  height (+ padding (c/draw-textbox! ctx option (m/translate-point coord 7 padding) w))
+                  option-rect (m/Rect. (:x coord) (:y coord) w height)]
               (if (= selected-option idx)
                 (c/set-fill-style! ctx "rgba(0, 0, 0, .1)")
                 (c/set-fill-style! ctx "rgba(0, 0, 0, 0)"))
-              (c/fill-rect! ctx coord w height)
+              (c/fill-rect! ctx option-rect)
 
               (c/set-line-width! ctx "1")
-              (c/stroke-rect! ctx coord w height)
+              (c/stroke-rect! ctx option-rect)
 
               (recur (inc idx)
                      (+ y height spacing)
                      options))))))
     (c/restore! ctx)))
 
-(defn draw-camera [ctx [left-top right-bottom]]
+(defn draw-camera [ctx {:keys [x y w h] :as camera}]
   (c/set-stroke-style! ctx "rgb(255, 0, 0)")
-  (c/stroke-rect! ctx
-                  left-top
-                  right-bottom)
+  (c/stroke-rect! ctx camera)
   (c/set-stroke-style! ctx "rgb(255, 255, 0)")
   (c/stroke-rect! ctx
-                  (u/translate-point left-top [(- tile-size) (- tile-size)])
-                  (u/translate-point right-bottom [tile-size tile-size])))
+                  (m/Rect. (- x tile-size) (- y tile-size)
+                           (+ w (* 2 tile-size)) (+ h (* 2 tile-size)))))
 
 
 (defn render [view-state]
   (when (some? @ctx)
-    (let [[[cam-left cam-top] _ :as camera] (:camera view-state)
-          cam-width (u/rect-width camera)
-          cam-height (u/rect-height camera)]
+    (let [camera (:camera view-state)]
       (c/clear! @ctx)
       (c/set-fill-style! @ctx "rgb(0, 0, 0)")
-      (c/fill-rect! @ctx [0 0] (c/width @ctx) (c/height @ctx))
-      (let [w-offset (- (/ (- (c/width @ctx) cam-width) 2) cam-left)
-            h-offset (- (/ (- (c/height @ctx) cam-height) 2) cam-top)]
+      (c/fill-rect! @ctx (m/Rect. 0 0 (c/width @ctx) (c/height @ctx)))
+      (let [w-offset (- (/ (- (c/width @ctx) (:w camera)) 2) (:x camera))
+            h-offset (- (/ (- (c/height @ctx) (:h camera)) 2) (:y camera))]
         (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
       (let [l (get-in view-state [:player :location-id])
             player-tile (u/coord->tile (get-in view-state [:player :position]))
@@ -236,15 +235,16 @@
       ; (draw-direction-indicator @ctx view-state)
       ; (draw-camera @ctx camera)
       (c/reset-transform! @ctx)
-      (let [w-offset (/ (- (c/width @ctx) cam-width) 2)
-            h-offset (/ (- (c/height @ctx) cam-height) 2)]
+      (let [w-offset (/ (- (c/width @ctx) (:w camera)) 2)
+            h-offset (/ (- (c/height @ctx) (:h camera)) 2)]
         (c/draw-image! @ctx
                        (.-canvas @ctx)
-                       [w-offset h-offset]
-                       [cam-width cam-height]
-                       [(- (/ (c/width @ctx) 2) (* (/ cam-width 2) camera-scale))
-                        (- (/ (c/height @ctx) 2) (* (/ cam-height 2) camera-scale))]
-                       [(* camera-scale cam-width) (* camera-scale cam-height)]))
+                       (m/Point. w-offset h-offset)
+                       [(:w camera) (:h camera)]
+                       (m/Point.
+                         (- (/ (c/width @ctx) 2) (* (/ (:w camera) 2) camera-scale))
+                         (- (/ (c/height @ctx) 2) (* (/ (:h camera) 2) camera-scale)))
+                       [(* camera-scale (:w camera)) (* camera-scale (:h camera))]))
       (when (interacting? view-state)
         (draw-dialogue-box @ctx (dialogue-data view-state))))))
 
@@ -326,12 +326,12 @@
      [:hare_right_walking2 (quot tile-move-time 2)]]}})
 
 (defn anim->data [now frames]
-  {:start (u/round now)
+  {:start (m/round now)
    :frames frames
    :total-duration (apply + (select [ALL (nthpath 1)] frames))})
 
 (defn animation-texture [now {:keys [start frames total-duration]}]
-  (let [animation-frame (mod (u/round (- now start)) total-duration)]
+  (let [animation-frame (mod (m/round (- now start)) total-duration)]
     (reduce (fn [duration-sum [texture duration]]
               (if (<= duration-sum animation-frame (+ duration-sum duration -1))
                 (reduced texture)
@@ -339,13 +339,13 @@
             0
             frames)))
 
-(defn animated-position [start [fx fy] [tx ty] now]
-  (let [passed (- now start)
-        pct (/ passed tile-move-time)
-        transform (fn [f t] (+ f (u/round (* pct (- t f)))))]
-    (if (< pct 1)
-      [(transform fx tx) (transform fy ty)]
-      [tx ty])))
+(defn animated-position [start from to now]
+  (let [pct-done (/ (- now start) tile-move-time)
+        transform (fn [f t] (+ f (m/round (* pct-done (- t f)))))]
+    (if (< pct-done 1)
+      (m/Point. (transform (:x from) (:x to))
+                (transform (:y from) (:y to)))
+      to)))
 
 (defn animation-done? [start now]
   (< (+ start tile-move-time) now))
@@ -356,44 +356,49 @@
   (let [; dec camera size to account for player in center
         w (* (dec camera-tile-width) tile-size) w2 (/ w 2)
         h (* (dec camera-tile-height) tile-size) h2 (/ h 2)
-        loc-dim (get-in @data [:locations location-id :dimension])
-        [[loc-left loc-top]
-         [loc-right loc-bottom]] (transform [ALL ALL] #(* % tile-size) loc-dim)
-        loc-w (* (u/rect-width loc-dim) tile-size)
-        loc-h (* (u/rect-height loc-dim) tile-size)
-        [left right] (if (<= loc-w w)
-                       (let [offset (/ (+ tile-size (- w loc-w)) 2)]
-                         [(- loc-left offset)
-                          (+ loc-right tile-size offset -1)])
-                       (let [p (first player-coord)]
-                         (cond
-                           ; close to left edge
-                           (< p (+ loc-left w2))
-                           [loc-left (+ loc-left tile-size w -1)]
+        dim (m/rect-scale
+              (get-in @data [:locations location-id :dimension])
+              tile-size)
+        dim-bottom-right (m/rect-bottom-right dim)
+        loc-left (:x dim)
+        loc-top (:y dim)
+        loc-w (:w dim)
+        loc-h (:h dim)
+        loc-bottom (:y dim-bottom-right)
+        loc-right (:x dim-bottom-right)
+        left (if (<= loc-w w)
+               (let [offset (/ (+ tile-size (- w loc-w)) 2)]
+                 (- loc-left offset))
+               (let [p (:x player-coord)]
+                 (cond
+                   ; close to left edge
+                   (< p (+ loc-left w2))
+                   loc-left
 
-                           ; close to right edge
-                           (> p (- loc-right w2))
-                           [(- loc-right w) (+ loc-right tile-size -1)]
+                   ; close to right edge
+                   (> p (- loc-right tile-size w2))
+                   (- loc-right w tile-size)
 
-                           :else
-                           [(- p w2) (+ p w2 tile-size -1)])))
-        [top bottom] (if (<= loc-h h)
-                       (let [offset (/ (+ tile-size (- h loc-h)) 2)]
-                         [(- loc-top offset)
-                          (+ loc-bottom tile-size offset -1)])
-                       (let [p (second player-coord)]
-                         (cond
-                           ; close to top edge
-                           (< p (+ loc-top h2))
-                           [loc-top (+ loc-top tile-size h -1)]
+                   :else
+                   (- p w2))))
+        top (if (<= loc-h h)
+              (let [offset (/ (+ tile-size (- h loc-h)) 2)]
+                (- loc-top offset))
+              (let [p (:y player-coord)]
+                (cond
+                  ; close to top edge
+                  (< p (+ loc-top h2))
+                  loc-top
 
-                           ; close to bottom edge
-                           (> p (- loc-bottom h2))
-                           [(- loc-bottom h) (+ loc-bottom tile-size -1)]
+                  ; close to bottom edge
+                  (> p (- loc-bottom tile-size h2))
+                  (- loc-bottom h tile-size)
 
-                           :else
-                           [(- p h2) (+ p h2 tile-size -1)])))]
-    [[left top] [right bottom]]))
+                  :else
+                  (- p h2))))]
+    (m/Rect. left top
+             (* tile-size camera-tile-width)
+             (* tile-size camera-tile-height))))
 
 (defn update-state-animation [state now]
   (if-let [{:keys [start destination]} (:animation state)]
@@ -413,8 +418,10 @@
 (defn update-state-movement [state now]
   (if (not (contains? state :animation))
     (if-let [direction (peek @move-q)]
-      (let [new-position (u/translate-point (get-in state [:player :position])
-                                            (direction-map direction))]
+      (let [new-position (apply
+                           m/translate-point
+                           (get-in state [:player :position])
+                           (direction-map direction))]
         (swap! move-q pop)
         (cond-> (assoc-in state [:player :direction] direction)
           (walkable? new-position)

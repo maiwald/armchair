@@ -6,6 +6,7 @@
             [armchair.location-editor.views :refer [location-editor]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
             [armchair.modals.views :refer [modal]]
+            [armchair.math :as m]
             [armchair.util :as u :refer [<sub >evt]]
             [armchair.config :as config]
             [armchair.routes :refer [routes >navigate]]
@@ -90,8 +91,8 @@
 (defn location-connection [start end]
   (let [start-pos (<sub [:ui/position start])
         end-pos (<sub [:ui/position end])]
-    [connection {:start (u/translate-point start-pos [(/ config/line-width 2) 15])
-                 :end (u/translate-point end-pos [(/ config/line-width 2) 15])}]))
+    [connection {:start (m/translate-point start-pos (/ config/line-width 2) 15)
+                 :end (m/translate-point end-pos (/ config/line-width 2) 15)}]))
 
 (defn location-management []
   (let [{:keys [location-ids connections]} (<sub [:location-map])]

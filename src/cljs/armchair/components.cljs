@@ -3,6 +3,7 @@
             [reagent.core :as r]
             [armchair.config :as config]
             [armchair.textures :refer [texture-path sprite-lookup]]
+            [armchair.math :refer [abs clip point-delta translate-point]]
             [armchair.util :as u :refer [stop-e! >evt <sub e->left?]]))
 
 ;; Drag & Drop
@@ -18,41 +19,38 @@
       (u/prevent-e! e)
       (>evt [:start-dragging ids (e->graph-cursor e)]))))
 
-(defn connection [{kind :kind
-                   [x1 y1] :start
-                   [x2 y2] :end}]
+(defn connection [{:keys [kind start end]}]
   [:line {:class ["graph__connection"
                   (when (= kind :connector) "graph__connection_is-connector")]
-          :x1 x1
-          :y1 y1
-          :x2 x2
-          :y2 y2}])
+          :x1 (:x start)
+          :y1 (:y start)
+          :x2 (:x end)
+          :y2 (:y end)}])
 
-(defn curved-connection [{kind :kind
-                          [x1 y1 :as start] :start
-                          [x2 y2 :as end] :end}]
-  (let [[dx dy] (u/point-delta start end)
-        [mx my] (u/translate-point start [(/ dx 2) (/ dy 2)])
-        [ctrl-x ctrl-y] [(if (pos? dx)
-                           (+ x1 (max (/ (u/abs dx) 6)
-                                      30))
-                           (max (- (+ x1 (u/abs dx)) (/ (u/abs dx) 6))
-                                (+ x1 30)))
-                         (+ y1 (/ (- my y1) 4))]]
+(defn curved-connection [{:keys [kind start end]}]
+  (let [[dx dy] (point-delta start end)
+        m (translate-point start (/ dx 2) (/ dy 2))
+        ctrl-x (if (pos? dx)
+                 (+ (:x start)
+                    (max (/ (abs dx) 6) 30))
+                 (max (- (+ (:x start) (abs dx))
+                         (/ (abs dx) 6))
+                      (+ (:x start) 30)))
+        ctrl-y (+ (:y start) (/ (- (:y m) (:y start)) 4))]
     [:path {:class ["graph__connection"
                     (when (= kind :connector) "graph__connection_is-connector")]
-            :d (join " " (concat ["M" x1 y1]
-                                 (if (< 20 (u/abs dy))
-                                   ["Q" ctrl-x ctrl-y mx my "T" x2 y2]
-                                   ["L" x2 y2])))}]))
+            :d (join " " (concat ["M" (:x start) (:y start)]
+                                 (if (< 20 (abs dy))
+                                   ["Q" ctrl-x ctrl-y (:x m) (:y m) "T" (:x end) (:y end)]
+                                   ["L" (:x end) (:y end)])))}]))
 
 (defn drag-item [item-id component]
-  (let [[left top] (<sub [:ui/position item-id])
+  (let [position (<sub [:ui/position item-id])
         dragging? (<sub [:dragging-item? item-id])]
     [:div {:on-mouse-down stop-e!
            :class ["graph__item"
                    (when dragging? "graph__item_is-dragging")]
-           :style {:left left :top top}}
+           :style {:left (:x position) :top (:y position)}}
      [component item-id]]))
 
 (defn drag-canvas [{:keys [kind nodes]}]
@@ -216,11 +214,11 @@
                        (let [offset 8
                              rect (u/get-rect (r/dom-node this))
                              ref-rect (u/get-rect (:reference (r/props this)))]
-                         [(u/clip
+                         [(clip
                             (- (.-innerWidth js/window) (:width rect))
                             (+ (- (:left ref-rect) (/ (:width rect) 2))
                                (/ (:width ref-rect) 2)))
-                          (u/clip
+                          (clip
                             (- (.-innerHeight js/window) (:height rect))
                             (- (:top ref-rect)
                                (:height rect)

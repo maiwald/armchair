@@ -1,9 +1,16 @@
 (ns armchair.migrations
   (:require [clojure.set :refer [rename-keys]]
             [com.rpl.specter
-             :refer [collect-one must NONE FIRST LAST ALL MAP-VALS]
+             :refer [collect-one
+                     multi-path
+                     nthpath
+                     must
+                     NONE
+                     FIRST LAST ALL
+                     MAP-VALS MAP-KEYS]
              :refer-macros [select setval transform]]
             [armchair.db :refer [db-version]]
+            [armchair.math :refer [Point Rect]]
             [armchair.util :as u]))
 
 (def migrations
@@ -86,7 +93,30 @@
        "Remove next-line-id key instead of storing nil"
        (->> db
          (setval [:lines MAP-VALS #(nil? (:next-line-id %)) :next-line-id] NONE)
-         (setval [:player-options MAP-VALS #(nil? (:next-line-id %)) :next-line-id] NONE)))})
+         (setval [:player-options MAP-VALS #(nil? (:next-line-id %)) :next-line-id] NONE)))
+
+   9 (fn [db]
+       "Migrate to Point and Rect records"
+       (letfn [(to-point [[x y]]
+                 (Point. x y))
+               (to-rect [[[x1 y1] [x2 y2]]]
+                 (Rect. x1 y1 (inc (- x2 x1)) (inc (- y2 y1))))]
+         (u/log "point migration")
+         (->> db
+           (transform [:locations MAP-VALS :dimension] to-rect)
+           (transform [:locations MAP-VALS :blocked ALL] to-point)
+           (transform [:locations MAP-VALS :connection-triggers MAP-VALS (nthpath 1)]
+                      to-point)
+           (transform [:locations MAP-VALS
+                       (multi-path :background1
+                                   :background2
+                                   :foreground1
+                                   :foreground2
+                                   :connection-triggers) MAP-KEYS]
+                      to-point)
+           (transform [:player :location-position] to-point)
+           (transform [:dialogues MAP-VALS (must :location-position)] to-point)
+           (transform [:ui/positions MAP-VALS] to-point))))})
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)

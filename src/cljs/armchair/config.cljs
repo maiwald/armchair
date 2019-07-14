@@ -1,9 +1,10 @@
-(ns armchair.config)
+(ns armchair.config
+  (:require [armchair.math :refer [Point]]))
 
 (def debug?
   ^boolean goog.DEBUG)
 
-(def default-ui-position [20 20])
+(def default-ui-position (Point. 20 20))
 (def line-width 260)
 (def line-height 100)
 (def tile-size 32)

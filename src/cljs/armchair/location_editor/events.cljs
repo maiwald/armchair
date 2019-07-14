@@ -5,6 +5,7 @@
              :refer [multi-path ALL NONE MAP-KEYS MAP-VALS]
              :refer-macros [setval transform]]
             [armchair.undo :refer [record-undo]]
+            [armchair.math :refer [rect-resize rect-contains?]]
             [armchair.util :as u]))
 
 (reg-event-data
@@ -149,14 +150,14 @@
 (reg-event-data
   :location-editor/resize-smaller
   (fn [db [_ location-id direction]]
-    (let [[shift-index shift-delta] (case direction
-                                      :up [0 [0 1]]
-                                      :left [0 [1 0]]
-                                      :right [1 [-1 0]]
-                                      :down [1 [0 -1]])
-          new-dimension (update (get-in db [:locations location-id :dimension])
-                                shift-index u/translate-point shift-delta)
-          out-of-bounds? (fn [point] (not (u/rect-contains? new-dimension point)))
+    (let [dimension (get-in db [:locations location-id :dimension])
+          side (case direction
+                 :up :top
+                 :down :bottom
+                 :left :left
+                 :right :right)
+          new-dimension (rect-resize dimension {side -1})
+          out-of-bounds? (fn [point] (not (rect-contains? new-dimension point)))
           loc-and-out-of-bounds? (fn [id point] (and (= location-id id)
                                                      (out-of-bounds? point)))]
       (->> (update-in db [:locations location-id]
@@ -184,13 +185,11 @@
 (reg-event-data
   :location-editor/resize-larger
   (fn [db [_ location-id direction]]
-    (let [[shift-index shift-delta] (case direction
-                                      :up [0 [0 -1]]
-                                      :left [0 [-1 0]]
-                                      :right [1 [1 0]]
-                                      :down [1 [0 1]])]
-      (update-in db [:locations
-                     location-id
-                     :dimension
-                     shift-index]
-                 u/translate-point shift-delta))))
+    (let [side (case direction
+                 :up :top
+                 :down :bottom
+                 :left :left
+                 :right :right)]
+      (update-in db [:locations location-id :dimension]
+                 (fn [dimension]
+                   (rect-resize dimension {side 1}))))))
