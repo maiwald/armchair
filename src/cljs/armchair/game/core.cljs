@@ -134,24 +134,6 @@
     (when (tile-visible? camera tile)
       (draw-sprite-texture ctx texture (u/tile->coord tile)))))
 
-; (defn draw-highlight [ctx highlight-coord]
-;   (c/save! ctx)
-;   (c/set-stroke-style! ctx "rgb(255, 255, 0)")
-;   (c/set-line-width! ctx "2")
-;   (c/stroke-rect! ctx highlight-coord tile-size tile-size)
-;   (c/restore! ctx))
-
-; (defn draw-path [ctx {:keys [highlight] {:keys [position]} :player}]
-;   (if highlight
-;     (doseq [path-tile (path/a-star
-;                         walkable?
-;                         (u/coord->tile position)
-;                         (u/coord->tile highlight))]
-;       (c/save! ctx)
-;       (c/set-fill-style! ctx "rgba(255, 255, 0, .2)")
-;       (c/fill-rect! ctx (u/tile->coord path-tile) tile-size tile-size)
-;       (c/restore! ctx))))
-
 (defn draw-direction-indicator [ctx {{:keys [position direction]} :player}]
   (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
     (draw-texture-rotated ctx :arrow position rotation)))
