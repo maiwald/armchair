@@ -334,53 +334,32 @@
 
 ;; state updates and view state
 
+(defn camera-coord [cam-size loc-lower loc-size p-coord]
+  (if (<= loc-size cam-size)
+    (- loc-lower (/ (- cam-size loc-size) 2))
+    (let [cam-half (/ cam-size 2)
+          loc-upper (+ loc-lower loc-size)
+          center-offset (/ tile-size 2)]
+      (cond
+        ; close to *lower* (left or top) edge
+        (< p-coord (+ loc-lower cam-half (- center-offset)))
+        loc-lower
+
+        ; close to *upper* (right or bottom) edge
+        (> p-coord (- loc-upper cam-half center-offset))
+        (- loc-upper cam-size)
+
+        :else
+        (+ (- p-coord cam-half) center-offset)))))
+
 (defn camera-rect [player-coord location-id]
-  (let [; dec camera size to account for player in center
-        w (* (dec camera-tile-width) tile-size) w2 (/ w 2)
-        h (* (dec camera-tile-height) tile-size) h2 (/ h 2)
-        dim (m/rect-scale
-              (get-in @data [:locations location-id :dimension])
-              tile-size)
-        dim-bottom-right (m/rect-bottom-right dim)
-        loc-left (:x dim)
-        loc-top (:y dim)
-        loc-w (:w dim)
-        loc-h (:h dim)
-        loc-bottom (:y dim-bottom-right)
-        loc-right (:x dim-bottom-right)
-        left (if (<= loc-w w)
-               (let [offset (/ (+ tile-size (- w loc-w)) 2)]
-                 (- loc-left offset))
-               (let [p (:x player-coord)]
-                 (cond
-                   ; close to left edge
-                   (< p (+ loc-left w2))
-                   loc-left
-
-                   ; close to right edge
-                   (> p (- loc-right tile-size w2))
-                   (- loc-right w tile-size)
-
-                   :else
-                   (- p w2))))
-        top (if (<= loc-h h)
-              (let [offset (/ (+ tile-size (- h loc-h)) 2)]
-                (- loc-top offset))
-              (let [p (:y player-coord)]
-                (cond
-                  ; close to top edge
-                  (< p (+ loc-top h2))
-                  loc-top
-
-                  ; close to bottom edge
-                  (> p (- loc-bottom tile-size h2))
-                  (- loc-bottom h tile-size)
-
-                  :else
-                  (- p h2))))]
-    (m/Rect. left top
-             (* tile-size camera-tile-width)
-             (* tile-size camera-tile-height))))
+  (let [w (* camera-tile-width tile-size)
+        h (* camera-tile-height tile-size)
+        loc-dim (get-in @data [:locations location-id :dimension])
+        dim (m/rect-scale loc-dim tile-size)
+        left (camera-coord w (:x dim) (:w dim) (:x player-coord))
+        top (camera-coord h (:y dim) (:h dim) (:y player-coord))]
+    (m/Rect. left top w h)))
 
 (defn update-state-animation [state now]
   (if-let [{:keys [start destination]} (:animation state)]
