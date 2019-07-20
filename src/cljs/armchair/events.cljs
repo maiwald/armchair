@@ -6,6 +6,7 @@
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
+            [armchair.config :refer [debug?]]
             [armchair.local-storage :as ls]
             [armchair.db :as db :refer [default-db
                                         content-data
@@ -16,19 +17,24 @@
             [armchair.math :as m]
             [armchair.util :as u]))
 
-(def validate
-  (after (fn [db]
-           (when-not (s/valid? :armchair.db/state db)
-             (let [explain (s/explain-data :armchair.db/state db)]
-               (js/console.log (:cljs.spec.alpha/problems explain)))))))
+(when debug?
+  (def validate
+    (after (fn [db event]
+             (when-not (s/valid? :armchair.db/state db)
+               (let [explain (s/explain-data :armchair.db/state db)]
+                 (apply js/console.log
+                        "Invalid state after:" event "\n"
+                        (:cljs.spec.alpha/problems explain))))))))
 
 (defn reg-event-data [id handler]
   (reg-event-db id
-                [validate record-undo ls/store]
+                [(when debug? validate)
+                 record-undo
+                 ls/store]
                 handler))
 
 (defn reg-event-meta [id handler]
-  (reg-event-db id [validate] handler))
+  (reg-event-db id [(when debug? validate)] handler))
 
 ;; Initializer
 
