@@ -1,14 +1,13 @@
 (ns armchair.util
   (:require [clojure.set :refer [intersection subset?]]
             [re-frame.core :as re-frame]
+            [armchair.math :refer [Point]]
             [armchair.config :refer [tile-size]]
             [com.rpl.specter
              :refer [must ALL NONE MAP-VALS MAP-KEYS]
              :refer-macros [transform]]))
 
 (defn px [v] (str v "px"))
-(defn round [x] (.round js/Math x))
-(defn abs [x] (.abs js/Math x))
 
 (defn upload-json! [callback]
   (let [file-input (doto (js/document.createElement "input")
@@ -24,45 +23,14 @@
              (callback content)))
     (.click file-input)))
 
-(defn clip [u-bound value]
-  (min u-bound (max 0 value)))
+(defn tile->coord [{:keys [x y]}]
+  (Point. (* tile-size x) (* tile-size y)))
 
-(defn tile->coord [[tx ty]]
-  [(* tile-size tx) (* tile-size ty)])
-
-(defn coord->tile [[cx cy]]
-  [(quot cx tile-size) (quot cy tile-size)])
+(defn coord->tile [{:keys [x y]}]
+  (Point. (quot x tile-size) (quot y tile-size)))
 
 (defn normalize-to-tile [coord]
   (-> coord coord->tile tile->coord))
-
-(defn rect-width [[[x1 _] [x2 _]]]
-  (inc (- x2 x1)))
-
-(defn rect-height [[[_ y1] [_ y2]]]
-  (inc (- y2 y1)))
-
-(defn rect-contains? [[[x1 y1] [x2 y2]] [x y]]
-  (and (<= x1 x x2)
-       (<= y1 y y2)))
-
-(defn rect-intersects? [[[left1 top1] [right1 bottom1]]
-                        [[left2 top2] [right2 bottom2]]]
-  (and (<= left1 right2)
-       (<= left2 right1)
-       (<= top1 bottom2)
-       (<= top2 bottom1)))
-
-(defn point-delta [start end]
-  (mapv - end start))
-
-(defn translate-point [point & deltas]
-  (apply mapv + point deltas))
-
-(defn rect->0
-  "Normalize a point relative to a rect to a 0,0 based rect"
-  [[top-left _] point]
-  (point-delta top-left point))
 
 (defn update-in-map
   "Updates specific map keys in a nested data structure"
@@ -154,8 +122,8 @@
 
 (defn relative-cursor [e elem]
   (let [rect (.getBoundingClientRect elem)]
-    [(- (.-clientX e) (.-left rect))
-     (- (.-clientY e) (.-top rect))]))
+    (Point. (- (.-clientX e) (.-left rect))
+            (- (.-clientY e) (.-top rect)))))
 
 (defn e->left? [e]
   (zero? (.-button e)))

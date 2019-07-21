@@ -3,6 +3,7 @@
             [clojure.string :refer [blank?]]
             [armchair.config :as config]
             [armchair.events :refer [reg-event-data reg-event-meta]]
+            [armchair.math :refer [Rect]]
             [armchair.util :as u]))
 
 (defn assert-no-open-modal [db]
@@ -70,7 +71,7 @@
                    :switch-id switch-id
                    :switch-value switch-value}]
       (cond-> db
-        (s/valid? :armchair.db/trigger trigger)
+        (s/valid? :trigger/trigger trigger)
         (-> (update-in [:lines trigger-node-id :trigger-ids]
                        (fn [ts] (conj (vec ts) trigger-id)))
             (assoc-in [:triggers trigger-id] trigger)
@@ -111,7 +112,7 @@
                      :texture texture
                      :color color}]
       (cond-> db
-        (and (s/valid? :armchair.db/character character)
+        (and (s/valid? :character/character character)
              (some? texture))
         (-> (assoc-in [:characters id] character)
             (dissoc :modal))))))
@@ -143,7 +144,7 @@
           (assoc-in [:ui/positions id] config/default-ui-position)
           (assoc-in [:locations id] {:entity/id id
                                      :entity/type :location
-                                     :dimension [[0 0] [2 2]]
+                                     :dimension (Rect. 0 0 3 3)
                                      :background1 {}
                                      :background2 {}
                                      :foreground1 {}
@@ -226,7 +227,6 @@
                                         :kind :npc
                                         :character-id (:character-id modal-data)
                                         :dialogue-id dialogue-id
-                                        :text nil
-                                        :next-line-id nil})
+                                        :text ""})
             (dissoc :modal))))))
 

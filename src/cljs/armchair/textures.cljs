@@ -1,5 +1,6 @@
 (ns armchair.textures
   (:require [clojure.core.async :refer [go chan take! put! <!]]
+            [armchair.config :refer [tile-size]]
             [armchair.util :as u]
             [com.rpl.specter
              :refer [multi-path MAP-VALS]
@@ -359,8 +360,9 @@
 (def sprite-lookup
   (into {}
         (for [[file sprites] sprite-sheets
-              [tile sprite] sprites]
-          [sprite [file (u/tile->coord tile)]])))
+              [[tile-x tile-y] sprite] sprites]
+          [sprite [file [(* tile-size tile-x)
+                         (* tile-size tile-y)]]])))
 
 (def texture-set (set (select [MAP-VALS MAP-VALS] sprite-sheets)))
 

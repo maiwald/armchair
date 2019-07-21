@@ -15,8 +15,10 @@
 (s/def :game/initial-state :armchair.game.core/state)
 (s/def :game/lines (s/map-of :entity/id (s/keys :req-un [:game/text :game/options]
                                                 :opt-un [:game/triggers])))
-(s/def :game/options (s/coll-of (s/keys :req-un [:game/text :game/next-line-id]
-                                        :opt-un [:game/condition :game/triggers])
+(s/def :game/options (s/coll-of (s/keys :req-un [:game/text]
+                                        :opt-un [:game/condition
+                                                 :game/triggers
+                                                 :game/next-line-id])
                                 :kind vector?))
 (s/def :game/locations (s/map-of :entity/id (s/keys :req-un [:game/dimension
                                                              :game/background1
@@ -67,8 +69,9 @@
   :<- [:db-triggers]
   (fn [[lines triggers]]
     (transform [MAP-VALS
-                #(and (= :npc (:kind %))
-                      (= :trigger (get-in lines [(:next-line-id %) :kind])))]
+                (fn [{:keys [kind next-line-id]}]
+                  (and (= :npc kind)
+                       (= :trigger (get-in lines [next-line-id :kind]))))]
                (fn [line]
                  (let [trigger (get lines (:next-line-id line))
                        triggers (->> (:trigger-ids trigger)
@@ -132,18 +135,15 @@
                                                         (switches switch-id)
                                                         switch-value-id))
                                                      terms))))))
-                      (vector {:text "Yeah..., whatever. Farewell"
-                               :next-line-id nil}))}))
+                      (vector {:text "Yeah..., whatever. Farewell"}))}))
       (u/where-map :kind :npc lines))))
 
 (reg-sub
   :game/player-data
   :<- [:db-player]
-  :<- [:db-locations]
-  (fn [[{:keys [location-id location-position]} locations]]
-    (let [dimension (get-in locations [location-id :dimension])]
-      {:location-id location-id
-       :position location-position})))
+  (fn [{:keys [location-id location-position]}]
+    {:location-id location-id
+     :position location-position}))
 
 (reg-sub
   :game/locations

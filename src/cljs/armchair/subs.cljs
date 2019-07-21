@@ -6,6 +6,7 @@
              :refer-macros [select]]
             [armchair.routes :refer [routes]]
             [bidi.bidi :refer [match-route]]
+            [armchair.math :refer [translate-point point-delta]]
             [armchair.util :as u]))
 
 (reg-sub :db-characters #(:characters %))
@@ -80,8 +81,8 @@
   (fn [[positions {:keys [ids cursor-start]} cursor] [_ id]]
     (let [position (get positions id)]
       (if (contains? ids id)
-        (let [delta (u/point-delta cursor-start cursor)]
-          (u/translate-point position delta))
+        (let [[dx dy] (point-delta cursor-start cursor)]
+          (translate-point position dx dy))
         position))))
 
 (reg-sub
