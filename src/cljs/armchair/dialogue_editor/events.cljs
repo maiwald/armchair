@@ -45,7 +45,8 @@
           (assoc-in [:lines id] {:entity/id id
                                  :entity/type :line
                                  :kind :trigger
-                                 :dialogue-id dialogue-id})))))
+                                 :dialogue-id dialogue-id
+                                 :trigger-ids []})))))
 
 (reg-event-data
   :dialogue-editor/delete-trigger
