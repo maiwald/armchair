@@ -5,6 +5,7 @@
             [armchair.components :as c]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
+            [armchair.math :refer [Point Rect translate-point relative-point rect-contains?]]
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
             [armchair.textures :refer [texture-path background-textures]]))
 
@@ -21,8 +22,7 @@
         image (.querySelector (.-currentTarget e) ".dnd-texture img")]
     (.setDragImage (.-dataTransfer e) image offset offset)))
 
-(defn tile-paint-canvas [{:keys [on-paint]
-                          [tile-offset _] :dimension}]
+(defn tile-paint-canvas [{:keys [on-paint dimension]}]
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
     (letfn [(get-tile [e] (u/coord->tile (u/relative-cursor e (.-currentTarget e))))
@@ -32,7 +32,7 @@
             (stop-painting [] (reset! painted-tiles nil))
             (make-paint [paint-fn]
               (fn [e]
-                (let [tile (u/translate-point (get-tile e) tile-offset)]
+                (let [tile (translate-point (get-tile e) (:x dimension) (:y dimension))]
                   (when (and (some? @painted-tiles)
                              (not (contains? @painted-tiles tile)))
                     (swap! painted-tiles conj tile)
@@ -51,7 +51,7 @@
                                   (paint e))
                  :on-mouse-up stop-painting}
            (when-let [tile @current-tile]
-             (let [[x y] (u/tile->coord tile)]
+             (let [{:keys [x y]} (u/tile->coord tile)]
                [:div {:class "interactor interactor_paint"
                       :style {:height (px config/tile-size)
                               :width (px config/tile-size)
@@ -239,29 +239,29 @@
                   [sidebar-player]
                   [sidebar-npcs location-id]])])]))
 
-(defn tile-style [[x y]]
+(defn tile-style [{:keys [x y]}]
   {:width (str config/tile-size "px")
    :height (str config/tile-size "px")
    :top (* y config/tile-size)
    :left (* x config/tile-size)})
 
-(defn do-all-tiles [[[x1 y1] [x2 y2] :as rect] layer-title f]
+(defn do-all-tiles [rect layer-title f]
   [:<>
-   (for [x (range x1 (inc x2))
-         y (range y1 (inc y2))
-         :let [tile [x y]]]
+   (for [x (range (:x rect) (+ (:x rect) (:w rect)))
+         y (range (:y rect) (+ (:y rect) (:h rect)))
+         :let [tile (Point. x y)]]
      (if-let [tile-data (f tile)]
-       [:div {:key (str "location-cell:" layer-title ":" tile)
+       [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
               :class "level__tile"
-              :style (tile-style (u/rect->0 rect tile))}
+              :style (tile-style (relative-point tile rect))}
         tile-data]))])
 
 (defn do-some-tiles [rect coll layer-title f]
   [:<> (for [[tile item] coll
-             :when (u/rect-contains? rect tile)]
-         [:div {:key (str "location-cell:" layer-title ":" tile)
+             :when (rect-contains? rect tile)]
+         [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
                 :class "level__tile"
-                :style (tile-style (u/rect->0 rect tile))}
+                :style (tile-style (relative-point tile rect))}
           (f tile item)])])
 
 (defn dropzone [{:keys [dimension highlight occupied on-drop]}]
@@ -287,10 +287,10 @@
          [c/sprite-texture t]))]))
 
 (defn player-tile [rect position]
-  (when (u/rect-contains? rect position)
+  (when (rect-contains? rect position)
     [:div {:key (str "location-cell:player:" position)
            :class "level__tile"
-           :style (tile-style (u/rect->0 rect position))}
+           :style (tile-style (relative-point position rect))}
      [c/sprite-texture :human "Player"]]))
 
 (defn entity-layer [location-id override-rect]
@@ -324,11 +324,13 @@
 
 (defn location-preview [location-id preview-tile]
   (let [tiles-around 3
-        dimension [(u/translate-point preview-tile [(- tiles-around) (- tiles-around)])
-                   (u/translate-point preview-tile [tiles-around tiles-around])]]
+        dimension (Rect. (- (:x preview-tile) tiles-around)
+                         (- (:y preview-tile) tiles-around)
+                         (inc (* 2 tiles-around))
+                         (inc (* 2 tiles-around)))]
     [:div {:class "level"
-           :style {:width (u/px (* config/tile-size (inc (* tiles-around 2))))
-                   :height (u/px (* config/tile-size (inc (* tiles-around 2))))}}
+           :style {:width (u/px (* config/tile-size (:w dimension)))
+                   :height (u/px (* config/tile-size (:h dimension)))}}
      [texture-layer location-id :background1 dimension]
      [texture-layer location-id :background2 dimension]
      [texture-layer location-id :foreground1 dimension]
@@ -337,7 +339,7 @@
      [conntection-trigger-layer location-id dimension]
      [:div {:key "location-cell:highlight"
             :class "level__tile level__tile_highlight"
-            :style (tile-style [tiles-around tiles-around])}]]))
+            :style (tile-style (relative-point preview-tile dimension))}]]))
 
 (defn position-select [location-id on-select selected]
   (let [{:keys [dimension]} (<sub [:location-editor/location location-id])
@@ -347,8 +349,8 @@
                    :max-width (u/px 600)
                    :max-height (u/px 400)}}
      [:div {:class "level"
-            :style {:width (u/px (* config/tile-size (u/rect-width dimension)))
-                    :height (u/px (* config/tile-size (u/rect-height dimension)))
+            :style {:width (u/px (* config/tile-size (:w dimension)))
+                    :height (u/px (* config/tile-size (:h dimension)))
                     :margin "auto"}}
       [texture-layer location-id :background1]
       [texture-layer location-id :background2]
@@ -359,7 +361,7 @@
       (when selected
         [:div {:key "location-cell:selected"
                :class "level__tile level__tile_highlight"
-               :style (tile-style (u/rect->0 dimension selected))}])
+               :style (tile-style (relative-point selected dimension))}])
       [do-all-tiles dimension "selectors"
        (fn [tile]
          (let [occupied? (contains? occupied tile)]
@@ -390,7 +392,8 @@
                                (>evt [:location-editor/remove-character id]))}]]))
 
 (defn trigger-popover [location-id tile]
-  (let [{:keys [id display-name position position-normalized]}
+  (let [{:keys [id display-name position]
+         {normalized-x :x normalized-y :y} :position-normalized}
         (<sub [:location-editor/trigger-popover location-id tile])]
     [:div {:class "level-popover"}
      [:ul
@@ -399,7 +402,7 @@
        [:span.level-popover__reference__payload
         [:a {:on-click #(do (>evt [:close-popover])
                             (>navigate :location-edit :id id))}
-         display-name " " (str position-normalized)]
+         (str display-name " [" normalized-x " " normalized-y "]")]
         [location-preview id position]]]]
      [c/button {:title "Remove Exit"
                 :type :danger
@@ -467,8 +470,8 @@
 
     [:div {:class "level-wrap"}
      [:div {:class "level"
-            :style {:width (u/px (* config/tile-size (u/rect-width dimension)))
-                    :height (u/px (* config/tile-size (u/rect-height dimension)))}}
+            :style {:width (u/px (* config/tile-size (:w dimension)))
+                    :height (u/px (* config/tile-size (:h dimension)))}}
 
       (for [[layer-id] (reverse config/location-editor-layers)
             :when (contains? visible-layers layer-id)]

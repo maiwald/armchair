@@ -1,6 +1,7 @@
 # BUGS
 - flickering inputs in character modal
 - drag and drop preview images are broken
+- dialogue states become nil when deleting line while no states are set
 
 # TODO
 - rethink relationship between character and dialogue
@@ -15,6 +16,7 @@
 - release to itch.io as free game ;)
 
 # nice things
+- prevent connecting multiple trigger and player nodes
 - custom layers and layer order
 - allow whole layers to be treated as not-walkable
 - show player silhouette when behind foreground texture

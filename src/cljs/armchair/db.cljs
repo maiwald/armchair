@@ -1,106 +1,17 @@
 (ns armchair.db
   (:require [clojure.spec.alpha :as s]
-            [clojure.string :as string]
-            [clojure.set :refer [union subset? rename-keys]]
+            [clojure.set :refer [subset?]]
             [com.rpl.specter
-             :refer [collect-one must FIRST LAST ALL NONE MAP-VALS]
-             :refer-macros [select setval transform]]
+             :refer [must ALL NONE MAP-VALS]
+             :refer-macros [setval]]
             [cognitect.transit :as t]
             [armchair.dummy-data :refer [dummy-data]]
             [armchair.textures :refer [background-textures texture-set]]
             [armchair.config :as config]
+            [armchair.math :refer [Point Rect]]
             [armchair.util :as u]))
 
-;; Migrations
-
-(def db-version 8)
-
-(def migrations
-  "Map of migrations. Key is the version we are coming from."
-  {1 (fn [db]
-       (-> db
-           (assoc :player {:location-id (-> db :locations keys first)
-                           :location-position [0 0]})
-           (u/update-values :dialogues
-                            (fn [d]
-                              (-> d
-                                  (assoc :synopsis (:description d))
-                                  (dissoc :description))))))
-
-   2 (fn [db]
-       "Extract player options from lines"
-       (let [player-lines (u/where-map :kind :player (:lines db))]
-         (reduce (fn [new-db [line-id {:keys [options] :as line}]]
-                   (let [new-options (mapv #(assoc %
-                                                   :entity/id (random-uuid)
-                                                   :entity/type :player-option)
-                                           options)
-                         option-ids (mapv :entity/id new-options)]
-                     (-> new-db
-                         (update :player-options merge (zipmap option-ids new-options))
-                         (assoc-in [:lines line-id :options] option-ids))))
-                 db
-                 player-lines)))
-
-   3 (fn [db]
-       "Remove inline state trigger and information concepts"
-       (-> db
-           (dissoc :infos)
-           (u/update-values :lines
-                            #(dissoc % :state-triggers :info-ids))
-           (u/update-values :player-options
-                            #(dissoc % :state-triggers :required-info-ids))))
-
-   4 (fn [db]
-       "Make location connections unidirectional"
-       (let [incoming (->> db
-                           (select [:locations ALL (collect-one FIRST) LAST :connection-triggers ALL])
-                           (reduce (fn [acc [location-id [target-position target-id]]]
-                                     (update acc location-id assoc target-id target-position))
-                                   {}))]
-         (->> (dissoc db :location-connections)
-              (transform [:locations ALL (collect-one FIRST) LAST :connection-triggers MAP-VALS]
-                         (fn [location-id target-id]
-                           [target-id (get-in incoming [target-id location-id])])))))
-
-   5 (fn [db]
-       "Store blocked tiles instead of walkable"
-       (letfn [(inverse [[[x1 y1] [x2 y2]] tiles]
-                 (set (for [x (range x1 (inc x2))
-                            y (range y1 (inc y2))
-                            :let [tile [x y]]
-                            :when (not (contains? tiles tile))]
-                        tile)))]
-         (transform [:locations MAP-VALS]
-           (fn [{:keys [dimension walk-set] :as location}]
-             (-> location
-                 (dissoc :walk-set)
-                 (assoc :blocked (inverse dimension walk-set))))
-           db)))
-
-   6 (fn [db]
-       "Rename :background to :background1"
-       (transform [:locations MAP-VALS]
-                  #(-> %
-                       (assoc :background2 {}
-                              :foreground1 {}
-                              :foreground2 {})
-                       (rename-keys {:background :background1}))
-                  db))
-   7 (fn [db]
-       "Remove nil as value for line text"
-       (setval [:lines MAP-VALS (must :text) nil?] "" db))})
-
-(defn migrate [{:keys [version payload]}]
-  (assert (<= version db-version)
-          (str "Save file version is invalid: " version ", current: " db-version))
-  (loop [version version
-         payload payload]
-    (if (= version db-version)
-      payload
-      (recur
-        (inc version)
-        ((get migrations version) payload)))))
+(def db-version 10)
 
 ;; Types
 
@@ -114,14 +25,17 @@
                       :switch
                       :switch-value})
 (s/def ::text string?)
-(s/def :type/point (s/tuple integer? integer?))
-(s/def :type/rect (s/and (s/tuple :type/point :type/point)
-                     (fn [[[x1 y1] [x2 y2]]] (and (< x1 x2)
-                                                  (< y1 y2)))))
+
+(s/def :type/x integer?)
+(s/def :type/y integer?)
+(s/def :type/w pos-int?)
+(s/def :type/h pos-int?)
+
+(s/def :type/point (s/keys :req-un [:type/x :type/y]))
+(s/def :type/rect (s/keys :req-un [:type/x :type/y :type/w :type/h]))
+
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:entity/id v)))))
 (s/def ::texture (s/nilable #(contains? texture-set %)))
-
-(s/def :ui/cursor :type/point)
 
 ;; UI State
 
@@ -129,10 +43,15 @@
 (s/def ::connecting-lines (s/keys :req-un [::cursor-start ::line-id]
                                   :opt-un [::index]))
 (s/def ::connecting-locations (s/keys :req-un [::cursor-start ::location-id]))
-(s/def ::connecting (s/or :lines ::connecting-lines
-                          :locations ::connecting-locations))
+(s/def :ui/connecting (s/or :lines ::connecting-lines
+                            :locations ::connecting-locations))
 
-(s/def ::dragging (s/keys :req-un [::cursor-start ::ids]))
+(s/def :ui/dragging (s/keys :req-un [::cursor-start ::ids]))
+
+(s/def :ui/cursor :type/point)
+
+(s/def :ui/positions (s/map-of uuid? :type/point))
+
 (s/def ::current-page (s/nilable string?))
 
 ;; Location Editor
@@ -171,28 +90,29 @@
 (s/def ::color ::text)
 (s/def ::description ::text)
 
-(s/def ::location (s/keys :req [:entity/id
-                                :entity/type]
-                          :req-un [:location/dimension
-                                   ::display-name
-                                   :location/background1
-                                   :location/background2
-                                   :location/foreground1
-                                   :location/foreground2
-                                   :location/blocked
-                                   :location/connection-triggers]))
+(s/def :location/location
+  (s/keys :req [:entity/id
+                :entity/type]
+          :req-un [:location/dimension
+                   ::display-name
+                   :location/background1
+                   :location/background2
+                   :location/foreground1
+                   :location/foreground2
+                   :location/blocked
+                   :location/connection-triggers]))
 
 (s/def :location/position :type/point)
-(s/def :location/texture-layer (s/map-of :type/point ::texture))
+(s/def :location/texture-layer (s/map-of :location/position ::texture))
 
 (s/def :location/dimension :type/rect)
 (s/def :location/background1 :location/texture-layer)
 (s/def :location/background2 :location/texture-layer)
 (s/def :location/foreground1 :location/texture-layer)
 (s/def :location/foreground1 :location/texture-layer)
-(s/def :location/blocked (s/coll-of :type/point :kind set?))
+(s/def :location/blocked (s/coll-of :location/position :kind set?))
 (s/def :location/connection-triggers
-  (s/map-of :type/point :location/connection-trigger-target))
+  (s/map-of :location/position :location/connection-trigger-target))
 
 (s/def :location/connection-trigger-target
   (s/tuple :connection-trigger/target-id
@@ -201,24 +121,21 @@
 (s/def :connection-trigger/target-id ::location-id)
 (s/def :connection-trigger/target-position :location/position)
 
-(s/def ::locations (s/and ::entity-map
-                          (s/map-of ::location-id ::location)))
 
-(s/def ::character (s/keys :req [:entity/id :entity/type]
-                           :req-un [::display-name ::color ::texture]))
-(s/def ::characters (s/and ::entity-map
-                           (s/map-of ::character-id ::character)))
+(s/def :character/character
+  (s/keys :req [:entity/id :entity/type]
+          :req-un [::display-name ::color ::texture]))
 
 ;; Dialogue & Lines
 
-(s/def ::next-line-id (s/or :line-id (s/nilable ::line-id)))
+(s/def ::next-line-id ::line-id)
 (s/def :node/kind keyword?)
 
 (defmulti node-type :kind)
 (defmethod node-type :npc [_]
   (s/keys :req-un [::text
-                   ::next-line-id
-                   ::character-id]))
+                   ::character-id]
+          :opt-un [::next-line-id]))
 
 (defmethod node-type :player [_]
   (s/keys :req-un [::options]))
@@ -230,8 +147,9 @@
                                (s/map-of ::player-option-id ::player-option)))
 
 (s/def ::player-option (s/keys :req [:entity/id :entity/type]
-                               :req-un [::text ::next-line-id]
-                               :opt-un [:player-option/condition]))
+                               :req-un [::text]
+                               :opt-un [:player-option/condition
+                                        ::next-line-id]))
 
 (s/def :player-option/condition
   (s/keys :req-un [:condition/conjunction
@@ -253,77 +171,74 @@
   (-> config/condition-operators keys set))
 
 (defmethod node-type :trigger [_]
-  (s/keys :req-un [::trigger-ids ::next-line-id]))
+  (s/keys :req-un [::trigger-ids]
+          :opt-un [::next-line-id]))
 
 (s/def ::trigger-ids (s/coll-of ::trigger-id :kind vector?))
 
-(s/def ::triggers (s/and ::entity-map
-                         (s/map-of ::trigger-id ::trigger)))
-
 (s/def :trigger/switch-kind #{:dialogue-state :switch})
 (s/def :trigger/switch-id :entity/id)
-(s/def :trigger/switch-value :entity/id)
-(s/def ::trigger (s/keys :req [:entity/id
-                               :entity/type]
-                         :req-un [:trigger/switch-kind
-                                  :trigger/switch-id
-                                  :trigger/switch-value]))
+(s/def :trigger/switch-value ::switch-value-id)
+(s/def :trigger/trigger
+  (s/keys :req [:entity/id
+                :entity/type]
+          :req-un [:trigger/switch-kind
+                   :trigger/switch-id
+                   :trigger/switch-value]))
 
-(s/def :node/node (s/and (s/keys :req [:entity/id
-                                       :entity/type]
-                                 :req-un [::dialogue-id
-                                          :node/kind])
-                         (s/multi-spec node-type :kind)))
+(s/def :node/node
+  (s/and (s/keys :req [:entity/id
+                       :entity/type]
+                 :req-un [::dialogue-id
+                          :node/kind])
+         (s/multi-spec node-type :kind)))
 
 (s/def ::lines (s/and ::entity-map
                       (s/map-of ::line-id :node/node)))
 
 (s/def ::location-position :location/position)
-(s/def ::dialogue (s/keys :req [:entity/id
-                                :entity/type]
-                          :req-un [::character-id
-                                   :dialogue/initial-line-id
-                                   ::location-id
-                                   ::location-position
-                                   ::synopsis]
-                          :opt-un [:dialogue/states]))
+(s/def :dialogue/dialogue
+  (s/keys :req [:entity/id
+                :entity/type]
+          :req-un [::character-id
+                   :dialogue/initial-line-id
+                   ::location-id
+                   ::location-position
+                   :dialogue/synopsis]
+          :opt-un [:dialogue/states]))
 
 (s/def :dialogue/states (s/map-of ::line-id ::text))
 (s/def :dialogue/initial-line-id ::line-id)
-(s/def ::dialogues (s/and ::entity-map
-                          (s/map-of ::dialogue-id ::dialogue)))
 
-(s/def ::switches (s/and ::entity-map
-                         (s/map-of ::switch-id ::switch)))
-
-(s/def ::switch (s/keys :req [:entity/id
-                              :entity/type]
-                        :req-un [::display-name
-                                 :switch/value-ids]))
+(s/def :switch/switch
+  (s/keys :req [:entity/id
+                :entity/type]
+          :req-un [::display-name
+                   :switch/value-ids]))
 
 (s/def :switch/value-ids (s/coll-of ::switch-value-id
                                     :kind vector?
                                     :min-count 2))
 
 (s/def ::switch-values (s/and ::entity-map
-                              (s/map-of ::switch-value-id ::switch-value)))
+                              (s/map-of ::switch-value-id :switch/value)))
 
-(s/def ::switch-value (s/keys :req [:entity/id
-                                    :entity/type]
-                              :req-un [::display-name]))
+(s/def :switch/value (s/keys :req [:entity/id
+                                   :entity/type]
+                             :req-un [::display-name]))
 
 ;; Modals
 
 (s/def ::npc-line-id ::line-id)
-(s/def ::modal (s/keys :opt-un [:modal/character-form
-                                :modal/dialogue-creation
-                                :modal/location-creation
-                                :modal/trigger-creation
-                                :modal/switch-form
-                                :modal/unlock-conditions-form
-                                :modal/connection-trigger-creation
-                                ::npc-line-id
-                                ::dialogue-state]))
+(s/def :modal/modal (s/keys :opt-un [:modal/character-form
+                                     :modal/dialogue-creation
+                                     :modal/location-creation
+                                     :modal/trigger-creation
+                                     :modal/switch-form
+                                     :modal/unlock-conditions-form
+                                     :modal/connection-trigger-creation
+                                     ::npc-line-id
+                                     ::dialogue-state]))
 
 (s/def :modal/location-creation ::display-name)
 
@@ -332,7 +247,7 @@
           :opt-un [:entity/id]))
 
 (s/def :modal/dialogue-creation
-  (s/keys :req-un [::character-id ::synopsis]
+  (s/keys :req-un [::character-id :dialogue/synopsis]
           :opt-un [::location-id ::location-position]))
 
 (s/def :modal/trigger-creation
@@ -347,7 +262,7 @@
           :opt-un [::switch-id]))
 
 (s/def :switch-form/values
-  (s/coll-of ::switch-value
+  (s/coll-of :switch/value
              :min-count 2))
 
 (s/def :modal/unlock-conditions-form
@@ -385,24 +300,46 @@
 (s/def ::state (s/and ::dialogue-must-start-with-npc-line
                       ::player-options-must-not-point-to-player-line
                       ::location-connection-validation
-                      (s/keys :req-un [::current-page
-                                       ::player
-                                       ::characters
-                                       ::dialogues
+                      (s/keys :req [:ui/positions]
+                              :req-un [::current-page
+                                       :state/player
+                                       :state/characters
+                                       :state/dialogues
                                        ::player-options
                                        ::lines
-                                       ::triggers
+                                       :state/triggers
                                        ::location-editor
-                                       ::locations
-                                       ::switches
+                                       :state/locations
+                                       :state/switches
                                        ::switch-values]
-                              :opt-un [::connecting
-                                       ::dragging
-                                       ::cursor
-                                       ::modal])))
+                              :opt-un [:ui/connecting
+                                       :ui/dragging
+                                       :ui/cursor
+                                       :modal/modal])))
 
-(s/def ::player (s/keys :req-un [::location-id
-                                 ::location-position]))
+(s/def :state/player
+  (s/keys :req-un [::location-id
+                   ::location-position]))
+
+(s/def :state/dialogues
+  (s/and ::entity-map
+         (s/map-of ::dialogue-id :dialogue/dialogue)))
+
+(s/def :state/switches
+  (s/and ::entity-map
+         (s/map-of ::switch-id :switch/switch)))
+
+(s/def :state/locations
+  (s/and ::entity-map
+         (s/map-of ::location-id :location/location)))
+
+(s/def :state/characters
+  (s/and ::entity-map
+         (s/map-of ::character-id :character/character)))
+
+(s/def :state/triggers
+  (s/and ::entity-map
+         (s/map-of ::trigger-id :trigger/trigger)))
 
 (defn clear-dialogue-state [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])
@@ -434,12 +371,22 @@
     (select-keys db content-keys)))
 
 (defn serialize-db [db]
-  (let [w (t/writer :json)]
+  (let [w (t/writer :json
+                    {:handlers {Point (t/write-handler
+                                        (fn [] "point")
+                                        (fn [p] #js [(:x p) (:y p)]))
+                                Rect (t/write-handler
+                                       (fn [] "rect")
+                                       (fn [r] #js [(:x r) (:y r)
+                                                    (:w r) (:h r)]))}})]
     (t/write w {:version db-version
                 :payload (content-data db)})))
 
 (defn deserialize-db [json]
-  (let [r (t/reader :json {:handlers {"u" uuid}})]
+  (let [r (t/reader :json
+                    {:handlers {"u" uuid
+                                "point" (fn [[x y]] (Point. x y))
+                                "rect" (fn [[x y w h]] (Rect. x y w h))}})]
     (t/read r json)))
 
 ;; Default DB

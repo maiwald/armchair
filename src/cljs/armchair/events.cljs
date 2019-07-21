@@ -6,28 +6,35 @@
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
+            [armchair.config :refer [debug?]]
             [armchair.local-storage :as ls]
             [armchair.db :as db :refer [default-db
                                         content-data
                                         serialize-db
-                                        deserialize-db
-                                        migrate]]
+                                        deserialize-db]]
+            [armchair.migrations :refer [migrate]]
             [armchair.undo :refer [record-undo]]
+            [armchair.math :as m]
             [armchair.util :as u]))
 
-(def validate
-  (after (fn [db]
-           (when-not (s/valid? :armchair.db/state db)
-             (let [explain (s/explain-data :armchair.db/state db)]
-               (js/console.log (:cljs.spec.alpha/problems explain)))))))
+(when debug?
+  (def validate
+    (after (fn [db event]
+             (when-not (s/valid? :armchair.db/state db)
+               (let [explain (s/explain-data :armchair.db/state db)]
+                 (apply js/console.log
+                        "Invalid state after:" event "\n"
+                        (:cljs.spec.alpha/problems explain))))))))
 
 (defn reg-event-data [id handler]
   (reg-event-db id
-                [validate record-undo ls/store]
+                [(when debug? validate)
+                 record-undo
+                 ls/store]
                 handler))
 
 (defn reg-event-meta [id handler]
-  (reg-event-db id [validate] handler))
+  (reg-event-db id [(when debug? validate)] handler))
 
 ;; Initializer
 
@@ -163,9 +170,9 @@
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
     (let [{:keys [cursor-start ids]} dragging
-          delta (u/point-delta cursor-start cursor)]
+          [dx dy] (m/point-delta cursor-start cursor)]
       (-> db
-          (u/update-in-map :ui/positions ids u/translate-point delta)
+          (u/update-in-map :ui/positions ids m/translate-point dx dy)
           (dissoc :dragging :cursor)))))
 
 (reg-event-meta
