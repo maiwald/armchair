@@ -101,7 +101,6 @@
                  (Point. x y))
                (to-rect [[[x1 y1] [x2 y2]]]
                  (Rect. x1 y1 (inc (- x2 x1)) (inc (- y2 y1))))]
-         (u/log "point migration")
          (->> db
            (transform [:locations MAP-VALS :dimension] to-rect)
            (transform [:locations MAP-VALS :blocked ALL] to-point)
