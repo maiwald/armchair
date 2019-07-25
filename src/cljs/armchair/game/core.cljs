@@ -33,7 +33,8 @@
                               :opt-un [::interaction ::animation])))
 
 (s/def ::player (s/keys :req-un [:player/position
-                                 :player/direction]))
+                                 :player/direction]
+                        :req-opt [:player/texture]))
 (s/def :player/position :type/point)
 (s/def :player/direction #{:up :down :left :right})
 
