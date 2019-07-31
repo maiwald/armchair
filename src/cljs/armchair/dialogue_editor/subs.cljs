@@ -88,13 +88,12 @@
                                         (lines-by-kind :trigger))
                                 (filter #(contains? % :next-line-id))
                                 (map #(vector (:entity/id %) (:next-line-id %))))
-         :option-connections (reduce
-                               (fn [acc {start :entity/id :keys [options]}]
-                                 (apply conj acc (->> options
-                                                      (map-indexed (fn [index option-id]
-                                                                     (vector start
-                                                                             index
-                                                                             (get-in player-options [option-id :next-line-id]))))
-                                                      (filter (fn [[_ _ end]] (some? end))))))
-                               (list)
+         :option-connections (mapcat
+                               (fn [{start :entity/id :keys [options]}]
+                                 (->> options
+                                      (map-indexed
+                                        (fn [index option-id]
+                                          (if-let [end (get-in player-options [option-id :next-line-id])]
+                                            (vector start index end))))
+                                      (remove nil?)))
                                (lines-by-kind :player))}))))
