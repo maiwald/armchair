@@ -244,5 +244,5 @@
           content])})))
 
 (defn popover []
-  (when-let [data (<sub [:popover])]
+  (if-let [data (<sub [:popover])]
     [popover-positioned data]))

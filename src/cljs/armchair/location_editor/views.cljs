@@ -50,7 +50,7 @@
                                   (set-current-tile e)
                                   (paint e))
                  :on-mouse-up stop-painting}
-           (when-let [tile @current-tile]
+           (if-let [tile @current-tile]
              (let [{:keys [x y]} (u/tile->coord tile)]
                [:div {:class "interactor interactor_paint"
                       :style {:height (px config/tile-size)
@@ -283,7 +283,7 @@
         layer (get location layer-id)]
     [do-all-tiles rect (str "texture-layer:" layer-id)
      (fn [tile]
-       (when-let [t (get layer tile)]
+       (if-let [t (get layer tile)]
          [c/sprite-texture t]))]))
 
 (defn player-tile [rect position]

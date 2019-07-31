@@ -135,13 +135,13 @@
           (into [:ol.breadcrumb.navigation-container]
                 (let [{:keys [location dialogue]} (<sub [:breadcrumb])]
                   [
-                   (when-let [{:keys [id display-name]} location]
+                   (if-let [{:keys [id display-name]} location]
                      [:li.navigation__item
                       {:class (when (= :location-edit page-name) "is-active")}
                       [:a {:on-click #(>navigate :location-edit :id id)}
                        [:span.navigation__item__type "Location"]
                        [:span.navigation__item__title display-name]]])
-                   (when-let [{:keys [id character-name synopsis]} dialogue]
+                   (if-let [{:keys [id character-name synopsis]} dialogue]
                      [:li.navigation__item
                       {:class (when (= :dialogue-edit page-name) "is-active")}
                       [:a {:on-click #(>navigate :dialogue-edit :id id)}
