@@ -186,6 +186,13 @@
                    :trigger/switch-id
                    :trigger/switch-value]))
 
+(defmethod node-type :case [_]
+  (s/keys :req-un [::switch-id
+                   :case/clauses]))
+
+(s/def :case/clauses
+  (s/map-of ::switch-value-id ::next-line-id))
+
 (s/def :node/node
   (s/and (s/keys :req [:entity/id
                        :entity/type]
