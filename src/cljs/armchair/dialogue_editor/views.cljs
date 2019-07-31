@@ -188,7 +188,7 @@
 (defn option-connection [start index end]
   (let [_ (<sub [:ui/position start])
         end-pos (<sub [:ui/position end])]
-    (when-let [start-pos (get-option-start-position (get @option-position-lookup [start index]))]
+    (if-let [start-pos (get-option-start-position (get @option-position-lookup [start index]))]
       [curved-connection
        {:start (translate-point start-pos 35 20)
         :end (translate-point end-pos 0 top-offset)}])))
@@ -217,7 +217,7 @@
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
-       (when-let [connector (<sub [:connector])]
+       (if-let [connector (<sub [:connector])]
          [connection connector])
        (for [[start end] line-connections]
          ^{:key (str "line-connection:" start "->" end)}
