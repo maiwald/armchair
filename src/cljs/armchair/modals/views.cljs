@@ -6,6 +6,7 @@
             [armchair.util :as u :refer [<sub >evt stop-e! e->val]]
             [armchair.textures :refer [character-textures]]
             [armchair.modals.trigger-creation]
+            [armchair.modals.case-node-creation]
             [armchair.modals.connection-trigger-creation]
             [armchair.modals.switch-form]
             [armchair.modals.unlock-conditions-form]))
@@ -88,6 +89,7 @@
       :character-form              [character-form-modal (:character-form modal)]
       :location-creation           [location-creation-modal (:location-creation modal)]
       :trigger-creation            [armchair.modals.trigger-creation/modal (:trigger-creation modal)]
+      :case-node-creation          [armchair.modals.case-node-creation/modal (:case-node-creation modal)]
       :switch-form                 [armchair.modals.switch-form/modal]
       :unlock-conditions-form      [armchair.modals.unlock-conditions-form/modal]
       :connection-trigger-creation [armchair.modals.connection-trigger-creation/modal (:connection-trigger-creation modal)])))
