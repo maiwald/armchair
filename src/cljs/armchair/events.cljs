@@ -2,7 +2,7 @@
   (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
             [com.rpl.specter
              :refer [must ALL NONE MAP-VALS]
-             :refer-macros [setval]]
+             :refer-macros [select setval]]
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
@@ -131,15 +131,15 @@
 (reg-event-data
   :delete-dialogue
   (fn [db [_ dialogue-id]]
-    (let [dialogue-states (get-in db [:dialogues dialogue-id :states])]
-      (-> (loop [db db
-                 [state-id & state-ids] (keys dialogue-states)]
-            (if (nil? state-id)
-              db
-              (recur (db/clear-dialogue-state db state-id)
-                     state-ids)))
-          (update :dialogues dissoc dialogue-id)
-          (update :lines #(u/filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %))))))
+    (let [in-dialogue? (fn [node] (= dialogue-id (:dialogue-id node)))
+          line-ids (select [:lines MAP-VALS in-dialogue? :entity/id] db)
+          player-option-ids (select [:lines MAP-VALS in-dialogue? :options ALL] db)]
+      (loop [db (update db :dialogues dissoc dialogue-id)
+             line-ids line-ids]
+        (if (empty? line-ids)
+          db
+          (recur (db/delete-node-with-references db (peek line-ids))
+                 (pop line-ids)))))))
 
 ;; Page
 
