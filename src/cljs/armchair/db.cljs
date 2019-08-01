@@ -129,7 +129,7 @@
 ;; Dialogue & Lines
 
 (s/def ::next-line-id ::line-id)
-(s/def :node/kind keyword?)
+(s/def :node/kind #{:npc :player :trigger :case})
 
 (defmulti node-type :kind)
 (defmethod node-type :npc [_]
@@ -241,6 +241,7 @@
                                      :modal/dialogue-creation
                                      :modal/location-creation
                                      :modal/trigger-creation
+                                     :modal/case-node-creation
                                      :modal/switch-form
                                      :modal/unlock-conditions-form
                                      :modal/connection-trigger-creation
@@ -259,9 +260,14 @@
 
 (s/def :modal/trigger-creation
   (s/keys :req-un [::trigger-node-id
-                   :trigger/switch-id
                    :trigger/switch-kind
+                   :trigger/switch-id
                    :trigger/switch-value]))
+
+(s/def :modal/case-node-creation
+  (s/keys :req-un [::dialogue-id
+                   :trigger/switch-kind
+                   :trigger/switch-id]))
 
 (s/def :modal/switch-form
   (s/keys :req-un [::display-name
@@ -361,6 +367,23 @@
                 NONE db)
         (update-in [:dialogues dialogue-id :states] dissoc line-id)
         (update :triggers #(apply dissoc % trigger-ids)))))
+
+(defn delete-node-with-references [db node-id]
+  (let [node (get-in db [:lines node-id])
+        node-ref? (fn [id] (= id node-id))
+        clear-node-ref
+        (fn [node]
+          (->> node
+               (setval [(must :next-line-id) node-ref?] NONE)
+               (setval [(must :clauses) MAP-VALS node-ref?] NONE)))]
+    (-> (case (:kind node)
+          :trigger (update db :triggers dissoc (:trigger-ids node))
+          :npc (clear-dialogue-state db node-id)
+          db)
+        (update :lines dissoc node-id)
+        (update :ui/positions dissoc node-id)
+        (u/update-values :lines clear-node-ref)
+        (u/update-values :player-options clear-node-ref))))
 
 ;; Serialization
 

@@ -59,6 +59,7 @@
     (assert-switch-modal db e)
     (assoc-in db [:modal :switch-form :values index :deleted] true)))
 
+;; TODO deleting switch options should affect case nodes
 (reg-event-data
   ::save
   (fn [db _]

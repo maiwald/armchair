@@ -72,22 +72,52 @@
        :trigger-ids trigger-ids})))
 
 (reg-sub
+  :dialogue-editor/case-node
+  :<- [:db-lines]
+  :<- [:db-switches]
+  :<- [:db-switch-values]
+  (fn [[lines switches switch-values] [_ case-node-id]]
+    (let [{:keys [switch-id clauses]} (lines case-node-id)
+          {:keys [display-name value-ids]} (switches switch-id)]
+      {:switch-name display-name
+       :clauses (map (fn [id]
+                       {:display-name (get-in switch-values [id :display-name])
+                        :connected? (contains? clauses id)
+                        :switch-value-id id})
+                     value-ids)})))
+
+(reg-sub
   :dialogue-editor/dialogue
   :<- [:db-lines]
   :<- [:db-player-options]
   :<- [:db-dialogues]
   :<- [:db-characters]
-  (fn [[lines player-options dialogues characters positions] [_ dialogue-id]]
+  :<- [:db-switches]
+  :<- [:db-switch-values]
+  (fn [[lines player-options dialogues characters switches switch-values] [_ dialogue-id]]
     (if-let [dialogue (get dialogues dialogue-id)]
       (let [dialogue-lines (u/where-map :dialogue-id dialogue-id lines)
             lines-by-kind (group-by :kind (vals dialogue-lines))]
         {:npc-line-ids (map :entity/id (lines-by-kind :npc))
          :player-line-ids (map :entity/id (lines-by-kind :player))
          :trigger-node-ids (map :entity/id (lines-by-kind :trigger))
+         :case-node-ids (map :entity/id (lines-by-kind :case))
          :line-connections (->> (concat (lines-by-kind :npc)
                                         (lines-by-kind :trigger))
                                 (filter #(contains? % :next-line-id))
                                 (map #(vector (:entity/id %) (:next-line-id %))))
+         :case-connections (mapcat
+                             (fn [{start :entity/id :keys [clauses switch-id]}]
+                               (let [value-ids (->> (get-in switches [switch-id :value-ids])
+                                                    (sort-by #(get-in switch-values [% :display-name]))
+                                                    reverse)]
+                                 (->> value-ids
+                                      (map-indexed
+                                        (fn [index value-id]
+                                          (if-let [end (get clauses value-id)]
+                                            (vector start index end))))
+                                      (remove nil?))))
+                             (lines-by-kind :case))
          :option-connections (mapcat
                                (fn [{start :entity/id :keys [options]}]
                                  (->> options
