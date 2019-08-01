@@ -359,7 +359,8 @@
                (setval [(must :next-line-id) node-ref?] NONE)
                (setval [(must :clauses) MAP-VALS node-ref?] NONE)))]
     (-> (case (:kind node)
-          :trigger (update db :triggers dissoc (:trigger-ids node))
+          :trigger (update db :triggers #(apply dissoc % (:trigger-ids node)))
+          :player (update db :player-options #(apply dissoc % (:options node)))
           db)
         (update :lines dissoc node-id)
         (update :ui/positions dissoc node-id)
