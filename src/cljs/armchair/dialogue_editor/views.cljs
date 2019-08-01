@@ -158,7 +158,7 @@
 
 (defn trigger-node-component [id]
   (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-trigger-node id]))
-          (action-add-trigger [e] (>evt [:modal/open-trigger-creation id]))]
+          (action-add-trigger [e] (>evt [:armchair.modals.trigger-creation/open id]))]
     (fn [id]
       (let [{:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
         [c/graph-node {:title "Triggers"

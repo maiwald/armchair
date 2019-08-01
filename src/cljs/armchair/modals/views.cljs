@@ -5,6 +5,7 @@
             [armchair.config :as config]
             [armchair.util :as u :refer [<sub >evt stop-e! e->val]]
             [armchair.textures :refer [character-textures]]
+            [armchair.modals.trigger-creation]
             [armchair.modals.connection-trigger-creation]
             [armchair.modals.switch-form]
             [armchair.modals.unlock-conditions-form]))
@@ -77,33 +78,6 @@
                   :on-change update-name
                   :value display-name}]]))
 
-(defn trigger-creation-modal [{:keys [switch-kind switch-id switch-value]}]
-  (let [{:keys [kind-options
-                switch-options
-                value-options]} (case switch-kind
-                                  :dialogue-state
-                                  (<sub [:trigger-creation/dialogue-state-options])
-                                  :switch
-                                  (<sub [:trigger-creation/switch-options]))]
-    [slds/modal {:title "Add Trigger"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [:modal/save-trigger])}
-     [slds/radio-button-group {:options [[:dialogue-state "Dialogue State"]
-                                         [:switch "Switch"]]
-                               :active switch-kind
-                               :on-change #(>evt [:modal/update-trigger-kind %])}]
-     [input/select {:label (case switch-kind
-                             :dialogue-state "Dialogue"
-                             :switch "Switch")
-                    :options switch-options
-                    :value switch-id
-                    :disabled (nil? switch-kind)
-                    :on-change #(>evt [:modal/update-trigger-switch-id (uuid (e->val %))])}]
-     [input/select {:label "Value"
-                    :options value-options
-                    :value switch-value
-                    :disabled (nil? switch-id)
-                    :on-change #(>evt [:modal/update-trigger-value (uuid (e->val %))])}]]))
 
 (defn modal []
   (if-let [modal (<sub [:modal])]
@@ -113,7 +87,7 @@
       :npc-line-id                 [npc-line-form-modal (:npc-line-id modal)]
       :character-form              [character-form-modal (:character-form modal)]
       :location-creation           [location-creation-modal (:location-creation modal)]
-      :trigger-creation            [trigger-creation-modal (:trigger-creation modal)]
+      :trigger-creation            [armchair.modals.trigger-creation/modal (:trigger-creation modal)]
       :switch-form                 [armchair.modals.switch-form/modal]
       :unlock-conditions-form      [armchair.modals.unlock-conditions-form/modal]
       :connection-trigger-creation [armchair.modals.connection-trigger-creation/modal (:connection-trigger-creation modal)])))
