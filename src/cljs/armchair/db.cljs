@@ -11,7 +11,7 @@
             [armchair.math :refer [Point Rect]]
             [armchair.util :as u]))
 
-(def db-version 10)
+(def db-version 11)
 
 ;; Types
 
@@ -176,14 +176,12 @@
 
 (s/def ::trigger-ids (s/coll-of ::trigger-id :kind vector?))
 
-(s/def :trigger/switch-kind #{:dialogue-state :switch})
 (s/def :trigger/switch-id :entity/id)
 (s/def :trigger/switch-value ::switch-value-id)
 (s/def :trigger/trigger
   (s/keys :req [:entity/id
                 :entity/type]
-          :req-un [:trigger/switch-kind
-                   :trigger/switch-id
+          :req-un [:trigger/switch-id
                    :trigger/switch-value]))
 
 (defmethod node-type :case [_]
@@ -260,13 +258,11 @@
 
 (s/def :modal/trigger-creation
   (s/keys :req-un [::trigger-node-id
-                   :trigger/switch-kind
                    :trigger/switch-id
                    :trigger/switch-value]))
 
 (s/def :modal/case-node-creation
   (s/keys :req-un [::dialogue-id
-                   :trigger/switch-kind
                    :trigger/switch-id]))
 
 (s/def :modal/switch-form
@@ -354,20 +350,6 @@
   (s/and ::entity-map
          (s/map-of ::trigger-id :trigger/trigger)))
 
-(defn clear-dialogue-state [db line-id]
-  (let [dialogue-id (get-in db [:lines line-id :dialogue-id])
-        trigger-ids (->> (:triggers db)
-                         (u/filter-map (fn [{v :switch-value
-                                             kind :switch-kind}]
-                                         (and (= kind :dialogue-state)
-                                              (= v line-id))))
-                         keys
-                         set)]
-    (-> (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)]
-                NONE db)
-        (update-in [:dialogues dialogue-id :states] dissoc line-id)
-        (update :triggers #(apply dissoc % trigger-ids)))))
-
 (defn delete-node-with-references [db node-id]
   (let [node (get-in db [:lines node-id])
         node-ref? (fn [id] (= id node-id))
@@ -378,7 +360,6 @@
                (setval [(must :clauses) MAP-VALS node-ref?] NONE)))]
     (-> (case (:kind node)
           :trigger (update db :triggers dissoc (:trigger-ids node))
-          :npc (clear-dialogue-state db node-id)
           db)
         (update :lines dissoc node-id)
         (update :ui/positions dissoc node-id)

@@ -113,7 +113,16 @@
                       to-point)
            (transform [:player :location-position] to-point)
            (transform [:dialogues MAP-VALS (must :location-position)] to-point)
-           (transform [:ui/positions MAP-VALS] to-point))))})
+           (transform [:ui/positions MAP-VALS] to-point))))
+
+   10 (fn [db]
+        "Remove triggers for dialogue states"
+        (let [ds-trigger? (fn [t] (= (:switch-kind t) :dialogue-state))
+              trigger-ids (set (select [:triggers MAP-VALS ds-trigger? :entity/id] db))]
+          (->> db
+               (setval [:triggers MAP-VALS ds-trigger?] NONE)
+               (setval [:triggers MAP-VALS :switch-kind] NONE)
+               (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)] NONE))))})
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)

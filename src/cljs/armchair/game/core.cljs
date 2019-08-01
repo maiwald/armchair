@@ -29,7 +29,7 @@
                     :left [-1 0]
                     :right [1 0]})
 
-(s/def ::state (s/and (s/keys :req-un [::player ::dialogue-states ::switches]
+(s/def ::state (s/and (s/keys :req-un [::player ::switches]
                               :opt-un [::interaction ::animation])))
 
 (s/def ::player (s/keys :req-un [:player/position
@@ -38,7 +38,6 @@
 (s/def :player/position :type/point)
 (s/def :player/direction #{:up :down :left :right})
 
-(s/def ::dialogue-states (s/map-of :entity/id :entity/id))
 (s/def ::switches (s/map-of :entity/id (s/nilable :entity/id)))
 
 (s/def ::interaction (s/keys :req-un [::line-id ::selected-option]))
@@ -252,13 +251,8 @@
           {option-triggers :triggers
            :keys [next-line-id]} (interaction-option @state)]
       (swap! state
-             #(-> %
-                  (update :dialogue-states merge
-                          (:dialogue-states current-triggers)
-                          (:dialogue-states option-triggers))
-                  (update :switches merge
-                          (:switches current-triggers)
-                          (:switches option-triggers))))
+             #(update % :switches
+                      merge current-triggers option-triggers))
       (if (some? next-line-id)
         (swap! state assoc :interaction {:line-id next-line-id
                                          :selected-option 0})

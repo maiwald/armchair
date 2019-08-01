@@ -76,8 +76,9 @@
 
 (reg-event-data
   :dialogue-editor/delete-dialogue-state
-  (fn [db [_ id]]
-    (db/clear-dialogue-state db id)))
+  (fn [db [_ line-id]]
+    (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
+      (update-in db [:dialogues dialogue-id :states] dissoc line-id))))
 
 (reg-event-meta
   :start-connecting-lines

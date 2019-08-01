@@ -141,15 +141,12 @@
 
 
 (defn trigger-component [trigger-node-id trigger-id]
-  (let [{:keys [switch-kind
-                switch-id
+  (let [{:keys [switch-id
                 switch-name
                 switch-value]} (<sub [:dialogue-editor/trigger trigger-id])]
     [:li
      [:a {:on-mouse-down stop-e!
-          :on-click (if (= switch-kind :dialogue-state)
-                      #(>navigate :dialogue-edit :id switch-id)
-                      #(>evt [:armchair.modals.switch-form/open switch-id]))}
+          :on-click #(>evt [:armchair.modals.switch-form/open switch-id])}
       [:span.line__triggers__switch-name switch-name]
       [:span.line__triggers__switch-value switch-value]]
      [:a {:on-mouse-down stop-e!
