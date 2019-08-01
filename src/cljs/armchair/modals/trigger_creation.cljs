@@ -18,17 +18,7 @@
   (fn [db [_ node-id]]
     (assert-no-open-modal db)
     (assoc-in db [:modal :trigger-creation]
-              {:trigger-node-id node-id
-               :switch-kind :dialogue-state})))
-
-(reg-event-meta
-  ::update-kind
-  (fn [db [_ kind]]
-    (assert-trigger-modal db)
-    (update-in db [:modal :trigger-creation]
-               (fn [t] (-> t
-                           (assoc :switch-kind kind)
-                           (dissoc :switch-id :switch-value))))))
+              {:trigger-node-id node-id})))
 
 (reg-event-meta
   ::update-switch-id
@@ -50,10 +40,9 @@
   (fn [db]
     (assert-trigger-modal db)
     (let [trigger-id (random-uuid)
-          {:keys [trigger-node-id switch-kind switch-id switch-value]} (get-in db [:modal :trigger-creation])
+          {:keys [trigger-node-id switch-id switch-value]} (get-in db [:modal :trigger-creation])
           trigger {:entity/id trigger-id
                    :entity/type :trigger
-                   :switch-kind switch-kind
                    :switch-id switch-id
                    :switch-value switch-value}]
       (cond-> db
@@ -108,26 +97,14 @@
 
 ;; Views
 
-(defn modal [{:keys [switch-kind switch-id switch-value]}]
-  (let [{:keys [switch-options
-                value-options]} (case switch-kind
-                                  :dialogue-state
-                                  (<sub [::dialogue-state-options])
-                                  :switch
-                                  (<sub [::switch-options]))]
+(defn modal [{:keys [switch-id switch-value]}]
+  (let [{:keys [switch-options value-options]} (<sub [::switch-options])]
     [slds/modal {:title "Add Trigger Node"
                  :close-handler #(>evt [:close-modal])
                  :confirm-handler #(>evt [::save])}
-     [slds/radio-button-group {:options [[:dialogue-state "Dialogue State"]
-                                         [:switch "Switch"]]
-                               :active switch-kind
-                               :on-change #(>evt [::update-kind %])}]
-     [input/select {:label (case switch-kind
-                             :dialogue-state "Dialogue"
-                             :switch "Switch")
+     [input/select {:label "Switch"
                     :options switch-options
                     :value switch-id
-                    :disabled (nil? switch-kind)
                     :on-change #(>evt [::update-switch-id (uuid (e->val %))])}]
      [input/select {:label "Value"
                     :options value-options

@@ -28,12 +28,7 @@
                                                              :game/blocked
                                                              :game/outbound-connections
                                                              :game/npcs])))
-(s/def :game/triggers (s/keys :opt-un [:game-triggers/dialogue-states
-                                       :game-triggers/switches]))
-(s/def :game/trigger-map (s/map-of :entity/id :entity/id))
-(s/def :game-triggers/dialogue-states :game/trigger-map)
-(s/def :game-triggers/switches :game/trigger-map)
-
+(s/def :game/triggers (s/map-of :entity/id :entity/id))
 (s/def :game/dimension :type/rect)
 (s/def :game/blocked (s/coll-of :type/point :kind set?))
 (s/def :game/outbound-connections (s/map-of :type/point (s/tuple :game/location-id :type/point)))
@@ -76,14 +71,10 @@
                  (let [trigger (get lines (:next-line-id line))
                        triggers (->> (:trigger-ids trigger)
                                      (map triggers)
-                                     (group-by :switch-kind)
-                                     (u/filter-map some?)
-                                     (u/map-values triggers-to-map))]
+                                     triggers-to-map)]
                    (assoc line
                           :next-line-id (:next-line-id trigger)
-                          :triggers (rename-keys triggers
-                                                 {:dialogue-state :dialogue-states
-                                                  :switch :switches}))))
+                          :triggers triggers)))
                lines)))
 
 (reg-sub
@@ -98,14 +89,10 @@
                  (let [trigger (get lines (:next-line-id player-option))
                        triggers (->> (:trigger-ids trigger)
                                      (map triggers)
-                                     (group-by :switch-kind)
-                                     (u/filter-map some?)
-                                     (u/map-values triggers-to-map))]
+                                     triggers-to-map)]
                    (assoc player-option
                           :next-line-id (:next-line-id trigger)
-                          :triggers (rename-keys triggers
-                                                 {:dialogue-state :dialogue-states
-                                                  :switch :switches}))))
+                          :triggers triggers)))
                player-options)))
 
 (reg-sub
