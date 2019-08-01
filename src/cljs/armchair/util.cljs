@@ -53,8 +53,9 @@
 (defn map-keys [f m]
   (transform [MAP-KEYS] f m))
 
-(defn update-values [m k f]
-  (transform [k MAP-VALS] f m))
+(defn update-values
+  ([m k f] (transform [k MAP-VALS] f m))
+  ([m k f & args] (transform [k MAP-VALS] #(apply f % args) m)))
 
 (defn submap? [a-map b-map]
   (subset? (set a-map) (set b-map)))

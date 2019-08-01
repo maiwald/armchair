@@ -44,10 +44,8 @@
        "Remove inline state trigger and information concepts"
        (-> db
            (dissoc :infos)
-           (u/update-values :lines
-                            #(dissoc % :state-triggers :info-ids))
-           (u/update-values :player-options
-                            #(dissoc % :state-triggers :required-info-ids))))
+           (u/update-values :lines dissoc :state-triggers :info-ids)
+           (u/update-values :player-options dissoc :state-triggers :required-info-ids)))
 
    4 (fn [db]
        "Make location connections unidirectional"
