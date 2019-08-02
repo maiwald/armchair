@@ -140,8 +140,8 @@
 (defmethod node-type :player [_]
   (s/keys :req-un [::options]))
 
-(s/def ::options (s/coll-of ::player-option-id :kind vector?))
-
+(s/def ::options
+  (s/coll-of ::player-option-id :kind vector?))
 
 (s/def ::player-options (s/and ::entity-map
                                (s/map-of ::player-option-id ::player-option)))

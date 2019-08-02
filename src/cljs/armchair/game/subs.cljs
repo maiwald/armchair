@@ -4,7 +4,7 @@
             [re-frame.core :refer [reg-sub]]
             [com.rpl.specter
              :refer [must ALL NONE MAP-VALS]
-             :refer-macros [select transform]]
+             :refer-macros [select setval transform]]
             [armchair.config :as config]
             [armchair.textures :refer [character-textures]]
             [armchair.util :as u]))
@@ -13,13 +13,39 @@
                                    :game/locations
                                    :game/initial-state]))
 (s/def :game/initial-state :armchair.game.core/state)
-(s/def :game/lines (s/map-of :entity/id (s/keys :req-un [:game/text :game/options]
-                                                :opt-un [:game/triggers])))
-(s/def :game/options (s/coll-of (s/keys :req-un [:game/text]
-                                        :opt-un [:game/condition
-                                                 :game/triggers
-                                                 :game/next-line-id])
-                                :kind vector?))
+
+(defmulti node-type :kind)
+(defmethod node-type :npc [_]
+  (s/keys :req-un [:game/text]
+          :opt-un [:game/next-line-id]))
+
+(defmethod node-type :player [_]
+  (s/keys :req-un [:game/options]))
+
+(s/def :game/options
+  (s/coll-of (s/keys :req-un [:game/text]
+                     :opt-un [:game/condition
+                              :game/next-line-id])
+             :kind vector?))
+
+(s/def :game/condition fn?)
+
+(defmethod node-type :trigger [_]
+  (s/keys :req-un [:game/trigger-changes]
+          :opt-un [:game/next-line-id]))
+
+(s/def :game/trigger-changes
+  (s/map-of :entity/id :entity/id))
+
+(defmethod node-type :case [_]
+  (s/keys :req-un [:game/next-line-id-fn]))
+
+(s/def :game/next-line-id-fn fn?)
+
+(s/def :game/lines
+  (s/map-of :entity/id
+            (s/multi-spec node-type :kind)))
+
 (s/def :game/locations (s/map-of :entity/id (s/keys :req-un [:game/dimension
                                                              :game/background1
                                                              :game/background2
@@ -28,7 +54,6 @@
                                                              :game/blocked
                                                              :game/outbound-connections
                                                              :game/npcs])))
-(s/def :game/triggers (s/map-of :entity/id :entity/id))
 (s/def :game/dimension :type/rect)
 (s/def :game/blocked (s/coll-of :type/point :kind set?))
 (s/def :game/outbound-connections (s/map-of :type/point (s/tuple :game/location-id :type/point)))
@@ -58,72 +83,42 @@
   (into {} (for [{:keys [switch-id switch-value]} triggers]
              [switch-id switch-value])))
 
-(reg-sub
-  :game/lines-with-triggers
-  :<- [:db-lines]
-  :<- [:db-triggers]
-  (fn [[lines triggers]]
-    (transform [MAP-VALS
-                (fn [{:keys [kind next-line-id]}]
-                  (and (= :npc kind)
-                       (= :trigger (get-in lines [next-line-id :kind]))))]
-               (fn [line]
-                 (let [trigger (get lines (:next-line-id line))
-                       triggers (->> (:trigger-ids trigger)
-                                     (map triggers)
-                                     triggers-to-map)]
-                   (assoc line
-                          :next-line-id (:next-line-id trigger)
-                          :triggers triggers)))
-               lines)))
+(defn condition->fn [{:keys [conjunction terms]}]
+  (fn [switches]
+    ((-> conjunction config/condition-conjunctions :func)
+     (fn [{:keys [switch-id operator switch-value-id]}]
+       ((-> operator config/condition-operators :func)
+        (switches switch-id) switch-value-id))
+     terms)))
 
-(reg-sub
-  :game/player-options-with-triggers
-  :<- [:db-player-options]
-  :<- [:db-lines]
-  :<- [:db-triggers]
-  (fn [[player-options lines triggers]]
-    (transform [MAP-VALS
-                #(= :trigger (get-in lines [(:next-line-id %) :kind]))]
-               (fn [player-option]
-                 (let [trigger (get lines (:next-line-id player-option))
-                       triggers (->> (:trigger-ids trigger)
-                                     (map triggers)
-                                     triggers-to-map)]
-                   (assoc player-option
-                          :next-line-id (:next-line-id trigger)
-                          :triggers triggers)))
-               player-options)))
+(defn triggers->changes-map [trigger-ids triggers]
+  (into {} (map
+             #(let [t (triggers %)]
+                [(:switch-id t) (:switch-value t)])
+             trigger-ids)))
+
+(defn clauses->fn [clauses switch-id]
+  (fn [switches]
+    (get clauses (switches switch-id))))
 
 (reg-sub
   :game/line-data
-  :<- [:game/lines-with-triggers]
-  :<- [:game/player-options-with-triggers]
-  (fn [[lines player-options]]
+  :<- [:db-lines]
+  :<- [:db-player-options]
+  :<- [:db-triggers]
+  (fn [[lines player-options triggers]]
     (u/map-values
-      (fn [{:keys [next-line-id] :as line}]
-        (merge
-          (select-keys line [:text :triggers])
-          {:options (if-let [next-line (get lines next-line-id)]
-                      (case (:kind next-line)
-                        :npc (vector {:text "Continue..."
-                                      :next-line-id (:entity/id next-line)})
-                        :player (->> (mapv player-options (:options next-line))
-                                     (transform [ALL (must :condition)]
-                                                (fn [{:keys [conjunction terms]}]
-                                                  (fn [switches]
-                                                    ((-> conjunction
-                                                         config/condition-conjunctions
-                                                         :func)
-                                                     (fn [{:keys [switch-id operator switch-value-id]}]
-                                                       ((-> operator
-                                                            config/condition-operators
-                                                            :func)
-                                                        (switches switch-id)
-                                                        switch-value-id))
-                                                     terms))))))
-                      (vector {:text "Yeah..., whatever. Farewell"}))}))
-      (u/where-map :kind :npc lines))))
+      (fn [{:keys [kind] :as line}]
+        (case kind
+          :player (->> line
+                       (transform [:options ALL] player-options)
+                       (transform [:options ALL (must :condition)] condition->fn))
+          :trigger (assoc line :trigger-changes
+                          (triggers->changes-map (:trigger-ids line) triggers))
+          :case (assoc line :next-line-id-fn
+                       (clauses->fn (:clauses line) (:switch-id line)))
+          line))
+      lines)))
 
 (reg-sub
   :game/player-data
