@@ -16,7 +16,9 @@
 (reg-event-meta
   :location-editor/set-active-texture
   (fn [db [_ texture]]
-    (assoc-in db [:location-editor :active-texture] texture)))
+    (update db :location-editor
+               merge {:active-texture texture
+                      :active-tool :brush})))
 
 (reg-event-meta
   :location-editor/set-active-tool
