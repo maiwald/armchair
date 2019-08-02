@@ -49,14 +49,16 @@
   :<- [:db-switches]
   :<- [:db-switch-values]
   (fn [[switches switch-values] _]
-    (let [value-name (comp :display-name switch-values)]
-      (->> switches
-           (map
-             (fn [[id {:keys [display-name value-ids]}]]
+    (->> switches
+         (map
+           (fn [[id {:keys [display-name value-ids default]}]]
+             (letfn [(value-name [value-id]
+                       (str (get-in switch-values [value-id :display-name])
+                            (if (= default value-id) "*")))]
                {:id id
                 :display-name display-name
-                :values (->> value-ids (map value-name) (join ", "))}))
-           (sort-by :display-name)))))
+                :values (->> value-ids (map value-name) (join ", "))})))
+         (sort-by :display-name))))
 
 
 (reg-sub

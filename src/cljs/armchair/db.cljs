@@ -11,7 +11,7 @@
             [armchair.math :refer [Point Rect]]
             [armchair.util :as u]))
 
-(def db-version 10)
+(def db-version 11)
 
 ;; Types
 
@@ -129,7 +129,7 @@
 ;; Dialogue & Lines
 
 (s/def ::next-line-id ::line-id)
-(s/def :node/kind keyword?)
+(s/def :node/kind #{:npc :player :trigger :case})
 
 (defmulti node-type :kind)
 (defmethod node-type :npc [_]
@@ -140,8 +140,8 @@
 (defmethod node-type :player [_]
   (s/keys :req-un [::options]))
 
-(s/def ::options (s/coll-of ::player-option-id :kind vector?))
-
+(s/def ::options
+  (s/coll-of ::player-option-id :kind vector?))
 
 (s/def ::player-options (s/and ::entity-map
                                (s/map-of ::player-option-id ::player-option)))
@@ -176,15 +176,20 @@
 
 (s/def ::trigger-ids (s/coll-of ::trigger-id :kind vector?))
 
-(s/def :trigger/switch-kind #{:dialogue-state :switch})
 (s/def :trigger/switch-id :entity/id)
 (s/def :trigger/switch-value ::switch-value-id)
 (s/def :trigger/trigger
   (s/keys :req [:entity/id
                 :entity/type]
-          :req-un [:trigger/switch-kind
-                   :trigger/switch-id
+          :req-un [:trigger/switch-id
                    :trigger/switch-value]))
+
+(defmethod node-type :case [_]
+  (s/keys :req-un [::switch-id
+                   :case/clauses]))
+
+(s/def :case/clauses
+  (s/map-of ::switch-value-id ::next-line-id))
 
 (s/def :node/node
   (s/and (s/keys :req [:entity/id
@@ -214,8 +219,10 @@
   (s/keys :req [:entity/id
                 :entity/type]
           :req-un [::display-name
-                   :switch/value-ids]))
+                   :switch/value-ids]
+          :req-opt [:switch/default]))
 
+(s/def :switch/default ::switch-value-id)
 (s/def :switch/value-ids (s/coll-of ::switch-value-id
                                     :kind vector?
                                     :min-count 2))
@@ -234,6 +241,7 @@
                                      :modal/dialogue-creation
                                      :modal/location-creation
                                      :modal/trigger-creation
+                                     :modal/case-node-creation
                                      :modal/switch-form
                                      :modal/unlock-conditions-form
                                      :modal/connection-trigger-creation
@@ -253,17 +261,24 @@
 (s/def :modal/trigger-creation
   (s/keys :req-un [::trigger-node-id
                    :trigger/switch-id
-                   :trigger/switch-kind
                    :trigger/switch-value]))
+
+(s/def :modal/case-node-creation
+  (s/keys :req-un [::dialogue-id
+                   :trigger/switch-id]))
 
 (s/def :modal/switch-form
   (s/keys :req-un [::display-name
                    :switch-form/values]
-          :opt-un [::switch-id]))
+          :opt-un [::switch-id
+                   :switch-form/default]))
 
 (s/def :switch-form/values
   (s/coll-of :switch/value
              :min-count 2))
+
+(s/def :switch-form/default 
+  (s/nilable #(and (int? %) (<= 0 %))))
 
 (s/def :modal/unlock-conditions-form
   (s/keys :req-un [::player-option-id
@@ -341,19 +356,22 @@
   (s/and ::entity-map
          (s/map-of ::trigger-id :trigger/trigger)))
 
-(defn clear-dialogue-state [db line-id]
-  (let [dialogue-id (get-in db [:lines line-id :dialogue-id])
-        trigger-ids (->> (:triggers db)
-                         (u/filter-map (fn [{v :switch-value
-                                             kind :switch-kind}]
-                                         (and (= kind :dialogue-state)
-                                              (= v line-id))))
-                         keys
-                         set)]
-    (-> (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)]
-                NONE db)
-        (update-in [:dialogues dialogue-id :states] dissoc line-id)
-        (update :triggers #(apply dissoc % trigger-ids)))))
+(defn delete-node-with-references [db node-id]
+  (let [node (get-in db [:lines node-id])
+        node-ref? (fn [id] (= id node-id))
+        clear-node-ref
+        (fn [node]
+          (->> node
+               (setval [(must :next-line-id) node-ref?] NONE)
+               (setval [(must :clauses) MAP-VALS node-ref?] NONE)))]
+    (-> (case (:kind node)
+          :trigger (update db :triggers #(apply dissoc % (:trigger-ids node)))
+          :player (update db :player-options #(apply dissoc % (:options node)))
+          db)
+        (update :lines dissoc node-id)
+        (update :ui/positions dissoc node-id)
+        (u/update-values :lines clear-node-ref)
+        (u/update-values :player-options clear-node-ref))))
 
 ;; Serialization
 

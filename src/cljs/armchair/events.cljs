@@ -2,7 +2,7 @@
   (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
             [com.rpl.specter
              :refer [must ALL NONE MAP-VALS]
-             :refer-macros [setval]]
+             :refer-macros [select setval]]
             [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
@@ -109,34 +109,34 @@
   (fn [db [_ switch-id]]
     (let [switch-value-ids (get-in db [:switches switch-id :value-ids])
           belongs-to-switch? (fn [i] (= (:switch-id i) switch-id))
+          case-node-ids (select [:lines MAP-VALS belongs-to-switch? :entity/id] db)
           trigger-ids (->> (:triggers db)
                            (u/filter-map belongs-to-switch?)
                            keys
                            set)]
       (->>
-        (-> db
+        (-> (reduce db/delete-node-with-references db case-node-ids)
             (update :switches dissoc switch-id)
             (update :switch-values #(apply dissoc % switch-value-ids))
             (update :triggers #(apply dissoc % trigger-ids)))
         (setval [:player-options MAP-VALS (must :condition) :terms ALL belongs-to-switch?] NONE)
         (setval [:player-options MAP-VALS (must :condition) #(empty? (:terms %))] NONE)
-        (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)] NONE)
-        u/log))))
+        (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)] NONE)))))
 
 ;; Dialogue CRUD
 
 (reg-event-data
   :delete-dialogue
   (fn [db [_ dialogue-id]]
-    (let [dialogue-states (get-in db [:dialogues dialogue-id :states])]
-      (-> (loop [db db
-                 [state-id & state-ids] (keys dialogue-states)]
-            (if (nil? state-id)
-              db
-              (recur (db/clear-dialogue-state db state-id)
-                     state-ids)))
-          (update :dialogues dissoc dialogue-id)
-          (update :lines #(u/filter-map (fn [{id :dialogue-id}] (not= id dialogue-id)) %))))))
+    (let [in-dialogue? (fn [node] (= dialogue-id (:dialogue-id node)))
+          line-ids (select [:lines MAP-VALS in-dialogue? :entity/id] db)
+          player-option-ids (select [:lines MAP-VALS in-dialogue? :options ALL] db)]
+      (loop [db (update db :dialogues dissoc dialogue-id)
+             line-ids line-ids]
+        (if (empty? line-ids)
+          db
+          (recur (db/delete-node-with-references db (peek line-ids))
+                 (pop line-ids)))))))
 
 ;; Page
 

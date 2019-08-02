@@ -57,23 +57,10 @@
                    (fn [ts]
                      (vec (remove #(= trigger-id %) ts)))))))
 
-(defn next-line-clearer [id]
-  (fn [item]
-    (cond-> item
-      (= (:next-line-id item) id)
-      (dissoc :next-line-id))))
-
 (reg-event-data
-  :dialogue-editor/delete-trigger-node
-  (fn [db [_ id]]
-    (let [trigger-ids (get-in db [:lines id :trigger-ids])
-          clear-line (next-line-clearer id)]
-      (-> db
-          (update :triggers #(apply dissoc % trigger-ids))
-          (update :ui/positions dissoc id)
-          (update :lines dissoc id)
-          (u/update-values :player-options clear-line)
-          (u/update-values :lines clear-line)))))
+  :dialogue-editor/delete-node
+  (fn [db [_ node-id]]
+    (db/delete-node-with-references db node-id)))
 
 (defn initial-line? [db line-id]
   (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
@@ -88,24 +75,10 @@
     (assoc-in db [:lines id field] value)))
 
 (reg-event-data
-  :delete-line
-  (fn [db [_ id]]
-    (assert (not (initial-line? db id))
-            "Initial lines cannot be deleted!")
-    (let [options (get-in db [:lines id :options])
-          clear-line (next-line-clearer id)]
-      (-> db
-          (db/clear-dialogue-state id)
-          (update :ui/positions dissoc id)
-          (update :lines dissoc id)
-          (update :player-options #(apply dissoc % options))
-          (u/update-values :player-options clear-line)
-          (u/update-values :lines clear-line)))))
-
-(reg-event-data
   :dialogue-editor/delete-dialogue-state
-  (fn [db [_ id]]
-    (db/clear-dialogue-state db id)))
+  (fn [db [_ line-id]]
+    (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
+      (update-in db [:dialogues dialogue-id :states] dissoc line-id))))
 
 (reg-event-meta
   :start-connecting-lines
@@ -123,12 +96,15 @@
   (fn [db [_ end-id]]
     (assert (s/valid? :armchair.db/connecting-lines (:connecting db))
             "Attempting to end connecting with missing or invalid state!")
-    (let [{start-id :line-id index :index} (:connecting db)
-          id-path (if-let [option-id (get-in db [:lines start-id :options index])]
-                    [:player-options option-id :next-line-id]
-                    [:lines start-id :next-line-id])]
+    (let [{:keys [line-id index]} (:connecting db)
+          start-line (get-in db [:lines line-id])
+          id-path (case (:kind start-line)
+                    :player (let [option-id (get-in start-line [:options index])]
+                              [:player-options option-id :next-line-id])
+                    :case [:lines line-id :clauses index]
+                    [:lines line-id :next-line-id])]
       (cond-> (dissoc db :connecting :cursor)
-        (not= start-id end-id) (assoc-in id-path end-id)))))
+        (not= line-id end-id) (assoc-in id-path end-id)))))
 
 (reg-event-data
   :dialogue-editor/disconnect-line
@@ -178,3 +154,8 @@
   (fn [db [_ id index]]
     (let [option-id (get-in db [:lines id :options index])]
       (update-in db [:player-options option-id] dissoc :next-line-id))))
+
+(reg-event-data
+  :dialogue-editor/disconnect-case-clause
+  (fn [db [_ id switch-value-id]]
+    (update-in db [:lines id :clauses] dissoc switch-value-id)))
