@@ -161,6 +161,11 @@
   (fn [db [_ dialogue-id]]
     (update-in db [:dialogues dialogue-id] dissoc :initial-line-id)))
 
+(reg-event-data
+  :dialogue-editor/update-synopsis
+  (fn [db [_ dialogue-id text]]
+    (assoc-in db [:dialogues dialogue-id :synopsis] text)))
+
 (reg-event-meta
   :dialogue-editor/start-connecting-initial-line
   (fn [db [_ dialogue-id cursor]]
