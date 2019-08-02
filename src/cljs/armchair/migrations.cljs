@@ -9,8 +9,9 @@
                      FIRST LAST ALL
                      MAP-VALS MAP-KEYS]
              :refer-macros [select setval transform]]
+            [armchair.config :as config]
             [armchair.db :refer [db-version]]
-            [armchair.math :refer [Point Rect]]
+            [armchair.math :as math :refer [Point Rect]]
             [armchair.util :as u]))
 
 (def migrations
@@ -122,7 +123,16 @@
           (->> db
                (setval [:triggers MAP-VALS ds-trigger?] NONE)
                (setval [:triggers MAP-VALS :switch-kind] NONE)
-               (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)] NONE))))})
+               (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)] NONE))))
+   11 (fn [db]
+        "Introduce nodes for initial dialogue lines"
+        (let [initial-line-positions (u/map-values
+                                       #(math/translate-point
+                                          (get-in db [:ui/positions (:initial-line-id %)])
+                                          (- (+ config/line-width 50)) 0)
+                                       (:dialogues db))]
+          (update db :ui/positions merge initial-line-positions)))})
+
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)
