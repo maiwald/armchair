@@ -40,11 +40,21 @@
 
 (s/def ::switches (s/map-of :entity/id (s/nilable :entity/id)))
 
-(s/def ::interaction (s/keys :req-un [::line-id ::selected-option]))
+(s/def ::interaction (s/keys :req-un [:interaction/text
+                                      :interaction/options
+                                      :interaction/selected-option]))
 (s/def ::animation (s/keys :req-un [::start ::destination]))
 
-(s/def ::line-id :entity/id)
-(s/def ::selected-option int?)
+(s/def :interaction/line-id :entity/id)
+(s/def :interaction/selected-option int?)
+(s/def :interaction/options (s/coll-of
+                              :interaction/option
+                              :kind vector?))
+
+(s/def :interaction/option
+  (s/keys :req-un [:option/text
+                   :option/trigger-changes]
+          :opt-un [:option/next-line-id]))
 
 ;; State
 
@@ -65,30 +75,13 @@
     position
     (direction-map direction)))
 
-(defn available-option? [{:keys [condition]}]
-  (or (not (fn? condition))
-      (condition (:switches @state))))
-
-(defn dialogue-data [{{:keys [line-id selected-option]} :interaction}]
-  (let [line (get-in @data [:lines line-id])]
-    {:text (:text line)
-     :options (->> (:options line)
-                   (filter available-option?)
-                   (map :text))
-     :selected-option selected-option}))
+(defn dialogue-data [{:keys [interaction]}]
+  (-> interaction
+      (select-keys [:text :options :selected-option])
+      (update :options #(mapv :text %))))
 
 (defn interacting? [state]
   (contains? state :interaction))
-
-(defn interaction-option-count [{{:keys [line-id]} :interaction}]
-  (->> (get-in @data [:lines line-id :options])
-       (filter available-option?)
-       count))
-
-(defn interaction-option [{{:keys [line-id selected-option]} :interaction}]
-  (get (->> (get-in @data [:lines line-id :options])
-            (filterv available-option?))
-       selected-option))
 
 ;; Rendering
 
@@ -230,6 +223,68 @@
       (when (interacting? view-state)
         (draw-dialogue-box @ctx (dialogue-data view-state))))))
 
+;; Dialogue
+
+(defn advance-meta-nodes [resolver line trigger-changes]
+  (case (:kind line)
+    :trigger (resolver
+               (:next-line-id line)
+               (merge trigger-changes (:trigger-changes line)))
+    :case (resolver
+            ((:next-line-id-fn line) (:switches @state))
+            trigger-changes)
+    line))
+
+(defn resolve-next-line-id [line-id trigger-changes]
+  (let [line (get-in @data [:lines line-id])]
+    (case (:kind line)
+      :npc {:next-line-id line-id
+            :trigger-changes trigger-changes}
+      (:trigger :case) (advance-meta-nodes
+                         resolve-next-line-id line trigger-changes)
+      {:next-line-id nil
+       :trigger-changes trigger-changes})))
+
+(defn available-option? [{:keys [condition]}]
+  (or (not (fn? condition))
+      (condition (:switches @state))))
+
+(defn resolve-options
+  ([line-id] (resolve-options line-id {}))
+  ([line-id trigger-changes]
+   (let [line (get-in @data [:lines line-id])]
+     (case (:kind line)
+       :npc (vector {:text "Continue..."
+                     :next-line-id line-id
+                     :trigger-changes trigger-changes})
+       :player (->> (:options line)
+                    (filterv available-option?)
+                    (mapv (fn [option]
+                            (merge option (resolve-next-line-id
+                                            (:next-line-id option)
+                                            trigger-changes)))))
+       (:trigger :case) (advance-meta-nodes
+                          resolve-options line trigger-changes)
+       (vector {:text "Yeah..., whatever. Farewell."
+                :trigger-changes trigger-changes})))))
+
+(defn resolve-interaction
+  ([line-id] (resolve-interaction line-id {}))
+  ([line-id trigger-changes]
+   (let [line (get-in @data [:lines line-id])]
+     (case (:kind line)
+       :npc {:text (:text line)
+             :options (resolve-options (:next-line-id line) trigger-changes)
+             :selected-option 0}
+       (:trigger :case) (advance-meta-nodes
+                          resolve-interaction line trigger-changes)))))
+
+(defn interaction-line-id []
+  (let [l (get-in @state [:player :location-id])
+        npcs (get-in @data [:locations l :npcs])
+        tile (interaction-tile @state)]
+    (if-let [dialogue-id (get-in npcs [tile :dialogue-id])]
+      (get-in @state [:dialogue-states dialogue-id]))))
 
 ;; Input Handlers
 
@@ -238,31 +293,23 @@
 (defn handle-move [direction]
   (if (interacting? @state)
     (if-let [next-index-fn (get {:up dec :down inc} direction)]
-      (swap! state
-             update-in [:interaction :selected-option]
-             (fn [index] (mod (next-index-fn index)
-                              (interaction-option-count @state)))))
+      (swap! state update :interaction
+             (fn [{:keys [options selected-option] :as interaction}]
+               (assoc interaction :selected-option
+                      (mod (next-index-fn selected-option)
+                           (count options))))))
     (swap! move-q conj direction)))
 
 (defn handle-interact []
   (if (interacting? @state)
-    (let [current-line-id (get-in @state [:interaction :line-id])
-          current-triggers (get-in @data [:lines current-line-id :triggers])
-          {option-triggers :triggers
-           :keys [next-line-id]} (interaction-option @state)]
-      (swap! state
-             #(update % :switches
-                      merge current-triggers option-triggers))
+    (let [{:keys [options selected-option]} (:interaction @state)
+          {:keys [trigger-changes next-line-id]} (options selected-option)]
+      (swap! state update :switches merge trigger-changes)
       (if (some? next-line-id)
-        (swap! state assoc :interaction {:line-id next-line-id
-                                         :selected-option 0})
+        (swap! state assoc :interaction (resolve-interaction next-line-id))
         (swap! state dissoc :interaction)))
-    (let [l (get-in @state [:player :location-id])
-          npcs (get-in @data [:locations l :npcs])]
-      (if-let [dialogue-id (get-in npcs [(interaction-tile @state) :dialogue-id])]
-        (let [line-id (get-in @state [:dialogue-states dialogue-id])]
-          (swap! state assoc :interaction {:line-id line-id
-                                           :selected-option 0}))))))
+    (if-let [line-id (interaction-line-id)]
+      (swap! state assoc :interaction (resolve-interaction line-id)))))
 
 (defn start-input-loop [channel]
   (go-loop [[command payload :as message] (<! channel)]
