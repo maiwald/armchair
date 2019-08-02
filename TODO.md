@@ -7,7 +7,6 @@
 - rethink relationship between character and dialogue
 - restructure navigation
 - zoom in dialogue editor
-- consolidate dialogue states and switches
 - select and paint multiple texture sprites
 - sounds & music
 - state invariants
