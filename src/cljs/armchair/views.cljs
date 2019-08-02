@@ -134,20 +134,20 @@
              (if (= page-name :game) "Edit" "Locations")]]]
           (into [:ol.breadcrumb.navigation-container]
                 (let [{:keys [location dialogue]} (<sub [:breadcrumb])]
-                  [
-                   (if-let [{:keys [id display-name]} location]
+                  [(if-let [{:keys [id display-name]} location]
                      [:li.navigation__item
                       {:class (when (= :location-edit page-name) "is-active")}
                       [:a {:on-click #(>navigate :location-edit :id id)}
                        [:span.navigation__item__type "Location"]
-                       [:span.navigation__item__title display-name]]])
+                       [:span.navigation__item__title
+                        (u/truncate display-name 25)]]])
                    (if-let [{:keys [id character-name synopsis]} dialogue]
                      [:li.navigation__item
                       {:class (when (= :dialogue-edit page-name) "is-active")}
                       [:a {:on-click #(>navigate :dialogue-edit :id id)}
                        [:span.navigation__item__type "Dialogue"]
                        [:span.navigation__item__title
-                        (str character-name ": " synopsis)]]])]))
+                        (u/truncate (str character-name ": " synopsis) 25)]]])]))
           (let [resource-pages {:dialogues "Dialogues"
                                 :characters "Characters"
                                 :switches "Switches"}

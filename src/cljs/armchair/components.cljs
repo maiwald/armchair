@@ -120,7 +120,7 @@
        (when @open
          [:ul.dropdown__menu
           (for [{:keys [title on-click]} items]
-            [:li {:key (str "breadcrump" title)
+            [:li {:key (str "breadcrumb" title)
                   :on-click (item-click-fn on-click)}
              title])])])))
 
