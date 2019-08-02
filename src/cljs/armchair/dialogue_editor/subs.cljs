@@ -73,11 +73,12 @@
     (let [{:keys [switch-id clauses]} (lines case-node-id)
           {:keys [display-name value-ids]} (switches switch-id)]
       {:switch-name display-name
-       :clauses (map (fn [id]
-                       {:display-name (get-in switch-values [id :display-name])
-                        :connected? (contains? clauses id)
-                        :switch-value-id id})
-                     value-ids)})))
+       :clauses (->> value-ids
+                     (map (fn [id]
+                            {:display-name (get-in switch-values [id :display-name])
+                             :connected? (contains? clauses id)
+                             :switch-value-id id}))
+                     (sort-by :display-name))})))
 
 (reg-sub
   :dialogue-editor/dialogue
@@ -102,8 +103,7 @@
          :case-connections (mapcat
                              (fn [{start :entity/id :keys [clauses switch-id]}]
                                (let [value-ids (->> (get-in switches [switch-id :value-ids])
-                                                    (sort-by #(get-in switch-values [% :display-name]))
-                                                    reverse)]
+                                                    (sort-by #(get-in switch-values [% :display-name])))]
                                  (->> value-ids
                                       (map-indexed
                                         (fn [index value-id]
