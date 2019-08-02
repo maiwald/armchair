@@ -63,7 +63,7 @@
                    :actions [(when-not (or initial-line? (some? state))
                                ["tag" "Create named state" #(>evt [:open-dialogue-state-modal line-id])])
                              (when-not initial-line?
-                               ["trash" "Delete" #(>evt [:delete-line line-id])])
+                               ["trash" "Delete" #(>evt [:dialogue-editor/delete-node line-id])])
                              ["edit" "Edit" #(>evt [:open-npc-line-modal line-id])]]}
      (cond
        initial-line? [:div {:class "line__state"}
@@ -124,7 +124,7 @@
                             :on-change handle-text-change}]]]]])))
 
 (defn player-line-component [line-id]
-  (letfn [(action-delete [e] (>evt [:delete-line line-id]))
+  (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-node line-id]))
           (action-add-option [e] (>evt [:dialogue-editor/add-option line-id]))]
     (fn [line-id]
       (let [options (<sub [:dialogue-editor/player-line-options line-id])]
@@ -141,15 +141,12 @@
 
 
 (defn trigger-component [trigger-node-id trigger-id]
-  (let [{:keys [switch-kind
-                switch-id
+  (let [{:keys [switch-id
                 switch-name
                 switch-value]} (<sub [:dialogue-editor/trigger trigger-id])]
     [:li
      [:a {:on-mouse-down stop-e!
-          :on-click (if (= switch-kind :dialogue-state)
-                      #(>navigate :dialogue-edit :id switch-id)
-                      #(>evt [:armchair.modals.switch-form/open switch-id]))}
+          :on-click #(>evt [:armchair.modals.switch-form/open switch-id])}
       [:span.line__triggers__switch-name switch-name]
       [:span.line__triggers__switch-value switch-value]]
      [:a {:on-mouse-down stop-e!
@@ -157,8 +154,8 @@
       [icon "times-circle"]]]))
 
 (defn trigger-node-component [id]
-  (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-trigger-node id]))
-          (action-add-trigger [e] (>evt [:modal/open-trigger-creation id]))]
+  (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-node id]))
+          (action-add-trigger [e] (>evt [:armchair.modals.trigger-creation/open id]))]
     (fn [id]
       (let [{:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
         [c/graph-node {:title "Triggers"
@@ -176,6 +173,25 @@
              ^{:key (str "trigger" trigger-id)}
              [trigger-component id trigger-id])]]]))))
 
+(defn case-node-component [id]
+  (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-node id]))]
+    (fn [id]
+      (let [{:keys [switch-name clauses]} (<sub [:dialogue-editor/case-node id])]
+        [c/graph-node {:title switch-name
+                       :item-id id
+                       :on-connect-end #(>evt [:end-connecting-lines id])
+                       :actions [["trash" "Delete" action-delete]]}
+         [:ul.line__case_clauses
+          (for [{:keys [display-name connected? switch-value-id]} clauses]
+            ^{:key (str "case" id "clause" display-name)}
+            [:li
+             [:div {:class "line__content-wrapper"}
+              [:div.graph-node__connector
+               [connector {:connected? connected?
+                           :connector #(>evt [:start-connecting-lines id (e->graph-cursor %) switch-value-id])
+                           :disconnector #(>evt [:dialogue-editor/disconnect-case-clause id switch-value-id])}]]
+              [:div display-name]]])]]))))
+
 (def top-offset 55)
 
 (defn line-connection [start end]
@@ -185,10 +201,18 @@
      {:start (translate-point start-pos (+ config/line-width 15) top-offset)
       :end (translate-point end-pos 0 top-offset)}]))
 
+(defn case-connection [start index end]
+  (let [start-pos (<sub [:ui/position start])
+        end-pos (<sub [:ui/position end])]
+    [curved-connection
+     {:start (translate-point start-pos (+ config/line-width 15) (+ (* index 34)
+                                                                    top-offset))
+      :end (translate-point end-pos 0 top-offset)}]))
+
 (defn option-connection [start index end]
   (let [_ (<sub [:ui/position start])
         end-pos (<sub [:ui/position end])]
-    (when-let [start-pos (get-option-start-position (get @option-position-lookup [start index]))]
+    (if-let [start-pos (get-option-start-position (get @option-position-lookup [start index]))]
       [curved-connection
        {:start (translate-point start-pos 35 20)
         :end (translate-point end-pos 0 top-offset)}])))
@@ -197,7 +221,9 @@
   (if-let [{:keys [npc-line-ids
                    player-line-ids
                    trigger-node-ids
+                   case-node-ids
                    line-connections
+                   case-connections
                    option-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
     [:div {:class "content-wrapper"}
      [:div {:class "new-item-button"}
@@ -209,19 +235,26 @@
                  :on-click #(>evt [:create-npc-line dialogue-id])}]
       [c/button {:title "New Trigger Node"
                  :icon "plus"
-                 :on-click #(>evt [:create-trigger-node dialogue-id])}]]
+                 :on-click #(>evt [:create-trigger-node dialogue-id])}]
+      [c/button {:title "New Case Node"
+                 :icon "plus"
+                 :on-click #(>evt [:armchair.modals.case-node-creation/open dialogue-id])}]]
      [drag-canvas {:kind "line"
                    :nodes {npc-line-component npc-line-ids
                            player-line-component player-line-ids
-                           trigger-node-component trigger-node-ids}}
+                           trigger-node-component trigger-node-ids
+                           case-node-component case-node-ids}}
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
-       (when-let [connector (<sub [:connector])]
+       (if-let [connector (<sub [:connector])]
          [connection connector])
        (for [[start end] line-connections]
          ^{:key (str "line-connection:" start "->" end)}
          [line-connection start end])
+       (for [[start index end] case-connections]
+         ^{:key (str "case-connection:" start ":" index "->" end)}
+         [case-connection start index end])
        (for [[start index end] option-connections]
          ^{:key (str "response-connection:" start ":" index "->" end)}
          [option-connection start index end])]]]

@@ -51,17 +51,10 @@
   :<- [:db-switches]
   :<- [:db-switch-values]
   (fn [[triggers dialogues switches switch-values] [_ trigger-id]]
-    (let [{:keys [switch-kind switch-id switch-value]} (triggers trigger-id)]
-      (merge
-        {:switch-kind switch-kind
-         :switch-id switch-id}
-        (case switch-kind
-          :dialogue-state
-          {:switch-name (get-in dialogues [switch-id :synopsis])
-           :switch-value (get-in dialogues [switch-id :states switch-value] "Initial Line")}
-          :switch
-          {:switch-name (get-in switches [switch-id :display-name])
-           :switch-value (get-in switch-values [switch-value :display-name])})))))
+    (let [{:keys [switch-id switch-value]} (triggers trigger-id)]
+      {:switch-id switch-id
+       :switch-name (get-in switches [switch-id :display-name])
+       :switch-value (get-in switch-values [switch-value :display-name])})))
 
 (reg-sub
   :dialogue-editor/trigger-node
@@ -72,29 +65,58 @@
        :trigger-ids trigger-ids})))
 
 (reg-sub
+  :dialogue-editor/case-node
+  :<- [:db-lines]
+  :<- [:db-switches]
+  :<- [:db-switch-values]
+  (fn [[lines switches switch-values] [_ case-node-id]]
+    (let [{:keys [switch-id clauses]} (lines case-node-id)
+          {:keys [display-name value-ids]} (switches switch-id)]
+      {:switch-name display-name
+       :clauses (->> value-ids
+                     (map (fn [id]
+                            {:display-name (get-in switch-values [id :display-name])
+                             :connected? (contains? clauses id)
+                             :switch-value-id id}))
+                     (sort-by :display-name))})))
+
+(reg-sub
   :dialogue-editor/dialogue
   :<- [:db-lines]
   :<- [:db-player-options]
   :<- [:db-dialogues]
   :<- [:db-characters]
-  (fn [[lines player-options dialogues characters positions] [_ dialogue-id]]
+  :<- [:db-switches]
+  :<- [:db-switch-values]
+  (fn [[lines player-options dialogues characters switches switch-values] [_ dialogue-id]]
     (if-let [dialogue (get dialogues dialogue-id)]
       (let [dialogue-lines (u/where-map :dialogue-id dialogue-id lines)
             lines-by-kind (group-by :kind (vals dialogue-lines))]
         {:npc-line-ids (map :entity/id (lines-by-kind :npc))
          :player-line-ids (map :entity/id (lines-by-kind :player))
          :trigger-node-ids (map :entity/id (lines-by-kind :trigger))
+         :case-node-ids (map :entity/id (lines-by-kind :case))
          :line-connections (->> (concat (lines-by-kind :npc)
                                         (lines-by-kind :trigger))
                                 (filter #(contains? % :next-line-id))
                                 (map #(vector (:entity/id %) (:next-line-id %))))
-         :option-connections (reduce
-                               (fn [acc {start :entity/id :keys [options]}]
-                                 (apply conj acc (->> options
-                                                      (map-indexed (fn [index option-id]
-                                                                     (vector start
-                                                                             index
-                                                                             (get-in player-options [option-id :next-line-id]))))
-                                                      (filter (fn [[_ _ end]] (some? end))))))
-                               (list)
+         :case-connections (mapcat
+                             (fn [{start :entity/id :keys [clauses switch-id]}]
+                               (let [value-ids (->> (get-in switches [switch-id :value-ids])
+                                                    (sort-by #(get-in switch-values [% :display-name])))]
+                                 (->> value-ids
+                                      (map-indexed
+                                        (fn [index value-id]
+                                          (if-let [end (get clauses value-id)]
+                                            (vector start index end))))
+                                      (remove nil?))))
+                             (lines-by-kind :case))
+         :option-connections (mapcat
+                               (fn [{start :entity/id :keys [options]}]
+                                 (->> options
+                                      (map-indexed
+                                        (fn [index option-id]
+                                          (if-let [end (get-in player-options [option-id :next-line-id])]
+                                            (vector start index end))))
+                                      (remove nil?)))
                                (lines-by-kind :player))}))))

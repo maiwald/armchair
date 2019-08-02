@@ -23,60 +23,6 @@
   (fn [db [_ modal-fn | args]]
     (dissoc db :modal)))
 
-(defn assert-trigger-modal [db]
-  (assert (contains? (:modal db) :trigger-creation)
-          "No trigger creation initiated. Cannot set value!"))
-
-(reg-event-meta
-  :modal/open-trigger-creation
-  (fn [db [_ node-id]]
-    (assert-no-open-modal db)
-    (assoc-in db [:modal :trigger-creation]
-              {:trigger-node-id node-id
-               :switch-kind :dialogue-state})))
-
-(reg-event-meta
-  :modal/update-trigger-kind
-  (fn [db [_ kind]]
-    (assert-trigger-modal db)
-    (update-in db [:modal :trigger-creation]
-               (fn [t] (-> t
-                           (assoc :switch-kind kind)
-                           (dissoc :switch-id :switch-value))))))
-
-(reg-event-meta
-  :modal/update-trigger-switch-id
-  (fn [db [_ id]]
-    (assert-trigger-modal db)
-    (update-in db [:modal :trigger-creation]
-               (fn [t] (-> t
-                           (assoc :switch-id id)
-                           (dissoc :switch-value))))))
-
-(reg-event-meta
-  :modal/update-trigger-value
-  (fn [db [_ value]]
-    (assert-trigger-modal db)
-    (assoc-in db [:modal :trigger-creation :switch-value] value)))
-
-(reg-event-data
-  :modal/save-trigger
-  (fn [db]
-    (assert-trigger-modal db)
-    (let [trigger-id (random-uuid)
-          {:keys [trigger-node-id switch-kind switch-id switch-value]} (get-in db [:modal :trigger-creation])
-          trigger {:entity/id trigger-id
-                   :entity/type :trigger
-                   :switch-kind switch-kind
-                   :switch-id switch-id
-                   :switch-value switch-value}]
-      (cond-> db
-        (s/valid? :trigger/trigger trigger)
-        (-> (update-in [:lines trigger-node-id :trigger-ids]
-                       (fn [ts] (conj (vec ts) trigger-id)))
-            (assoc-in [:triggers trigger-id] trigger)
-            (dissoc :modal))))))
-
 (reg-event-meta
   :open-character-modal
   (fn [db [_ id]]
