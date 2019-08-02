@@ -104,27 +104,24 @@
           (u/update-in-map :dialogues location-dialogue-ids
                            dissoc :location-id :location-position)))))
 
-;; TODO deleting switch options should affect case nodes
 (reg-event-data
   :delete-switch
   (fn [db [_ switch-id]]
     (let [switch-value-ids (get-in db [:switches switch-id :value-ids])
           belongs-to-switch? (fn [i] (= (:switch-id i) switch-id))
+          case-node-ids (select [:lines MAP-VALS belongs-to-switch? :entity/id] db)
           trigger-ids (->> (:triggers db)
                            (u/filter-map belongs-to-switch?)
                            keys
                            set)]
       (->>
-        (-> db
+        (-> (reduce db/delete-node-with-references db case-node-ids)
             (update :switches dissoc switch-id)
             (update :switch-values #(apply dissoc % switch-value-ids))
             (update :triggers #(apply dissoc % trigger-ids)))
         (setval [:player-options MAP-VALS (must :condition) :terms ALL belongs-to-switch?] NONE)
         (setval [:player-options MAP-VALS (must :condition) #(empty? (:terms %))] NONE)
-        (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)] NONE)
-        (setval [:lines MAP-VALS #(and (contains? % :switch-id)
-                                       (= switch-id (:switch-id %)))] NONE)
-        u/log))))
+        (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)] NONE)))))
 
 ;; Dialogue CRUD
 

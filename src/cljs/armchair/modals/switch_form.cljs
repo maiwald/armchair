@@ -1,5 +1,8 @@
 (ns armchair.modals.switch-form
   (:require [clojure.spec.alpha :as s]
+            [com.rpl.specter
+             :refer [must NONE MAP-VALS MAP-KEYS]
+             :refer-macros [setval]]
             [re-frame.core :as re-frame :refer [reg-sub]]
             [armchair.modals.events :refer [assert-no-open-modal
                                             build-modal-assertion]]
@@ -71,23 +74,28 @@
   ::remove-value
   (fn [db [e index]]
     (assert-switch-modal db e)
-    (assoc-in db [:modal :switch-form :values index :deleted] true)))
+    (cond-> (assoc-in db [:modal :switch-form :values index :deleted] true)
+      (= index (get-in db [:modal :switch-form :default]))
+      (update-in [:modal :switch-form] dissoc :default))))
 
-;; TODO deleting switch options should affect case nodes
 (reg-event-data
   ::save
   (fn [db _]
     (assert-switch-modal db)
     (let [{:keys [switch-id display-name values default]} (get-in db [:modal :switch-form])
+          belongs-to-switch? (fn [i] (= (:switch-id i) switch-id))
           {values nil
            deleted-values true} (group-by :deleted values)
+          deleted-value-ids (map :entity/id deleted-values)
           id (or switch-id (random-uuid))
           value-map (into {} (for [v values] [(:entity/id v) v]))]
-      (cond-> db
-        (s/valid? :modal/switch-form {:switch-id id
-                                      :display-name display-name
-                                      :values values})
-        (-> (dissoc :modal)
+      (if (s/valid? :modal/switch-form {:switch-id id
+                                        :display-name display-name
+                                        :values values})
+        (-> (setval [:lines MAP-VALS
+                     belongs-to-switch? (must :clauses)
+                     MAP-KEYS #(contains? (set deleted-value-ids) %)] NONE db)
+            (dissoc :modal)
             (assoc-in [:switches id]
                       {:entity/id id
                        :entity/type :switch
@@ -95,8 +103,8 @@
                        :value-ids (mapv :entity/id values)
                        :default (:entity/id (get values default))})
             (update :switch-values merge value-map)
-            (update :switch-values #(apply dissoc % (map :entity/id deleted-values))))))))
-
+            (update :switch-values #(apply dissoc % deleted-value-ids)))
+        db))))
 
 ;; Subscriptions
 
