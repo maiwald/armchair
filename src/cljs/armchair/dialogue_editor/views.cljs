@@ -6,12 +6,13 @@
             [armchair.routes :refer [>navigate]]
             [armchair.config :as config]
             [armchair.slds :as slds]
-            [armchair.math :refer [Point translate-point]]
+            [armchair.input :as input]
+            [armchair.math :as math :refer [Point translate-point]]
             [armchair.util :as u :refer [<sub >evt stop-e! prevent-e! e->val e->left?]]))
 
 (def option-position-lookup (r/atom {}))
 
-(defn inline-textarea [{:keys [text on-change]}]
+(defn inline-textarea [{:keys [label text on-change]}]
   (let [text-state (r/atom text)
         handle-text-change #(reset! text-state (e->val %))
         handle-text-blur on-change]
@@ -24,17 +25,19 @@
                                    (reset! text-state new-text))))
        :reagent-render
        (fn []
-         [:textarea {:on-mouse-down stop-e!
-                     :on-change handle-text-change
-                     :on-blur #(handle-text-blur @text-state)
-                     :value @text-state}])})))
+         [input/textarea {:label label
+                          :options {:on-mouse-down stop-e!
+                                    :on-blur #(handle-text-blur @text-state)}
+                          :on-change handle-text-change
+                          :value @text-state}])})))
 
 (defn get-option-start-position [elem]
   (let [graph (aget (js/document.getElementsByClassName "graph") 0)]
     (when (and (some? elem) (some? graph))
-      (let [{:keys [right top]} (u/get-rect elem)
-            top-offset (:top (u/get-rect graph))]
-        (Point. right (- top top-offset))))))
+      (let [rect (u/get-rect elem)
+            top-offset (:y (u/get-rect graph))]
+        (translate-point (math/rect-point rect)
+                         (:w rect) (- top-offset))))))
 
 (defn connector [{:keys [connected? connector disconnector]}]
   (if connected?
@@ -74,7 +77,7 @@
        [connector {:connected? connected?
                    :connector #(>evt [:dialogue-editor/start-connecting-lines line-id (e->graph-cursor %)])
                    :disconnector #(>evt [:dialogue-editor/disconnect-line line-id])}]]
-      [:p.line__text
+      [:div.line__text
        [inline-textarea {:text text
                          :on-change #(>evt [:update-line line-id :text %])}]]]]))
 
@@ -114,7 +117,7 @@
                 [:span.line__condition__switch switch]
                 " " [:span.line__condition__operator operator]
                 " " [:span.line__condition__value value]])]])
-         [:p.line__text
+         [:div.line__text
           [inline-textarea {:text text
                             :on-change handle-text-change}]]]]])))
 
@@ -170,7 +173,7 @@
 
 (defn initial-line-component [id]
   (let [{:keys [synopsis connected?]} (<sub [:dialogue-editor/initial-line id])]
-    [c/graph-node {:title (u/truncate synopsis 35)
+    [c/graph-node {:title "Dialogue Start"
                    :item-id id
                    :on-connect-end #(>evt [:dialogue-editor/end-connecting-lines id])}
      [:div {:class "line__content-wrapper"}
@@ -178,7 +181,10 @@
        [connector {:connected? connected?
                    :connector #(>evt [:dialogue-editor/start-connecting-initial-line id (e->graph-cursor %)])
                    :disconnector #(>evt [:dialogue-editor/disconnect-initial-line id])}]]
-      [:p.line__text "Initial line"]]]))
+      [:div.line__text
+       [inline-textarea {:label "Synopsis"
+                         :text synopsis
+                         :on-change #(>evt [:dialogue-editor/update-synopsis id %])}]]]]))
 
 (defn case-node-component [id]
   (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-node id]))]
