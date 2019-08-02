@@ -215,14 +215,12 @@
                              rect (u/get-rect (r/dom-node this))
                              ref-rect (u/get-rect (:reference (r/props this)))]
                          [(clip
-                            (- (.-innerWidth js/window) (:width rect))
-                            (+ (- (:left ref-rect) (/ (:width rect) 2))
-                               (/ (:width ref-rect) 2)))
+                            (- (.-innerWidth js/window) (:w rect))
+                            (+ (- (:x ref-rect) (/ (:w rect) 2))
+                               (/ (:w ref-rect) 2)))
                           (clip
-                            (- (.-innerHeight js/window) (:height rect))
-                            (- (:top ref-rect)
-                               (:height rect)
-                               offset))]))]
+                            (- (.-innerHeight js/window) (:h rect))
+                            (- (:y ref-rect) (:h rect) offset))]))]
     (r/create-class
       {:display-name "popover-positioned"
        :component-did-mount

@@ -1,7 +1,7 @@
 (ns armchair.util
   (:require [clojure.set :refer [intersection subset?]]
             [re-frame.core :as re-frame]
-            [armchair.math :refer [Point]]
+            [armchair.math :as math :refer [Point Rect]]
             [armchair.config :refer [tile-size]]
             [com.rpl.specter
              :refer [must ALL NONE MAP-VALS MAP-KEYS]
@@ -118,13 +118,9 @@
       (.-value target))))
 
 (defn get-rect [elem]
-  (let [rect (.getBoundingClientRect elem)]
-    {:top (.-top rect)
-     :left (.-left rect)
-     :bottom (.-bottom rect)
-     :right (.-right rect)
-     :width (.-width rect)
-     :height (.-height rect)}))
+  (let [domrect (.getBoundingClientRect elem)]
+    (Rect. (.-left domrect) (.-top domrect)
+           (.-width domrect) (.-height domrect))))
 
 (defn relative-cursor [e elem]
   (let [rect (.getBoundingClientRect elem)]

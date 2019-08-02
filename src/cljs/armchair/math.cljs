@@ -43,6 +43,9 @@
   [(- (:x end) (:x start))
    (- (:y end) (:y start))])
 
+(defn rect-point [{:keys [x y]}]
+  (Point. x y))
+
 (defn translate-point [{:keys [x y] :as point} dx dy]
   (assoc point
          :x (+ x dx)
