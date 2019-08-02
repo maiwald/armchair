@@ -158,5 +158,5 @@
     {:lines line-data
      :locations locations
      :initial-state {:dialogue-states (u/map-values :initial-line-id dialogues)
-                     :switches (u/map-values (constantly nil) switches)
+                     :switches (u/map-values :default switches)
                      :player (merge player-data {:direction :down})}}))

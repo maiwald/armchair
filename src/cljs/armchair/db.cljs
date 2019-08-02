@@ -219,8 +219,10 @@
   (s/keys :req [:entity/id
                 :entity/type]
           :req-un [::display-name
-                   :switch/value-ids]))
+                   :switch/value-ids]
+          :req-opt [:switch/default]))
 
+(s/def :switch/default ::switch-value-id)
 (s/def :switch/value-ids (s/coll-of ::switch-value-id
                                     :kind vector?
                                     :min-count 2))
@@ -268,11 +270,15 @@
 (s/def :modal/switch-form
   (s/keys :req-un [::display-name
                    :switch-form/values]
-          :opt-un [::switch-id]))
+          :opt-un [::switch-id
+                   :switch-form/default]))
 
 (s/def :switch-form/values
   (s/coll-of :switch/value
              :min-count 2))
+
+(s/def :switch-form/default 
+  (s/nilable #(and (int? %) (<= 0 %))))
 
 (s/def :modal/unlock-conditions-form
   (s/keys :req-un [::player-option-id
