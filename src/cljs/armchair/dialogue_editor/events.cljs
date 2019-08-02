@@ -62,16 +62,9 @@
   (fn [db [_ node-id]]
     (db/delete-node-with-references db node-id)))
 
-(defn initial-line? [db line-id]
-  (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
-    (= line-id (get-in db [:dialogues dialogue-id :initial-line-id]))))
-
 (reg-event-data
   :update-line
   (fn [db [_ id field value]]
-    (assert (not (and (= field :character-id)
-                      (initial-line? db id)))
-            "Cannot modify initial line's character!")
     (assoc-in db [:lines id field] value)))
 
 (reg-event-data
@@ -81,7 +74,7 @@
       (update-in db [:dialogues dialogue-id :states] dissoc line-id))))
 
 (reg-event-meta
-  :start-connecting-lines
+  :dialogue-editor/start-connecting-lines
   (fn [db [_ line-id cursor index]]
     (assert (not (contains? db :connecting))
             "Attempting to start connecting lines while already in progress!")
@@ -92,19 +85,22 @@
            :cursor cursor)))
 
 (reg-event-data
-  :end-connecting-lines
+  :dialogue-editor/end-connecting-lines
   (fn [db [_ end-id]]
     (assert (s/valid? :armchair.db/connecting-lines (:connecting db))
             "Attempting to end connecting with missing or invalid state!")
-    (let [{:keys [line-id index]} (:connecting db)
-          start-line (get-in db [:lines line-id])
-          id-path (case (:kind start-line)
-                    :player (let [option-id (get-in start-line [:options index])]
-                              [:player-options option-id :next-line-id])
-                    :case [:lines line-id :clauses index]
-                    [:lines line-id :next-line-id])]
+    (let [{:keys [dialogue-id line-id index]} (:connecting db)
+          id-path (if (some? line-id)
+                    (let [start-line (get-in db [:lines line-id])]
+                      (case (:kind start-line)
+                        :player (let [option-id (get-in start-line [:options index])]
+                                  [:player-options option-id :next-line-id])
+                        :case [:lines line-id :clauses index]
+                        [:lines line-id :next-line-id]))
+                    [:dialogues dialogue-id :initial-line-id])]
       (cond-> (dissoc db :connecting :cursor)
-        (not= line-id end-id) (assoc-in id-path end-id)))))
+        (not= line-id end-id)
+        (assoc-in id-path end-id)))))
 
 (reg-event-data
   :dialogue-editor/disconnect-line
@@ -159,3 +155,19 @@
   :dialogue-editor/disconnect-case-clause
   (fn [db [_ id switch-value-id]]
     (update-in db [:lines id :clauses] dissoc switch-value-id)))
+
+(reg-event-data
+  :dialogue-editor/disconnect-initial-line
+  (fn [db [_ dialogue-id]]
+    (update-in db [:dialogues dialogue-id] dissoc :initial-line-id)))
+
+(reg-event-meta
+  :dialogue-editor/start-connecting-initial-line
+  (fn [db [_ dialogue-id cursor]]
+    (assert (not (contains? db :connecting))
+            "Attempting to start connecting lines while already in progress!")
+    (assoc db
+           :connecting {:cursor-start cursor
+                        :dialogue-id dialogue-id}
+           :cursor cursor)))
+

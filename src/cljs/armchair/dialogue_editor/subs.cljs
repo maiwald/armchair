@@ -81,6 +81,14 @@
                      (sort-by :display-name))})))
 
 (reg-sub
+  :dialogue-editor/initial-line
+  :<- [:db-dialogues]
+  (fn [dialogues [_ dialogue-id]]
+    (let [{:keys [synopsis initial-line-id]} (dialogues dialogue-id)]
+      {:synopsis synopsis
+       :connected? (some? initial-line-id)})))
+
+(reg-sub
   :dialogue-editor/dialogue
   :<- [:db-lines]
   :<- [:db-player-options]
@@ -96,6 +104,8 @@
          :player-line-ids (map :entity/id (lines-by-kind :player))
          :trigger-node-ids (map :entity/id (lines-by-kind :trigger))
          :case-node-ids (map :entity/id (lines-by-kind :case))
+         :initial-line-connection (if-let [end (:initial-line-id dialogue)]
+                                    (vector dialogue-id end))
          :line-connections (->> (concat (lines-by-kind :npc)
                                         (lines-by-kind :trigger))
                                 (filter #(contains? % :next-line-id))

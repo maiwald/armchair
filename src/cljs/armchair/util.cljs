@@ -9,6 +9,11 @@
 
 (defn px [v] (str v "px"))
 
+(defn truncate [s n]
+  (if (< (count s) n)
+    s
+    (str (subs s 0 n) "…")))
+
 (defn upload-json! [callback]
   (let [file-input (doto (js/document.createElement "input")
                      (.setAttribute "type" "file")

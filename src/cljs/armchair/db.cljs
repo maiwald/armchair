@@ -11,7 +11,7 @@
             [armchair.math :refer [Point Rect]]
             [armchair.util :as u]))
 
-(def db-version 11)
+(def db-version 12)
 
 ;; Types
 
@@ -40,8 +40,8 @@
 ;; UI State
 
 (s/def ::cursor-start :type/point)
-(s/def ::connecting-lines (s/keys :req-un [::cursor-start ::line-id]
-                                  :opt-un [::index]))
+(s/def ::connecting-lines (s/keys :req-un [::cursor-start]
+                                  :opt-un [::line-id ::dialogue-id ::index]))
 (s/def ::connecting-locations (s/keys :req-un [::cursor-start ::location-id]))
 (s/def :ui/connecting (s/or :lines ::connecting-lines
                             :locations ::connecting-locations))
@@ -277,7 +277,7 @@
   (s/coll-of :switch/value
              :min-count 2))
 
-(s/def :switch-form/default 
+(s/def :switch-form/default
   (s/nilable #(and (int? %) (<= 0 %))))
 
 (s/def :modal/unlock-conditions-form

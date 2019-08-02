@@ -51,7 +51,6 @@
 
 (defn npc-line-component [line-id]
   (let [{:keys [state
-                initial-line?
                 connected?
                 text
                 character-name
@@ -59,25 +58,21 @@
     [c/graph-node {:title character-name
                    :item-id line-id
                    :color character-color
-                   :on-connect-end #(>evt [:end-connecting-lines line-id])
-                   :actions [(when-not (or initial-line? (some? state))
+                     :on-connect-end #(>evt [:dialogue-editor/end-connecting-lines line-id])
+                   :actions [(when-not (some? state)
                                ["tag" "Create named state" #(>evt [:open-dialogue-state-modal line-id])])
-                             (when-not initial-line?
-                               ["trash" "Delete" #(>evt [:dialogue-editor/delete-node line-id])])
+                             ["trash" "Delete" #(>evt [:dialogue-editor/delete-node line-id])]
                              ["edit" "Edit" #(>evt [:open-npc-line-modal line-id])]]}
-     (cond
-       initial-line? [:div {:class "line__state"}
-                      [c/tag {:icon "tag"
-                              :title "Initial Line"}]]
-       (some? state) [:div {:class "line__state"}
-                      [c/tag {:title state
-                              :icon "tag"
-                              :on-click #(>evt [:open-dialogue-state-modal line-id])
-                              :on-remove #(>evt [:dialogue-editor/delete-dialogue-state line-id])}]])
+     (if (some? state)
+       [:div {:class "line__state"}
+        [c/tag {:title state
+                :icon "tag"
+                :on-click #(>evt [:open-dialogue-state-modal line-id])
+                :on-remove #(>evt [:dialogue-editor/delete-dialogue-state line-id])}]])
      [:div {:class "line__content-wrapper"}
       [:div.graph-node__connector
        [connector {:connected? connected?
-                   :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %)])
+                   :connector #(>evt [:dialogue-editor/start-connecting-lines line-id (e->graph-cursor %)])
                    :disconnector #(>evt [:dialogue-editor/disconnect-line line-id])}]]
       [:p.line__text
        [inline-textarea {:text text
@@ -106,7 +101,7 @@
                :ref #(swap! option-position-lookup assoc [line-id index] %)}
          [:div.graph-node__connector
           [connector {:connected? connected?
-                      :connector #(>evt [:start-connecting-lines line-id (e->graph-cursor %) index])
+                      :connector #(>evt [:dialogue-editor/start-connecting-lines line-id (e->graph-cursor %) index])
                       :disconnector #(>evt [:dialogue-editor/disconnect-option line-id index])}]]
          (when (seq conditions)
            [:div.line__condition
@@ -130,7 +125,7 @@
       (let [options (<sub [:dialogue-editor/player-line-options line-id])]
         [c/graph-node {:title "Player"
                        :item-id line-id
-                       :on-connect-end #(>evt [:end-connecting-lines line-id])
+                       :on-connect-end #(>evt [:dialogue-editor/end-connecting-lines line-id])
                        :actions [["trash" "Delete" action-delete]
                                  ["plus" "Add Option" action-add-option]]}
          [:ul {:class "line__options"}
@@ -160,18 +155,30 @@
       (let [{:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
         [c/graph-node {:title "Triggers"
                        :item-id id
-                       :on-connect-end #(>evt [:end-connecting-lines id])
+                       :on-connect-end #(>evt [:dialogue-editor/end-connecting-lines id])
                        :actions [["trash" "Delete" action-delete]
                                  ["plus" "Add Trigger" action-add-trigger]]}
          [:div {:class "line__content-wrapper"}
           [:div.graph-node__connector
            [connector {:connected? connected?
-                       :connector #(>evt [:start-connecting-lines id (e->graph-cursor %)])
+                       :connector #(>evt [:dialogue-editor/start-connecting-lines id (e->graph-cursor %)])
                        :disconnector #(>evt [:dialogue-editor/disconnect-line id])}]]
           [:ul.line__triggers
            (for [trigger-id trigger-ids]
              ^{:key (str "trigger" trigger-id)}
              [trigger-component id trigger-id])]]]))))
+
+(defn initial-line-component [id]
+  (let [{:keys [synopsis connected?]} (<sub [:dialogue-editor/initial-line id])]
+    [c/graph-node {:title (u/truncate synopsis 35)
+                   :item-id id
+                   :on-connect-end #(>evt [:dialogue-editor/end-connecting-lines id])}
+     [:div {:class "line__content-wrapper"}
+      [:div.graph-node__connector
+       [connector {:connected? connected?
+                   :connector #(>evt [:dialogue-editor/start-connecting-initial-line id (e->graph-cursor %)])
+                   :disconnector #(>evt [:dialogue-editor/disconnect-initial-line id])}]]
+      [:p.line__text "Initial line"]]]))
 
 (defn case-node-component [id]
   (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-node id]))]
@@ -188,7 +195,7 @@
              [:div {:class "line__content-wrapper"}
               [:div.graph-node__connector
                [connector {:connected? connected?
-                           :connector #(>evt [:start-connecting-lines id (e->graph-cursor %) switch-value-id])
+                           :connector #(>evt [:dialogue-editor/start-connecting-lines id (e->graph-cursor %) switch-value-id])
                            :disconnector #(>evt [:dialogue-editor/disconnect-case-clause id switch-value-id])}]]
               [:div display-name]]])]]))))
 
@@ -222,6 +229,7 @@
                    player-line-ids
                    trigger-node-ids
                    case-node-ids
+                   initial-line-connection
                    line-connections
                    case-connections
                    option-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
@@ -243,12 +251,15 @@
                    :nodes {npc-line-component npc-line-ids
                            player-line-component player-line-ids
                            trigger-node-component trigger-node-ids
-                           case-node-component case-node-ids}}
+                           case-node-component case-node-ids
+                           initial-line-component (list dialogue-id)}}
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
        (if-let [connector (<sub [:connector])]
          [connection connector])
+       (if-let [[start end] initial-line-connection]
+         [line-connection start end])
        (for [[start end] line-connections]
          ^{:key (str "line-connection:" start "->" end)}
          [line-connection start end])

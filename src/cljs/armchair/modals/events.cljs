@@ -3,7 +3,7 @@
             [clojure.string :refer [blank?]]
             [armchair.config :as config]
             [armchair.events :refer [reg-event-data reg-event-meta]]
-            [armchair.math :refer [Rect]]
+            [armchair.math :as math :refer [Rect]]
             [armchair.util :as u]))
 
 (defn assert-no-open-modal [db]
@@ -167,7 +167,10 @@
                                                       {:entity/id dialogue-id
                                                        :entity/type :dialogue
                                                        :initial-line-id line-id}))
-            (assoc-in [:ui/positions line-id] config/default-ui-position)
+            (update :ui/positions assoc
+                    dialogue-id config/default-ui-position
+                    line-id (math/translate-point config/default-ui-position
+                                                  (+ config/line-width 60) 0))
             (assoc-in [:lines line-id] {:entity/id line-id
                                         :entity/type :line
                                         :kind :npc
