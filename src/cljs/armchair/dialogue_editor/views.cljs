@@ -250,7 +250,7 @@
       [c/button {:title "New Trigger Node"
                  :icon "plus"
                  :on-click #(>evt [:create-trigger-node dialogue-id])}]
-      [c/button {:title "New Case Node"
+      [c/button {:title "New Switch Node"
                  :icon "plus"
                  :on-click #(>evt [:armchair.modals.case-node-creation/open dialogue-id])}]]
      [drag-canvas {:kind "line"
