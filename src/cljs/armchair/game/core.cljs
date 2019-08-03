@@ -249,24 +249,25 @@
   (or (not (fn? condition))
       (condition (:switches @state))))
 
-(defn resolve-options
-  ([line-id] (resolve-options line-id {}))
-  ([line-id trigger-changes]
-   (let [line (get-in @data [:lines line-id])]
-     (case (:kind line)
-       :npc (vector {:text "Continue..."
-                     :next-line-id line-id
-                     :trigger-changes trigger-changes})
-       :player (->> (:options line)
-                    (filterv available-option?)
-                    (mapv (fn [option]
-                            (merge option (resolve-next-line-id
-                                            (:next-line-id option)
-                                            trigger-changes)))))
-       (:trigger :case) (advance-meta-nodes
-                          resolve-options line trigger-changes)
-       (vector {:text "Yeah..., whatever. Farewell."
-                :trigger-changes trigger-changes})))))
+(defn resolve-options [line-id trigger-changes]
+  (let [line (get-in @data [:lines line-id])
+        options (case (:kind line)
+                  :npc (vector {:text "Continue..."
+                                :next-line-id line-id
+                                :trigger-changes trigger-changes})
+                  :player (->> (:options line)
+                               (filterv available-option?)
+                               (mapv (fn [option]
+                                       (merge option (resolve-next-line-id
+                                                       (:next-line-id option)
+                                                       trigger-changes)))))
+                  (:trigger :case) (advance-meta-nodes
+                                     resolve-options line trigger-changes)
+                  nil)]
+    (if-not (empty? options)
+      options
+      (vector {:text "Yeah..., whatever. Farewell."
+               :trigger-changes trigger-changes}))))
 
 (defn resolve-interaction
   ([line-id] (resolve-interaction line-id {}))
@@ -303,7 +304,7 @@
 (defn handle-interact []
   (if (interacting? @state)
     (let [{:keys [options selected-option]} (:interaction @state)
-          {:keys [trigger-changes next-line-id]} (options selected-option)]
+          {:keys [trigger-changes next-line-id]} (get options selected-option)]
       (swap! state update :switches merge trigger-changes)
       (if (some? next-line-id)
         (swap! state assoc :interaction (resolve-interaction next-line-id))
