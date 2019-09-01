@@ -30,20 +30,21 @@
                     :right [1 0]})
 
 (s/def ::state (s/and (s/keys :req-un [::player ::switches]
-                              :opt-un [::interaction ::animation])))
+                              :opt-un [::interaction])))
 
 (s/def ::player (s/keys :req-un [:player/position
                                  :player/direction]
-                        :req-opt [:player/texture]))
+                        :req-opt [:player/texture
+                                  :player/animation]))
 (s/def :player/position :type/point)
 (s/def :player/direction #{:up :down :left :right})
+(s/def :player/animation (s/keys :req-un [::start ::origin ::destination]))
 
 (s/def ::switches (s/map-of :entity/id (s/nilable :entity/id)))
 
 (s/def ::interaction (s/keys :req-un [:interaction/text
                                       :interaction/options
                                       :interaction/selected-option]))
-(s/def ::animation (s/keys :req-un [::start ::destination]))
 
 (s/def :interaction/line-id :entity/id)
 (s/def :interaction/selected-option int?)
@@ -404,10 +405,10 @@
         top (camera-coord h (:y dim) (:h dim) (:y player-coord))]
     (m/Rect. left top w h)))
 
-(defn update-state-movement [state now]
-  (if-let [{:keys [start destination]} (:animation state)]
+(defn update-state-player-movement [state now]
+  (if-let [{:keys [start destination]} (get-in state [:player :animation])]
     (if (animation-done? start now)
-      (let [new-state (dissoc state :animation)
+      (let [new-state (update state :player dissoc :animation)
             location-id (get-in state [:player :location-id])]
         (if-let [[new-location-id new-position]
                  (get-in @data [:locations location-id :outbound-connections destination])]
@@ -415,34 +416,36 @@
             (reset! move-q #queue [])
             (update new-state :player merge {:location-id new-location-id
                                              :position new-position}))
-          (assoc-in new-state [:player :position] destination)))
+          new-state))
       state)
     (if-let [direction (peek @move-q)]
-      (let [new-position (apply
+      (let [old-position (get-in state [:player :position])
+            new-position (apply
                            m/translate-point
-                           (get-in state [:player :position])
+                           old-position
                            (direction-map direction))]
         (swap! move-q pop)
         (cond-> (assoc-in state [:player :direction] direction)
           (walkable? new-position)
-          (assoc :animation {:start now
-                             :destination new-position})))
+          (update :player
+                  assoc
+                  :position new-position
+                  :animation {:start now
+                              :origin old-position
+                              :destination new-position})))
       state)))
 
 (defn update-state [state now]
   (-> state
-      (update-state-movement now)))
+      (update-state-player-movement now)))
 
 (defn view-state [state now]
   (as-> state s
     (update s :player
-            (fn [{:keys [position direction] :as player}]
+            (fn [{:keys [position direction animation] :as player}]
               (merge player
-                     (if-let [{:keys [start destination]} (:animation state)]
-                       {:position (animated-position start
-                                                     (u/tile->coord position)
-                                                     (u/tile->coord destination)
-                                                     now)
+                     (if-some [{:keys [start origin destination]} animation]
+                       {:position (animated-position start (u/tile->coord origin) (u/tile->coord destination) now)
                         :texture (animation-texture now (anim->data start (get-in player-animations [:walking direction])))}
                        {:position (u/tile->coord position)
                         :texture (animation-texture now (anim->data 0 (get-in player-animations [:idle direction])))}))))
