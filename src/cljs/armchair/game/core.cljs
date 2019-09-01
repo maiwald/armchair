@@ -404,7 +404,7 @@
         top (camera-coord h (:y dim) (:h dim) (:y player-coord))]
     (m/Rect. left top w h)))
 
-(defn update-state-animation [state now]
+(defn update-state-movement [state now]
   (if-let [{:keys [start destination]} (:animation state)]
     (if (animation-done? start now)
       (let [new-state (dissoc state :animation)
@@ -417,10 +417,6 @@
                                              :position new-position}))
           (assoc-in new-state [:player :position] destination)))
       state)
-    state))
-
-(defn update-state-movement [state now]
-  (if (not (contains? state :animation))
     (if-let [direction (peek @move-q)]
       (let [new-position (apply
                            m/translate-point
@@ -431,12 +427,10 @@
           (walkable? new-position)
           (assoc :animation {:start now
                              :destination new-position})))
-      state)
-    state))
+      state)))
 
 (defn update-state [state now]
   (-> state
-      (update-state-animation now)
       (update-state-movement now)))
 
 (defn view-state [state now]
