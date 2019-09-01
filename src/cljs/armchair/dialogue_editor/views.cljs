@@ -192,7 +192,7 @@
       (let [{:keys [switch-name clauses]} (<sub [:dialogue-editor/case-node id])]
         [c/graph-node {:title switch-name
                        :item-id id
-                       :on-connect-end #(>evt [:end-connecting-lines id])
+                       :on-connect-end #(>evt [:dialogue-editor/end-connecting-lines id])
                        :actions [["trash" "Delete" action-delete]]}
          [:ul.line__case_clauses
           (for [{:keys [display-name connected? switch-value-id]} clauses]
