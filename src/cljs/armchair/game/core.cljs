@@ -94,23 +94,23 @@
                       (m/Rect. (* x tile-size) (* y tile-size)
                                tile-size tile-size)))
 
-(defn draw-texture [ctx texture coord]
+(defn draw-texture [texture coord]
   (when (some? @texture-atlas)
-    (c/draw-image! ctx (get @texture-atlas texture (@texture-atlas :missing_texture)) coord)))
+    (c/draw-image! @ctx (get @texture-atlas texture (@texture-atlas :missing_texture)) coord)))
 
-(defn draw-sprite-texture [ctx texture dest-coord]
+(defn draw-sprite-texture [texture dest-coord]
   (when (some? @texture-atlas)
     (if-let [[file [x-offset y-offset]] (get sprite-lookup texture)]
       (if-let [sprite-sheet (get @texture-atlas file)]
-        (c/draw-image! ctx sprite-sheet (m/Point. x-offset y-offset) dest-coord)
-        (c/draw-image! ctx (@texture-atlas :missing_texture) dest-coord))
-      (c/draw-image! ctx (@texture-atlas :missing_texture) dest-coord))))
+        (c/draw-image! @ctx sprite-sheet (m/Point. x-offset y-offset) dest-coord)
+        (c/draw-image! @ctx (@texture-atlas :missing_texture) dest-coord))
+      (c/draw-image! @ctx (@texture-atlas :missing_texture) dest-coord))))
 
-(defn draw-texture-rotated [ctx texture coord deg]
+(defn draw-texture-rotated [texture coord deg]
   (when (some? @texture-atlas)
-    (c/draw-image-rotated! ctx (@texture-atlas texture) coord deg)))
+    (c/draw-image-rotated! @ctx (@texture-atlas texture) coord deg)))
 
-(defn draw-background [ctx rect background camera]
+(defn draw-background [rect background camera]
   (when (some? background)
     (doseq [x (range (:x rect) (+ (:x rect) (:w rect)))
             y (range (:y rect) (+ (:y rect) (:h rect)))
@@ -118,37 +118,37 @@
                   texture (get background tile)]
             :when (and (some? texture)
                        (tile-visible? camera tile))]
-      (draw-sprite-texture ctx texture (u/tile->coord tile)))))
+      (draw-sprite-texture texture (u/tile->coord tile)))))
 
-(defn draw-player [ctx {:keys [position texture]}]
-  (draw-sprite-texture ctx texture position))
+(defn draw-player [{:keys [position texture]}]
+  (draw-sprite-texture texture position))
 
-(defn draw-npcs [ctx npcs camera]
+(defn draw-npcs [npcs camera]
   (doseq [[tile {texture :texture}] npcs]
     (when (tile-visible? camera tile)
-      (draw-sprite-texture ctx texture (u/tile->coord tile)))))
+      (draw-sprite-texture texture (u/tile->coord tile)))))
 
-(defn draw-direction-indicator [ctx {{:keys [position direction]} :player}]
+(defn draw-direction-indicator [{{:keys [position direction]} :player}]
   (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
-    (draw-texture-rotated ctx :arrow position rotation)))
+    (draw-texture-rotated :arrow position rotation)))
 
-(defn draw-dialogue-box [ctx {:keys [text options selected-option]}]
+(defn draw-dialogue-box [{:keys [text options selected-option]}]
   (let [w 600
         h 300
-        x (/ (- (c/width ctx) w) 2)
-        y (/ (- (c/height ctx) h) 2)
+        x (/ (- (c/width @ctx) w) 2)
+        y (/ (- (c/height @ctx) h) 2)
         dialogue-box-rect (m/Rect. x y w h)]
-    (c/save! ctx)
-    (c/set-fill-style! ctx "rgba(230, 230, 230, .9)")
-    (c/fill-rect! ctx dialogue-box-rect)
-    (c/set-stroke-style! ctx "rgb(0, 0, 0)")
-    (c/stroke-rect! ctx dialogue-box-rect)
+    (c/save! @ctx)
+    (c/set-fill-style! @ctx "rgba(230, 230, 230, .9)")
+    (c/fill-rect! @ctx dialogue-box-rect)
+    (c/set-stroke-style! @ctx "rgb(0, 0, 0)")
+    (c/stroke-rect! @ctx dialogue-box-rect)
 
-    (c/set-fill-style! ctx "rgb(0, 0, 0)")
-    (c/set-baseline! ctx "top")
-    (c/set-font! ctx "23px serif")
-    (let [offset (c/draw-textbox! ctx text (m/translate-point (m/Point. x y) 20 20) (- w 40))]
-      (c/set-font! ctx "18px serif")
+    (c/set-fill-style! @ctx "rgb(0, 0, 0)")
+    (c/set-baseline! @ctx "top")
+    (c/set-font! @ctx "23px serif")
+    (let [offset (c/draw-textbox! @ctx text (m/translate-point (m/Point. x y) 20 20) (- w 40))]
+      (c/set-font! @ctx "18px serif")
       (let [w (- w 40)
             padding 6
             spacing 6]
@@ -156,73 +156,72 @@
                y (+ y 40 offset)
                [option & options] options]
           (when (some? option)
-            (c/set-fill-style! ctx "rgb(0, 0, 0)")
+            (c/set-fill-style! @ctx "rgb(0, 0, 0)")
             (if (= selected-option idx)
-              (c/set-stroke-style! ctx "rgb(255, 0, 0)")
-              (c/set-stroke-style! ctx "rgb(0, 0, 0)"))
+              (c/set-stroke-style! @ctx "rgb(255, 0, 0)")
+              (c/set-stroke-style! @ctx "rgb(0, 0, 0)"))
             (let [coord (m/translate-point (m/Point. x y) 20 0)
-                  height (+ padding (c/draw-textbox! ctx option (m/translate-point coord 7 padding) w))
+                  height (+ padding (c/draw-textbox! @ctx option (m/translate-point coord 7 padding) w))
                   option-rect (m/Rect. (:x coord) (:y coord) w height)]
               (if (= selected-option idx)
-                (c/set-fill-style! ctx "rgba(0, 0, 0, .1)")
-                (c/set-fill-style! ctx "rgba(0, 0, 0, 0)"))
-              (c/fill-rect! ctx option-rect)
+                (c/set-fill-style! @ctx "rgba(0, 0, 0, .1)")
+                (c/set-fill-style! @ctx "rgba(0, 0, 0, 0)"))
+              (c/fill-rect! @ctx option-rect)
 
-              (c/set-line-width! ctx "1")
-              (c/stroke-rect! ctx option-rect)
+              (c/set-line-width! @ctx "1")
+              (c/stroke-rect! @ctx option-rect)
 
               (recur (inc idx)
                      (+ y height spacing)
                      options))))))
-    (c/restore! ctx)))
+    (c/restore! @ctx)))
 
-(defn draw-camera [ctx {:keys [x y w h] :as camera}]
-  (c/set-stroke-style! ctx "rgb(255, 0, 0)")
-  (c/stroke-rect! ctx camera)
-  (c/set-stroke-style! ctx "rgb(255, 255, 0)")
-  (c/stroke-rect! ctx
+(defn draw-camera [{:keys [x y w h] :as camera}]
+  (c/set-stroke-style! @ctx "rgb(255, 0, 0)")
+  (c/stroke-rect! @ctx camera)
+  (c/set-stroke-style! @ctx "rgb(255, 255, 0)")
+  (c/stroke-rect! @ctx
                   (m/Rect. (- x tile-size) (- y tile-size)
                            (+ w (* 2 tile-size)) (+ h (* 2 tile-size)))))
 
 
 (defn render [view-state]
-  (when (some? @ctx)
-    (let [camera (:camera view-state)]
-      (c/clear! @ctx)
-      (c/set-fill-style! @ctx "rgb(0, 0, 0)")
-      (c/fill-rect! @ctx (m/Rect. 0 0 (c/width @ctx) (c/height @ctx)))
-      (let [w-offset (- (/ (- (c/width @ctx) (:w camera)) 2) (:x camera))
-            h-offset (- (/ (- (c/height @ctx) (:h camera)) 2) (:y camera))]
-        (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
-      (let [l (get-in view-state [:player :location-id])
-            player-tile (u/coord->tile (get-in view-state [:player :position]))
-            {:keys [npcs
-                    dimension
-                    background1
-                    background2
-                    foreground1
-                    foreground2]} (get-in @data [:locations l])]
-        (draw-background @ctx dimension background1 camera)
-        (draw-background @ctx dimension background2 camera)
-        (draw-player @ctx (:player view-state))
-        (draw-npcs @ctx npcs camera)
-        (draw-background @ctx dimension foreground1 camera)
-        (draw-background @ctx dimension foreground2 camera))
-      ; (draw-direction-indicator @ctx view-state)
-      ; (draw-camera @ctx camera)
-      (c/reset-transform! @ctx)
-      (let [w-offset (/ (- (c/width @ctx) (:w camera)) 2)
-            h-offset (/ (- (c/height @ctx) (:h camera)) 2)]
-        (c/draw-image! @ctx
-                       (.-canvas @ctx)
-                       (m/Point. w-offset h-offset)
-                       [(:w camera) (:h camera)]
-                       (m/Point.
-                         (- (/ (c/width @ctx) 2) (* (/ (:w camera) 2) camera-scale))
-                         (- (/ (c/height @ctx) 2) (* (/ (:h camera) 2) camera-scale)))
-                       [(* camera-scale (:w camera)) (* camera-scale (:h camera))]))
-      (when (interacting? view-state)
-        (draw-dialogue-box @ctx (dialogue-data view-state))))))
+  (let [camera (:camera view-state)]
+    (c/clear! @ctx)
+    (c/set-fill-style! @ctx "rgb(0, 0, 0)")
+    (c/fill-rect! @ctx (m/Rect. 0 0 (c/width @ctx) (c/height @ctx)))
+    (let [w-offset (- (/ (- (c/width @ctx) (:w camera)) 2) (:x camera))
+          h-offset (- (/ (- (c/height @ctx) (:h camera)) 2) (:y camera))]
+      (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
+    (let [l (get-in view-state [:player :location-id])
+          player-tile (u/coord->tile (get-in view-state [:player :position]))
+          {:keys [npcs
+                  dimension
+                  background1
+                  background2
+                  foreground1
+                  foreground2]} (get-in @data [:locations l])]
+      (draw-background dimension background1 camera)
+      (draw-background dimension background2 camera)
+      (draw-player (:player view-state))
+      (draw-npcs npcs camera)
+      (draw-background dimension foreground1 camera)
+      (draw-background dimension foreground2 camera))
+    ; (draw-direction-indicator @ctx view-state)
+    ; (draw-camera @ctx camera)
+    (c/reset-transform! @ctx)
+    (let [w-offset (/ (- (c/width @ctx) (:w camera)) 2)
+          h-offset (/ (- (c/height @ctx) (:h camera)) 2)]
+      (c/draw-image! @ctx
+                     (.-canvas @ctx)
+                     (m/Point. w-offset h-offset)
+                     [(:w camera) (:h camera)]
+                     (m/Point.
+                       (- (/ (c/width @ctx) 2) (* (/ (:w camera) 2) camera-scale))
+                       (- (/ (c/height @ctx) 2) (* (/ (:h camera) 2) camera-scale)))
+                     [(* camera-scale (:w camera)) (* camera-scale (:h camera))]))
+    (when (interacting? view-state)
+      (draw-dialogue-box (dialogue-data view-state)))))
 
 ;; Dialogue
 
