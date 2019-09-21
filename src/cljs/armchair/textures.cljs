@@ -19,7 +19,9 @@
             [8 0] :hare_left_walking1
             [9 0] :hare_left_walking2
             [10 0] :hare_right_walking1
-            [11 0] :hare_right_walking2}
+            [11 0] :hare_right_walking2
+            [12 0] :hare_right_idle
+            [13 0] :hare_left_idle}
      :guy_sprite_sheet {[0 0] :guy_up_walking1
                         [1 0] :guy_up_idle
                         [2 0] :guy_up_walking2

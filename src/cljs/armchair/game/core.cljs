@@ -333,9 +333,11 @@
     [[:hare_down_idle1 200]
      [:hare_down_idle2 200]]
     :left
-    [[:hare_left_walking2 200]]
+    [[:hare_left_walking2 200]
+     [:hare_left_idle 200]]
     :right
-    [[:hare_right_walking2 200]]}
+    [[:hare_right_walking2 200]
+     [:hare_right_idle 200]]}
 
    :walking
    {:up
