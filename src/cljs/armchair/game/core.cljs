@@ -324,34 +324,49 @@
 
 ;; Animations
 
-(def player-animations
-  {:idle
-   {:up
-    [[:hare_up_idle1 200]
-     [:hare_up_idle2 200]]
-    :down
-    [[:hare_down_idle1 200]
-     [:hare_down_idle2 200]]
-    :left
-    [[:hare_left_walking2 200]
-     [:hare_left_idle 200]]
-    :right
-    [[:hare_right_walking2 200]
-     [:hare_right_idle 200]]}
+(def hare-animations
+  {:idle {:up
+          [[:hare_up_idle1 200]
+           [:hare_up_idle2 200]]
+          :down
+          [[:hare_down_idle1 200]
+           [:hare_down_idle2 200]]
+          :left
+          [[:hare_left_walking2 200]
+           [:hare_left_idle 200]]
+          :right
+          [[:hare_right_walking2 200]
+           [:hare_right_idle 200]]}
+   :walking {:up
+             [[:hare_up_walking1 (quot tile-move-time 2)]
+              [:hare_up_walking2 (quot tile-move-time 2)]]
+             :down
+             [[:hare_down_walking1 (quot tile-move-time 2)]
+              [:hare_down_walking2 (quot tile-move-time 2)]]
+             :left
+             [[:hare_left_walking1 (quot tile-move-time 2)]
+              [:hare_left_walking2 (quot tile-move-time 2)]]
+             :right
+             [[:hare_right_walking1 (quot tile-move-time 2)]
+              [:hare_right_walking2 (quot tile-move-time 2)]]}})
 
-   :walking
-   {:up
-    [[:hare_up_walking1 (quot tile-move-time 2)]
-     [:hare_up_walking2 (quot tile-move-time 2)]]
-    :down
-    [[:hare_down_walking1 (quot tile-move-time 2)]
-     [:hare_down_walking2 (quot tile-move-time 2)]]
-    :left
-    [[:hare_left_walking1 (quot tile-move-time 2)]
-     [:hare_left_walking2 (quot tile-move-time 2)]]
-    :right
-    [[:hare_right_walking1 (quot tile-move-time 2)]
-     [:hare_right_walking2 (quot tile-move-time 2)]]}})
+(def guy-animations
+  {:idle {:up [[:guy_up_idle 200]]
+          :down [[:guy_down_idle 200]]
+          :left [[:guy_left_idle 200]]
+          :right [[:guy_right_idle 200]]}
+   :walking {:up
+             [[:guy_up_walking1 (quot tile-move-time 2)]
+              [:guy_up_walking2 (quot tile-move-time 2)]]
+             :down
+             [[:guy_down_walking1 (quot tile-move-time 2)]
+              [:guy_down_walking2 (quot tile-move-time 2)]]
+             :left
+             [[:guy_left_walking1 (quot tile-move-time 2)]
+              [:guy_left_walking2 (quot tile-move-time 2)]]
+             :right
+             [[:guy_right_walking1 (quot tile-move-time 2)]
+              [:guy_right_walking2 (quot tile-move-time 2)]]}})
 
 (defn anim->data [now frames]
   {:start (m/round now)
@@ -448,9 +463,9 @@
               (merge player
                      (if-some [{:keys [start origin destination]} animation]
                        {:position (animated-position start (u/tile->coord origin) (u/tile->coord destination) now)
-                        :texture (animation-texture now (anim->data start (get-in player-animations [:walking direction])))}
+                        :texture (animation-texture now (anim->data start (get-in hare-animations [:walking direction])))}
                        {:position (u/tile->coord position)
-                        :texture (animation-texture now (anim->data 0 (get-in player-animations [:idle direction])))}))))
+                        :texture (animation-texture now (anim->data 0 (get-in hare-animations [:idle direction])))}))))
     (let [{:keys [position location-id]} (:player s)]
       (assoc s :camera (camera-rect position location-id)))))
 
