@@ -74,7 +74,8 @@
 (defn location-component [location-id]
   (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])]
     [:div.location
-     [c/graph-node {:title [:a {:on-click #(>navigate :location-edit :id location-id)}
+     [c/graph-node {:title [:a {:on-click #(>navigate :location-edit :id location-id)
+                                :on-mouse-down u/stop-e!}
                             display-name]
                     :item-id location-id
                     :actions [["trash" "Delete"
