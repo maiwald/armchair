@@ -421,7 +421,7 @@
         top (camera-coord h (:y dim) (:h dim) (:y player-coord))]
     (m/Rect. left top w h)))
 
-(defn update-state-player-movement [state now]
+(defn update-state-animation [state now]
   (if-let [{:keys [start destination]} (get-in state [:player :animation])]
     (if (animation-done? start now)
       (let [new-state (update state :player dissoc :animation)
@@ -434,6 +434,10 @@
                                              :position new-position}))
           new-state))
       state)
+    state))
+
+(defn update-state-movement [state now]
+  (if (not (contains? state :animation))
     (if-let [direction (peek @move-q)]
       (let [old-position (get-in state [:player :position])
             new-position (apply
@@ -453,7 +457,8 @@
 
 (defn update-state [state now]
   (-> state
-      (update-state-player-movement now)))
+      (update-state-animation now)
+      (update-state-movement now)))
 
 (defn view-state [state now]
   (as-> state s
