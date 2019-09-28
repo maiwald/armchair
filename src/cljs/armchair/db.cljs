@@ -365,6 +365,11 @@
                (setval [(must :next-line-id) node-ref?] NONE)
                (setval [(must :clauses) MAP-VALS node-ref?] NONE)))]
     (-> (case (:kind node)
+          :npc (update-in db [:dialogues (:dialogue-id node)]
+                          (fn [dialogue]
+                            (if-let [states (dissoc (:states dialogue) node-id)]
+                              (assoc dialogue :states states)
+                              (dissoc dialogue :states))))
           :trigger (update db :triggers #(apply dissoc % (:trigger-ids node)))
           :player (update db :player-options #(apply dissoc % (:options node)))
           db)
