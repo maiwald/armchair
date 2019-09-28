@@ -1,7 +1,6 @@
 # BUGS
 - flickering inputs in character modal
 - drag and drop preview images are broken
-- dialogue states become nil when deleting line while no states are set
 
 # TODO
 - rethink relationship between character and dialogue
