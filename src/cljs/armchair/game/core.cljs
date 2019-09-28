@@ -437,7 +437,7 @@
     state))
 
 (defn update-state-movement [state now]
-  (if (not (contains? state :animation))
+  (if (not (contains? (:player state) :animation))
     (if-let [direction (peek @move-q)]
       (let [old-position (get-in state [:player :position])
             new-position (apply
@@ -453,7 +453,8 @@
                   :animation {:start now
                               :origin old-position
                               :destination new-position})))
-      state)))
+      state)
+    state))
 
 (defn update-state [state now]
   (-> state
@@ -489,7 +490,7 @@
         (start-input-loop input-chan)
         (js/requestAnimationFrame
           (fn game-loop []
-            (when-not @quit
+            (when (and (not @quit) @ctx)
               (let [now (* time-factor (.now js/performance))
                     new-state (swap! state #(update-state % now))
                     view-state (view-state new-state now)]
