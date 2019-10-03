@@ -20,11 +20,7 @@
        (-> db
            (assoc :player {:location-id (-> db :locations keys first)
                            :location-position [0 0]})
-           (u/update-values :dialogues
-                            (fn [d]
-                              (-> d
-                                  (assoc :synopsis (:description d))
-                                  (dissoc :description))))))
+           (u/update-values :dialogues rename-keys {:description :synopsis})))
 
    2 (fn [db]
        "Extract player options from lines"
