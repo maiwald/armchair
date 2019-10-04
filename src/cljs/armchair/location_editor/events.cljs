@@ -78,37 +78,18 @@
                        :location-position position}))))
 
 (reg-event-data
-  :location-editor/move-character
+  :location-editor/place-character
   (fn [db [_ location-id character-id to]]
-    (let [new-db (update db :location-editor dissoc :highlight :dnd-payload)
-          dialogue-lookup (->> (:dialogues db)
-                               vals
-                               (reduce (fn [acc {d-id :entity/id
-                                                 c-id :character-id}]
-                                         (assoc acc c-id d-id))
-                                       {}))]
-      (if-let [dialogue-id (get dialogue-lookup character-id)]
-        (update-in new-db [:dialogues dialogue-id]
-                   assoc
-                   :location-id location-id
-                   :location-position to)
-        (assoc-in new-db [:modal :dialogue-creation]
+    (-> db
+        (update :location-editor dissoc :highlight :dnd-payload)
+        (assoc-in [:locations location-id :placements to]
                   {:character-id character-id
-                   :location-id location-id
-                   :location-position to})))))
+                   :dialogue-id nil}))))
 
 (reg-event-data
   :location-editor/remove-character
-  (fn [db [_ character-id]]
-    (let [dialogue-lookup (->> (:dialogues db)
-                               vals
-                               (reduce (fn [acc {d-id :entity/id
-                                                 c-id :character-id}]
-                                         (assoc acc c-id d-id))
-                                       {}))]
-      (-> db
-          (update-in [:dialogues (dialogue-lookup character-id)]
-                     dissoc :location-id :location-position)))))
+  (fn [db [_ location-id tile]]
+    (update-in db [:locations location-id :placements] dissoc tile)))
 
 (reg-event-data
   :location-editor/move-trigger

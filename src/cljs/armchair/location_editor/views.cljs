@@ -389,7 +389,7 @@
                 :type :danger
                 :fill true
                 :on-click #(do (>evt [:close-popover])
-                               (>evt [:location-editor/remove-character id]))}]]))
+                               (>evt [:location-editor/remove-character location-id tile]))}]]))
 
 (defn trigger-popover [location-id tile]
   (let [{:keys [id display-name position]
