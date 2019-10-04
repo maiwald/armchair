@@ -461,12 +461,11 @@
                 active-layer
                 visible-layers
                 highlight]} (<sub [:location-editor/ui])
-        [dnd-type dnd-payload] (<sub [:dnd-payload])
-        dropzone-fn (case dnd-type
-                      :player             #(>evt [:location-editor/move-player location-id %])
-                      :character          #(>evt [:location-editor/move-character location-id dnd-payload %])
-                      :connection-trigger #(>evt [:location-editor/move-trigger location-id dnd-payload %])
-                      nil)]
+        dropzone-fn (if-let [[dnd-type dnd-payload] (<sub [:location-editor/dnd-payload])]
+                      (case dnd-type
+                        :player             #(>evt [:location-editor/move-player location-id %])
+                        :character          #(>evt [:location-editor/place-character location-id dnd-payload %])
+                        :connection-trigger #(>evt [:location-editor/move-trigger location-id dnd-payload %])))]
 
     [:div {:class "level-wrap"}
      [:div {:class "level"
