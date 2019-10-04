@@ -72,7 +72,7 @@
            db)))
 
    6 (fn [db]
-       "Rename :background to :background1"
+       "Migrate to multiple location layers"
        (transform [:locations MAP-VALS]
                   #(-> %
                        (assoc :background2 {}
