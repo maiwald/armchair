@@ -369,9 +369,9 @@
                           (when occupied? "interactor_disabled")]
                   :on-click (when-not occupied? #(on-select tile))}]))]]]))
 
-(defn npc-popover [location-id tile]
+(defn character-popover [location-id tile]
   (let [{:keys [id display-name dialogue-id dialogue-synopsis]}
-        (<sub [:location-editor/npc-popover location-id tile])]
+        (<sub [:location-editor/character-popover location-id tile])]
     [:div {:class "level-popover"}
      [:header
       display-name " "
@@ -427,7 +427,7 @@
                                   (>evt [:location-editor/start-entity-drag [:player]]))}
            [dnd-texture :human]])])
 
-     [do-some-tiles dimension characters "npc-select"
+     [do-some-tiles dimension characters "character-select"
       (fn [tile {:keys [texture display-name]}]
         [:div {:class "interactor interactor_draggable"
                :title display-name
@@ -436,7 +436,7 @@
                                 (set-dnd-texture! e)
                                 (.setData (.-dataTransfer e) "text/plain" display-name)
                                 (>evt [:location-editor/start-entity-drag [:placement tile]]))}
-         [c/popover-trigger {:popover [npc-popover location-id tile]}]
+         [c/popover-trigger {:popover [character-popover location-id tile]}]
          [dnd-texture texture]])]]))
 
 (defn edit-trigger-layer [location-id]
