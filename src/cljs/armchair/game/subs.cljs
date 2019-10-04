@@ -53,31 +53,20 @@
                                                              :game/foreground1
                                                              :game/blocked
                                                              :game/outbound-connections
-                                                             :game/npcs])))
+                                                             :game/characters])))
 (s/def :game/dimension :type/rect)
 (s/def :game/blocked (s/coll-of :type/point :kind set?))
-(s/def :game/outbound-connections (s/map-of :type/point (s/tuple :game/location-id :type/point)))
+(s/def :game/outbound-connections
+  (s/map-of :type/point (s/tuple :game/location-id :type/point)))
 (s/def :game/location-id :entity/id)
 (s/def :game/position :type/point)
-(s/def :game/npcs (s/nilable (s/map-of :type/point (s/keys :req-un [:game/texture :game/dialogue-id]))))
-(s/def :game/dialogue-id :entity/id)
+(s/def :game/characters
+  (s/nilable (s/map-of :type/point
+                       (s/keys :req-un [:game/texture :game/dialogue-id]))))
+(s/def :game/dialogue-id (s/nilable :entity/id))
 (s/def :game/texture (fn [t] (contains? (set character-textures) t)))
 (s/def :game/next-line-id (s/nilable :entity/id))
 
-
-(reg-sub
-  :game/npcs-by-location
-  :<- [:db-dialogues]
-  :<- [:db-characters]
-  (fn [[dialogues characters] _]
-    (reduce
-      (fn [acc [id {:keys [location-id location-position character-id]}]]
-        (assoc-in acc
-                  [location-id location-position]
-                  {:texture (get-in characters [character-id :texture])
-                   :dialogue-id id}))
-      {}
-      dialogues)))
 
 (defn triggers-to-map [triggers]
   (into {} (for [{:keys [switch-id switch-value]} triggers]
@@ -130,10 +119,11 @@
 (reg-sub
   :game/locations
   :<- [:db-locations]
-  :<- [:game/npcs-by-location]
-  (fn [[locations npcs-by-location]]
+  :<- [:db-characters]
+  :<- [:db-dialogues]
+  (fn [[locations characters dialogues]]
     (u/map-values
-      (fn [{id :entity/id :as location}]
+      (fn [location]
         (-> location
             (select-keys [:dimension
                           :background1
@@ -142,7 +132,11 @@
                           :foreground2
                           :blocked])
             (assoc :outbound-connections (:connection-triggers location)
-                   :npcs (npcs-by-location id))))
+                   :characters (->> (:placements location)
+                                    (u/map-values
+                                      (fn [{:keys [character-id dialogue-id]}]
+                                        {:texture (get-in characters [character-id :texture])
+                                         :dialogue-id dialogue-id}))))))
       locations)))
 
 (reg-sub

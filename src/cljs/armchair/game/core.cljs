@@ -64,11 +64,11 @@
 
 (defn walkable? [tile]
   (let [{l :location-id} (:player @state)
-        {:keys [dimension blocked npcs]} (get-in @data [:locations l])]
+        {:keys [dimension blocked characters]} (get-in @data [:locations l])]
     (and
       (m/rect-contains? dimension tile)
       (not (or (contains? blocked tile)
-               (contains? npcs tile))))))
+               (contains? characters tile))))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
   (apply
@@ -123,8 +123,8 @@
 (defn draw-player [{:keys [position texture]}]
   (draw-sprite-texture texture position))
 
-(defn draw-npcs [npcs camera]
-  (doseq [[tile {texture :texture}] npcs]
+(defn draw-characters [characters camera]
+  (doseq [[tile {texture :texture}] characters]
     (when (tile-visible? camera tile)
       (draw-sprite-texture texture (u/tile->coord tile)))))
 
@@ -195,7 +195,7 @@
       (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
     (let [l (get-in view-state [:player :location-id])
           player-tile (u/coord->tile (get-in view-state [:player :position]))
-          {:keys [npcs
+          {:keys [characters
                   dimension
                   background1
                   background2
@@ -204,7 +204,7 @@
       (draw-background dimension background1 camera)
       (draw-background dimension background2 camera)
       (draw-player (:player view-state))
-      (draw-npcs npcs camera)
+      (draw-characters characters camera)
       (draw-background dimension foreground1 camera)
       (draw-background dimension foreground2 camera))
     ; (draw-direction-indicator @ctx view-state)
@@ -282,9 +282,9 @@
 
 (defn interaction-line-id []
   (let [l (get-in @state [:player :location-id])
-        npcs (get-in @data [:locations l :npcs])
+        characters (get-in @data [:locations l :characters])
         tile (interaction-tile @state)]
-    (if-let [dialogue-id (get-in npcs [tile :dialogue-id])]
+    (if-let [dialogue-id (get-in characters [tile :dialogue-id])]
       (get-in @state [:dialogue-states dialogue-id]))))
 
 ;; Input Handlers
