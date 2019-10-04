@@ -128,20 +128,14 @@
 (reg-sub
   :location-editor/occupied-tiles
   :<- [:db-locations]
-  :<- [:db-dialogues]
   :<- [:db-player]
-  (fn [[locations dialogues player] [_ location-id]]
-    (let [triggers (select [(keypath location-id)
-                            :connection-triggers
-                            MAP-KEYS]
-                           locations)
-          npcs (select [MAP-VALS
-                        #(= location-id (:location-id %))
-                        :location-position]
-                       dialogues)
+  (fn [[locations player] [_ location-id]]
+    (let [location (get locations location-id)
           player (when (= location-id (:location-id player))
                    [(:location-position player)])]
-      (set (concat triggers npcs player)))))
+      (set (concat (keys (:connection-triggers location))
+                   (keys (:placements location))
+                   player)))))
 
 (reg-sub
   :location-editor/physically-occupied-tiles
