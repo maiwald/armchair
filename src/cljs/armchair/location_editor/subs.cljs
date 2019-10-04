@@ -74,15 +74,15 @@
      :player-position player-position}))
 
 (reg-sub
-  :location-editor/available-npcs
+  :location-editor/available-characters
   :<- [:db-characters]
-  :<- [:db-dialogues]
-  (fn [[characters dialogues] _]
-    (let [placed-characters (->> (vals dialogues)
-                                 (filter #(contains? % :location-id))
-                                 (reduce #(conj %1 (:character-id %2)) #{}))]
-      (u/filter-map #(not (contains? placed-characters (:entity/id %)))
-                    characters))))
+  (fn [characters]
+    (->> characters
+      (map (fn [[id {:keys [texture display-name]}]]
+             {:character-id id
+              :display-name display-name
+              :texture texture}))
+      (sort-by :display-name))))
 
 (reg-sub
   :location-editor/display-name
