@@ -127,7 +127,28 @@
                                           (get-in db [:ui/positions (:initial-line-id %)])
                                           (- (+ config/line-width 50)) 0)
                                        (:dialogues db))]
-          (update db :ui/positions merge initial-line-positions)))})
+          (update db :ui/positions merge initial-line-positions)))
+
+   12 (fn [db]
+        "Move character/dialogue combination into location placements"
+        (let [placements (->> db :dialogues vals
+                              (remove #(nil? (:location-position %)))
+                              (group-by :location-id)
+                              (u/map-values
+                                (fn [ds]
+                                   (->> ds
+                                        (group-by :location-position)
+                                        (u/map-values
+                                          (fn [[d]]
+                                            {:character-id (:character-id d)
+                                             :dialogue-id (:entity/id d)}))))))]
+          (->> db
+            (transform [:locations MAP-VALS]
+                       (fn [l]
+                         (assoc l :placements (get placements (:entity/id l) {}))))
+            (transform [:dialogues MAP-VALS]
+                       (fn [d]
+                         (dissoc d :location-id :location-position))))))})
 
 
 (defn migrate [{:keys [version payload]}]
