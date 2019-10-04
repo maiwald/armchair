@@ -99,19 +99,17 @@
        :height (:h dimension)})))
 
 (reg-sub
-  :location-editor/npc-popover
+  :location-editor/character-popover
+  :<- [:db-locations]
   :<- [:db-dialogues]
   :<- [:db-characters]
-  (fn [[dialogues characters] [_ location-id tile]]
-    (let [{:keys [character-id]
-           dialogue-id :entity/id
-           dialogue-synopsis :synopsis}
-          (select-one! [MAP-VALS #(u/submap? {:location-id location-id :location-position tile} %)]
-                       dialogues)
+  (fn [[locations dialogues characters] [_ location-id tile]]
+    (let [placement (get-in locations [location-id :placements tile])
+          {:keys [character-id dialogue-id]} placement
           character (characters character-id)]
-      (merge {:id (:entity/id character)
+      (merge {:id character-id
               :dialogue-id dialogue-id
-              :dialogue-synopsis dialogue-synopsis}
+              :dialogue-synopsis (get-in dialogues [dialogue-id :synopsis])}
              (select-keys character [:texture :display-name])))))
 
 (reg-sub
