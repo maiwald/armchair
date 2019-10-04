@@ -175,18 +175,17 @@
 (reg-sub
   :location-map/location
   :<- [:db-locations]
-  :<- [:db-dialogues]
   :<- [:db-characters]
-  (fn [[locations dialogues characters] [_ location-id]]
-    (let [location-dialogues (u/where-map :location-id location-id dialogues)]
-      (assoc (get locations location-id)
-             :id location-id
-             :dialogues (map (fn [[_ d]]
-                               (let [character (get characters (:character-id d))]
-                                 {:dialogue-id (:entity/id d)
-                                  :npc-name (:display-name character)
-                                  :npc-color (:color character)}))
-                             location-dialogues)))))
+  (fn [[locations characters] [_ location-id]]
+    (let [location (get locations location-id)]
+      {:display-name (:display-name location)
+       :characters (->> location :placements
+                        (map (fn [[_ {:keys [character-id dialogue-id]}]]
+                               (let [character (get characters character-id)]
+                                 {:dialogue-id dialogue-id
+                                  :character-id character-id
+                                  :character-name (:display-name character)
+                                  :character-color (:color character)}))))})))
 
 (reg-sub
   :breadcrumb
