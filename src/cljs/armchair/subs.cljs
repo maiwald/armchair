@@ -140,19 +140,16 @@
 (reg-sub
   :dialogue-list
   :<- [:db-dialogues]
-  :<- [:db-locations]
   :<- [:db-characters]
-  (fn [[dialogues locations characters]]
+  (fn [[dialogues characters]]
     (->> (vals dialogues)
          (map
-           (fn [{id :entity/id :keys [synopsis character-id location-id]}]
-             (let [character (characters character-id)
-                   location (locations location-id)]
+           (fn [{id :entity/id :keys [synopsis character-id]}]
+             (let [character (characters character-id)]
                {:id id
                 :synopsis synopsis
                 :character (merge {:id character-id} character)
-                :texture (:texture character)
-                :location (merge {:id location-id} location)})))
+                :texture (:texture character)})))
          (sort-by #(get-in % [:character :display-name])))))
 
 (reg-sub

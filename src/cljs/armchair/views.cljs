@@ -18,7 +18,7 @@
 (defn dialogue-management []
   (let [dialogues (<sub [:dialogue-list])]
     [slds/resource-page "Dialogues"
-     {:columns [:texture :character :synopsis :location :actions]
+     {:columns [:texture :character :synopsis :actions]
       :collection dialogues
       :cell-views {:character (fn [{:keys [id display-name]}]
                                 [:a {:on-click #(>evt [:open-character-modal id])}
@@ -28,9 +28,6 @@
                    :synopsis (fn [synopsis {id :id}]
                                [:a {:on-click #(>navigate :dialogue-edit :id id)}
                                 synopsis])
-                   :location (fn [{:keys [id display-name]}]
-                               [:a {:on-click #(>navigate :location-edit :id id)}
-                                display-name])
                    :actions (fn [_ {id :id}]
                               [:div {:class "slds-text-align_right"}
                                [c/button {:icon "trash-alt"
