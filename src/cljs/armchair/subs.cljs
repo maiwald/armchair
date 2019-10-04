@@ -27,8 +27,6 @@
 (reg-sub :modal #(:modal %))
 (reg-sub :popover #(:popover %))
 
-(reg-sub :dnd-payload #(:dnd-payload %))
-
 (reg-sub
   :character-list
   :<- [:db-characters]

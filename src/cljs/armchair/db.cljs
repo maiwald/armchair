@@ -57,14 +57,15 @@
 ;; Location Editor
 
 
-(s/def ::location-editor
+(s/def :location-editor/location-editor
   (s/keys :req-un [:location-editor/visible-layers
                    :location-editor/active-layer
                    :location-editor/active-pane
                    :location-editor/active-tool
                    :location-editor/active-walk-state
                    :location-editor/active-texture]
-          :opt-un [:location-editor/highlight]))
+          :opt-un [:location-editor/highlight
+                   :location-editor/dnd-payload]))
 
 (s/def :location-editor/active-pane #{:info :level})
 (s/def :location-editor/active-tool #{:brush :eraser})
@@ -332,7 +333,7 @@
                                        ::player-options
                                        ::lines
                                        :state/triggers
-                                       ::location-editor
+                                       :location-editor/location-editor
                                        :state/locations
                                        :state/switches
                                        ::switch-values]
