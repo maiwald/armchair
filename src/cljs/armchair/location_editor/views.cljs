@@ -186,10 +186,10 @@
 
 
 (defn sidebar-npcs [location-id]
-  (let [available-npcs (<sub [:location-editor/available-npcs location-id])]
+  (let [available-characters (<sub [:location-editor/available-characters])]
     [sidebar-widget {:title "Available Characters"}
      [:ul {:class "tile-list"}
-      (for [[character-id {:keys [display-name texture]}] available-npcs]
+      (for [{:keys [character-id display-name texture]} available-characters]
         [:li {:key (str "character-select" display-name)
               :class "tile-list__item"
               :draggable true
@@ -203,7 +203,7 @@
                          :height (str config/tile-size "px")}}
           [c/sprite-texture texture display-name]]
          [:span {:class "tile-list__item__label"} display-name]])]
-     (if (empty? available-npcs) "All Characters are placed in locations.")
+     (if (empty? available-characters) "There are no characters.")
      [c/button {:title "Create Character"
                 :icon "plus"
                 :fill true
