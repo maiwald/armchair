@@ -31,17 +31,15 @@
 
 (reg-sub
   :location-editor/characters
-  :<- [:db-dialogues]
+  :<- [:db-locations]
   :<- [:db-characters]
-  (fn [[dialogues characters] [_ location-id]]
-    (->> (vals dialogues)
-         (u/where :location-id location-id)
-         (map (fn [{:keys [character-id location-position]}]
-                (let [character (characters character-id)]
-                  [location-position
-                   (merge {:id character-id}
-                          (select-keys character [:texture :display-name]))])))
-         (into {}))))
+  (fn [[locations characters] [_ location-id]]
+    (->> (locations location-id)
+         :placements
+         (u/map-values
+           (fn [{:keys [character-id]}]
+             (let [character (characters character-id)]
+               (select-keys character [:texture :display-name])))))))
 
 (reg-sub
   :location-editor/location
@@ -68,7 +66,7 @@
      (subscribe [:location-editor/player-position location-id])])
   (fn [[locations characters player-position] [_ location-id]]
     {:dimension (get-in locations [location-id :dimension])
-     :npcs characters
+     :characters characters
      :player-position player-position}))
 
 (reg-sub

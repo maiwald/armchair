@@ -295,11 +295,11 @@
 
 (defn entity-layer [location-id override-rect]
   (let [{:keys [player-position
-                npcs
+                characters
                 dimension]} (<sub [:location-editor/entity-layer location-id])
         rect (or override-rect dimension)]
     [:<>
-     [do-some-tiles rect npcs "npc"
+     [do-some-tiles rect characters "npc"
       (fn [tile {:keys [display-name texture]}]
         [c/sprite-texture texture display-name])]
      (when (some? player-position)
@@ -412,7 +412,7 @@
 
 (defn edit-entity-layer [location-id]
   (let [{:keys [player-position
-                npcs
+                characters
                 dimension]} (<sub [:location-editor/entity-layer location-id])]
     [:<>
      (when player-position
@@ -427,15 +427,15 @@
                                   (>evt [:location-editor/start-entity-drag [:player]]))}
            [dnd-texture :human]])])
 
-     [do-some-tiles dimension npcs "npc-select"
-      (fn [tile {:keys [id texture display-name]}]
+     [do-some-tiles dimension characters "npc-select"
+      (fn [tile {:keys [texture display-name]}]
         [:div {:class "interactor interactor_draggable"
                :title display-name
                :draggable true
                :on-drag-start (fn [e]
                                 (set-dnd-texture! e)
                                 (.setData (.-dataTransfer e) "text/plain" display-name)
-                                (>evt [:location-editor/start-entity-drag [:character id]]))}
+                                (>evt [:location-editor/start-entity-drag [:placement tile]]))}
          [c/popover-trigger {:popover [npc-popover location-id tile]}]
          [dnd-texture texture]])]]))
 
