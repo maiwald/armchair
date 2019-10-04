@@ -1,3 +1,4 @@
+@import "constants"
 @import "colors"
 @import "input"
 @import "components"
@@ -238,13 +239,24 @@
     align-self: flex-end
 
 .tile-list
+  $padding: 4px
+  $gutter: 7px
+
+  overflow-y: auto
+  flex-grow: 1
+  height: $tile-size + 2 * $padding
+  margin-bottom: $gutter
+
   &__item
     display: flex
     align-items: center
     background: rgba(0, 0, 0, .1)
-    padding: 4px
+    padding: $padding
     border-radius: 5px
-    margin-bottom: 7px
+    margin-bottom: $gutter
+
+    &:last-child
+      margin-bottom: 0
 
     &_dropzone
       border: 1px dashed black
@@ -260,6 +272,7 @@
 
 .tile-grid
   $gutter: 2px
+  $border: 1px
 
   display: flex
   flex-wrap: wrap
@@ -267,18 +280,19 @@
   align-content: flex-start
   overflow-y: auto
   flex-grow: 1
-  height: 0
+
+  height: $tile-size + $gutter + $border
 
   padding: $gutter / 2
 
   &__item
     box-sizing: content-box
-    border: 1px solid grey
+    border: $border solid grey
     margin: 0 $gutter $gutter 0
 
     &_active
       border: 2px solid red
-      margin: -1px $gutter - 1 $gutter - 1 -1px
+      margin: (-$border) ($gutter - $border) ($gutter - $border) (-$border)
 
     > *
       display: block
