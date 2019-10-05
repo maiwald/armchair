@@ -148,7 +148,10 @@
                          (assoc l :placements (get placements (:entity/id l) {}))))
             (transform [:dialogues MAP-VALS]
                        (fn [d]
-                         (dissoc d :location-id :location-position))))))})
+                         (dissoc d :location-id :location-position))))))
+   13 (fn [db]
+        "Remove nil dialogue states"
+        (setval [:dialogues MAP-VALS :states empty?] NONE db))})
 
 
 (defn migrate [{:keys [version payload]}]
