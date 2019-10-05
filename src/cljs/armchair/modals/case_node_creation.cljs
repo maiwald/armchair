@@ -10,7 +10,8 @@
 
 ;; Events
 
-(def assert-trigger-modal (build-modal-assertion :case-node-creation))
+(def assert-trigger-modal
+  (build-modal-assertion :case-node-creation))
 
 (reg-event-meta
   ::open

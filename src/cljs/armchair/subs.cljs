@@ -94,20 +94,6 @@
          (sort-by second))))
 
 (reg-sub
-  :dialogue-creation/character-options
-  :<- [:db-characters]
-  :<- [:db-dialogues]
-  (fn [[characters dialogues] _]
-    (let [with-dialogue (reduce
-                          #(conj %1 (:character-id %2))
-                          #{}
-                          (vals dialogues))]
-      (->> characters
-           (u/filter-map #(not (contains? with-dialogue (:entity/id %))))
-           (u/map-values :display-name)
-           (sort-by second)))))
-
-(reg-sub
   :character
   :<- [:db-characters]
   (fn [characters [_ character-id]]
@@ -148,7 +134,8 @@
                 :synopsis synopsis
                 :character (merge {:id character-id} character)
                 :texture (:texture character)})))
-         (sort-by #(get-in % [:character :display-name])))))
+         (sort-by (fn [{s :synopsis {n :display-name} :character}]
+                    [n s])))))
 
 (reg-sub
   :location-options

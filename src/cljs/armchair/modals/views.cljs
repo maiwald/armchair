@@ -5,24 +5,12 @@
             [armchair.config :as config]
             [armchair.util :as u :refer [<sub >evt stop-e! e->val]]
             [armchair.textures :refer [character-textures]]
+            [armchair.modals.dialogue-creation]
             [armchair.modals.trigger-creation]
             [armchair.modals.case-node-creation]
             [armchair.modals.connection-trigger-creation]
             [armchair.modals.switch-form]
             [armchair.modals.unlock-conditions-form]))
-
-(defn dialogue-creation-modal [{:keys [character-id synopsis]}]
-  [slds/modal {:title "Create Dialogue"
-               :confirm-handler #(>evt [:create-dialogue])
-               :close-handler #(>evt [:close-modal])}
-   [:<>
-    [input/select {:label "Character *"
-                   :on-change #(>evt [:dialogue-creation-update :character-id (uuid (e->val %))])
-                   :options (<sub [:dialogue-creation/character-options])
-                   :value character-id}]
-    [input/textarea {:label "Synopsis *"
-                     :on-change #(>evt [:dialogue-creation-update :synopsis (e->val %)])
-                     :value synopsis}]]])
 
 (defn dialogue-state-modal [{:keys [line-id description]}]
   [slds/modal {:title "Dialogue State"
@@ -83,7 +71,7 @@
 (defn modal []
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
-      :dialogue-creation           [dialogue-creation-modal (:dialogue-creation modal)]
+      :dialogue-creation           [armchair.modals.dialogue-creation/modal (:dialogue-creation modal)]
       :dialogue-state              [dialogue-state-modal (:dialogue-state modal)]
       :npc-line-id                 [npc-line-form-modal (:npc-line-id modal)]
       :character-form              [character-form-modal (:character-form modal)]
