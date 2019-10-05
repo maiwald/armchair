@@ -15,16 +15,19 @@
             [armchair.migrations :refer [migrate]]
             [armchair.undo :refer [record-undo]]
             [armchair.math :as m]
-            [armchair.util :as u]))
+            [armchair.util :as u]
+            [goog.functions :refer [debounce]]))
 
 (when debug?
   (def validate
-    (after (fn [db event]
-             (when-not (s/valid? :armchair.db/state db)
-               (let [explain (s/explain-data :armchair.db/state db)]
-                 (apply js/console.log
-                        "Invalid state after:" event "\n"
-                        (:cljs.spec.alpha/problems explain))))))))
+    (after (debounce
+             (fn [db event]
+               (when-not (s/valid? :armchair.db/state db)
+                 (let [explain (s/explain-data :armchair.db/state db)]
+                   (apply js/console.log
+                          "Invalid state after:" event "\n"
+                          (:cljs.spec.alpha/problems explain)))))
+             200))))
 
 (defn reg-event-data [id handler]
   (reg-event-db id
