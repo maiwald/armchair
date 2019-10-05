@@ -379,12 +379,16 @@
                                (>evt [:open-character-modal id]))}
        [c/icon "edit" (str "Edit " display-name)]]]
      [:ul
-      [:li.level-popover__reference
-       [:span.level-popover__reference__title "Dialogue"]
-       [:span.level-popover__reference__payload
-        [:a {:on-click #(do (>evt [:close-popover])
-                            (>navigate :dialogue-edit :id dialogue-id))}
-         dialogue-synopsis]]]]
+      [:li.level-popover__deletable
+       [:div.level-popover__reference
+        [:span.level-popover__reference__title "Dialogue"]
+        [:span.level-popover__reference__payload
+         [:a {:on-click #(do (>evt [:close-popover])
+                             (>navigate :dialogue-edit :id dialogue-id))}
+          dialogue-synopsis]]]
+       [:a.level-popover__deletable__button
+        {:on-click #(>evt [:location-editor/dissoc-placement-dialogue location-id tile])}
+        [c/icon "times-circle" "Disconnect Dialogue"]]]]
      [c/button {:title "Remove Character"
                 :type :danger
                 :fill true
