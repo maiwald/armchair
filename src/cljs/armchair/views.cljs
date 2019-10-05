@@ -33,7 +33,7 @@
                                [c/button {:icon "trash-alt"
                                           :on-click #(when (js/confirm "Are you sure you want to delete this dialogue?")
                                                        (>evt [:delete-dialogue id]))}]])}
-      :new-resource #(>evt [:open-dialogue-creation-modal])}]))
+      :new-resource #(>evt [:armchair.modals.dialogue-creation/open])}]))
 
 (defn character-management []
   (let [characters (<sub [:character-list])]

@@ -1,9 +1,8 @@
 (ns armchair.modals.events
   (:require [clojure.spec.alpha :as s]
-            [clojure.string :refer [blank?]]
             [armchair.config :as config]
             [armchair.events :refer [reg-event-data reg-event-meta]]
-            [armchair.math :as math :refer [Rect]]
+            [armchair.math :refer [Rect]]
             [armchair.util :as u]))
 
 (defn assert-no-open-modal [db]
@@ -105,12 +104,6 @@
     (assert-no-open-modal db)
     (assoc-in db [:modal :npc-line-id] payload)))
 
-(reg-event-meta
-  :open-dialogue-creation-modal
-  (fn [db _]
-    (assert-no-open-modal db)
-    (assoc-in db [:modal :dialogue-creation] {:character-id nil
-                                              :synopsis nil})))
 ;; Dialogue state modal
 
 (reg-event-meta
@@ -141,41 +134,3 @@
       (cond-> (dissoc db :modal)
         (not-empty description)
         (update-in [:dialogues dialogue-id :states] assoc line-id description)))))
-
-(defn assert-dialogue-creation-modal [db]
-  (assert (contains? (:modal db) :dialogue-creation)
-          "No dialogue creation initiated. Cannot set value!"))
-
-(reg-event-meta
-  :dialogue-creation-update
-  (fn [db [_ field value]]
-    (assert-dialogue-creation-modal db)
-    (assoc-in db [:modal :dialogue-creation field] value)))
-
-(reg-event-data
-  :create-dialogue
-  (fn [db]
-    (assert-dialogue-creation-modal db)
-    (let [dialogue-id (random-uuid)
-          line-id (random-uuid)
-          modal-data (get-in db [:modal :dialogue-creation])]
-      (if (or (blank? (:character-id modal-data))
-              (blank? (:synopsis modal-data)))
-        db
-        (-> db
-            (assoc-in [:dialogues dialogue-id] (merge modal-data
-                                                      {:entity/id dialogue-id
-                                                       :entity/type :dialogue
-                                                       :initial-line-id line-id}))
-            (update :ui/positions assoc
-                    dialogue-id config/default-ui-position
-                    line-id (math/translate-point config/default-ui-position
-                                                  (+ config/line-width 60) 0))
-            (assoc-in [:lines line-id] {:entity/id line-id
-                                        :entity/type :line
-                                        :kind :npc
-                                        :character-id (:character-id modal-data)
-                                        :dialogue-id dialogue-id
-                                        :text ""})
-            (dissoc :modal))))))
-
