@@ -129,14 +129,14 @@
   :delete-dialogue
   (fn [db [_ dialogue-id]]
     (let [in-dialogue? (fn [node] (= dialogue-id (:dialogue-id node)))
-          line-ids (select [:lines MAP-VALS in-dialogue? :entity/id] db)
-          player-option-ids (select [:lines MAP-VALS in-dialogue? :options ALL] db)]
-      (loop [db (update db :dialogues dissoc dialogue-id)
-             line-ids line-ids]
-        (if (empty? line-ids)
-          db
-          (recur (db/delete-node-with-references db (peek line-ids))
-                 (pop line-ids)))))))
+          line-ids (select [:lines MAP-VALS in-dialogue? :entity/id] db)]
+      (-> (loop [new-db db
+                 line-ids line-ids]
+            (if (empty? line-ids)
+              new-db
+              (recur (db/delete-node-with-references new-db (first line-ids))
+                     (rest line-ids))))
+          (update :dialogues dissoc dialogue-id)))))
 
 ;; Page
 
