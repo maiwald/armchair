@@ -199,14 +199,9 @@
         :location-edit {:location {:id id
                                    :display-name
                                    (get-in locations [id :display-name])}}
-        :dialogue-edit (let [{:keys [character-id location-id synopsis]}
-                             (get dialogues id)
-                             character-name
-                             (get-in characters [character-id :display-name])]
-                         {:location {:id location-id
-                                     :display-name
-                                     (get-in locations [location-id :display-name])}
-                          :dialogue {:id id
+        :dialogue-edit (let [{:keys [character-id synopsis]} (get dialogues id)
+                             character-name (get-in characters [character-id :display-name])]
+                         {:dialogue {:id id
                                      :character-name character-name
                                      :synopsis synopsis}})
         nil))))
