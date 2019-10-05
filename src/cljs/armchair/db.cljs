@@ -119,8 +119,8 @@
             :location/placement))
 
 (s/def :location/placement
-  (s/keys :req-un [:placement/character-id
-                   :placement/dialogue-id]))
+  (s/keys :req-un [:placement/character-id]
+          :opt-un [:placement/dialogue-id]))
 
 (s/def :location/connection-triggers
   (s/map-of :location/position

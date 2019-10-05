@@ -164,6 +164,25 @@
     .edit
       font-size: .7rem
 
+  &__deletable
+    display: flex
+    flex-direction: row
+
+    *
+      flex-grow: 1
+
+    &__button
+      display: flex
+      flex-grow: 0
+      align-self: center
+      justify-content: center
+      color: $text-light
+      width: 20px
+
+      &:hover
+        color: $text-link
+        text-decoration: none
+
   &__reference
     display: flex
     flex-direction: column

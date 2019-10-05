@@ -90,13 +90,17 @@
     (-> db
         (update :location-editor dissoc :highlight :dnd-payload)
         (assoc-in [:locations location-id :placements to]
-                  {:character-id character-id
-                   :dialogue-id nil}))))
+                  {:character-id character-id}))))
 
 (reg-event-data
   :location-editor/remove-character
   (fn [db [_ location-id tile]]
     (update-in db [:locations location-id :placements] dissoc tile)))
+
+(reg-event-data
+  :location-editor/dissoc-placement-dialogue
+  (fn [db [_ location-id tile]]
+    (update-in db [:locations location-id :placements tile] dissoc :dialogue-id)))
 
 (reg-event-data
   :location-editor/move-trigger
