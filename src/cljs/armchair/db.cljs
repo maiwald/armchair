@@ -11,7 +11,7 @@
             [armchair.math :refer [Point Rect]]
             [armchair.util :as u]))
 
-(def db-version 13)
+(def db-version 14)
 
 ;; Types
 
