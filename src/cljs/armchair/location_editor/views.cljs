@@ -463,10 +463,10 @@
                 highlight]} (<sub [:location-editor/ui])
         dropzone-fn (if-let [[dnd-type dnd-payload] (<sub [:location-editor/dnd-payload])]
                       (case dnd-type
-                        :player             #(>evt [:location-editor/move-player location-id %])
                         :character          #(>evt [:location-editor/place-character location-id dnd-payload %])
+                        :player             #(>evt [:location-editor/move-player location-id %])
+                        :placement          #(>evt [:location-editor/move-placement location-id dnd-payload %])
                         :connection-trigger #(>evt [:location-editor/move-trigger location-id dnd-payload %])))]
-
     [:div {:class "level-wrap"}
      [:div {:class "level"
             :style {:width (u/px (* config/tile-size (:w dimension)))

@@ -78,6 +78,13 @@
                        :location-position position}))))
 
 (reg-event-data
+  :location-editor/move-placement
+  (fn [db [_ location-id from to]]
+    (-> db
+        (update :location-editor dissoc :highlight :dnd-payload)
+        (update-in [:locations location-id :placements] rename-keys {from to}))))
+
+(reg-event-data
   :location-editor/place-character
   (fn [db [_ location-id character-id to]]
     (-> db
@@ -98,7 +105,7 @@
       (if (some? from)
         (update-in new-db
                    [:locations location :connection-triggers]
-                   (fn [cts] (rename-keys cts {from to})))
+                   rename-keys {from to})
         (assoc-in new-db
                   [:modal :connection-trigger-creation]
                   {:location-id location
