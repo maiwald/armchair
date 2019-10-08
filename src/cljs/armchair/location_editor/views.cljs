@@ -370,44 +370,50 @@
                   :on-click (when-not occupied? #(on-select tile))}]))]]]))
 
 (defn character-popover [location-id tile]
-  (let [{:keys [id display-name dialogue-id dialogue-synopsis]}
-        (<sub [:location-editor/character-popover location-id tile])]
-    [:div {:class "level-popover"}
-     [:header
-      display-name " "
-      [:a.edit {:on-click #(do (>evt [:close-popover])
-                               (>evt [:open-character-modal id]))}
-       [c/icon "edit" (str "Edit " display-name)]]]
-     [:ul
-      [:li.level-popover__deletable
-       [:div.level-popover__reference
-        [:span.level-popover__reference__title "Dialogue"]
-        [:span.level-popover__reference__payload
-         [:a {:on-click #(do (>evt [:close-popover])
-                             (>navigate :dialogue-edit :id dialogue-id))}
-          dialogue-synopsis]]]
-       [:a.level-popover__deletable__button
-        {:on-click #(>evt [:location-editor/dissoc-placement-dialogue location-id tile])}
-        [c/icon "times-circle" "Disconnect Dialogue"]]]]
-     [c/button {:title "Remove Character"
-                :type :danger
-                :fill true
-                :on-click #(do (>evt [:close-popover])
-                               (>evt [:location-editor/remove-character location-id tile]))}]]))
+  (letfn [(set-dialogue [e]
+            (let [e-value (e->val e)
+                  value (if (= e-value "nil") nil (uuid e-value))]
+              (>evt [:location-editor/set-placement-dialogue
+                     location-id tile value])))]
+    (fn [location-id title]
+      (let [{:keys [id display-name dialogue-id dialogue-synopsis dialogue-options]}
+            (<sub [:location-editor/character-popover location-id tile])]
+        [:div {:class "level-popover"}
+         [:header display-name]
+         [:ul.level-popover__quick-links
+          [:li [:a {:on-click #(do (>evt [:close-popover])
+                                   (>evt [:open-character-modal id]))}
+                [c/icon "user"] "Edit Character"]]
+          (if (some? dialogue-id)
+            [:li [:a {:on-click #(do (>evt [:close-popover])
+                                     (>navigate :dialogue-edit :id dialogue-id))}
+                  [c/icon "comments"] "Edit Dialogue"]])]
+         [:div.level-popover__reference
+          [:span.level-popover__reference__title "Dialogue"]
+          [:div.level-popover__reference__payload
+           [input/select {:value dialogue-id
+                          :nil-value "No Dialogue"
+                          :options dialogue-options
+                          :on-change set-dialogue}]]]
+         [c/button {:title "Remove Character"
+                    :type :danger
+                    :fill true
+                    :on-click #(do (>evt [:close-popover])
+                                   (>evt [:location-editor/remove-character location-id tile]))}]]))))
 
 (defn trigger-popover [location-id tile]
   (let [{:keys [id display-name position]
          {normalized-x :x normalized-y :y} :position-normalized}
         (<sub [:location-editor/trigger-popover location-id tile])]
     [:div {:class "level-popover"}
-     [:ul
-      [:li.level-popover__reference
-       [:span.level-popover__reference__title "Exit to"]
-       [:span.level-popover__reference__payload
-        [:a {:on-click #(do (>evt [:close-popover])
-                            (>navigate :location-edit :id id))}
-         (str display-name " [" normalized-x " " normalized-y "]")]
-        [location-preview id position]]]]
+     [:header "Trigger"]
+     [:div.level-popover__reference
+      [:span.level-popover__reference__title "Exit to"]
+      [:span.level-popover__reference__payload
+       [:a {:on-click #(do (>evt [:close-popover])
+                           (>navigate :location-edit :id id))}
+        (str display-name " [" normalized-x " " normalized-y "]")]
+       [location-preview id position]]]
      [c/button {:title "Remove Exit"
                 :type :danger
                 :fill true

@@ -98,9 +98,11 @@
     (update-in db [:locations location-id :placements] dissoc tile)))
 
 (reg-event-data
-  :location-editor/dissoc-placement-dialogue
-  (fn [db [_ location-id tile]]
-    (update-in db [:locations location-id :placements tile] dissoc :dialogue-id)))
+  :location-editor/set-placement-dialogue
+  (fn [db [_ location-id tile dialogue-id]]
+    (if (some? dialogue-id)
+      (assoc-in db [:locations location-id :placements tile :dialogue-id] dialogue-id)
+      (update-in db [:locations location-id :placements tile] dissoc :dialogue-id))))
 
 (reg-event-data
   :location-editor/move-trigger

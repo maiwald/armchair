@@ -106,10 +106,14 @@
   (fn [[locations dialogues characters] [_ location-id tile]]
     (let [placement (get-in locations [location-id :placements tile])
           {:keys [character-id dialogue-id]} placement
-          character (characters character-id)]
+          character (characters character-id)
+          dialogue-options (->> dialogues
+                                (u/filter-map #(= character-id (:character-id %)))
+                                (u/map-values :synopsis))]
       (merge {:id character-id
               :dialogue-id dialogue-id
-              :dialogue-synopsis (get-in dialogues [dialogue-id :synopsis])}
+              :dialogue-synopsis (get-in dialogues [dialogue-id :synopsis])
+              :dialogue-options dialogue-options}
              (select-keys character [:texture :display-name])))))
 
 (reg-sub
