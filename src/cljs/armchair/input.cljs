@@ -24,7 +24,7 @@
               :checked checked?}]
      [:label {:class "input-checkbox__label input__label" :for id} label]]))
 
-(defn select [{:keys [label disabled on-change value options]}]
+(defn select [{:keys [label disabled on-change value options nil-value]}]
   (let [id (gensym "input-select")]
     [:div {:class "input input-select"}
      (when label
@@ -34,7 +34,10 @@
                :on-change on-change
                :disabled disabled
                :value (or value "nil")}
-      [:option {:key (str id "nil") :value "nil" :disabled "disabled"}]
+      [:option {:key (str id "nil")
+                :value "nil"
+                :disabled (if-not nil-value "disabled")}
+       nil-value]
       (for [[option option-label] options]
         [:option {:key (str id ":" option) :value option} option-label])]]))
 
@@ -62,4 +65,3 @@
                     :matchProp "label"
                     :ignoreCase true
                     :value values}]]))
-
