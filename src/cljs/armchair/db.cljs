@@ -5,13 +5,12 @@
              :refer [must ALL NONE MAP-VALS]
              :refer-macros [setval]]
             [cognitect.transit :as t]
+            [armchair.migrations :refer [db-version]]
             [armchair.dummy-data :refer [dummy-data]]
             [armchair.textures :refer [background-textures texture-set]]
             [armchair.config :as config]
             [armchair.math :refer [Point Rect]]
             [armchair.util :as u]))
-
-(def db-version 14)
 
 ;; Types
 

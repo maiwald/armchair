@@ -10,9 +10,10 @@
                      MAP-VALS MAP-KEYS]
              :refer-macros [select setval transform]]
             [armchair.config :as config]
-            [armchair.db :refer [db-version]]
             [armchair.math :as math :refer [Point Rect]]
             [armchair.util :as u]))
+
+(def db-version 14)
 
 (def migrations
   "Map of migrations. Key is the version we are coming from."
