@@ -392,34 +392,7 @@
 (defn animation-done? [start now]
   (< (+ start tile-move-time) now))
 
-;; state updates and view state
-
-(defn camera-coord [cam-size loc-lower loc-size p-coord]
-  (if (<= loc-size cam-size)
-    (- loc-lower (/ (- cam-size loc-size) 2))
-    (let [cam-half (/ cam-size 2)
-          loc-upper (+ loc-lower loc-size)
-          center-offset (/ tile-size 2)]
-      (cond
-        ; close to *lower* (left or top) edge
-        (< p-coord (+ loc-lower cam-half (- center-offset)))
-        loc-lower
-
-        ; close to *upper* (right or bottom) edge
-        (> p-coord (- loc-upper cam-half center-offset))
-        (- loc-upper cam-size)
-
-        :else
-        (+ (- p-coord cam-half) center-offset)))))
-
-(defn camera-rect [player-coord location-id]
-  (let [w (* camera-tile-width tile-size)
-        h (* camera-tile-height tile-size)
-        loc-dim (get-in @data [:locations location-id :dimension])
-        dim (m/rect-scale loc-dim tile-size)
-        left (camera-coord w (:x dim) (:w dim) (:x player-coord))
-        top (camera-coord h (:y dim) (:h dim) (:y player-coord))]
-    (m/Rect. left top w h)))
+;; State updates
 
 (defn update-state-animation [state now]
   (if-let [{:keys [start destination]} (get-in state [:player :animation])]
@@ -461,6 +434,35 @@
       (update-state-animation now)
       (update-state-movement now)))
 
+;; View State
+
+(defn camera-coord [cam-size loc-lower loc-size p-coord]
+  (if (<= loc-size cam-size)
+    (- loc-lower (/ (- cam-size loc-size) 2))
+    (let [cam-half (/ cam-size 2)
+          loc-upper (+ loc-lower loc-size)
+          center-offset (/ tile-size 2)]
+      (cond
+        ; close to *lower* (left or top) edge
+        (< p-coord (+ loc-lower cam-half (- center-offset)))
+        loc-lower
+
+        ; close to *upper* (right or bottom) edge
+        (> p-coord (- loc-upper cam-half center-offset))
+        (- loc-upper cam-size)
+
+        :else
+        (+ (- p-coord cam-half) center-offset)))))
+
+(defn camera-rect [player-coord location-id]
+  (let [w (* camera-tile-width tile-size)
+        h (* camera-tile-height tile-size)
+        loc-dim (get-in @data [:locations location-id :dimension])
+        dim (m/rect-scale loc-dim tile-size)
+        left (camera-coord w (:x dim) (:w dim) (:x player-coord))
+        top (camera-coord h (:y dim) (:h dim) (:y player-coord))]
+    (m/Rect. left top w h)))
+
 (defn view-state [state now]
   (as-> state s
     (update s :player
@@ -492,7 +494,7 @@
           (fn game-loop []
             (when (and (not @quit) @ctx)
               (let [now (* time-factor (.now js/performance))
-                    new-state (swap! state #(update-state % now))
+                    new-state (swap! state update-state now)
                     view-state (view-state new-state now)]
                 (when-not (s/valid? ::state new-state)
                   (s/explain ::state new-state))
