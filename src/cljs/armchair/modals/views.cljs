@@ -71,7 +71,7 @@
 (defn modal []
   (if-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
-      :dialogue-creation           [armchair.modals.dialogue-creation/modal (:dialogue-creation modal)]
+      :dialogue-creation           [armchair.modals.dialogue-creation/modal]
       :dialogue-state              [dialogue-state-modal (:dialogue-state modal)]
       :npc-line-id                 [npc-line-form-modal (:npc-line-id modal)]
       :character-form              [character-form-modal (:character-form modal)]

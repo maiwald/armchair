@@ -111,6 +111,7 @@
                                 (u/filter-map #(= character-id (:character-id %)))
                                 (u/map-values :synopsis))]
       (merge {:id character-id
+              :character-id character-id
               :dialogue-id dialogue-id
               :dialogue-synopsis (get-in dialogues [dialogue-id :synopsis])
               :dialogue-options dialogue-options}
