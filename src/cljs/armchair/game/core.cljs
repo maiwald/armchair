@@ -383,10 +383,10 @@
 
 (defn animated-position [start from to now]
   (let [pct-done (/ (- now start) tile-move-time)
-        transform (fn [f t] (+ f (m/round (* pct-done (- t f)))))]
+        xform (fn [f t] (+ f (m/round (* pct-done (- t f)))))]
     (if (< pct-done 1)
-      (m/Point. (transform (:x from) (:x to))
-                (transform (:y from) (:y to)))
+      (m/Point. (xform (:x from) (:x to))
+                (xform (:y from) (:y to)))
       to)))
 
 (defn animation-done? [start now]
