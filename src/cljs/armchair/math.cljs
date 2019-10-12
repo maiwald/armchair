@@ -47,9 +47,7 @@
   (Point. x y))
 
 (defn translate-point [{:keys [x y] :as point} dx dy]
-  (assoc point
-         :x (+ x dx)
-         :y (+ y dy)))
+  (Point. (+ x dx) (+ y dy)))
 
 (defn relative-point
   "Convert *global* point to a Point relative to rect"
