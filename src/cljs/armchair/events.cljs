@@ -15,16 +15,19 @@
             [armchair.migrations :refer [migrate]]
             [armchair.undo :refer [record-undo]]
             [armchair.math :as m]
-            [armchair.util :as u]))
+            [armchair.util :as u]
+            [goog.functions :refer [debounce]]))
 
 (when debug?
   (def validate
-    (after (fn [db event]
-             (when-not (s/valid? :armchair.db/state db)
-               (let [explain (s/explain-data :armchair.db/state db)]
-                 (apply js/console.log
-                        "Invalid state after:" event "\n"
-                        (:cljs.spec.alpha/problems explain))))))))
+    (after (debounce
+             (fn [db event]
+               (when-not (s/valid? :armchair.db/state db)
+                 (let [explain (s/explain-data :armchair.db/state db)]
+                   (apply js/console.log
+                          "Invalid state after:" event "\n"
+                          (:cljs.spec.alpha/problems explain)))))
+             200))))
 
 (defn reg-event-data [id handler]
   (reg-event-db id
@@ -77,13 +80,17 @@
 
 (reg-event-data
   :delete-character
-  (fn [db [_ id]]
+  (fn [db [_ character-id]]
     (let [line-count (->> (:lines db)
-                          (u/filter-map #(= (:character-id %) id))
+                          (u/filter-map #(= (:character-id %) character-id))
                           count)]
-      (cond-> db
-        (zero? line-count)
-        (update :characters dissoc id)))))
+      (if (zero? line-count)
+        (-> (setval [:locations MAP-VALS
+                     :placements ALL
+                     (fn [[_ {c-id :character-id}]] (= c-id character-id))]
+                    NONE db)
+            (update :characters dissoc character-id))
+        db))))
 
 ;; Location CRUD
 
@@ -130,7 +137,11 @@
   (fn [db [_ dialogue-id]]
     (let [in-dialogue? (fn [node] (= dialogue-id (:dialogue-id node)))
           line-ids (select [:lines MAP-VALS in-dialogue? :entity/id] db)]
-      (-> (loop [new-db db
+
+      (-> (loop [new-db (setval [:locations MAP-VALS
+                                 :placements MAP-VALS
+                                 :dialogue-id #(= dialogue-id %)]
+                                NONE db)
                  line-ids line-ids]
             (if (empty? line-ids)
               new-db

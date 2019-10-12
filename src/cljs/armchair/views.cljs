@@ -18,7 +18,7 @@
 (defn dialogue-management []
   (let [dialogues (<sub [:dialogue-list])]
     [slds/resource-page "Dialogues"
-     {:columns [:texture :character :synopsis :location :actions]
+     {:columns [:texture :character :synopsis :actions]
       :collection dialogues
       :cell-views {:character (fn [{:keys [id display-name]}]
                                 [:a {:on-click #(>evt [:open-character-modal id])}
@@ -28,15 +28,12 @@
                    :synopsis (fn [synopsis {id :id}]
                                [:a {:on-click #(>navigate :dialogue-edit :id id)}
                                 synopsis])
-                   :location (fn [{:keys [id display-name]}]
-                               [:a {:on-click #(>navigate :location-edit :id id)}
-                                display-name])
                    :actions (fn [_ {id :id}]
                               [:div {:class "slds-text-align_right"}
                                [c/button {:icon "trash-alt"
                                           :on-click #(when (js/confirm "Are you sure you want to delete this dialogue?")
                                                        (>evt [:delete-dialogue id]))}]])}
-      :new-resource #(>evt [:open-dialogue-creation-modal])}]))
+      :new-resource #(>evt [:armchair.modals.dialogue-creation/open])}]))
 
 (defn character-management []
   (let [characters (<sub [:character-list])]
@@ -72,7 +69,7 @@
       :new-resource #(>evt [:armchair.modals.switch-form/open])}]))
 
 (defn location-component [location-id]
-  (let [{:keys [display-name dialogues]} (<sub [:location-map/location location-id])]
+  (let [{:keys [display-name characters]} (<sub [:location-map/location location-id])]
     [:div.location
      [c/graph-node {:title [:a {:on-click #(>navigate :location-edit :id location-id)
                                 :on-mouse-down u/stop-e!}
@@ -82,12 +79,15 @@
                                #(when (js/confirm "Are you sure you want to delete this location?")
                                   (>evt [:delete-location location-id]))]]}
       [:ul {:class "location__characters"}
-       (for [{:keys [dialogue-id npc-name npc-color]} dialogues]
-         [:li {:key (str "location-dialogue-" location-id " - " dialogue-id)}
-          [:a {:style {:background-color npc-color}
+       (for [{:keys [dialogue-id
+                     character-id
+                     character-name
+                     character-color]} characters]
+         [:li {:key (str "location-dialogue-" location-id " - " character-id)}
+          [:a {:style {:background-color character-color}
                :on-mouse-down u/stop-e!
                :on-click #(>navigate :dialogue-edit :id dialogue-id)}
-           npc-name]])]]]))
+           character-name]])]]]))
 
 (defn location-connection [start end]
   (let [start-pos (<sub [:ui/position start])

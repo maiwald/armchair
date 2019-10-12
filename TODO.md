@@ -3,7 +3,6 @@
 - drag and drop preview images are broken
 
 # TODO
-- rethink relationship between character and dialogue
 - restructure navigation
 - zoom in dialogue editor
 - select and paint multiple texture sprites
