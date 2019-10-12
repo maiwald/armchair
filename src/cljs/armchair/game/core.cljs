@@ -394,23 +394,32 @@
 
 ;; State updates
 
-(defn update-state-animation [state now]
-  (if-let [{:keys [start destination]} (get-in state [:player :animation])]
-    (if (animation-done? start now)
-      (let [new-state (update state :player dissoc :animation)
-            location-id (get-in state [:player :location-id])]
-        (if-let [[new-location-id new-position]
-                 (get-in @data [:locations location-id :outbound-connections destination])]
-          (do
-            (reset! move-q #queue [])
-            (update new-state :player merge {:location-id new-location-id
-                                             :position new-position}))
-          new-state))
-      state)
+(defn player-animation? [state]
+  (contains? (:player state) :animation))
+
+(defn player-animation-done?
+  "Returns true if a player animation has just finished in this frame."
+  [state now]
+  (let [animation (get-in state [:player :animation])]
+    (and (some? animation)
+         (animation-done? (:start animation) now))))
+
+(defn update-state-location [state now]
+  (if (player-animation-done? state now)
+    (let [{location-id :location-id
+           {destination :destination} :animation} (:player state)]
+      (if-let [[new-location-id new-position]
+               (get-in @data [:locations location-id :outbound-connections destination])]
+        (do
+          (reset! move-q #queue [])
+          (update state :player merge {:location-id new-location-id
+                                       :position new-position}))
+        state))
     state))
 
 (defn update-state-movement [state now]
-  (if (not (contains? (:player state) :animation))
+  (if (or (not (player-animation? state))
+          (player-animation-done? state now))
     (if-let [direction (peek @move-q)]
       (let [old-position (get-in state [:player :position])
             new-position (apply
@@ -429,10 +438,16 @@
       state)
     state))
 
+(defn update-state-remove-animations [state now]
+  (if (player-animation-done? state now)
+    (update state :player dissoc :animation)
+    state))
+
 (defn update-state [state now]
   (-> state
-      (update-state-animation now)
-      (update-state-movement now)))
+      (update-state-location now)
+      (update-state-movement now)
+      (update-state-remove-animations now)))
 
 ;; View State
 
