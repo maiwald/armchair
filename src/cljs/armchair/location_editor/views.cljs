@@ -7,6 +7,7 @@
             [armchair.routes :refer [>navigate]]
             [armchair.math :refer [Point Rect translate-point relative-point rect-contains?]]
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
+            [armchair.modals.dialogue-creation :as dialogue-creation]
             [armchair.textures :refer [texture-path background-textures]]))
 
 (defn dnd-texture [texture]
@@ -186,10 +187,10 @@
 
 
 (defn sidebar-npcs [location-id]
-  (let [available-npcs (<sub [:location-editor/available-npcs location-id])]
+  (let [available-characters (<sub [:location-editor/available-characters])]
     [sidebar-widget {:title "Available Characters"}
      [:ul {:class "tile-list"}
-      (for [[character-id {:keys [display-name texture]}] available-npcs]
+      (for [{:keys [character-id display-name texture]} available-characters]
         [:li {:key (str "character-select" display-name)
               :class "tile-list__item"
               :draggable true
@@ -203,7 +204,7 @@
                          :height (str config/tile-size "px")}}
           [c/sprite-texture texture display-name]]
          [:span {:class "tile-list__item__label"} display-name]])]
-     (if (empty? available-npcs) "All Characters are placed in locations.")
+     (if (empty? available-characters) "There are no characters.")
      [c/button {:title "Create Character"
                 :icon "plus"
                 :fill true
@@ -295,11 +296,11 @@
 
 (defn entity-layer [location-id override-rect]
   (let [{:keys [player-position
-                npcs
+                characters
                 dimension]} (<sub [:location-editor/entity-layer location-id])
         rect (or override-rect dimension)]
     [:<>
-     [do-some-tiles rect npcs "npc"
+     [do-some-tiles rect characters "npc"
       (fn [tile {:keys [display-name texture]}]
         [c/sprite-texture texture display-name])]
      (when (some? player-position)
@@ -369,41 +370,59 @@
                           (when occupied? "interactor_disabled")]
                   :on-click (when-not occupied? #(on-select tile))}]))]]]))
 
-(defn npc-popover [location-id tile]
-  (let [{:keys [id display-name dialogue-id dialogue-synopsis]}
-        (<sub [:location-editor/npc-popover location-id tile])]
-    [:div {:class "level-popover"}
-     [:header
-      display-name " "
-      [:a.edit {:on-click #(do (>evt [:close-popover])
-                               (>evt [:open-character-modal id]))}
-       [c/icon "edit" (str "Edit " display-name)]]]
-     [:ul
-      [:li.level-popover__reference
-       [:span.level-popover__reference__title "Dialogue"]
-       [:span.level-popover__reference__payload
-        [:a {:on-click #(do (>evt [:close-popover])
-                            (>navigate :dialogue-edit :id dialogue-id))}
-         dialogue-synopsis]]]]
-     [c/button {:title "Remove Character"
-                :type :danger
-                :fill true
-                :on-click #(do (>evt [:close-popover])
-                               (>evt [:location-editor/remove-character id]))}]]))
+(defn character-popover [location-id tile]
+  (letfn [(set-dialogue [e]
+            (let [e-value (e->val e)
+                  value (if (= e-value "nil") nil (uuid e-value))]
+              (>evt [:location-editor/set-placement-dialogue
+                     location-id tile value])))]
+    (fn [location-id title]
+      (let [{:keys [id
+                    character-id
+                    dialogue-id
+                    display-name
+                    dialogue-synopsis
+                    dialogue-options]}
+            (<sub [:location-editor/character-popover location-id tile])]
+        [:div {:class "level-popover"}
+         [:header display-name]
+         [:ul.level-popover__quick-links
+          [:li [:a {:on-click #(do (>evt [:close-popover])
+                                   (>evt [:open-character-modal id]))}
+                [c/icon "user"] "Edit Character"]]
+          (if (some? dialogue-id)
+            [:li [:a {:on-click #(do (>evt [:close-popover])
+                                     (>navigate :dialogue-edit :id dialogue-id))}
+                  [c/icon "comments"] "Edit Dialogue"]])]
+         [:div.level-popover__reference
+          [:span.level-popover__reference__title "Dialogue"]
+          [:div.level-popover__reference__payload
+           [input/select {:value dialogue-id
+                          :nil-value "No Dialogue"
+                          :options dialogue-options
+                          :on-change set-dialogue}]
+           [:a.new-dialogue {:on-click #(do (>evt [:close-popover])
+                                            (>evt [::dialogue-creation/open character-id location-id tile]))}
+            "Create new Dialogue"]]]
+         [c/button {:title "Remove Character"
+                    :type :danger
+                    :fill true
+                    :on-click #(do (>evt [:close-popover])
+                                   (>evt [:location-editor/remove-character location-id tile]))}]]))))
 
 (defn trigger-popover [location-id tile]
   (let [{:keys [id display-name position]
          {normalized-x :x normalized-y :y} :position-normalized}
         (<sub [:location-editor/trigger-popover location-id tile])]
     [:div {:class "level-popover"}
-     [:ul
-      [:li.level-popover__reference
-       [:span.level-popover__reference__title "Exit to"]
-       [:span.level-popover__reference__payload
-        [:a {:on-click #(do (>evt [:close-popover])
-                            (>navigate :location-edit :id id))}
-         (str display-name " [" normalized-x " " normalized-y "]")]
-        [location-preview id position]]]]
+     [:header "Trigger"]
+     [:div.level-popover__reference
+      [:span.level-popover__reference__title "Exit to"]
+      [:span.level-popover__reference__payload
+       [:a {:on-click #(do (>evt [:close-popover])
+                           (>navigate :location-edit :id id))}
+        (str display-name " [" normalized-x " " normalized-y "]")]
+       [location-preview id position]]]
      [c/button {:title "Remove Exit"
                 :type :danger
                 :fill true
@@ -412,7 +431,7 @@
 
 (defn edit-entity-layer [location-id]
   (let [{:keys [player-position
-                npcs
+                characters
                 dimension]} (<sub [:location-editor/entity-layer location-id])]
     [:<>
      (when player-position
@@ -427,16 +446,16 @@
                                   (>evt [:location-editor/start-entity-drag [:player]]))}
            [dnd-texture :human]])])
 
-     [do-some-tiles dimension npcs "npc-select"
-      (fn [tile {:keys [id texture display-name]}]
+     [do-some-tiles dimension characters "character-select"
+      (fn [tile {:keys [texture display-name]}]
         [:div {:class "interactor interactor_draggable"
                :title display-name
                :draggable true
                :on-drag-start (fn [e]
                                 (set-dnd-texture! e)
                                 (.setData (.-dataTransfer e) "text/plain" display-name)
-                                (>evt [:location-editor/start-entity-drag [:character id]]))}
-         [c/popover-trigger {:popover [npc-popover location-id tile]}]
+                                (>evt [:location-editor/start-entity-drag [:placement tile]]))}
+         [c/popover-trigger {:popover [character-popover location-id tile]}]
          [dnd-texture texture]])]]))
 
 (defn edit-trigger-layer [location-id]
@@ -461,13 +480,12 @@
                 active-layer
                 visible-layers
                 highlight]} (<sub [:location-editor/ui])
-        [dnd-type dnd-payload] (<sub [:dnd-payload])
-        dropzone-fn (case dnd-type
-                      :player             #(>evt [:location-editor/move-player location-id %])
-                      :character          #(>evt [:location-editor/move-character location-id dnd-payload %])
-                      :connection-trigger #(>evt [:location-editor/move-trigger location-id dnd-payload %])
-                      nil)]
-
+        dropzone-fn (if-let [[dnd-type dnd-payload] (<sub [:location-editor/dnd-payload])]
+                      (case dnd-type
+                        :character          #(>evt [:location-editor/place-character location-id dnd-payload %])
+                        :player             #(>evt [:location-editor/move-player location-id %])
+                        :placement          #(>evt [:location-editor/move-placement location-id dnd-payload %])
+                        :connection-trigger #(>evt [:location-editor/move-trigger location-id dnd-payload %])))]
     [:div {:class "level-wrap"}
      [:div {:class "level"
             :style {:width (u/px (* config/tile-size (:w dimension)))

@@ -5,13 +5,12 @@
              :refer [must ALL NONE MAP-VALS]
              :refer-macros [setval]]
             [cognitect.transit :as t]
+            [armchair.migrations :refer [db-version]]
             [armchair.dummy-data :refer [dummy-data]]
             [armchair.textures :refer [background-textures texture-set]]
             [armchair.config :as config]
             [armchair.math :refer [Point Rect]]
             [armchair.util :as u]))
-
-(def db-version 12)
 
 ;; Types
 
@@ -57,14 +56,15 @@
 ;; Location Editor
 
 
-(s/def ::location-editor
+(s/def :location-editor/location-editor
   (s/keys :req-un [:location-editor/visible-layers
                    :location-editor/active-layer
                    :location-editor/active-pane
                    :location-editor/active-tool
                    :location-editor/active-walk-state
                    :location-editor/active-texture]
-          :opt-un [:location-editor/highlight]))
+          :opt-un [:location-editor/highlight
+                   :location-editor/dnd-payload]))
 
 (s/def :location-editor/active-pane #{:info :level})
 (s/def :location-editor/active-tool #{:brush :eraser})
@@ -100,6 +100,7 @@
                    :location/foreground1
                    :location/foreground2
                    :location/blocked
+                   :location/placements
                    :location/connection-triggers]))
 
 (s/def :location/position :type/point)
@@ -111,8 +112,18 @@
 (s/def :location/foreground1 :location/texture-layer)
 (s/def :location/foreground1 :location/texture-layer)
 (s/def :location/blocked (s/coll-of :location/position :kind set?))
+
+(s/def :location/placements
+  (s/map-of :location/position
+            :location/placement))
+
+(s/def :location/placement
+  (s/keys :req-un [:placement/character-id]
+          :opt-un [:placement/dialogue-id]))
+
 (s/def :location/connection-triggers
-  (s/map-of :location/position :location/connection-trigger-target))
+  (s/map-of :location/position
+            :location/connection-trigger-target))
 
 (s/def :location/connection-trigger-target
   (s/tuple :connection-trigger/target-id
@@ -207,8 +218,6 @@
                 :entity/type]
           :req-un [::character-id
                    :dialogue/initial-line-id
-                   ::location-id
-                   ::location-position
                    :dialogue/synopsis]
           :opt-un [:dialogue/states]))
 
@@ -323,7 +332,7 @@
                                        ::player-options
                                        ::lines
                                        :state/triggers
-                                       ::location-editor
+                                       :location-editor/location-editor
                                        :state/locations
                                        :state/switches
                                        ::switch-values]

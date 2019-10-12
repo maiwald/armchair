@@ -161,18 +161,46 @@
     border-bottom: 1px solid #ddd
     padding: 0 2px 5px
 
-    .edit
+  &__quick-links
+    display: flex
+    flex-direction: row
+
+    li
+      text-align: center
+      flex-grow: 1
       font-size: .7rem
+
+      margin: 4px 4px 0 0
+      &:last-child
+        margin-right: 0
+
+      a
+        display: block
+        padding: 5px
+        background-color: $primary-light
+
+        i
+          float: left
+          margin: 2px 4px 0 2px
 
   &__reference
     display: flex
     flex-direction: column
     padding: 0 2px
-    margin: 5px 0
+    margin: 8px 0
 
     &__title
       font-size: .7rem
       color: $text-light
+
+    &__payload
+      select
+        font-size: .8rem
+
+      .new-dialogue
+        font-size: .8rem
+        display: block
+        margin-top: -8px
 
 .level-layers
   &__item

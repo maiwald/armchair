@@ -27,8 +27,6 @@
 (reg-sub :modal #(:modal %))
 (reg-sub :popover #(:popover %))
 
-(reg-sub :dnd-payload #(:dnd-payload %))
-
 (reg-sub
   :character-list
   :<- [:db-characters]
@@ -96,20 +94,6 @@
          (sort-by second))))
 
 (reg-sub
-  :dialogue-creation/character-options
-  :<- [:db-characters]
-  :<- [:db-dialogues]
-  (fn [[characters dialogues] _]
-    (let [with-dialogue (reduce
-                          #(conj %1 (:character-id %2))
-                          #{}
-                          (vals dialogues))]
-      (->> characters
-           (u/filter-map #(not (contains? with-dialogue (:entity/id %))))
-           (u/map-values :display-name)
-           (sort-by second)))))
-
-(reg-sub
   :character
   :<- [:db-characters]
   (fn [characters [_ character-id]]
@@ -140,20 +124,18 @@
 (reg-sub
   :dialogue-list
   :<- [:db-dialogues]
-  :<- [:db-locations]
   :<- [:db-characters]
-  (fn [[dialogues locations characters]]
+  (fn [[dialogues characters]]
     (->> (vals dialogues)
          (map
-           (fn [{id :entity/id :keys [synopsis character-id location-id]}]
-             (let [character (characters character-id)
-                   location (locations location-id)]
+           (fn [{id :entity/id :keys [synopsis character-id]}]
+             (let [character (characters character-id)]
                {:id id
                 :synopsis synopsis
                 :character (merge {:id character-id} character)
-                :texture (:texture character)
-                :location (merge {:id location-id} location)})))
-         (sort-by #(get-in % [:character :display-name])))))
+                :texture (:texture character)})))
+         (sort-by (fn [{s :synopsis {n :display-name} :character}]
+                    [n s])))))
 
 (reg-sub
   :location-options
@@ -178,18 +160,17 @@
 (reg-sub
   :location-map/location
   :<- [:db-locations]
-  :<- [:db-dialogues]
   :<- [:db-characters]
-  (fn [[locations dialogues characters] [_ location-id]]
-    (let [location-dialogues (u/where-map :location-id location-id dialogues)]
-      (assoc (get locations location-id)
-             :id location-id
-             :dialogues (map (fn [[_ d]]
-                               (let [character (get characters (:character-id d))]
-                                 {:dialogue-id (:entity/id d)
-                                  :npc-name (:display-name character)
-                                  :npc-color (:color character)}))
-                             location-dialogues)))))
+  (fn [[locations characters] [_ location-id]]
+    (let [location (get locations location-id)]
+      {:display-name (:display-name location)
+       :characters (->> location :placements
+                        (map (fn [[_ {:keys [character-id dialogue-id]}]]
+                               (let [character (get characters character-id)]
+                                 {:dialogue-id dialogue-id
+                                  :character-id character-id
+                                  :character-name (:display-name character)
+                                  :character-color (:color character)}))))})))
 
 (reg-sub
   :breadcrumb
@@ -205,14 +186,9 @@
         :location-edit {:location {:id id
                                    :display-name
                                    (get-in locations [id :display-name])}}
-        :dialogue-edit (let [{:keys [character-id location-id synopsis]}
-                             (get dialogues id)
-                             character-name
-                             (get-in characters [character-id :display-name])]
-                         {:location {:id location-id
-                                     :display-name
-                                     (get-in locations [location-id :display-name])}
-                          :dialogue {:id id
+        :dialogue-edit (let [{:keys [character-id synopsis]} (get dialogues id)
+                             character-name (get-in characters [character-id :display-name])]
+                         {:dialogue {:id id
                                      :character-name character-name
                                      :synopsis synopsis}})
         nil))))

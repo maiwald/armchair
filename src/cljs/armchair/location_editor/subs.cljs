@@ -7,6 +7,10 @@
             [armchair.util :as u]))
 
 (reg-sub
+  :location-editor/dnd-payload
+  (fn [db] (get-in db [:location-editor :dnd-payload])))
+
+(reg-sub
   :location-editor/ui
   (fn [db]
     (select-keys (:location-editor db)
@@ -31,17 +35,15 @@
 
 (reg-sub
   :location-editor/characters
-  :<- [:db-dialogues]
+  :<- [:db-locations]
   :<- [:db-characters]
-  (fn [[dialogues characters] [_ location-id]]
-    (->> (vals dialogues)
-         (u/where :location-id location-id)
-         (map (fn [{:keys [character-id location-position]}]
-                (let [character (characters character-id)]
-                  [location-position
-                   (merge {:id character-id}
-                          (select-keys character [:texture :display-name]))])))
-         (into {}))))
+  (fn [[locations characters] [_ location-id]]
+    (->> (locations location-id)
+         :placements
+         (u/map-values
+           (fn [{:keys [character-id]}]
+             (let [character (characters character-id)]
+               (select-keys character [:texture :display-name])))))))
 
 (reg-sub
   :location-editor/location
@@ -68,19 +70,19 @@
      (subscribe [:location-editor/player-position location-id])])
   (fn [[locations characters player-position] [_ location-id]]
     {:dimension (get-in locations [location-id :dimension])
-     :npcs characters
+     :characters characters
      :player-position player-position}))
 
 (reg-sub
-  :location-editor/available-npcs
+  :location-editor/available-characters
   :<- [:db-characters]
-  :<- [:db-dialogues]
-  (fn [[characters dialogues] _]
-    (let [placed-characters (->> (vals dialogues)
-                                 (filter #(contains? % :location-id))
-                                 (reduce #(conj %1 (:character-id %2)) #{}))]
-      (u/filter-map #(not (contains? placed-characters (:entity/id %)))
-                    characters))))
+  (fn [characters]
+    (->> characters
+      (map (fn [[id {:keys [texture display-name]}]]
+             {:character-id id
+              :display-name display-name
+              :texture texture}))
+      (sort-by :display-name))))
 
 (reg-sub
   :location-editor/display-name
@@ -97,19 +99,22 @@
        :height (:h dimension)})))
 
 (reg-sub
-  :location-editor/npc-popover
+  :location-editor/character-popover
+  :<- [:db-locations]
   :<- [:db-dialogues]
   :<- [:db-characters]
-  (fn [[dialogues characters] [_ location-id tile]]
-    (let [{:keys [character-id]
-           dialogue-id :entity/id
-           dialogue-synopsis :synopsis}
-          (select-one! [MAP-VALS #(u/submap? {:location-id location-id :location-position tile} %)]
-                       dialogues)
-          character (characters character-id)]
-      (merge {:id (:entity/id character)
+  (fn [[locations dialogues characters] [_ location-id tile]]
+    (let [placement (get-in locations [location-id :placements tile])
+          {:keys [character-id dialogue-id]} placement
+          character (characters character-id)
+          dialogue-options (->> dialogues
+                                (u/filter-map #(= character-id (:character-id %)))
+                                (u/map-values :synopsis))]
+      (merge {:id character-id
+              :character-id character-id
               :dialogue-id dialogue-id
-              :dialogue-synopsis dialogue-synopsis}
+              :dialogue-synopsis (get-in dialogues [dialogue-id :synopsis])
+              :dialogue-options dialogue-options}
              (select-keys character [:texture :display-name])))))
 
 (reg-sub
@@ -126,20 +131,14 @@
 (reg-sub
   :location-editor/occupied-tiles
   :<- [:db-locations]
-  :<- [:db-dialogues]
   :<- [:db-player]
-  (fn [[locations dialogues player] [_ location-id]]
-    (let [triggers (select [(keypath location-id)
-                            :connection-triggers
-                            MAP-KEYS]
-                           locations)
-          npcs (select [MAP-VALS
-                        #(= location-id (:location-id %))
-                        :location-position]
-                       dialogues)
+  (fn [[locations player] [_ location-id]]
+    (let [location (get locations location-id)
           player (when (= location-id (:location-id player))
                    [(:location-position player)])]
-      (set (concat triggers npcs player)))))
+      (set (concat (keys (:connection-triggers location))
+                   (keys (:placements location))
+                   player)))))
 
 (reg-sub
   :location-editor/physically-occupied-tiles

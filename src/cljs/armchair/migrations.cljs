@@ -10,9 +10,10 @@
                      MAP-VALS MAP-KEYS]
              :refer-macros [select setval transform]]
             [armchair.config :as config]
-            [armchair.db :refer [db-version]]
             [armchair.math :as math :refer [Point Rect]]
             [armchair.util :as u]))
+
+(def db-version 14)
 
 (def migrations
   "Map of migrations. Key is the version we are coming from."
@@ -72,7 +73,7 @@
            db)))
 
    6 (fn [db]
-       "Rename :background to :background1"
+       "Migrate to multiple location layers"
        (transform [:locations MAP-VALS]
                   #(-> %
                        (assoc :background2 {}
@@ -127,7 +128,31 @@
                                           (get-in db [:ui/positions (:initial-line-id %)])
                                           (- (+ config/line-width 50)) 0)
                                        (:dialogues db))]
-          (update db :ui/positions merge initial-line-positions)))})
+          (update db :ui/positions merge initial-line-positions)))
+
+   12 (fn [db]
+        "Move character/dialogue combination into location placements"
+        (let [placements (->> db :dialogues vals
+                              (remove #(nil? (:location-position %)))
+                              (group-by :location-id)
+                              (u/map-values
+                                (fn [ds]
+                                   (->> ds
+                                        (group-by :location-position)
+                                        (u/map-values
+                                          (fn [[d]]
+                                            {:character-id (:character-id d)
+                                             :dialogue-id (:entity/id d)}))))))]
+          (->> db
+            (transform [:locations MAP-VALS]
+                       (fn [l]
+                         (assoc l :placements (get placements (:entity/id l) {}))))
+            (transform [:dialogues MAP-VALS]
+                       (fn [d]
+                         (dissoc d :location-id :location-position))))))
+   13 (fn [db]
+        "Remove nil dialogue states"
+        (setval [:dialogues MAP-VALS :states empty?] NONE db))})
 
 
 (defn migrate [{:keys [version payload]}]
