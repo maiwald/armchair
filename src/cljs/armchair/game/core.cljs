@@ -17,7 +17,7 @@
             [armchair.math :as m]
             [armchair.util :as u]
             [com.rpl.specter
-             :refer [nthpath ALL MAP-KEYS MAP-VALS]
+             :refer [collect-one nthpath keypath ALL MAP-KEYS MAP-VALS]
              :refer-macros [select transform]]))
 
 ;; Definitions
@@ -65,7 +65,7 @@
 
 (defn walkable? [tile]
   (let [l (get-in @state [:player :location-id])
-        enemies (get-in @state [:enemies l])
+        enemies (into #{} (map :position (get-in @state [:enemies l])))
         {:keys [dimension blocked characters]} (get-in @data [:locations l])]
     (and
       (m/rect-contains? dimension tile)
@@ -136,7 +136,7 @@
     (draw-texture-rotated :arrow position rotation)))
 
 (defn draw-enemies [enemies camera]
-  (doseq [[coord {texture :texture}] enemies]
+  (doseq [{coord :position texture :texture} enemies]
     (when (tile-visible? camera (u/coord->tile coord))
       (draw-sprite-texture texture coord))))
 
@@ -398,8 +398,7 @@
     state))
 
 (defn update-state-movement [state now]
-  (if (or (not (player-animation? state))
-          (player-animation-done? state now))
+  (if (or (not (player-animation? state)) (player-animation-done? state now))
     (if-let [direction (peek @move-q)]
       (let [old-position (get-in state [:player :position])
             new-position (apply
@@ -418,6 +417,19 @@
       state)
     state))
 
+(defn update-state-enemies [state now]
+  (let [location-id (get-in state [:player :location-id])
+        direction (:enemy-movement state)]
+    (transform [:enemies (keypath location-id) ALL (collect-one :position) :animation nil?]
+               (fn [position animation]
+                 (let [destination (apply m/translate-point
+                                          position
+                                          (direction-map direction))]
+                   {:start now
+                    :origin position
+                    :destination destination}))
+               state)))
+
 (defn update-state-remove-animations [state now]
   (if (player-animation-done? state now)
     (update state :player dissoc :animation)
@@ -427,6 +439,7 @@
   (-> state
       (update-state-location now)
       (update-state-movement now)
+      (update-state-enemies now)
       (update-state-remove-animations now)))
 
 ;; View State
@@ -459,18 +472,22 @@
     (m/Rect. left top w h)))
 
 (defn view-state [state now]
-  (as-> state s
-    (transform [:enemies MAP-VALS MAP-KEYS] u/tile->coord s)
-    (update s :player
-            (fn [{:keys [position direction animation] :as player}]
-              (merge player
-                     (if-some [{:keys [start origin destination]} animation]
-                       {:position (animated-position start (u/tile->coord origin) (u/tile->coord destination) now)
-                        :texture (animation-texture now (anim->data start (get-in hare-animations [:walking direction])))}
-                       {:position (u/tile->coord position)
-                        :texture (animation-texture now (anim->data 0 (get-in hare-animations [:idle direction])))}))))
-    (let [{:keys [position location-id]} (:player s)]
-      (assoc s :camera (camera-rect position location-id)))))
+  (letfn [(apply-animation [{:keys [position animation] :as e}]
+            (let [view-position (if-some [{:keys [start origin destination]} animation]
+                                  (animated-position start (u/tile->coord origin) (u/tile->coord destination) now)
+                                  (u/tile->coord position))]
+              (assoc e :position view-position)))]
+    (as-> state s
+      (transform [:player] apply-animation s)
+      (transform [:enemies MAP-VALS ALL] apply-animation s)
+      (update s :player
+              (fn [{:keys [direction animation] :as player}]
+                (assoc player :texture
+                       (if-some [{start :start} animation]
+                         (animation-texture now (anim->data start (get-in hare-animations [:walking direction])))
+                         (animation-texture now (anim->data 0 (get-in hare-animations [:idle direction])))))))
+      (let [{:keys [position location-id]} (:player s)]
+        (assoc s :camera (camera-rect position location-id))))))
 
 ;; Input Handlers
 
@@ -520,7 +537,8 @@
 ;; Game Loop
 
 (defn start-game [context game-data]
-  (reset! state (:initial-state game-data))
+  (reset! state (assoc (:initial-state game-data)
+                       :enemy-movement :down))
   (reset! data game-data)
   (reset! ctx context)
   (reset! move-q #queue [])

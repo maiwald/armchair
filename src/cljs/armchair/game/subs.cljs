@@ -156,5 +156,5 @@
                      :switches (u/map-values :default switches)
                      :player (merge player-data {:direction :down})
                      :enemies {(uuid "8594a767-8036-409d-81eb-104c799cf26e")
-                               {(m/Point. 0 1) {:texture :orc_knight}
-                                (m/Point. 3 2) {:texture :orc_warrior}}}}}))
+                               (list {:texture :orc_knight :position (m/Point. 0 1)}
+                                     {:texture :orc_warrior :position (m/Point. 3 2)})}}}))
