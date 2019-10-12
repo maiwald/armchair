@@ -369,7 +369,7 @@
                 (xform (:y from) (:y to)))
       to)))
 
-(defn animation-done? [start now]
+(defn animation-done? [{:keys [start]} now]
   (< (+ start tile-move-time) now))
 
 ;; State updates
@@ -382,7 +382,7 @@
   [state now]
   (let [animation (get-in state [:player :animation])]
     (and (some? animation)
-         (animation-done? (:start animation) now))))
+         (animation-done? animation now))))
 
 (defn update-state-location [state now]
   (if (player-animation-done? state now)
@@ -419,16 +419,32 @@
 
 (defn update-state-enemies [state now]
   (let [location-id (get-in state [:player :location-id])
-        direction (:enemy-movement state)]
-    (transform [:enemies (keypath location-id) ALL (collect-one :position) :animation nil?]
-               (fn [position animation]
-                 (let [destination (apply m/translate-point
-                                          position
-                                          (direction-map direction))]
-                   {:start now
-                    :origin position
-                    :destination destination}))
-               state)))
+        direction (:enemy-movement state)
+        initialized (transform [:enemies (keypath location-id) ALL #(nil? (:animation %))]
+                               (fn [{:keys [position animation] :as enemy}]
+                                 (let [destination (apply m/translate-point
+                                                          position
+                                                          (direction-map direction))]
+                                   (assoc enemy
+                                          :position destination
+                                          :animation {:start now
+                                                      :origin position
+                                                      :destination destination})))
+                               state)]
+    (if (every? #(animation-done? % (- now 1000)) (select [:enemies (keypath location-id) ALL :animation] initialized))
+      (let [new-direction (if (= direction :up) :down :up)]
+        (transform [:enemies (keypath location-id) ALL]
+                   (fn [{:keys [position animation] :as enemy}]
+                     (let [destination (apply m/translate-point
+                                              position
+                                              (direction-map new-direction))]
+                       (assoc enemy
+                              :position destination
+                              :animation {:start now
+                                          :origin position
+                                          :destination destination})))
+                   (assoc initialized :enemy-movement new-direction)))
+      initialized)))
 
 (defn update-state-remove-animations [state now]
   (if (player-animation-done? state now)
