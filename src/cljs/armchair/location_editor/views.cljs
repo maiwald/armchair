@@ -7,6 +7,7 @@
             [armchair.routes :refer [>navigate]]
             [armchair.math :refer [Point Rect translate-point relative-point rect-contains?]]
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
+            [armchair.modals.dialogue-creation :as dialogue-creation]
             [armchair.textures :refer [texture-path background-textures]]))
 
 (defn dnd-texture [texture]
@@ -376,7 +377,12 @@
               (>evt [:location-editor/set-placement-dialogue
                      location-id tile value])))]
     (fn [location-id title]
-      (let [{:keys [id display-name dialogue-id dialogue-synopsis dialogue-options]}
+      (let [{:keys [id
+                    character-id
+                    dialogue-id
+                    display-name
+                    dialogue-synopsis
+                    dialogue-options]}
             (<sub [:location-editor/character-popover location-id tile])]
         [:div {:class "level-popover"}
          [:header display-name]
@@ -394,7 +400,10 @@
            [input/select {:value dialogue-id
                           :nil-value "No Dialogue"
                           :options dialogue-options
-                          :on-change set-dialogue}]]]
+                          :on-change set-dialogue}]
+           [:a.new-dialogue {:on-click #(do (>evt [:close-popover])
+                                            (>evt [::dialogue-creation/open character-id location-id tile]))}
+            "Create new Dialogue"]]]
          [c/button {:title "Remove Character"
                     :type :danger
                     :fill true
