@@ -17,7 +17,7 @@
             [armchair.math :as m]
             [armchair.util :as u]
             [com.rpl.specter
-             :refer [nthpath ALL]
+             :refer [nthpath ALL MAP-KEYS MAP-VALS]
              :refer-macros [select transform]]))
 
 ;; Definitions
@@ -64,12 +64,14 @@
 (def move-q (atom #queue []))
 
 (defn walkable? [tile]
-  (let [{l :location-id} (:player @state)
+  (let [l (get-in @state [:player :location-id])
+        enemies (get-in @state [:enemies l])
         {:keys [dimension blocked characters]} (get-in @data [:locations l])]
     (and
       (m/rect-contains? dimension tile)
       (not (or (contains? blocked tile)
-               (contains? characters tile))))))
+               (contains? characters tile)
+               (contains? enemies tile))))))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
   (apply
@@ -132,6 +134,11 @@
 (defn draw-direction-indicator [{{:keys [position direction]} :player}]
   (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
     (draw-texture-rotated :arrow position rotation)))
+
+(defn draw-enemies [enemies camera]
+  (doseq [[coord {texture :texture}] enemies]
+    (when (tile-visible? camera (u/coord->tile coord))
+      (draw-sprite-texture texture coord))))
 
 (defn draw-dialogue-box [{:keys [text options selected-option]}]
   (let [w 600
@@ -199,6 +206,7 @@
           h-offset (- (/ (- (c/height @ctx) (:h camera)) 2) (:y camera))]
       (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
     (let [l (get-in view-state [:player :location-id])
+          enemies (get-in view-state [:enemies l])
           {:keys [characters
                   dimension
                   background1
@@ -210,6 +218,7 @@
       (draw-highlight (:highlight view-state))
       (draw-player (:player view-state))
       (draw-characters characters camera)
+      (draw-enemies enemies camera)
       (draw-background dimension foreground1 camera)
       (draw-background dimension foreground2 camera))
     ; (draw-direction-indicator @ctx view-state)
@@ -451,6 +460,7 @@
 
 (defn view-state [state now]
   (as-> state s
+    (transform [:enemies MAP-VALS MAP-KEYS] u/tile->coord s)
     (update s :player
             (fn [{:keys [position direction animation] :as player}]
               (merge player

@@ -7,6 +7,7 @@
              :refer-macros [select setval transform]]
             [armchair.config :as config]
             [armchair.textures :refer [character-textures]]
+            [armchair.math :as m]
             [armchair.util :as u]))
 
 (s/def :game/data (s/keys :req-un [:game/lines
@@ -153,4 +154,7 @@
      :locations locations
      :initial-state {:dialogue-states (u/map-values :initial-line-id dialogues)
                      :switches (u/map-values :default switches)
-                     :player (merge player-data {:direction :down})}}))
+                     :player (merge player-data {:direction :down})
+                     :enemies {(uuid "8594a767-8036-409d-81eb-104c799cf26e")
+                               {(m/Point. 0 1) {:texture :orc_knight}
+                                (m/Point. 3 2) {:texture :orc_warrior}}}}}))
