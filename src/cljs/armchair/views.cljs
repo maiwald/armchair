@@ -85,8 +85,9 @@
                      character-color]} characters]
          [:li {:key (str "location-dialogue-" location-id " - " character-id)}
           [:a {:style {:background-color character-color}
+               :class (when-not dialogue-id "disabled")
                :on-mouse-down u/stop-e!
-               :on-click #(>navigate :dialogue-edit :id dialogue-id)}
+               :on-click (when dialogue-id #(>navigate :dialogue-edit :id dialogue-id))}
            character-name]])]]]))
 
 (defn location-connection [start end]
