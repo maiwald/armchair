@@ -57,7 +57,7 @@
 
 (defn modal [{:keys [switch-id]}]
   (let [switch-options (<sub [::switch-options])]
-    [slds/modal {:title "Add Case Node"
+    [slds/modal {:title "Add Switch Node"
                  :close-handler #(>evt [:close-modal])
                  :confirm-handler #(>evt [::save])}
      [input/select {:label "Switch"

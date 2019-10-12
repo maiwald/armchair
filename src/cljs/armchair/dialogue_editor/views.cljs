@@ -8,6 +8,10 @@
             [armchair.slds :as slds]
             [armchair.input :as input]
             [armchair.math :as math :refer [Point translate-point]]
+            [armchair.modals.unlock-conditions-form :as unlock-conditions-form]
+            [armchair.modals.switch-form :as switch-form]
+            [armchair.modals.trigger-creation :as trigger-creation]
+            [armchair.modals.case-node-creation :as case-node-creation]
             [armchair.util :as u :refer [<sub >evt stop-e! prevent-e! e->val e->left?]]))
 
 (def option-position-lookup (r/atom {}))
@@ -83,7 +87,7 @@
 
 (defn player-line-option-component [line-id index option total-count]
   (let [handle-text-change #(>evt [:dialogue-editor/update-option line-id index %])
-        edit-condition #(>evt [:armchair.modals.unlock-conditions-form/open line-id index])
+        edit-condition #(>evt [::unlock-conditions-form/open line-id index])
         move-up #(>evt [:dialogue-editor/move-option line-id index :up])
         move-down #(>evt [:dialogue-editor/move-option line-id index :down])
         delete #(>evt [:dialogue-editor/delete-option line-id index])]
@@ -144,7 +148,7 @@
                 switch-value]} (<sub [:dialogue-editor/trigger trigger-id])]
     [:li
      [:a {:on-mouse-down stop-e!
-          :on-click #(>evt [:armchair.modals.switch-form/open switch-id])}
+          :on-click #(>evt [::switch-form/open switch-id])}
       [:span.line__triggers__switch-name switch-name]
       [:span.line__triggers__switch-value switch-value]]
      [:a {:on-mouse-down stop-e!
@@ -153,7 +157,7 @@
 
 (defn trigger-node-component [id]
   (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-node id]))
-          (action-add-trigger [e] (>evt [:armchair.modals.trigger-creation/open id]))]
+          (action-add-trigger [e] (>evt [::trigger-creation/open id]))]
     (fn [id]
       (let [{:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
         [c/graph-node {:title "Triggers"
@@ -252,7 +256,7 @@
                  :on-click #(>evt [:create-trigger-node dialogue-id])}]
       [c/button {:title "New Switch Node"
                  :icon "plus"
-                 :on-click #(>evt [:armchair.modals.case-node-creation/open dialogue-id])}]]
+                 :on-click #(>evt [::case-node-creation/open dialogue-id])}]]
      [drag-canvas {:kind "line"
                    :nodes {npc-line-component npc-line-ids
                            player-line-component player-line-ids
