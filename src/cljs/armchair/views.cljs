@@ -6,6 +6,8 @@
             [armchair.location-editor.views :refer [location-editor]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
             [armchair.modals.views :refer [modal]]
+            [armchair.modals.dialogue-creation :as dialogue-creation]
+            [armchair.modals.switch-form :as switch-form]
             [armchair.math :as m]
             [armchair.util :as u :refer [<sub >evt]]
             [armchair.config :as config]
@@ -33,7 +35,7 @@
                                [c/button {:icon "trash-alt"
                                           :on-click #(when (js/confirm "Are you sure you want to delete this dialogue?")
                                                        (>evt [:delete-dialogue id]))}]])}
-      :new-resource #(>evt [:armchair.modals.dialogue-creation/open])}]))
+      :new-resource #(>evt [::dialogue-creation/open])}]))
 
 (defn character-management []
   (let [characters (<sub [:character-list])]
@@ -65,8 +67,8 @@
                                           :on-click #(when (js/confirm "Are you sure you want to delete this switch?")
                                                        (>evt [:delete-switch id]))}]
                                [c/button {:icon "edit"
-                                          :on-click #(>evt [:armchair.modals.switch-form/open id])}]])}
-      :new-resource #(>evt [:armchair.modals.switch-form/open])}]))
+                                          :on-click #(>evt [::switch-form/open id])}]])}
+      :new-resource #(>evt [::switch-form/open])}]))
 
 (defn location-component [location-id]
   (let [{:keys [display-name characters]} (<sub [:location-map/location location-id])]
