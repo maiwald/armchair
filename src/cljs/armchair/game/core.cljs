@@ -64,10 +64,13 @@
 (def move-q (atom #queue []))
 
 (defn walkable? [tile]
-  (let [l (get-in @state [:player :location-id])
-        enemies (into #{} (map :position (get-in @state [:enemies l])))
-        {:keys [dimension blocked characters]} (get-in @data [:locations l])]
+  (let [{:keys [location-id position]} (:player @state)
+        enemies (->> (get-in @state [:enemies location-id])
+                     (map :position)
+                     (into #{}))
+        {:keys [dimension blocked characters]} (get-in @data [:locations location-id])]
     (and
+      (not= tile position)
       (m/rect-contains? dimension tile)
       (not (or (contains? blocked tile)
                (contains? characters tile)
@@ -139,6 +142,16 @@
   (doseq [{coord :position texture :texture} enemies]
     (when (tile-visible? camera (u/coord->tile coord))
       (draw-sprite-texture texture coord))))
+
+(defn draw-walkable [rect camera]
+  (doseq [x (range (:x rect) (+ (:x rect) (:w rect)))
+          y (range (:y rect) (+ (:y rect) (:h rect)))
+          :let [tile (m/Point. x y)]
+          :when (and (tile-visible? camera tile)
+                     (not (walkable? tile)))]
+    (c/set-fill-style! @ctx "rgba(255, 0, 0, .2)")
+    (c/fill-rect! @ctx (m/Rect. (* tile-size x) (* tile-size y)
+                                tile-size tile-size))))
 
 (defn draw-dialogue-box [{:keys [text options selected-option]}]
   (let [w 600
@@ -221,8 +234,9 @@
       (draw-enemies enemies camera)
       (draw-background dimension foreground1 camera)
       (draw-background dimension foreground2 camera))
-    ; (draw-direction-indicator @ctx view-state)
-    ; (draw-camera @ctx camera)
+      ; (draw-walkable dimension camera))
+      ; (draw-direction-indicator view-state))
+      ; (draw-camera camera)
     (c/reset-transform! @ctx)
     (let [w-offset (/ (- (c/width @ctx) (:w camera)) 2)
           h-offset (/ (- (c/height @ctx) (:h camera)) 2)]
@@ -425,11 +439,13 @@
                                  (let [destination (apply m/translate-point
                                                           position
                                                           (direction-map direction))]
-                                   (assoc enemy
-                                          :position destination
-                                          :animation {:start now
-                                                      :origin position
-                                                      :destination destination})))
+                                   (if (walkable? destination)
+                                     (assoc enemy
+                                            :position destination
+                                            :animation {:start now
+                                                        :origin position
+                                                        :destination destination})
+                                     enemy)))
                                state)]
     (if (every? #(animation-done? % (- now 1000)) (select [:enemies (keypath location-id) ALL :animation] initialized))
       (let [new-direction (if (= direction :up) :down :up)]
@@ -438,11 +454,13 @@
                      (let [destination (apply m/translate-point
                                               position
                                               (direction-map new-direction))]
-                       (assoc enemy
-                              :position destination
-                              :animation {:start now
-                                          :origin position
-                                          :destination destination})))
+                       (if (walkable? destination)
+                         (assoc enemy
+                                :position destination
+                                :animation {:start now
+                                            :origin position
+                                            :destination destination})
+                         enemy)))
                    (assoc initialized :enemy-movement new-direction)))
       initialized)))
 
