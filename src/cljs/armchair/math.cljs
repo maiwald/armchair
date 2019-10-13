@@ -50,7 +50,13 @@
   (Point. (+ x dx) (+ y dy)))
 
 (defn relative-point
-  "Convert *global* point to a Point relative to rect"
+  "Convert global point to a point relative to rect"
   [point rect]
   (let [[dx dy] (point-delta (rect-top-left rect) point)]
     (Point. dx dy)))
+
+(defn global-point
+  "Convert rect relative point to a global point"
+  [point rect]
+  (let [{:keys [x y]} (rect-top-left rect)]
+    (translate-point point x y)))
