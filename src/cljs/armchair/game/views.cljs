@@ -1,7 +1,7 @@
 (ns armchair.game.views
   (:require [clojure.core.async :refer [put!]]
             [reagent.core :as r]
-            [armchair.util :refer [<sub prevent-e! px]]
+            [armchair.util :as u :refer [<sub prevent-e! px]]
             [armchair.config :refer [tile-size
                                      camera-tile-width
                                      camera-tile-height
@@ -26,7 +26,10 @@
                     (swap! keypresses conj keycode)
                     (put! (:input @game-handle) action)))))
             (on-key-up [e]
-              (swap! keypresses disj (.-code e)))]
+              (swap! keypresses disj (.-code e)))
+            (on-click [e]
+              (let [point (u/relative-cursor e (.-currentTarget e))]
+                (put! (:input @game-handle) [:click point])))]
       (r/create-class
         {:display-name "game-canvas"
          :component-did-mount
@@ -53,6 +56,7 @@
            (let [w (* tile-size camera-tile-width camera-scale)
                  h (* tile-size camera-tile-height camera-scale)]
              [:canvas {:id "game"
+                       :on-click on-click
                        :width w
                        :height h
                        :style {:width (px w)

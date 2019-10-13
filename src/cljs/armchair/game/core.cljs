@@ -61,6 +61,7 @@
 
 (def state (atom nil))
 (def data (atom nil))
+(def move-q (atom #queue []))
 
 (defn walkable? [tile]
   (let [{l :location-id} (:player @state)
@@ -184,6 +185,10 @@
                   (m/Rect. (- x tile-size) (- y tile-size)
                            (+ w (* 2 tile-size)) (+ h (* 2 tile-size)))))
 
+(defn draw-highlight [{:keys [x y]}]
+  (c/set-fill-style! @ctx "rgba(255, 255, 0, .4)")
+  (c/fill-rect! @ctx (m/Rect. (* tile-size x) (* tile-size y)
+                              tile-size tile-size)))
 
 (defn render [view-state]
   (let [camera (:camera view-state)]
@@ -202,6 +207,7 @@
                   foreground2]} (get-in @data [:locations l])]
       (draw-background dimension background1 camera)
       (draw-background dimension background2 camera)
+      (draw-highlight (:highlight view-state))
       (draw-player (:player view-state))
       (draw-characters characters camera)
       (draw-background dimension foreground1 camera)
@@ -285,40 +291,6 @@
         tile (interaction-tile @state)]
     (if-let [dialogue-id (get-in characters [tile :dialogue-id])]
       (get-in @state [:dialogue-states dialogue-id]))))
-
-;; Input Handlers
-
-(def move-q (atom #queue []))
-
-(defn handle-move [direction]
-  (if (interacting? @state)
-    (if-let [next-index-fn (get {:up dec :down inc} direction)]
-      (swap! state update :interaction
-             (fn [{:keys [options selected-option] :as interaction}]
-               (assoc interaction :selected-option
-                      (mod (next-index-fn selected-option)
-                           (count options))))))
-    (swap! move-q conj direction)))
-
-(defn handle-interact []
-  (if (interacting? @state)
-    (let [{:keys [options selected-option]} (:interaction @state)
-          {:keys [trigger-changes next-line-id]} (get options selected-option)]
-      (swap! state update :switches merge trigger-changes)
-      (if (some? next-line-id)
-        (swap! state assoc :interaction (resolve-interaction next-line-id))
-        (swap! state dissoc :interaction)))
-    (if-let [line-id (interaction-line-id)]
-      (swap! state assoc :interaction (resolve-interaction line-id)))))
-
-(defn start-input-loop [channel]
-  (go-loop [[command payload :as message] (<! channel)]
-           (when message
-             (let [handler (case command
-                             :move handle-move
-                             :interact handle-interact)]
-               (handler payload)
-               (recur (<! channel))))))
 
 ;; Animations
 
@@ -489,6 +461,51 @@
                         :texture (animation-texture now (anim->data 0 (get-in hare-animations [:idle direction])))}))))
     (let [{:keys [position location-id]} (:player s)]
       (assoc s :camera (camera-rect position location-id)))))
+
+;; Input Handlers
+
+(defn handle-move [direction]
+  (if (interacting? @state)
+    (if-let [next-index-fn (get {:up dec :down inc} direction)]
+      (swap! state update :interaction
+             (fn [{:keys [options selected-option] :as interaction}]
+               (assoc interaction :selected-option
+                      (mod (next-index-fn selected-option)
+                           (count options))))))
+    (swap! move-q conj direction)))
+
+(defn handle-interact []
+  (if (interacting? @state)
+    (let [{:keys [options selected-option]} (:interaction @state)
+          {:keys [trigger-changes next-line-id]} (get options selected-option)]
+      (swap! state update :switches merge trigger-changes)
+      (if (some? next-line-id)
+        (swap! state assoc :interaction (resolve-interaction next-line-id))
+        (swap! state dissoc :interaction)))
+    (if-let [line-id (interaction-line-id)]
+      (swap! state assoc :interaction (resolve-interaction line-id)))))
+
+(defn handle-click [{:keys [x y] :as p}]
+  (let [
+        scaled-coord (m/Point. (quot x camera-scale)
+                               (quot y camera-scale))
+        {:keys [position location-id]} (:player @state)
+        camera (camera-rect (u/tile->coord position) location-id)
+        global-coord (m/global-point scaled-coord camera)
+        tile (u/coord->tile global-coord)]
+    (js/console.log "gloabl:" global-coord)
+    (js/console.log "tile:" tile)
+    (swap! state assoc :highlight tile)))
+
+(defn start-input-loop [channel]
+  (go-loop [[command payload :as message] (<! channel)]
+           (when message
+             (let [handler (case command
+                             :move handle-move
+                             :interact handle-interact
+                             :click handle-click)]
+               (handler payload)
+               (recur (<! channel))))))
 
 ;; Game Loop
 
