@@ -32,7 +32,8 @@
   (Point. (* tile-size x) (* tile-size y)))
 
 (defn coord->tile [{:keys [x y]}]
-  (Point. (quot x tile-size) (quot y tile-size)))
+  (Point. (cond-> (quot x tile-size) (neg? x) dec)
+          (cond-> (quot y tile-size) (neg? y) dec)))
 
 (defn normalize-to-tile [coord]
   (-> coord coord->tile tile->coord))
