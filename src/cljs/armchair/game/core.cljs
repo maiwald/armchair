@@ -190,6 +190,18 @@
   (c/fill-rect! @ctx (m/Rect. (* tile-size x) (* tile-size y)
                               tile-size tile-size)))
 
+(defn scale-to-fill [{cam-w :w cam-h :h}]
+  (let [ctx-w (c/width @ctx)
+        ctx-h (c/height @ctx)
+        w-offset (/ (- ctx-w cam-w) 2)
+        h-offset (/ (- ctx-h cam-h) 2)]
+    (c/draw-image! @ctx
+                   (.-canvas @ctx)
+                   (m/Point. w-offset h-offset)
+                   [cam-w cam-h]
+                   (m/Point. 0 0)
+                   [ctx-w ctx-h])))
+
 (defn render [view-state]
   (let [camera (:camera view-state)]
     (c/clear! @ctx)
@@ -212,19 +224,10 @@
       (draw-characters characters camera)
       (draw-background dimension foreground1 camera)
       (draw-background dimension foreground2 camera))
-    ; (draw-direction-indicator @ctx view-state)
-    ; (draw-camera @ctx camera)
+      ; (draw-direction-indicator @ctx view-state)
+      ; (draw-camera camera))
     (c/reset-transform! @ctx)
-    (let [w-offset (/ (- (c/width @ctx) (:w camera)) 2)
-          h-offset (/ (- (c/height @ctx) (:h camera)) 2)]
-      (c/draw-image! @ctx
-                     (.-canvas @ctx)
-                     (m/Point. w-offset h-offset)
-                     [(:w camera) (:h camera)]
-                     (m/Point.
-                       (- (/ (c/width @ctx) 2) (* (/ (:w camera) 2) camera-scale))
-                       (- (/ (c/height @ctx) 2) (* (/ (:h camera) 2) camera-scale)))
-                     [(* camera-scale (:w camera)) (* camera-scale (:h camera))]))
+    (scale-to-fill camera)
     (when (interacting? view-state)
       (draw-dialogue-box (dialogue-data view-state)))))
 
