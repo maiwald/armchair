@@ -194,7 +194,6 @@
           h-offset (- (/ (- (c/height @ctx) (:h camera)) 2) (:y camera))]
       (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
     (let [l (get-in view-state [:player :location-id])
-          player-tile (u/coord->tile (get-in view-state [:player :position]))
           {:keys [characters
                   dimension
                   background1
