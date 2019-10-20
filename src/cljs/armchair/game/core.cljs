@@ -121,17 +121,17 @@
                        (tile-visible? camera tile))]
       (draw-sprite-texture texture (u/tile->coord tile)))))
 
-(defn draw-player [{:keys [position texture]}]
-  (draw-sprite-texture texture position))
+(defn draw-player [{:keys [coord texture]}]
+  (draw-sprite-texture texture coord))
 
 (defn draw-characters [characters camera]
   (doseq [[tile {texture :texture}] characters]
     (when (tile-visible? camera tile)
       (draw-sprite-texture texture (u/tile->coord tile)))))
 
-(defn draw-direction-indicator [{{:keys [position direction]} :player}]
+(defn draw-direction-indicator [{{:keys [coord direction]} :player}]
   (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
-    (draw-texture-rotated :arrow position rotation)))
+    (draw-texture-rotated :arrow coord rotation)))
 
 (defn draw-dialogue-box [{:keys [text options selected-option]}]
   (let [w 600
@@ -185,10 +185,11 @@
                   (m/Rect. (- x tile-size) (- y tile-size)
                            (+ w (* 2 tile-size)) (+ h (* 2 tile-size)))))
 
-(defn draw-highlight [{:keys [x y]}]
+(defn draw-highlight [source {:keys [x y] :as target}]
   (c/set-fill-style! @ctx "rgba(255, 255, 0, .4)")
-  (c/fill-rect! @ctx (m/Rect. (* tile-size x) (* tile-size y)
-                              tile-size tile-size)))
+  (doseq [step (path/a-star walkable? source target)]
+    (let [{:keys [x y]} (u/tile->coord step)]
+      (c/fill-rect! @ctx (m/Rect. x y tile-size tile-size)))))
 
 (defn scale-to-fill [{cam-w :w cam-h :h}]
   (let [ctx-w (c/width @ctx)
@@ -219,7 +220,8 @@
                   foreground2]} (get-in @data [:locations l])]
       (draw-background dimension background1 camera)
       (draw-background dimension background2 camera)
-      (draw-highlight (:highlight view-state))
+      (draw-highlight (:position (:player view-state))
+                      (:highlight view-state))
       (draw-player (:player view-state))
       (draw-characters characters camera)
       (draw-background dimension foreground1 camera)
@@ -458,12 +460,12 @@
             (fn [{:keys [position direction animation] :as player}]
               (merge player
                      (if-some [{:keys [start origin destination]} animation]
-                       {:position (animated-position start (u/tile->coord origin) (u/tile->coord destination) now)
+                       {:coord (animated-position start (u/tile->coord origin) (u/tile->coord destination) now)
                         :texture (animation-texture now (anim->data start (get-in hare-animations [:walking direction])))}
-                       {:position (u/tile->coord position)
+                       {:coord (u/tile->coord position)
                         :texture (animation-texture now (anim->data 0 (get-in hare-animations [:idle direction])))}))))
-    (let [{:keys [position location-id]} (:player s)]
-      (assoc s :camera (camera-rect position location-id)))))
+    (let [{:keys [coord location-id]} (:player s)]
+      (assoc s :camera (camera-rect coord location-id)))))
 
 ;; Input Handlers
 
