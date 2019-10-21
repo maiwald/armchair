@@ -23,11 +23,17 @@
 ;; Definitions
 
 (def time-factor 1)
+(defn get-time []
+  (* time-factor (.now js/performance)))
+
 (def tile-move-time 200) ; milliseconds
-(def direction-map {:up [0 -1]
-                    :down [0 1]
-                    :left [-1 0]
-                    :right [1 0]})
+
+(def direction->delta {:up [0 -1]
+                       :down [0 1]
+                       :left [-1 0]
+                       :right [1 0]})
+
+(def delta->direction (u/reverse-map direction->delta))
 
 (s/def ::state (s/and (s/keys :req-un [::player ::switches]
                               :opt-un [::interaction])))
@@ -71,11 +77,16 @@
       (not (or (contains? blocked tile)
                (contains? characters tile))))))
 
+(defn interactable? [tile]
+  (let [{l :location-id} (:player @state)
+        {:keys [dimension blocked characters]} (get-in @data [:locations l])]
+    (contains? characters tile)))
+
 (defn interaction-tile [{{:keys [position direction]} :player}]
   (apply
     m/translate-point
     position
-    (direction-map direction)))
+    (direction->delta direction)))
 
 (defn dialogue-data [{:keys [interaction]}]
   (-> interaction
@@ -185,10 +196,10 @@
                   (m/Rect. (- x tile-size) (- y tile-size)
                            (+ w (* 2 tile-size)) (+ h (* 2 tile-size)))))
 
-(defn draw-highlight [source {:keys [x y] :as target}]
-  (c/set-fill-style! @ctx "rgba(255, 255, 0, .4)")
-  (doseq [step (path/a-star walkable? source target)]
-    (let [{:keys [x y]} (u/tile->coord step)]
+(defn draw-highlight [{:keys [position opacity]}]
+  (when-not (zero? opacity)
+    (c/set-fill-style! @ctx (str "rgba(255, 255, 0, " opacity ")"))
+    (let [{:keys [x y]} (u/tile->coord position)]
       (c/fill-rect! @ctx (m/Rect. x y tile-size tile-size)))))
 
 (defn scale-to-fill [{cam-w :w cam-h :h}]
@@ -220,8 +231,7 @@
                   foreground2]} (get-in @data [:locations l])]
       (draw-background dimension background1 camera)
       (draw-background dimension background2 camera)
-      (draw-highlight (:position (:player view-state))
-                      (:highlight view-state))
+      (draw-highlight (:highlight view-state))
       (draw-player (:player view-state))
       (draw-characters characters camera)
       (draw-background dimension foreground1 camera)
@@ -401,7 +411,7 @@
             new-position (apply
                            m/translate-point
                            old-position
-                           (direction-map direction))]
+                           (direction->delta direction))]
         (swap! move-q pop)
         (cond-> (assoc-in state [:player :direction] direction)
           (walkable? new-position)
@@ -464,6 +474,14 @@
                         :texture (animation-texture now (anim->data start (get-in hare-animations [:walking direction])))}
                        {:coord (u/tile->coord position)
                         :texture (animation-texture now (anim->data 0 (get-in hare-animations [:idle direction])))}))))
+    (if-let [start (get-in s [:highlight :start])]
+      (let [highlight-t 300
+            delta (- now start)]
+        (assoc-in s [:highlight :opacity]
+                  (if (< delta highlight-t)
+                    (* 0.5 (- 1 (/ delta highlight-t)))
+                    0)))
+      s)
     (let [{:keys [coord location-id]} (:player s)]
       (assoc s :camera (camera-rect coord location-id)))))
 
@@ -490,14 +508,29 @@
     (if-let [line-id (interaction-line-id)]
       (swap! state assoc :interaction (resolve-interaction line-id)))))
 
-(defn handle-click [{:keys [x y] :as p}]
+(defn view->tile [{:keys [x y]}]
   (let [scaled-coord (m/Point. (quot x camera-scale)
                                (quot y camera-scale))
         {:keys [position location-id]} (:player @state)
         camera (camera-rect (u/tile->coord position) location-id)
-        global-coord (m/global-point scaled-coord camera)
-        tile (u/coord->tile global-coord)]
-    (swap! state assoc :highlight tile)))
+        global-coord (m/global-point scaled-coord camera)]
+    (u/coord->tile global-coord)))
+
+(defn handle-click [canvas-point]
+  (if-not (interacting? @state)
+    (let [target-tile (view->tile canvas-point)
+          player-pos (get-in @state [:player :position])
+          path (->> (path/a-star (fn [t]
+                                   (or (and (= target-tile t)
+                                            (interactable? t))
+                                       (walkable? t)))
+                                 player-pos target-tile)
+                    (partition 2 1)
+                    (map (fn [[p1 p2]] (delta->direction (m/point-delta p1 p2))))
+                    (into #queue []))]
+      (swap! state assoc :highlight {:position target-tile
+                                     :start (get-time)})
+      (reset! move-q path))))
 
 (defn start-input-loop [channel]
   (go-loop [[command payload :as message] (<! channel)]
@@ -526,7 +559,7 @@
         (js/requestAnimationFrame
           (fn game-loop []
             (when (and (not @quit) @ctx)
-              (let [now (* time-factor (.now js/performance))
+              (let [now (get-time)
                     new-state (swap! state update-state now)
                     view-state (view-state new-state now)]
                 (when-not (s/valid? ::state new-state)
