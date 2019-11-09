@@ -52,7 +52,6 @@
                                       :interaction/options
                                       :interaction/selected-option]))
 
-(s/def :interaction/line-id :entity/id)
 (s/def :interaction/selected-option int?)
 (s/def :interaction/options (s/coll-of
                               :interaction/option
@@ -67,7 +66,6 @@
 
 (def state (atom nil))
 (def data (atom nil))
-(def move-q (atom #queue []))
 
 (defn walkable? [tile]
   (let [{l :location-id} (:player @state)
@@ -396,24 +394,25 @@
            {destination :destination} :animation} (:player state)]
       (if-let [[new-location-id new-position]
                (get-in @data [:locations location-id :outbound-connections destination])]
-        (do
-          (reset! move-q #queue [])
-          (update state :player merge {:location-id new-location-id
-                                       :position new-position}))
+        (-> state
+            (assoc :move-q #queue [])
+            (update :player merge {:location-id new-location-id
+                                   :position new-position}))
         state))
     state))
 
 (defn update-state-movement [state now]
   (if (or (not (player-animation? state))
           (player-animation-done? state now))
-    (if-let [direction (peek @move-q)]
+    (if-let [direction (peek (:move-q state))]
       (let [old-position (get-in state [:player :position])
             new-position (apply
                            m/translate-point
                            old-position
                            (direction->delta direction))]
-        (swap! move-q pop)
-        (cond-> (assoc-in state [:player :direction] direction)
+        (cond-> (-> state
+                    (update :move-q pop)
+                    (assoc-in [:player :direction] direction))
           (walkable? new-position)
           (update :player
                   assoc
@@ -495,7 +494,7 @@
                (assoc interaction :selected-option
                       (mod (next-index-fn selected-option)
                            (count options))))))
-    (swap! move-q conj direction)))
+    (swap! state update :move-q conj direction)))
 
 (defn handle-interact []
   (if (interacting? @state)
@@ -528,9 +527,10 @@
                     (partition 2 1)
                     (map (fn [[p1 p2]] (delta->direction (m/point-delta p1 p2))))
                     (into #queue []))]
-      (swap! state assoc :highlight {:position target-tile
-                                     :start (get-time)})
-      (reset! move-q path))))
+      (swap! state assoc
+             :move-q path
+             :highlight {:position target-tile
+                         :start (get-time)}))))
 
 (defn start-input-loop [channel]
   (go-loop [[command payload :as message] (<! channel)]
@@ -545,10 +545,10 @@
 ;; Game Loop
 
 (defn start-game [context game-data]
-  (reset! state (:initial-state game-data))
+  (reset! state (assoc (:initial-state game-data)
+                       :move-q #queue []))
   (reset! data game-data)
   (reset! ctx context)
-  (reset! move-q #queue [])
   (let [input-chan (chan)
         quit (atom false)
         prev-view-state (atom nil)]
@@ -576,5 +576,4 @@
   (close! input)
   (reset! state nil)
   (reset! data nil)
-  (reset! move-q nil)
   (reset! ctx nil))
