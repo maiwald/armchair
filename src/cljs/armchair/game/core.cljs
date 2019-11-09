@@ -194,11 +194,14 @@
                   (m/Rect. (- x tile-size) (- y tile-size)
                            (+ w (* 2 tile-size)) (+ h (* 2 tile-size)))))
 
-(defn draw-highlight [{:keys [position opacity]}]
-  (when-not (zero? opacity)
-    (c/set-fill-style! @ctx (str "rgba(255, 255, 0, " opacity ")"))
-    (let [{:keys [x y]} (u/tile->coord position)]
-      (c/fill-rect! @ctx (m/Rect. x y tile-size tile-size)))))
+(defn draw-highlight [{:keys [position completion]}]
+  (when (<= completion 1)
+    (c/set-fill-style! @ctx (str "rgba(255, 255, 0, " (* 0.5 (- 1 completion)) ")"))
+    (let [{:keys [x y]} (u/tile->coord position)
+          offset (* 8 completion)]
+      (c/fill-rect! @ctx (m/Rect. (- x offset) (- y offset)
+                                  (+ (* 2 offset) tile-size)
+                                  (+ (* 2 offset) tile-size))))))
 
 (defn scale-to-fill [{cam-w :w cam-h :h}]
   (let [ctx-w (c/width @ctx)
@@ -476,11 +479,8 @@
                         :texture (animation-texture now (anim->data 0 (get-in hare-animations [:idle direction])))}))))
     (if-let [start (get-in s [:highlight :start])]
       (let [highlight-t 300
-            delta (- now start)]
-        (assoc-in s [:highlight :opacity]
-                  (if (< delta highlight-t)
-                    (* 0.5 (- 1 (/ delta highlight-t)))
-                    0)))
+            delta-t (- now start)]
+        (assoc-in s [:highlight :completion] (/ delta-t highlight-t)))
       s)
     (let [{:keys [coord location-id]} (:player s)]
       (assoc s :camera (camera-rect coord location-id)))))
