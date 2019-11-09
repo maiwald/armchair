@@ -396,6 +396,7 @@
                (get-in @data [:locations location-id :outbound-connections destination])]
         (-> state
             (assoc :move-q #queue [])
+            (dissoc :move-source)
             (update :player merge {:location-id new-location-id
                                    :position new-position}))
         state))
@@ -494,7 +495,12 @@
                (assoc interaction :selected-option
                       (mod (next-index-fn selected-option)
                            (count options))))))
-    (swap! state update :move-q conj direction)))
+    (let [move-q (if (= :keys (:move-source @state))
+                   (conj (:move-q @state) direction)
+                   #queue [direction])]
+      (swap! state assoc
+             :move-source :keys
+             :move-q move-q))))
 
 (defn handle-interact []
   (if (interacting? @state)
@@ -529,6 +535,7 @@
                     (into #queue []))]
       (swap! state assoc
              :move-q path
+             :move-source :mouse
              :highlight {:position target-tile
                          :start (get-time)}))))
 
