@@ -10,8 +10,7 @@
             [armchair.game.core :refer [start-game end-game]]))
 
 (defn game-canvas [game-data]
-  (let [game-handle (atom nil)
-        keypresses (atom #{})]
+  (let [game-handle (atom nil)]
     (letfn [(on-key-down [e]
               (let [keycode (.-code e)]
                 (when-let [action (case keycode
@@ -22,11 +21,8 @@
                                     ("Space" "Enter") [:interact]
                                     nil)]
                   (prevent-e! e)
-                  (when (not (contains? @keypresses keycode))
-                    (swap! keypresses conj keycode)
+                  (when-not (.-repeat e)
                     (put! (:input @game-handle) action)))))
-            (on-key-up [e]
-              (swap! keypresses disj (.-code e)))
             (on-click [e]
               (let [point (u/relative-cursor e (.-currentTarget e))]
                 (put! (:input @game-handle) [:click point])))]
@@ -36,13 +32,11 @@
          (fn [this]
            (reset! game-handle (start-game (.getContext (r/dom-node this) "2d")
                                            (r/props this)))
-           (.addEventListener js/document "keydown" on-key-down)
-           (.addEventListener js/document "keyup" on-key-up))
+           (.addEventListener js/document "keydown" on-key-down))
 
          :component-will-unmount
          (fn [this]
            (.removeEventListener js/document "keydown" on-key-down)
-           (.removeEventListener js/document "keyup" on-key-up)
            (end-game @game-handle))
 
          :component-did-update
