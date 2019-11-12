@@ -215,15 +215,15 @@
                    (m/Point. 0 0)
                    [ctx-w ctx-h])))
 
-(defn render [view-state]
-  (let [camera (:camera view-state)]
+(defn render [state]
+  (let [camera (:camera state)]
     (c/clear! @ctx)
     (c/set-fill-style! @ctx "rgb(0, 0, 0)")
     (c/fill-rect! @ctx (m/Rect. 0 0 (c/width @ctx) (c/height @ctx)))
     (let [w-offset (- (/ (- (c/width @ctx) (:w camera)) 2) (:x camera))
           h-offset (- (/ (- (c/height @ctx) (:h camera)) 2) (:y camera))]
       (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
-    (let [l (get-in view-state [:player :location-id])
+    (let [l (get-in state [:player :location-id])
           {:keys [characters
                   dimension
                   background1
@@ -232,17 +232,17 @@
                   foreground2]} (get-in @data [:locations l])]
       (draw-background dimension background1 camera)
       (draw-background dimension background2 camera)
-      (draw-highlight (:highlight view-state))
-      (draw-player (:player view-state))
+      (draw-highlight (:highlight state))
+      (draw-player (:player state))
       (draw-characters characters camera)
       (draw-background dimension foreground1 camera)
       (draw-background dimension foreground2 camera))
-      ; (draw-direction-indicator @ctx view-state)
+      ; (draw-direction-indicator @ctx state)
       ; (draw-camera camera))
     (c/reset-transform! @ctx)
     (scale-to-fill camera)
-    (when (interacting? view-state)
-      (draw-dialogue-box (dialogue-data view-state)))))
+    (when (interacting? state)
+      (draw-dialogue-box (dialogue-data state)))))
 
 ;; Dialogue
 
@@ -427,18 +427,15 @@
       state)
     state))
 
-(defn update-state-remove-animations [state now]
-  (if (player-animation-done? state now)
-    (update state :player dissoc :animation)
-    state))
-
-(defn update-state [state now]
-  (-> state
-      (update-state-location now)
-      (update-state-movement now)
-      (update-state-remove-animations now)))
-
-;; View State
+(defn update-state-animation-coords [state now]
+  (update state :player
+          (fn [{:keys [position direction animation] :as player}]
+            (merge player
+                   (if-some [{:keys [start origin destination]} animation]
+                     {:coord (animated-position start (u/tile->coord origin) (u/tile->coord destination) now)
+                      :texture (animation-texture now (anim->data start (get-in hare-animations [:walking direction])))}
+                     {:coord (u/tile->coord position)
+                      :texture (animation-texture now (anim->data 0 (get-in hare-animations [:idle direction])))})))))
 
 (defn camera-coord [cam-size loc-lower loc-size p-coord]
   (if (<= loc-size cam-size)
@@ -467,23 +464,30 @@
         top (camera-coord h (:y dim) (:h dim) (:y player-coord))]
     (m/Rect. left top w h)))
 
-(defn view-state [state now]
-  (as-> state s
-    (update s :player
-            (fn [{:keys [position direction animation] :as player}]
-              (merge player
-                     (if-some [{:keys [start origin destination]} animation]
-                       {:coord (animated-position start (u/tile->coord origin) (u/tile->coord destination) now)
-                        :texture (animation-texture now (anim->data start (get-in hare-animations [:walking direction])))}
-                       {:coord (u/tile->coord position)
-                        :texture (animation-texture now (anim->data 0 (get-in hare-animations [:idle direction])))}))))
-    (if-let [start (get-in s [:highlight :start])]
-      (let [highlight-t 300
-            delta-t (- now start)]
-        (assoc-in s [:highlight :completion] (/ delta-t highlight-t)))
-      s)
-    (let [{:keys [coord location-id]} (:player s)]
-      (assoc s :camera (camera-rect coord location-id)))))
+(defn update-state-camera [state]
+  (let [{:keys [coord location-id]} (:player state)]
+    (assoc state :camera (camera-rect coord location-id))))
+
+(defn update-state-highlight [state now]
+  (if-let [start (get-in state [:highlight :start])]
+    (let [highlight-t 300
+          delta-t (- now start)]
+      (assoc-in state [:highlight :completion] (/ delta-t highlight-t)))
+    state))
+
+(defn update-state-remove-animations [state now]
+  (if (player-animation-done? state now)
+    (update state :player dissoc :animation)
+    state))
+
+(defn update-state [state now]
+  (-> state
+      (update-state-location now)
+      (update-state-movement now)
+      (update-state-animation-coords now)
+      (update-state-camera)
+      (update-state-highlight now)
+      (update-state-remove-animations now)))
 
 ;; Input Handlers
 
@@ -557,8 +561,7 @@
   (reset! data game-data)
   (reset! ctx context)
   (let [input-chan (chan)
-        quit (atom false)
-        prev-view-state (atom nil)]
+        quit (atom false)]
     (load-textures
       (fn [loaded-atlas]
         (reset! texture-atlas loaded-atlas)
@@ -567,13 +570,10 @@
           (fn game-loop []
             (when (and (not @quit) @ctx)
               (let [now (get-time)
-                    new-state (swap! state update-state now)
-                    view-state (view-state new-state now)]
+                    new-state (swap! state update-state now)]
                 (when-not (s/valid? ::state new-state)
                   (s/explain ::state new-state))
-                (when-not (= @prev-view-state view-state)
-                  (reset! prev-view-state view-state)
-                  (render view-state))
+                (render new-state)
                 (js/requestAnimationFrame game-loop)))))))
     {:input input-chan
      :quit quit}))
