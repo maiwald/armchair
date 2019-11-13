@@ -65,6 +65,7 @@
 ;; State
 
 (def state (atom nil))
+(def input-map (atom {}))
 (def data (atom nil))
 
 (defn walkable? [tile]
@@ -381,6 +382,38 @@
 
 ;; State updates
 
+(defn update-state-read-input [state input-map]
+  (assoc state
+         :input
+         (assoc input-map
+                :mouse-clicked?
+                (and (= (:mouse-state input-map) :up)
+                     (= (get-in state [:input :mouse-state]) :down)))))
+
+(defn update-state-handle-tile-click [state]
+  (if (and (not (interacting? state))
+           (get-in state [:input :mouse-clicked?]))
+    (let [{:keys [x y]} (get-in state [:input :mouse-position])
+          target-tile (-> (m/Point. (quot x camera-scale)
+                                    (quot y camera-scale))
+                          (m/global-point (:camera state)) ; previous frame's camera
+                          (u/coord->tile))
+          player-pos (get-in state [:player :position])
+          path (->> (path/a-star (fn [t]
+                                   (or (and (= target-tile t)
+                                            (interactable? t))
+                                       (walkable? t)))
+                                 player-pos target-tile)
+                    (partition 2 1)
+                    (map (fn [[p1 p2]] (delta->direction (m/point-delta p1 p2))))
+                    (into #queue []))]
+      (assoc state
+             :move-q path
+             :move-source :mouse
+             :highlight {:position target-tile
+                         :start (get-time)}))
+    state))
+
 (defn player-animation? [state]
   (contains? (:player state) :animation))
 
@@ -480,8 +513,10 @@
     (update state :player dissoc :animation)
     state))
 
-(defn update-state [state now]
+(defn update-state [state input-map now]
   (-> state
+      (update-state-read-input input-map)
+      (update-state-handle-tile-click)
       (update-state-location now)
       (update-state-movement now)
       (update-state-animation-coords now)
@@ -517,39 +552,14 @@
     (if-let [line-id (interaction-line-id)]
       (swap! state assoc :interaction (resolve-interaction line-id)))))
 
-(defn view->tile [{:keys [x y]}]
-  (let [scaled-coord (m/Point. (quot x camera-scale)
-                               (quot y camera-scale))
-        {:keys [position location-id]} (:player @state)
-        camera (camera-rect (u/tile->coord position) location-id)
-        global-coord (m/global-point scaled-coord camera)]
-    (u/coord->tile global-coord)))
-
-(defn handle-click [canvas-point]
-  (if-not (interacting? @state)
-    (let [target-tile (view->tile canvas-point)
-          player-pos (get-in @state [:player :position])
-          path (->> (path/a-star (fn [t]
-                                   (or (and (= target-tile t)
-                                            (interactable? t))
-                                       (walkable? t)))
-                                 player-pos target-tile)
-                    (partition 2 1)
-                    (map (fn [[p1 p2]] (delta->direction (m/point-delta p1 p2))))
-                    (into #queue []))]
-      (swap! state assoc
-             :move-q path
-             :move-source :mouse
-             :highlight {:position target-tile
-                         :start (get-time)}))))
-
 (defn start-input-loop [channel]
   (go-loop [[command payload :as message] (<! channel)]
            (when message
              (let [handler (case command
                              :move handle-move
                              :interact handle-interact
-                             :click handle-click)]
+                             :mouse-state #(swap! input-map assoc :mouse-state %)
+                             :mouse-position #(swap! input-map assoc :mouse-position %))]
                (handler payload)
                (recur (<! channel))))))
 
@@ -570,7 +580,7 @@
           (fn game-loop []
             (when (and (not @quit) @ctx)
               (let [now (get-time)
-                    new-state (swap! state update-state now)]
+                    new-state (swap! state update-state @input-map now)]
                 (when-not (s/valid? ::state new-state)
                   (s/explain ::state new-state))
                 (render new-state)

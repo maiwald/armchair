@@ -23,9 +23,13 @@
                   (prevent-e! e)
                   (when-not (.-repeat e)
                     (put! (:input @game-handle) action)))))
-            (on-click [e]
+            (on-mouse-down [e]
+              (put! (:input @game-handle) [:mouse-state :down]))
+            (on-mouse-up [e]
+              (put! (:input @game-handle) [:mouse-state :up]))
+            (on-mouse-move [e]
               (let [point (u/relative-cursor e (.-currentTarget e))]
-                (put! (:input @game-handle) [:click point])))]
+                (put! (:input @game-handle) [:mouse-position point])))]
       (r/create-class
         {:display-name "game-canvas"
          :component-did-mount
@@ -50,7 +54,9 @@
            (let [w (* tile-size camera-tile-width camera-scale)
                  h (* tile-size camera-tile-height camera-scale)]
              [:canvas {:id "game"
-                       :on-click on-click
+                       :on-mouse-down on-mouse-down
+                       :on-mouse-up on-mouse-up
+                       :on-mouse-move on-mouse-move
                        :width w
                        :height h
                        :style {:width (px w)
