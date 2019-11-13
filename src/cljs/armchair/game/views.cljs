@@ -9,20 +9,31 @@
             [armchair.components :refer [icon]]
             [armchair.game.core :refer [start-game end-game]]))
 
+(def allowed-keys
+  #{"ArrowUp" "KeyW" "KeyK"
+    "ArrowRight" "KeyD" "KeyL"
+    "ArrowDown" "KeyS" "KeyJ"
+    "ArrowLeft" "KeyA" "KeyH"
+    "Space" "Enter"})
+
 (defn game-canvas [game-data]
   (let [game-handle (atom nil)]
     (letfn [(on-key-down [e]
+              (when-let [keycode (allowed-keys (.-code e))]
+                (prevent-e! e)
+                (when-not (.-repeat e)
+                  (put! (:input @game-handle) [:key-state [keycode :down]])))
               (let [keycode (.-code e)]
                 (when-let [action (case keycode
-                                    ("ArrowUp" "KeyW" "KeyK") [:move :up]
-                                    ("ArrowRight" "KeyD" "KeyL") [:move :right]
-                                    ("ArrowDown" "KeyS" "KeyJ") [:move :down]
-                                    ("ArrowLeft" "KeyA" "KeyH") [:move :left]
                                     ("Space" "Enter") [:interact]
                                     nil)]
                   (prevent-e! e)
                   (when-not (.-repeat e)
                     (put! (:input @game-handle) action)))))
+            (on-key-up [e]
+              (when-let [keycode (allowed-keys (.-code e))]
+                (prevent-e! e)
+                (put! (:input @game-handle) [:key-state [keycode :up]])))
             (on-mouse-down [e]
               (put! (:input @game-handle) [:mouse-state :down]))
             (on-mouse-up [e]
@@ -36,11 +47,13 @@
          (fn [this]
            (reset! game-handle (start-game (.getContext (r/dom-node this) "2d")
                                            (r/props this)))
-           (.addEventListener js/document "keydown" on-key-down))
+           (.addEventListener js/document "keydown" on-key-down)
+           (.addEventListener js/document "keyup" on-key-up))
 
          :component-will-unmount
          (fn [this]
            (.removeEventListener js/document "keydown" on-key-down)
+           (.removeEventListener js/document "keyup" on-key-up)
            (end-game @game-handle))
 
          :component-did-update

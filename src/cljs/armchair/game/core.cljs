@@ -6,7 +6,7 @@
                                         put!
                                         sliding-buffer]]
             [clojure.spec.alpha :as s]
-            [clojure.set :refer [subset? union]]
+            [clojure.set :refer [subset? union intersection difference]]
             [armchair.game.canvas :as c]
             [armchair.game.pathfinding :as path]
             [armchair.config :refer [tile-size
@@ -65,7 +65,7 @@
 ;; State
 
 (def state (atom nil))
-(def input-map (atom {}))
+(def input-map (atom {:pressed-keys #{}}))
 (def data (atom nil))
 
 (defn walkable? [tile]
@@ -383,12 +383,14 @@
 ;; State updates
 
 (defn update-state-read-input [state input-map]
-  (assoc state
-         :input
-         (assoc input-map
-                :mouse-clicked?
-                (and (= (:mouse-state input-map) :up)
-                     (= (get-in state [:input :mouse-state]) :down)))))
+  (let [{prev-mouse-state :mouse-state prev-pressed-keys :pressed-keys} (:input state)
+        {new-mouse-state :mouse-state new-pressed-keys :pressed-keys} input-map]
+    (assoc state
+           :input
+           (assoc input-map
+                  :changed-keys (difference new-pressed-keys prev-pressed-keys)
+                  :mouse-clicked? (and (= prev-mouse-state :down)
+                                       (= new-mouse-state :up))))))
 
 (defn update-state-handle-tile-click [state]
   (if (and (not (interacting? state))
@@ -413,6 +415,32 @@
              :highlight {:position target-tile
                          :start (get-time)}))
     state))
+
+(defn update-state-handle-move [state]
+  (let [key? (fn [& k]
+               (seq (intersection
+                      (get-in state [:input :changed-keys])
+                      (set k))))
+        direction (cond
+                    (key? "ArrowUp" "KeyW" "KeyK") :up
+                    (key? "ArrowDown" "KeyS" "KeyJ") :down
+                    (key? "ArrowLeft" "KeyA" "KeyH") :left
+                    (key? "ArrowRight" "KeyD" "KeyL") :right)]
+    (if (some? direction)
+      (if (interacting? state)
+        (if-let [next-index-fn (get {:up dec :down inc} direction)]
+          (update state :interaction
+                  (fn [{:keys [options selected-option] :as interaction}]
+                    (assoc interaction :selected-option
+                           (mod (next-index-fn selected-option)
+                                (count options))))))
+        (let [move-q (if (= :keys (:move-source state))
+                       (conj (:move-q state) direction)
+                       #queue [direction])]
+          (assoc state
+                 :move-source :keys
+                 :move-q move-q)))
+      state)))
 
 (defn player-animation? [state]
   (contains? (:player state) :animation))
@@ -517,6 +545,7 @@
   (-> state
       (update-state-read-input input-map)
       (update-state-handle-tile-click)
+      (update-state-handle-move)
       (update-state-location now)
       (update-state-movement now)
       (update-state-animation-coords now)
@@ -525,21 +554,6 @@
       (update-state-remove-animations now)))
 
 ;; Input Handlers
-
-(defn handle-move [direction]
-  (if (interacting? @state)
-    (if-let [next-index-fn (get {:up dec :down inc} direction)]
-      (swap! state update :interaction
-             (fn [{:keys [options selected-option] :as interaction}]
-               (assoc interaction :selected-option
-                      (mod (next-index-fn selected-option)
-                           (count options))))))
-    (let [move-q (if (= :keys (:move-source @state))
-                   (conj (:move-q @state) direction)
-                   #queue [direction])]
-      (swap! state assoc
-             :move-source :keys
-             :move-q move-q))))
 
 (defn handle-interact []
   (if (interacting? @state)
@@ -556,8 +570,11 @@
   (go-loop [[command payload :as message] (<! channel)]
            (when message
              (let [handler (case command
-                             :move handle-move
                              :interact handle-interact
+                             :key-state (fn [[k state]]
+                                          (if (= state :down)
+                                            (swap! input-map update :pressed-keys conj k)
+                                            (swap! input-map update :pressed-keys disj k)))
                              :mouse-state #(swap! input-map assoc :mouse-state %)
                              :mouse-position #(swap! input-map assoc :mouse-position %))]
                (handler payload)
