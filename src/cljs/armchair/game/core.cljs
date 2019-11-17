@@ -476,9 +476,13 @@
         state))
     state))
 
+(defn remove-finished-animations [state now]
+  (if (player-animation-done? state now)
+    (update state :player dissoc :animation)
+    state))
+
 (defn process-action [state now]
-  (if (or (not (player-animation? state))
-          (player-animation-done? state now))
+  (if-not (player-animation? state)
     (if-let [action (peek (:action-q state))]
       (if (interacting? state)
         (case action
@@ -574,22 +578,17 @@
       (assoc-in state [:highlight :completion] (/ delta-t highlight-t)))
     state))
 
-(defn remove-animations [state now]
-  (if (player-animation-done? state now)
-    (update state :player dissoc :animation)
-    state))
-
 (defn update-state [state input-map now]
   (-> state
       (read-input input-map)
       (handle-keyboard-input)
       (handle-tile-click)
       (maybe-change-location now)
+      (remove-finished-animations now)
       (process-action now)
       (update-animation now)
       (update-camera)
-      (update-highlight now)
-      (remove-animations now)))
+      (update-highlight now)))
 
 ;; Input Handlers
 
