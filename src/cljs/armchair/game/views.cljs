@@ -75,8 +75,9 @@
   [:div {:class "content-wrapper"}
    [game-canvas (<sub [:game/data])]
    [:div {:id "game-help"}
+    [:p "Use mouse for movement, selection and interaction."]
     [:p
-     "Use "
+     "On keyboard use "
      [:span [icon "arrow-left" "Arrow Left"]] " "
      [:span [icon "arrow-up" "Arrow Up"]] " "
      [:span [icon "arrow-down" "Arrow Down"]] " "
@@ -86,9 +87,9 @@
      [:span "a"] " "
      [:span "s"] " "
      [:span "d"] " "
-     "for movement and selection."]
+     "for movement and selection"]
     [:p
-     "Use "
+     "and "
      [:span "Space"]
      " or "
      [:span "Enter"]
