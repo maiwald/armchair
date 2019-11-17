@@ -398,7 +398,7 @@
 
 ;; State updates
 
-(defn update-state-read-input [state input-map]
+(defn read-input [state input-map]
   (let [{prev-mouse-state :mouse-state prev-pressed-keys :pressed-keys} (:input state)
         {new-mouse-state :mouse-state new-pressed-keys :pressed-keys} input-map]
     (assoc state
@@ -408,7 +408,7 @@
                   :mouse-clicked? (and (= prev-mouse-state :down)
                                        (= new-mouse-state :up))))))
 
-(defn update-state-handle-tile-click [state]
+(defn handle-tile-click [state]
   (if (and (not (interacting? state))
            (get-in state [:input :mouse-clicked?]))
     (let [{:keys [x y]} (get-in state [:input :mouse-position])
@@ -435,7 +435,7 @@
                          :start (get-time)}))
     state))
 
-(defn update-state-handle-keyboard-input [state]
+(defn handle-keyboard-input [state]
   (let [{:keys [move-source action-q]
          {:keys [changed-keys]} :input} state
         key? (fn [& k] (seq (intersection changed-keys (set k))))]
@@ -462,7 +462,7 @@
     (and (some? animation)
          (animation-done? (:start animation) now))))
 
-(defn update-state-location-change [state now]
+(defn maybe-change-location [state now]
   (if (player-animation-done? state now)
     (let [{location-id :location-id
            {destination :destination} :animation} (:player state)]
@@ -476,7 +476,7 @@
         state))
     state))
 
-(defn update-state-process-action [state now]
+(defn process-action [state now]
   (if (or (not (player-animation? state))
           (player-animation-done? state now))
     (if-let [action (peek (:action-q state))]
@@ -526,7 +526,7 @@
       state)
     state))
 
-(defn update-state-animation-coords [state now]
+(defn update-animation [state now]
   (update state :player
           (fn [{:keys [position direction animation] :as player}]
             (merge player
@@ -563,33 +563,33 @@
         top (camera-coord h (:y dim) (:h dim) (:y player-coord))]
     (m/Rect. left top w h)))
 
-(defn update-state-camera [state]
+(defn update-camera [state]
   (let [{:keys [coord location-id]} (:player state)]
     (assoc state :camera (camera-rect coord location-id))))
 
-(defn update-state-highlight [state now]
+(defn update-highlight [state now]
   (if-let [start (get-in state [:highlight :start])]
     (let [highlight-t 300
           delta-t (- now start)]
       (assoc-in state [:highlight :completion] (/ delta-t highlight-t)))
     state))
 
-(defn update-state-remove-animations [state now]
+(defn remove-animations [state now]
   (if (player-animation-done? state now)
     (update state :player dissoc :animation)
     state))
 
 (defn update-state [state input-map now]
   (-> state
-      (update-state-read-input input-map)
-      (update-state-handle-keyboard-input)
-      (update-state-handle-tile-click)
-      (update-state-location-change now)
-      (update-state-process-action now)
-      (update-state-animation-coords now)
-      (update-state-camera)
-      (update-state-highlight now)
-      (update-state-remove-animations now)))
+      (read-input input-map)
+      (handle-keyboard-input)
+      (handle-tile-click)
+      (maybe-change-location now)
+      (process-action now)
+      (update-animation now)
+      (update-camera)
+      (update-highlight now)
+      (remove-animations now)))
 
 ;; Input Handlers
 
@@ -597,8 +597,8 @@
   (go-loop [[command payload :as message] (<! channel)]
            (when message
              (let [handler (case command
-                             :key-state (fn [[k state]]
-                                          (if (= state :down)
+                             :key-state (fn [[k key-state]]
+                                          (if (= key-state :down)
                                             (swap! input-map update :pressed-keys conj k)
                                             (swap! input-map update :pressed-keys disj k)))
                              :mouse-state #(swap! input-map assoc :mouse-state %)
