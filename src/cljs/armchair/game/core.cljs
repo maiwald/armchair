@@ -68,16 +68,16 @@
 (def input-map (atom {:pressed-keys #{}}))
 (def data (atom nil))
 
-(defn walkable? [tile]
-  (let [{l :location-id} (:player @state)
+(defn walkable? [state tile]
+  (let [{l :location-id} (:player state)
         {:keys [dimension blocked characters]} (get-in @data [:locations l])]
     (and
       (m/rect-contains? dimension tile)
       (not (or (contains? blocked tile)
                (contains? characters tile))))))
 
-(defn interactable? [tile]
-  (let [{l :location-id} (:player @state)
+(defn interactable? [state tile]
+  (let [{l :location-id} (:player state)
         {:keys [dimension blocked characters]} (get-in @data [:locations l])]
     (contains? characters tile)))
 
@@ -143,7 +143,16 @@
   (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
     (draw-texture-rotated :arrow coord rotation)))
 
-(defn draw-dialogue-box [{:keys [text options selected-option]}]
+(defn button [rect
+              {:keys [mouse-clicked?
+                      mouse-position]}
+              {:keys [on-click on-enter]}]
+  (when (m/rect-contains? rect mouse-position)
+    (if mouse-clicked?
+      (on-click)
+      (on-enter))))
+
+(defn draw-dialogue-box [{:keys [text options selected-option]} input]
   (let [w 600
         h 300
         x (/ (- (c/width @ctx) w) 2)
@@ -181,6 +190,11 @@
 
               (c/set-line-width! @ctx "1")
               (c/stroke-rect! @ctx option-rect)
+
+              (button option-rect input
+                      {:on-click #(swap! state update :action-q conj :interact)
+                       :on-enter #(swap! state assoc-in
+                                         [:interaction :selected-option] idx)})
 
               (recur (inc idx)
                      (+ y height spacing)
@@ -243,47 +257,49 @@
     (c/reset-transform! @ctx)
     (scale-to-fill camera)
     (when (interacting? state)
-      (draw-dialogue-box (dialogue-data state)))))
+      (draw-dialogue-box (dialogue-data state)
+                         (:input state)))))
 
 ;; Dialogue
 
-(defn advance-meta-nodes [resolver line trigger-changes]
+(defn advance-meta-nodes [state resolver line trigger-changes]
   (case (:kind line)
-    :trigger (resolver
+    :trigger (resolver state
                (:next-line-id line)
                (merge trigger-changes (:trigger-changes line)))
-    :case (resolver
-            ((:next-line-id-fn line) (:switches @state))
+    :case (resolver state
+            ((:next-line-id-fn line) (:switches state))
             trigger-changes)
     line))
 
-(defn resolve-next-line-id [line-id trigger-changes]
+(defn resolve-next-line-id [state line-id trigger-changes]
   (let [line (get-in @data [:lines line-id])]
     (case (:kind line)
       :npc {:next-line-id line-id
             :trigger-changes trigger-changes}
-      (:trigger :case) (advance-meta-nodes
+      (:trigger :case) (advance-meta-nodes state
                          resolve-next-line-id line trigger-changes)
       {:next-line-id nil
        :trigger-changes trigger-changes})))
 
-(defn available-option? [{:keys [condition]}]
+(defn available-option? [state {:keys [condition]}]
   (or (not (fn? condition))
-      (condition (:switches @state))))
+      (condition (:switches state))))
 
-(defn resolve-options [line-id trigger-changes]
+(defn resolve-options [state line-id trigger-changes]
   (let [line (get-in @data [:lines line-id])
         options (case (:kind line)
                   :npc (vector {:text "Continue..."
                                 :next-line-id line-id
                                 :trigger-changes trigger-changes})
                   :player (->> (:options line)
-                               (filterv available-option?)
+                               (filterv #(available-option? state %))
                                (mapv (fn [option]
                                        (merge option (resolve-next-line-id
+                                                       state
                                                        (:next-line-id option)
                                                        trigger-changes)))))
-                  (:trigger :case) (advance-meta-nodes
+                  (:trigger :case) (advance-meta-nodes state
                                      resolve-options line trigger-changes)
                   nil)]
     (if-not (empty? options)
@@ -292,22 +308,22 @@
                :trigger-changes trigger-changes}))))
 
 (defn resolve-interaction
-  ([line-id] (resolve-interaction line-id {}))
-  ([line-id trigger-changes]
+  ([state line-id] (resolve-interaction state line-id {}))
+  ([state line-id trigger-changes]
    (let [line (get-in @data [:lines line-id])]
      (case (:kind line)
        :npc {:text (:text line)
-             :options (resolve-options (:next-line-id line) trigger-changes)
+             :options (resolve-options state (:next-line-id line) trigger-changes)
              :selected-option 0}
-       (:trigger :case) (advance-meta-nodes
+       (:trigger :case) (advance-meta-nodes state
                           resolve-interaction line trigger-changes)))))
 
-(defn interaction-line-id []
-  (let [l (get-in @state [:player :location-id])
+(defn interaction-line-id [state]
+  (let [l (get-in state [:player :location-id])
         characters (get-in @data [:locations l :characters])
-        tile (interaction-tile @state)]
+        tile (interaction-tile state)]
     (if-let [dialogue-id (get-in characters [tile :dialogue-id])]
-      (get-in @state [:dialogue-states dialogue-id]))))
+      (get-in state [:dialogue-states dialogue-id]))))
 
 ;; Animations
 
@@ -400,46 +416,40 @@
                                     (quot y camera-scale))
                           (m/global-point (:camera state)) ; previous frame's camera
                           (u/coord->tile))
+          target-tile-interactable? (interactable? state target-tile)
           player-pos (get-in state [:player :position])
           path (->> (path/a-star (fn [t]
-                                   (or (and (= target-tile t)
-                                            (interactable? t))
-                                       (walkable? t)))
+                                   (or (walkable? state t)
+                                       (and (= target-tile t)
+                                            target-tile-interactable?)))
                                  player-pos target-tile)
                     (partition 2 1)
                     (map (fn [[p1 p2]] (delta->direction (m/point-delta p1 p2))))
                     (into #queue []))]
       (assoc state
-             :move-q path
+             :action-q (if target-tile-interactable?
+                         (conj path :interact)
+                         path)
              :move-source :mouse
              :highlight {:position target-tile
                          :start (get-time)}))
     state))
 
-(defn update-state-handle-move [state]
-  (let [key? (fn [& k]
-               (seq (intersection
-                      (get-in state [:input :changed-keys])
-                      (set k))))
-        direction (cond
-                    (key? "ArrowUp" "KeyW" "KeyK") :up
-                    (key? "ArrowDown" "KeyS" "KeyJ") :down
-                    (key? "ArrowLeft" "KeyA" "KeyH") :left
-                    (key? "ArrowRight" "KeyD" "KeyL") :right)]
-    (if (some? direction)
-      (if (interacting? state)
-        (if-let [next-index-fn (get {:up dec :down inc} direction)]
-          (update state :interaction
-                  (fn [{:keys [options selected-option] :as interaction}]
-                    (assoc interaction :selected-option
-                           (mod (next-index-fn selected-option)
-                                (count options))))))
-        (let [move-q (if (= :keys (:move-source state))
-                       (conj (:move-q state) direction)
-                       #queue [direction])]
-          (assoc state
-                 :move-source :keys
-                 :move-q move-q)))
+(defn update-state-handle-keyboard-input [state]
+  (let [{:keys [move-source action-q]
+         {:keys [changed-keys]} :input} state
+        key? (fn [& k] (seq (intersection changed-keys (set k))))]
+    (if-some [action (cond
+                       (key? "ArrowUp" "KeyW" "KeyK") :up
+                       (key? "ArrowDown" "KeyS" "KeyJ") :down
+                       (key? "ArrowLeft" "KeyA" "KeyH") :left
+                       (key? "ArrowRight" "KeyD" "KeyL") :right
+                       (key? "Space" "Enter") :interact)]
+      (assoc state
+             :move-source :keys
+             :action-q (if (= :keys move-source)
+                         (conj action-q action)
+                         #queue [action]))
       state)))
 
 (defn player-animation? [state]
@@ -452,39 +462,67 @@
     (and (some? animation)
          (animation-done? (:start animation) now))))
 
-(defn update-state-location [state now]
+(defn update-state-location-change [state now]
   (if (player-animation-done? state now)
     (let [{location-id :location-id
            {destination :destination} :animation} (:player state)]
       (if-let [[new-location-id new-position]
                (get-in @data [:locations location-id :outbound-connections destination])]
         (-> state
-            (assoc :move-q #queue [])
+            (assoc :action-q #queue [])
             (dissoc :move-source)
             (update :player merge {:location-id new-location-id
                                    :position new-position}))
         state))
     state))
 
-(defn update-state-movement [state now]
+(defn update-state-process-action [state now]
   (if (or (not (player-animation? state))
           (player-animation-done? state now))
-    (if-let [direction (peek (:move-q state))]
-      (let [old-position (get-in state [:player :position])
-            new-position (apply
-                           m/translate-point
-                           old-position
-                           (direction->delta direction))]
-        (cond-> (-> state
-                    (update :move-q pop)
-                    (assoc-in [:player :direction] direction))
-          (walkable? new-position)
-          (update :player
-                  assoc
-                  :position new-position
-                  :animation {:start now
-                              :origin old-position
-                              :destination new-position})))
+    (if-let [action (peek (:action-q state))]
+      (if (interacting? state)
+        (case action
+          (:up :down)
+          (-> state
+              (update :action-q pop)
+              (update :interaction
+                      (fn [{:keys [options selected-option] :as interaction}]
+                        (assoc interaction :selected-option
+                               (mod ((case action :up dec :down dec) selected-option)
+                                    (count options))))))
+          :interact
+          (let [{:keys [options selected-option]} (:interaction state)
+                {:keys [trigger-changes next-line-id]} (get options selected-option)
+                new-state (-> state
+                              (update :action-q pop)
+                              (update :switches merge trigger-changes))]
+            (if (some? next-line-id)
+              (assoc new-state :interaction (resolve-interaction state next-line-id))
+              (dissoc new-state :interaction)))
+          (update state :action-q pop))
+        (case action
+          (:up :down :left :right)
+          (let [old-position (get-in state [:player :position])
+                new-position (apply
+                               m/translate-point
+                               old-position
+                               (direction->delta action))]
+            (cond-> (-> state
+                        (update :action-q pop)
+                        (assoc-in [:player :direction] action))
+              (walkable? state new-position)
+              (update :player
+                      assoc
+                      :position new-position
+                      :animation {:start now
+                                  :origin old-position
+                                  :destination new-position})))
+          :interact
+          (if-let [line-id (interaction-line-id state)]
+            (-> state
+                (update :action-q pop)
+                (assoc :interaction (resolve-interaction state line-id)))
+            (update state :action-q pop))))
       state)
     state))
 
@@ -544,10 +582,10 @@
 (defn update-state [state input-map now]
   (-> state
       (update-state-read-input input-map)
+      (update-state-handle-keyboard-input)
       (update-state-handle-tile-click)
-      (update-state-handle-move)
-      (update-state-location now)
-      (update-state-movement now)
+      (update-state-location-change now)
+      (update-state-process-action now)
       (update-state-animation-coords now)
       (update-state-camera)
       (update-state-highlight now)
@@ -555,22 +593,10 @@
 
 ;; Input Handlers
 
-(defn handle-interact []
-  (if (interacting? @state)
-    (let [{:keys [options selected-option]} (:interaction @state)
-          {:keys [trigger-changes next-line-id]} (get options selected-option)]
-      (swap! state update :switches merge trigger-changes)
-      (if (some? next-line-id)
-        (swap! state assoc :interaction (resolve-interaction next-line-id))
-        (swap! state dissoc :interaction)))
-    (if-let [line-id (interaction-line-id)]
-      (swap! state assoc :interaction (resolve-interaction line-id)))))
-
 (defn start-input-loop [channel]
   (go-loop [[command payload :as message] (<! channel)]
            (when message
              (let [handler (case command
-                             :interact handle-interact
                              :key-state (fn [[k state]]
                                           (if (= state :down)
                                             (swap! input-map update :pressed-keys conj k)
@@ -584,7 +610,7 @@
 
 (defn start-game [context game-data]
   (reset! state (assoc (:initial-state game-data)
-                       :move-q #queue []))
+                       :action-q #queue []))
   (reset! data game-data)
   (reset! ctx context)
   (let [input-chan (chan)

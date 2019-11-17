@@ -19,17 +19,13 @@
 (defn game-canvas [game-data]
   (let [game-handle (atom nil)]
     (letfn [(on-key-down [e]
-              (when-let [keycode (allowed-keys (.-code e))]
-                (prevent-e! e)
-                (when-not (.-repeat e)
-                  (put! (:input @game-handle) [:key-state [keycode :down]])))
-              (let [keycode (.-code e)]
-                (when-let [action (case keycode
-                                    ("Space" "Enter") [:interact]
-                                    nil)]
+              (when-not (or (.-altKey e)
+                            (.-ctrlKey e)
+                            (.-metaKey e))
+                (when-let [keycode (allowed-keys (.-code e))]
                   (prevent-e! e)
                   (when-not (.-repeat e)
-                    (put! (:input @game-handle) action)))))
+                    (put! (:input @game-handle) [:key-state [keycode :down]])))))
             (on-key-up [e]
               (when-let [keycode (allowed-keys (.-code e))]
                 (prevent-e! e)
