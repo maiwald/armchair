@@ -125,8 +125,8 @@
 
 (defn relative-cursor [e elem]
   (let [rect (.getBoundingClientRect elem)]
-    (Point. (- (.-clientX e) (.-left rect))
-            (- (.-clientY e) (.-top rect)))))
+    (Point. (- (.-clientX e) (.-left rect) -1)
+            (- (.-clientY e) (.-top rect) -1))))
 
 (defn e->left? [e]
   (zero? (.-button e)))
