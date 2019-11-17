@@ -13,7 +13,8 @@
 - release to itch.io as free game ;)
 
 # nice things
-- make clickable things work like actual links
+- cache static level parts in one image once insted of building it every frame
+- prevent queueing multiple interactions
 - prevent connecting multiple trigger and player nodes
 - custom layers and layer order
 - allow whole layers to be treated as not-walkable
