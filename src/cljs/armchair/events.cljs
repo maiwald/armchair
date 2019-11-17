@@ -3,7 +3,6 @@
             [com.rpl.specter
              :refer [must ALL NONE MAP-VALS]
              :refer-macros [select setval]]
-            [clojure.set :refer [difference]]
             [clojure.spec.alpha :as s]
             cljsjs.filesaverjs
             [armchair.config :refer [debug?]]

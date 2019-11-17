@@ -32,7 +32,8 @@
   (Point. (* tile-size x) (* tile-size y)))
 
 (defn coord->tile [{:keys [x y]}]
-  (Point. (quot x tile-size) (quot y tile-size)))
+  (Point. (cond-> (quot x tile-size) (neg? x) dec)
+          (cond-> (quot y tile-size) (neg? y) dec)))
 
 (defn normalize-to-tile [coord]
   (-> coord coord->tile tile->coord))
@@ -124,8 +125,8 @@
 
 (defn relative-cursor [e elem]
   (let [rect (.getBoundingClientRect elem)]
-    (Point. (- (.-clientX e) (.-left rect))
-            (- (.-clientY e) (.-top rect)))))
+    (Point. (- (.-clientX e) (.-left rect) -1)
+            (- (.-clientY e) (.-top rect) -1))))
 
 (defn e->left? [e]
   (zero? (.-button e)))

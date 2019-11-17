@@ -1,7 +1,7 @@
 (ns armchair.game.views
   (:require [clojure.core.async :refer [put!]]
             [reagent.core :as r]
-            [armchair.util :refer [<sub prevent-e! px]]
+            [armchair.util :as u :refer [<sub prevent-e! px]]
             [armchair.config :refer [tile-size
                                      camera-tile-width
                                      camera-tile-height
@@ -9,24 +9,34 @@
             [armchair.components :refer [icon]]
             [armchair.game.core :refer [start-game end-game]]))
 
+(def allowed-keys
+  #{"ArrowUp" "KeyW" "KeyK"
+    "ArrowRight" "KeyD" "KeyL"
+    "ArrowDown" "KeyS" "KeyJ"
+    "ArrowLeft" "KeyA" "KeyH"
+    "Space" "Enter"})
+
 (defn game-canvas [game-data]
-  (let [game-handle (atom nil)
-        keypresses (atom #{})]
+  (let [game-handle (atom nil)]
     (letfn [(on-key-down [e]
-              (let [keycode (.-code e)]
-                (when-let [action (case keycode
-                                    ("ArrowUp" "KeyW" "KeyK") [:move :up]
-                                    ("ArrowRight" "KeyD" "KeyL") [:move :right]
-                                    ("ArrowDown" "KeyS" "KeyJ") [:move :down]
-                                    ("ArrowLeft" "KeyA" "KeyH") [:move :left]
-                                    ("Space" "Enter") [:interact]
-                                    nil)]
+              (when-not (or (.-altKey e)
+                            (.-ctrlKey e)
+                            (.-metaKey e))
+                (when-let [keycode (allowed-keys (.-code e))]
                   (prevent-e! e)
-                  (when (not (contains? @keypresses keycode))
-                    (swap! keypresses conj keycode)
-                    (put! (:input @game-handle) action)))))
+                  (when-not (.-repeat e)
+                    (put! (:input @game-handle) [:key-state [keycode :down]])))))
             (on-key-up [e]
-              (swap! keypresses disj (.-code e)))]
+              (when-let [keycode (allowed-keys (.-code e))]
+                (prevent-e! e)
+                (put! (:input @game-handle) [:key-state [keycode :up]])))
+            (on-mouse-down [e]
+              (put! (:input @game-handle) [:mouse-state :down]))
+            (on-mouse-up [e]
+              (put! (:input @game-handle) [:mouse-state :up]))
+            (on-mouse-move [e]
+              (let [point (u/relative-cursor e (.-currentTarget e))]
+                (put! (:input @game-handle) [:mouse-position point])))]
       (r/create-class
         {:display-name "game-canvas"
          :component-did-mount
@@ -53,6 +63,9 @@
            (let [w (* tile-size camera-tile-width camera-scale)
                  h (* tile-size camera-tile-height camera-scale)]
              [:canvas {:id "game"
+                       :on-mouse-down on-mouse-down
+                       :on-mouse-up on-mouse-up
+                       :on-mouse-move on-mouse-move
                        :width w
                        :height h
                        :style {:width (px w)
@@ -62,8 +75,9 @@
   [:div {:class "content-wrapper"}
    [game-canvas (<sub [:game/data])]
    [:div {:id "game-help"}
+    [:p "Use mouse for movement, selection and interaction."]
     [:p
-     "Use "
+     "On keyboard use "
      [:span [icon "arrow-left" "Arrow Left"]] " "
      [:span [icon "arrow-up" "Arrow Up"]] " "
      [:span [icon "arrow-down" "Arrow Down"]] " "
@@ -73,9 +87,9 @@
      [:span "a"] " "
      [:span "s"] " "
      [:span "d"] " "
-     "for movement and selection."]
+     "for movement and selection"]
     [:p
-     "Use "
+     "and "
      [:span "Space"]
      " or "
      [:span "Enter"]
