@@ -192,9 +192,10 @@
               (c/stroke-rect! @ctx option-rect)
 
               (button option-rect input
-                      {:on-click #(swap! state update :action-q conj :interact)
-                       :on-enter #(swap! state assoc-in
-                                         [:interaction :selected-option] idx)})
+                      {:on-click #(swap! state (fn [s] (-> s
+                                                           (update :action-q conj :interact)
+                                                           (assoc-in [:interaction :selected-option] idx))))
+                       :on-enter #(swap! state assoc-in [:interaction :selected-option] idx)})
 
               (recur (inc idx)
                      (+ y height spacing)

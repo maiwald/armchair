@@ -30,11 +30,11 @@
               (when-let [keycode (allowed-keys (.-code e))]
                 (prevent-e! e)
                 (put! (:input @game-handle) [:key-state [keycode :up]])))
-            (on-mouse-down [e]
+            (on-pointer-down [e]
               (put! (:input @game-handle) [:mouse-state :down]))
-            (on-mouse-up [e]
+            (on-pointer-up [e]
               (put! (:input @game-handle) [:mouse-state :up]))
-            (on-mouse-move [e]
+            (on-pointer-move [e]
               (let [point (u/relative-cursor e (.-currentTarget e))]
                 (put! (:input @game-handle) [:mouse-position point])))]
       (r/create-class
@@ -63,9 +63,12 @@
            (let [w (* tile-size camera-tile-width camera-scale)
                  h (* tile-size camera-tile-height camera-scale)]
              [:canvas {:id "game"
-                       :on-mouse-down on-mouse-down
-                       :on-mouse-up on-mouse-up
-                       :on-mouse-move on-mouse-move
+                       :on-mouse-down on-pointer-down
+                       :on-mouse-up on-pointer-up
+                       :on-mouse-move on-pointer-move
+                       :on-touch-start on-pointer-down
+                       :on-touch-end on-pointer-down
+                       :on-touch-move on-pointer-move
                        :width w
                        :height h
                        :style {:width (px w)
