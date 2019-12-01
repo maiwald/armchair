@@ -211,7 +211,7 @@
                            (+ w (* 2 tile-size)) (+ h (* 2 tile-size)))))
 
 (defn draw-highlight [{:keys [position completion]}]
-  (when (<= completion 1)
+  (when (and (some? position) (<= completion 1))
     (c/set-fill-style! @ctx (str "rgba(255, 255, 0, " (* 0.5 (- 1 completion)) ")"))
     (let [{:keys [x y]} (u/tile->coord position)
           offset (* 8 completion)]
