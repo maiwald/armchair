@@ -119,7 +119,7 @@
         [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [c/icon "arrow-left" "shrink"]]
         [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [c/icon "arrow-right" "extend"]]]]]]))
 
-(defn sidebar-paint [location-id]
+(defn sidebar-texture-select [location-id]
   (let [{:keys [active-texture]} (<sub [:location-editor/ui])]
     [sidebar-widget {:title "Background Textures"}
      [:ul {:class "tile-grid"}
@@ -227,7 +227,7 @@
                  (:background1 :background2 :foreground1 :foreground2)
                  [:<>
                   [sidebar-tool]
-                  [sidebar-paint location-id]]
+                  [sidebar-texture-select location-id]]
 
                  :collision
                  [sidebar-collision]
