@@ -10,6 +10,7 @@
                                    translate-point
                                    relative-point
                                    global-point
+                                   rect->point-seq
                                    rect-contains?]]
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
             [armchair.modals.dialogue-creation :as dialogue-creation]
@@ -250,22 +251,22 @@
 
 (defn do-all-tiles [rect layer-title f]
   [:<>
-   (for [x (range (:x rect) (+ (:x rect) (:w rect)))
-         y (range (:y rect) (+ (:y rect) (:h rect)))
-         :let [tile (Point. x y)]]
-     (if-let [tile-data (f tile)]
-       [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
-              :class "level__tile"
-              :style (tile-style (global-point tile rect))}
-        tile-data]))])
+   (for [tile (rect->point-seq rect)
+         :let [tile-data (f tile)]
+         :when (some? tile-data)]
+     [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
+            :class "level__tile"
+            :style (tile-style (global-point tile rect))}
+      tile-data])])
 
 (defn do-some-tiles [rect coll layer-title f]
-  [:<> (for [[tile item] coll
-             :when (rect-contains? rect tile)]
-         [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
-                :class "level__tile"
-                :style (tile-style (global-point tile rect))}
-          (f tile item)])])
+  [:<>
+   (for [[tile item] coll
+         :when (rect-contains? rect tile)]
+     [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
+            :class "level__tile"
+            :style (tile-style (global-point tile rect))}
+      (f tile item)])])
 
 (defn dropzone [{:keys [dimension highlight occupied on-drop]}]
   [do-all-tiles dimension "dropzone"
