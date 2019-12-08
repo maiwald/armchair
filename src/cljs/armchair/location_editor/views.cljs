@@ -34,7 +34,7 @@
        (u/relative-cursor e)
        u/coord->tile))
 
-(defn tile-paint-canvas [{:keys [on-paint dimension]}]
+(defn tile-paint-canvas [{:keys [on-paint dimension texture]}]
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
     (letfn [(set-current-tile [e] (reset! current-tile (get-tile e)))
@@ -48,7 +48,7 @@
                              (not (contains? @painted-tiles tile)))
                     (swap! painted-tiles conj tile)
                     (paint-fn tile)))))]
-      (fn [{:keys [on-paint]}]
+      (fn [{:keys [on-paint texture]}]
         (let [paint (make-paint on-paint)]
           [:div {:class "level__layer"
                  :on-mouse-enter set-current-tile
@@ -63,11 +63,19 @@
                  :on-mouse-up stop-painting}
            (if-let [tile @current-tile]
              (let [{:keys [x y]} (u/tile->coord tile)]
-               [:div {:class "interactor interactor_paint"
-                      :style {:height (px config/tile-size)
-                              :width (px config/tile-size)
-                              :top (px y)
-                              :left (px x)}}]))])))))
+               (if (some? texture)
+                 [:div {:style {:position "absolute"
+                                :opacity ".8"
+                                :height (px config/tile-size)
+                                :width (px config/tile-size)
+                                :top (px y)
+                                :left (px x)}}
+                  [c/sprite-texture texture]]
+                 [:div {:class "interactor interactor_paint"
+                        :style {:height (px config/tile-size)
+                                :width (px config/tile-size)
+                                :top (px y)
+                                :left (px x)}}])))])))))
 
 (defn sidebar-widget [{title :title}]
   (into [:div {:class "location-editor__sidebar-widget"}
@@ -499,6 +507,7 @@
         {:keys [active-pane
                 active-layer
                 visible-layers
+                active-texture
                 highlight]} (<sub [:location-editor/ui])
         dropzone-fn (if-let [[dnd-type dnd-payload] (<sub [:location-editor/dnd-payload])]
                       (case dnd-type
@@ -535,6 +544,7 @@
           (:background1 :background2 :foreground1 :foreground2)
           [tile-paint-canvas
            {:dimension dimension
+            :texture active-texture
             :on-paint #(>evt [:location-editor/paint location-id active-layer %])}]
 
           :collision
