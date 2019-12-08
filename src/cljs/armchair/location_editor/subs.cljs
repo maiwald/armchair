@@ -146,11 +146,7 @@
   :<- [:db-dialogues]
   :<- [:db-player]
   (fn [[locations dialogues player] [_ location-id]]
-    (let [blocked (get-in locations [location-id :blocked])
-          npcs (select [MAP-VALS
-                        #(= location-id (:location-id %))
-                        :location-position]
-                       dialogues)
+    (let [{:keys [blocked placements]} (get locations location-id)
           player (when (= location-id (:location-id player))
                    [(:location-position player)])]
-      (set (concat blocked npcs player)))))
+      (set (concat player blocked (keys placements))))))
