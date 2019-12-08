@@ -363,8 +363,8 @@
   (into {}
         (for [[file sprites] sprite-sheets
               [[tile-x tile-y] sprite] sprites]
-          [sprite [file [(* tile-size tile-x)
-                         (* tile-size tile-y)]]])))
+          [sprite [file (Point. (* tile-size tile-x)
+                                (* tile-size tile-y))]])))
 
 (def texture-set (set (select [MAP-VALS MAP-VALS] sprite-sheets)))
 
