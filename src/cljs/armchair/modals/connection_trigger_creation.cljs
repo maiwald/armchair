@@ -4,28 +4,36 @@
             [armchair.input :as input]
             [armchair.util :as u :refer [<sub >evt e->val]]
             [armchair.events :refer [reg-event-data reg-event-meta]]
+            [armchair.modals.events :refer [build-modal-assertion]]
             [armchair.location-editor.views :refer [position-select]]))
 
 ;; Events
 
+(def assert-connection-trigger-creation-modal
+  (build-modal-assertion :connection-trigger-creation))
+
 (reg-event-meta
   ::update-target-id
   (fn [db [_ target-id]]
+    (assert-connection-trigger-creation-modal db)
     (assoc-in db [:modal :connection-trigger-creation :target-id] target-id)))
 
 (reg-event-meta
   ::update-target-position
   (fn [db [_ position]]
+    (assert-connection-trigger-creation-modal db)
     (assoc-in db [:modal :connection-trigger-creation :target-position] position)))
 
 (reg-event-meta
   ::update-symmetric
   (fn [db [_ value]]
+    (assert-connection-trigger-creation-modal db)
     (assoc-in db [:modal :connection-trigger-creation :symmetric?] value)))
 
 (reg-event-data
   ::save
   (fn [db]
+    (assert-connection-trigger-creation-modal db)
     (let [{:keys [location-id
                   location-position
                   target-id
