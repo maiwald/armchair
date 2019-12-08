@@ -415,7 +415,7 @@
     (let [{:keys [x y]} (get-in state [:input :mouse-position])
           target-tile (-> (m/Point. (quot x camera-scale)
                                     (quot y camera-scale))
-                          (m/global-point (:camera state)) ; previous frame's camera
+                          (m/relative-point (:camera state)) ; previous frame's camera
                           (u/coord->tile))
           target-tile-interactable? (interactable? state target-tile)
           player-pos (get-in state [:player :position])
