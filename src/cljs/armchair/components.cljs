@@ -175,15 +175,13 @@
 ;; Sprite Texture
 
 (defn sprite-texture [texture title]
-  (if-let [[file [x-offset y-offset]] (get sprite-lookup texture)]
+  (if-let [[file {:keys [x y]}] (get sprite-lookup texture)]
     [:div.sprite-texture
      {:title title
       :style {:width (u/px config/tile-size)
               :height (u/px config/tile-size)
               :background-image (str "url(" (texture-path file) ")")
-              :background-position (str (u/px (- x-offset))
-                                        " "
-                                        (u/px (- y-offset)))}}]
+              :background-position (str (u/px (- x)) " " (u/px (- y)))}}]
     [:img {:src (texture-path :missing_texture)
            :width (u/px config/tile-size)
            :height (u/px config/tile-size)}]))

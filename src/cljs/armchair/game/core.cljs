@@ -111,9 +111,9 @@
 
 (defn draw-sprite-texture [texture dest-coord]
   (when (some? @texture-atlas)
-    (if-let [[file [x-offset y-offset]] (get sprite-lookup texture)]
+    (if-let [[file tile] (get sprite-lookup texture)]
       (if-let [sprite-sheet (get @texture-atlas file)]
-        (c/draw-image! @ctx sprite-sheet (m/Point. x-offset y-offset) dest-coord)
+        (c/draw-image! @ctx sprite-sheet tile dest-coord)
         (c/draw-image! @ctx (@texture-atlas :missing_texture) dest-coord))
       (c/draw-image! @ctx (@texture-atlas :missing_texture) dest-coord))))
 
