@@ -5,7 +5,12 @@
             [armchair.components :as c]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
-            [armchair.math :refer [Point Rect translate-point relative-point rect-contains?]]
+            [armchair.math :refer [Point
+                                   Rect
+                                   translate-point
+                                   global-point
+                                   relative-point
+                                   rect-contains?]]
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
             [armchair.modals.dialogue-creation :as dialogue-creation]
             [armchair.textures :refer [texture-path background-textures]]))
@@ -23,11 +28,15 @@
         image (.querySelector (.-currentTarget e) ".dnd-texture img")]
     (.setDragImage (.-dataTransfer e) image offset offset)))
 
+(defn get-tile [e]
+  (->> (.-currentTarget e)
+       (u/relative-cursor e)
+       u/coord->tile))
+
 (defn tile-paint-canvas [{:keys [on-paint dimension]}]
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
-    (letfn [(get-tile [e] (u/coord->tile (u/relative-cursor e (.-currentTarget e))))
-            (set-current-tile [e] (reset! current-tile (get-tile e)))
+    (letfn [(set-current-tile [e] (reset! current-tile (get-tile e)))
             (clear-current-tile [] (reset! current-tile nil))
             (start-painting [] (reset! painted-tiles #{}))
             (stop-painting [] (reset! painted-tiles nil))
@@ -342,6 +351,25 @@
             :class "level__tile level__tile_highlight"
             :style (tile-style (relative-point preview-tile dimension))}]]))
 
+(defn tile-select [{:keys [dimension on-select selected selectable?]}]
+  (letfn [(on-click [e]
+            (let [tile (global-point (get-tile e) dimension)]
+              (if (or (not (fn? selectable?))
+                      (selectable? tile))
+                (on-select tile))))]
+    [:div
+     (when selected
+       [:div {:key "location-cell:selected"
+              :class "level__tile level__tile_highlight"
+              :style (tile-style (relative-point selected dimension))}])
+     (when (fn? selectable?)
+       [do-all-tiles dimension "selectors"
+        (fn [tile]
+          (if-not (selectable? tile)
+            [:div {:class ["interactor" "interactor_disabled"]}]))])
+     [:div {:class "level__layer"
+            :on-click on-click}]]))
+
 (defn position-select [location-id on-select selected]
   (let [{:keys [dimension]} (<sub [:location-editor/location location-id])
         occupied (<sub [:location-editor/physically-occupied-tiles location-id])]
@@ -358,17 +386,11 @@
       [texture-layer location-id :foreground1]
       [texture-layer location-id :foreground2]
       [entity-layer location-id]
-      [conntection-trigger-layer location-id dimension]
-      (when selected
-        [:div {:key "location-cell:selected"
-               :class "level__tile level__tile_highlight"
-               :style (tile-style (relative-point selected dimension))}])
-      [do-all-tiles dimension "selectors"
-       (fn [tile]
-         (let [occupied? (contains? occupied tile)]
-           [:div {:class ["interactor"
-                          (when occupied? "interactor_disabled")]
-                  :on-click (when-not occupied? #(on-select tile))}]))]]]))
+      [conntection-trigger-layer location-id]
+      [tile-select {:dimension dimension
+                    :on-select on-select
+                    :selected selected
+                    :selectable? (fn [tile] (not (contains? occupied tile)))}]]]))
 
 (defn character-popover [location-id tile]
   (letfn [(set-dialogue [e]
