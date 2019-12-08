@@ -10,7 +10,8 @@
             [armchair.modals.case-node-creation]
             [armchair.modals.connection-trigger-creation]
             [armchair.modals.switch-form]
-            [armchair.modals.unlock-conditions-form]))
+            [armchair.modals.unlock-conditions-form]
+            [armchair.modals.texture-selection]))
 
 (defn dialogue-state-modal [{:keys [line-id description]}]
   [slds/modal {:title "Dialogue State"
@@ -80,4 +81,5 @@
       :case-node-creation          [armchair.modals.case-node-creation/modal (:case-node-creation modal)]
       :switch-form                 [armchair.modals.switch-form/modal]
       :unlock-conditions-form      [armchair.modals.unlock-conditions-form/modal]
-      :connection-trigger-creation [armchair.modals.connection-trigger-creation/modal (:connection-trigger-creation modal)])))
+      :connection-trigger-creation [armchair.modals.connection-trigger-creation/modal (:connection-trigger-creation modal)]
+      :texture-selection           [armchair.modals.texture-selection/modal])))

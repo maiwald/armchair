@@ -112,7 +112,7 @@
 
 (defn sidebar-resize [location-id]
   (let [{:keys [width height]} (<sub [:location-editor/dimensions location-id])]
-    [sidebar-widget {:title (str "Size: " width "x" height)}
+    [sidebar-widget {:title (str "Size: " width " x " height)}
      [:div {:class "resize-container"}
       [:div {:class "resize-container__reference"}
        [:div {:class "resizer resizer_horizontal resizer_top"}
@@ -128,19 +128,12 @@
         [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [c/icon "arrow-left" "shrink"]]
         [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [c/icon "arrow-right" "extend"]]]]]]))
 
-(defn sidebar-texture-select [location-id]
+(defn sidebar-texture-select []
   (let [{:keys [active-texture]} (<sub [:location-editor/ui])]
-    [sidebar-widget {:title "Background Textures"}
-     [:ul {:class "tile-grid"}
-      (for [texture background-textures]
-        [:li {:key (str "texture-select:" texture)
-              :title texture
-              :class ["tile-grid__item"
-                      (when (= texture active-texture) "tile-grid__item_active")]
-              :style {:width (u/px config/tile-size)
-                      :height (u/px config/tile-size)}}
-         [:a {:on-click #(>evt [:location-editor/set-active-texture texture])}
-          [c/sprite-texture texture]]])]]))
+    [sidebar-widget {:title "Active Texture"}
+     [:a {:class "active-texture"
+          :on-click (e-> #(>evt [:armchair.modals.texture-selection/open active-texture]))}
+       [c/sprite-texture active-texture]]]))
 
 (defn sidebar-collision [location-id]
   (let [{:keys [active-walk-state]} (<sub [:location-editor/ui])]
@@ -235,8 +228,8 @@
                (case active-layer
                  (:background1 :background2 :foreground1 :foreground2)
                  [:<>
-                  [sidebar-tool]
-                  [sidebar-texture-select location-id]]
+                  [sidebar-texture-select]
+                  [sidebar-tool]]
 
                  :collision
                  [sidebar-collision]
@@ -357,13 +350,17 @@
               (if (or (not (fn? selectable?))
                       (selectable? tile))
                 (on-select tile))))]
-    [:div
+    [:div {:style {:position "absolute"
+                   :top 0
+                   :left 0
+                   :width (u/px (* config/tile-size (:w dimension)))
+                   :height (u/px (* config/tile-size (:h dimension)))}}
      (when selected
        [:div {:key "location-cell:selected"
               :class "level__tile level__tile_highlight"
               :style (tile-style (global-point selected dimension))}])
      (when (fn? selectable?)
-       [do-all-tiles dimension "selectors"
+       [do-all-tiles dimension "disabled-selectors"
         (fn [tile]
           (if-not (selectable? tile)
             [:div {:class ["interactor" "interactor_disabled"]}]))])
