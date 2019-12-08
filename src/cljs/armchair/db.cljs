@@ -254,6 +254,7 @@
                                      :modal/switch-form
                                      :modal/unlock-conditions-form
                                      :modal/connection-trigger-creation
+                                     :modal/texture-selection
                                      ::npc-line-id
                                      ::dialogue-state]))
 
@@ -303,6 +304,10 @@
 (s/def ::dialogue-state
   (s/keys :req-un [::line-id]
           :opt-un [::description]))
+
+(s/def :modal/texture-selection
+  (s/keys :req-un [:texture-selection/file
+                   :texture-selection/tile]))
 
 ;; Invariants
 
