@@ -8,8 +8,8 @@
             [armchair.math :refer [Point
                                    Rect
                                    translate-point
-                                   global-point
                                    relative-point
+                                   global-point
                                    rect-contains?]]
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
             [armchair.modals.dialogue-creation :as dialogue-creation]
@@ -263,7 +263,7 @@
      (if-let [tile-data (f tile)]
        [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
               :class "level__tile"
-              :style (tile-style (relative-point tile rect))}
+              :style (tile-style (global-point tile rect))}
         tile-data]))])
 
 (defn do-some-tiles [rect coll layer-title f]
@@ -271,7 +271,7 @@
              :when (rect-contains? rect tile)]
          [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
                 :class "level__tile"
-                :style (tile-style (relative-point tile rect))}
+                :style (tile-style (global-point tile rect))}
           (f tile item)])])
 
 (defn dropzone [{:keys [dimension highlight occupied on-drop]}]
@@ -300,7 +300,7 @@
   (when (rect-contains? rect position)
     [:div {:key (str "location-cell:player:" position)
            :class "level__tile"
-           :style (tile-style (relative-point position rect))}
+           :style (tile-style (global-point position rect))}
      [c/sprite-texture :human "Player"]]))
 
 (defn entity-layer [location-id override-rect]
@@ -349,11 +349,11 @@
      [conntection-trigger-layer location-id dimension]
      [:div {:key "location-cell:highlight"
             :class "level__tile level__tile_highlight"
-            :style (tile-style (relative-point preview-tile dimension))}]]))
+            :style (tile-style (global-point preview-tile dimension))}]]))
 
 (defn tile-select [{:keys [dimension on-select selected selectable?]}]
   (letfn [(on-click [e]
-            (let [tile (global-point (get-tile e) dimension)]
+            (let [tile (relative-point (get-tile e) dimension)]
               (if (or (not (fn? selectable?))
                       (selectable? tile))
                 (on-select tile))))]
@@ -361,7 +361,7 @@
      (when selected
        [:div {:key "location-cell:selected"
               :class "level__tile level__tile_highlight"
-              :style (tile-style (relative-point selected dimension))}])
+              :style (tile-style (global-point selected dimension))}])
      (when (fn? selectable?)
        [do-all-tiles dimension "selectors"
         (fn [tile]
