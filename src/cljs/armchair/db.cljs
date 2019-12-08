@@ -25,13 +25,15 @@
                       :switch-value})
 (s/def ::text string?)
 
-(s/def :type/x integer?)
-(s/def :type/y integer?)
-(s/def :type/w pos-int?)
-(s/def :type/h pos-int?)
+(s/def :point/x integer?)
+(s/def :point/y integer?)
+(s/def :type/point
+  (s/keys :req-un [:type/x :type/y]))
 
-(s/def :type/point (s/keys :req-un [:type/x :type/y]))
-(s/def :type/rect (s/keys :req-un [:type/x :type/y :type/w :type/h]))
+(s/def :rect/w pos-int?)
+(s/def :rect/h pos-int?)
+(s/def :type/rect
+  (s/keys :req-un [:point/x :point/y :rect/w :rect/h]))
 
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:entity/id v)))))
 (s/def ::texture (s/nilable #(contains? texture-set %)))
