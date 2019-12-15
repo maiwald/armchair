@@ -6,7 +6,6 @@
              :refer [must ALL NONE MAP-VALS]
              :refer-macros [select setval transform]]
             [armchair.config :as config]
-            [armchair.textures :refer [character-textures]]
             [armchair.util :as u]))
 
 (s/def :game/data (s/keys :req-un [:game/lines
@@ -64,7 +63,7 @@
   (s/nilable (s/map-of :type/point
                        (s/keys :req-un [:game/texture :game/dialogue-id]))))
 (s/def :game/dialogue-id (s/nilable :entity/id))
-(s/def :game/texture (fn [t] (contains? (set character-textures) t)))
+(s/def :game/texture (s/tuple :texture/file :texture/tile))
 (s/def :game/next-line-id (s/nilable :entity/id))
 
 

@@ -13,12 +13,11 @@
                                    rect->point-seq
                                    rect-contains?]]
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
-            [armchair.modals.dialogue-creation :as dialogue-creation]
-            [armchair.textures :refer [texture-path background-textures]]))
+            [armchair.textures :refer [image-path]]))
 
 (defn dnd-texture [texture]
   [:div.dnd-texture
-   [:img {:src (texture-path texture)
+   [:img {:src (image-path texture)
           :style {:height (str config/tile-size "px")
                   :width (str config/tile-size "px")
                   :max-width (str config/tile-size "px")
@@ -176,7 +175,7 @@
      [:span {:class "tile-list__item__image"
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
-      [c/sprite-texture :hare_down_idle1 "Player"]]
+      [c/sprite-texture ["hare.png" (Point. 6 0)] "Player"]]
      [:span {:class "tile-list__item__label"} "Place Player"]]]])
 
 (defn sidebar-triggers []
@@ -192,7 +191,7 @@
      [:span {:class "tile-list__item__image"
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
-      [:img {:src (texture-path :exit)
+      [:img {:src (image-path "exit.png")
              :title "Exit"}]]
      [:span {:class "tile-list__item__label"} "Place new Exit"]]]])
 
@@ -303,7 +302,7 @@
     [:div {:key (str "location-cell:player:" position)
            :class "level__tile"
            :style (tile-style (global-point position rect))}
-     [c/sprite-texture :hare_down_idle1 "Player"]]))
+     [c/sprite-texture ["hare.png" (Point. 6 0)] "Player"]]))
 
 (defn entity-layer [location-id override-rect]
   (let [{:keys [player-position
@@ -323,7 +322,7 @@
         rect (or override-rect dimension)]
     [do-some-tiles rect connection-triggers "connection-trigger"
      (fn [tile {:keys [display-name]}]
-       [:img {:src (texture-path :exit)
+       [:img {:src (image-path "exit.png")
               :title (str "to " display-name)}])]))
 
 (defn collision-layer [rect blocked]
@@ -430,7 +429,7 @@
                           :options dialogue-options
                           :on-change set-dialogue}]
            [:a.new-dialogue {:on-click #(do (>evt [:close-popover])
-                                            (>evt [::dialogue-creation/open character-id location-id tile]))}
+                                            (>evt [:armchair.modals.dialogue-creation/open character-id location-id tile]))}
             "Create new Dialogue"]]]
          [c/button {:title "Remove Character"
                     :type :danger
