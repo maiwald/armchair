@@ -5,12 +5,12 @@
              :refer [must ALL NONE MAP-VALS]
              :refer-macros [setval]]
             [cognitect.transit :as t]
-            [armchair.migrations :refer [db-version]]
-            [armchair.dummy-data :refer [dummy-data]]
+            [armchair.migrations :refer [db-version migrate]]
             [armchair.textures :refer [background-textures texture-set]]
             [armchair.config :as config]
             [armchair.math :refer [Point Rect]]
-            [armchair.util :as u]))
+            [armchair.util :as u])
+  (:require-macros [armchair.slurp :refer [slurp]]))
 
 ;; Types
 
@@ -443,4 +443,4 @@
           :triggers {}
           :switches {}
           :switch-values {}}
-         dummy-data))
+         (migrate (deserialize-db (slurp "resources/dummy_data.json")))))
