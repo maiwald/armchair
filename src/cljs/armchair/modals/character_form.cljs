@@ -71,8 +71,15 @@
                        (when (= c color) "color-picker__color_selected")]
                :on-click #(>evt [::update :color c])
                :style {:background-color c}}])]
-     [input/select {:label "Avatar"
-                    :options (mapv #(vector % %) character-textures)
-                    :value texture
-                    :on-change #(>evt [::update :texture (keyword (e->val %))])}]
-     [c/sprite-texture texture]]))
+     [input/label "Avatar"]
+     [:ul {:class "tile-grid"
+           :style {:height "200px"}}
+      (for [t character-textures]
+        [:li {:key (str "avatar-select:" t)
+              :class ["tile-grid__item"
+                      (when (= t texture) "tile-grid__item_active")]
+              :style {:width (u/px config/tile-size)
+                      :height (u/px config/tile-size)
+                      :background-color "#fff"}}
+         [:a {:on-click #(>evt [::update :texture t])}
+          [c/sprite-texture t]]])]]))
