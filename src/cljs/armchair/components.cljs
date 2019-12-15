@@ -2,7 +2,7 @@
   (:require [clojure.string :refer [join]]
             [reagent.core :as r]
             [armchair.config :as config]
-            [armchair.textures :refer [texture-path sprite-lookup]]
+            [armchair.textures :refer [image-path]]
             [armchair.math :refer [abs clip point-delta translate-point]]
             [armchair.util :as u :refer [stop-e! >evt <sub e->left?]]))
 
@@ -174,17 +174,15 @@
 
 ;; Sprite Texture
 
-(defn sprite-texture [texture title]
-  (if-let [[file {:keys [x y]}] (get sprite-lookup texture)]
-    [:div.sprite-texture
-     {:title title
-      :style {:width (u/px config/tile-size)
-              :height (u/px config/tile-size)
-              :background-image (str "url(" (texture-path file) ")")
-              :background-position (str (u/px (- x)) " " (u/px (- y)))}}]
-    [:img {:src (texture-path :missing_texture)
-           :width (u/px config/tile-size)
-           :height (u/px config/tile-size)}]))
+(defn sprite-texture [[file {:keys [x y]}] title]
+  [:div.sprite-texture
+   {:title title
+    :style {:width (u/px config/tile-size)
+            :height (u/px config/tile-size)
+            :background-image (str "url(" (image-path file) ")")
+            :background-position (str (u/px (- (* config/tile-size x)))
+                                      " "
+                                      (u/px (- (* config/tile-size y))))}}])
 
 ;; Tabs
 

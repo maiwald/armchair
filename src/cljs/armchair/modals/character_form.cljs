@@ -5,8 +5,9 @@
             [armchair.slds :as slds]
             [armchair.input :as input]
             [armchair.util :as u :refer [>evt e->val]]
+            [armchair.math :as m]
             [armchair.events :refer [reg-event-data reg-event-meta]]
-            [armchair.textures :refer [character-textures]]
+            [armchair.textures :refer [character-sprite-sheets]]
             [armchair.components :as c]
             [armchair.modals.events :refer [assert-no-open-modal build-modal-assertion]]))
 
@@ -74,12 +75,16 @@
      [input/label "Avatar"]
      [:ul {:class "tile-grid"
            :style {:height "200px"}}
-      (for [t character-textures]
-        [:li {:key (str "avatar-select:" t)
+      (for [[file dimensions] character-sprite-sheets
+            tile (-> dimensions
+                     (m/rect-scale (/ 1 config/tile-size))
+                     m/rect->point-seq)
+            :let [new-texture [file tile]]]
+        [:li {:key (str "avatar-select:" file ":" (pr-str tile))
               :class ["tile-grid__item"
-                      (when (= t texture) "tile-grid__item_active")]
+                      (when (= new-texture texture) "tile-grid__item_active")]
               :style {:width (u/px config/tile-size)
                       :height (u/px config/tile-size)
                       :background-color "#fff"}}
-         [:a {:on-click #(>evt [::update :texture t])}
-          [c/sprite-texture t]]])]]))
+         [:a {:on-click #(>evt [::update :texture new-texture])}
+          [c/sprite-texture new-texture]]])]]))

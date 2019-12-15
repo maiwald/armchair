@@ -6,7 +6,7 @@
              :refer-macros [setval]]
             [cognitect.transit :as t]
             [armchair.migrations :refer [db-version migrate]]
-            [armchair.textures :refer [background-textures texture-set]]
+            [armchair.textures :refer [tile-sprite-sheets]]
             [armchair.config :as config]
             [armchair.math :refer [Point Rect]]
             [armchair.util :as u])
@@ -36,7 +36,11 @@
   (s/keys :req-un [:point/x :point/y :rect/w :rect/h]))
 
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:entity/id v)))))
-(s/def ::texture (s/nilable #(contains? texture-set %)))
+
+(s/def :texture/file string?)
+(s/def :texture/tile :type/point)
+(s/def ::texture
+  (s/nilable (s/tuple :texture/file :texture/tile)))
 
 ;; UI State
 
@@ -441,7 +445,7 @@
                                               :entities
                                               :triggers}
                             :active-walk-state true
-                            :active-texture (first background-textures)}
+                            :active-texture ["PathAndObjects_0.png" (Point. 4 1)]}
           :ui/positions {}
           :characters {}
           :locations {}
