@@ -1,10 +1,8 @@
 (ns armchair.modals.views
   (:require [armchair.slds :as slds]
             [armchair.input :as input]
-            [armchair.components :as c :refer [icon]]
-            [armchair.config :as config]
             [armchair.util :as u :refer [<sub >evt stop-e! e->val]]
-            [armchair.textures :refer [character-textures]]
+            [armchair.modals.character-form]
             [armchair.modals.dialogue-creation]
             [armchair.modals.trigger-creation]
             [armchair.modals.case-node-creation]
@@ -35,30 +33,6 @@
                        :on-change #(>evt [:update-line line-id :text (e->val %)])
                        :value (:text line)}]]]))
 
-(defn character-form-modal [{:keys [display-name color texture]}]
-  (let [update-handler (fn [field] #(>evt [:character-form/update field (e->val %)]))]
-    [slds/modal {:title "Character"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [:character-form/save])}
-     [input/text {:label "Name"
-                  :on-change (update-handler :display-name)
-                  :value display-name}]
-     [input/text {:label "Color"
-                  :on-change (update-handler :color)
-                  :value color}]
-     [:div {:class "color-picker"}
-      (for [c config/color-grid]
-        [:div {:key (str "color-picker-color:" c)
-               :class ["color-picker__color"
-                       (when (= c color) "color-picker__color_selected")]
-               :on-click #(>evt [:character-form/update :color c])
-               :style {:background-color c}}])]
-     [input/select {:label "Avatar"
-                    :options (mapv #(vector % %) character-textures)
-                    :value texture
-                    :on-change #(>evt [:character-form/update :texture (keyword (e->val %))])}]
-     [c/sprite-texture texture]]))
-
 (defn location-creation-modal [display-name]
   (let [update-name #(>evt [:update-location-creation-name (e->val %)])]
     [slds/modal {:title "Create Location"
@@ -75,7 +49,7 @@
       :dialogue-creation           [armchair.modals.dialogue-creation/modal]
       :dialogue-state              [dialogue-state-modal (:dialogue-state modal)]
       :npc-line-id                 [npc-line-form-modal (:npc-line-id modal)]
-      :character-form              [character-form-modal (:character-form modal)]
+      :character-form              [armchair.modals.character-form/modal (:character-form modal)]
       :location-creation           [location-creation-modal (:location-creation modal)]
       :trigger-creation            [armchair.modals.trigger-creation/modal (:trigger-creation modal)]
       :case-node-creation          [armchair.modals.case-node-creation/modal (:case-node-creation modal)]

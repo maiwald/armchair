@@ -219,7 +219,7 @@
      [c/button {:title "Create Character"
                 :icon "plus"
                 :fill true
-                :on-click #(>evt [:open-character-modal])}]]))
+                :on-click #(>evt [:armchair.modals.character-form/open])}]]))
 
 (defn sidebar [location-id]
   (let [{:keys [active-pane active-layer]} (<sub [:location-editor/ui])]
@@ -416,7 +416,7 @@
          [:header display-name]
          [:ul.level-popover__quick-links
           [:li [:a {:on-click #(do (>evt [:close-popover])
-                                   (>evt [:open-character-modal id]))}
+                                   (>evt [:armchair.modals.character-form/open id]))}
                 [c/icon "user"] "Edit Character"]]
           (if (some? dialogue-id)
             [:li [:a {:on-click #(do (>evt [:close-popover])

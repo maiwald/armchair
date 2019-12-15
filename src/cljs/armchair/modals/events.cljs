@@ -1,6 +1,5 @@
 (ns armchair.modals.events
-  (:require [clojure.spec.alpha :as s]
-            [armchair.config :as config]
+  (:require [armchair.config :as config]
             [armchair.events :refer [reg-event-data reg-event-meta]]
             [armchair.math :refer [Rect]]
             [armchair.util :as u]))
@@ -21,46 +20,6 @@
   :close-modal
   (fn [db [_ modal-fn | args]]
     (dissoc db :modal)))
-
-(reg-event-meta
-  :open-character-modal
-  (fn [db [_ id]]
-    (assert-no-open-modal db)
-    (assoc-in db [:modal :character-form]
-              (if-let [{:keys [display-name color texture]} (get-in db [:characters id])]
-                {:id id
-                 :display-name display-name
-                 :texture texture
-                 :color color}
-                {:display-name ""
-                 :color (rand-nth config/color-grid)}))))
-
-(defn assert-character-modal [db]
-  (assert (contains? (:modal db) :character-form)
-          "No character creation initiated. Cannot set value!"))
-
-(reg-event-data
-  :character-form/update
-  (fn [db [_ field value]]
-    (assert-character-modal db)
-    (assoc-in db [:modal :character-form field] value)))
-
-(reg-event-data
-  :character-form/save
-  (fn [db]
-    (assert-character-modal db)
-    (let [{:keys [id display-name texture color]} (get-in db [:modal :character-form])
-          id (or id (random-uuid))
-          character {:entity/id id
-                     :entity/type :character
-                     :display-name display-name
-                     :texture texture
-                     :color color}]
-      (cond-> db
-        (and (s/valid? :character/character character)
-             (some? texture))
-        (-> (assoc-in [:characters id] character)
-            (dissoc :modal))))))
 
 (reg-event-meta
   :open-location-creation
