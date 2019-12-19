@@ -6,7 +6,7 @@
              :refer-macros [setval]]
             [cognitect.transit :as t]
             [armchair.migrations :refer [db-version migrate]]
-            [armchair.textures :refer [background-textures texture-set]]
+            [armchair.textures :refer [tile-sprite-sheets]]
             [armchair.config :as config]
             [armchair.math :refer [Point Rect]]
             [armchair.util :as u])
@@ -25,16 +25,22 @@
                       :switch-value})
 (s/def ::text string?)
 
-(s/def :type/x integer?)
-(s/def :type/y integer?)
-(s/def :type/w pos-int?)
-(s/def :type/h pos-int?)
+(s/def :point/x integer?)
+(s/def :point/y integer?)
+(s/def :type/point
+  (s/keys :req-un [:type/x :type/y]))
 
-(s/def :type/point (s/keys :req-un [:type/x :type/y]))
-(s/def :type/rect (s/keys :req-un [:type/x :type/y :type/w :type/h]))
+(s/def :rect/w pos-int?)
+(s/def :rect/h pos-int?)
+(s/def :type/rect
+  (s/keys :req-un [:point/x :point/y :rect/w :rect/h]))
 
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:entity/id v)))))
-(s/def ::texture (s/nilable #(contains? texture-set %)))
+
+(s/def :texture/file string?)
+(s/def :texture/tile :type/point)
+(s/def ::texture
+  (s/nilable (s/tuple :texture/file :texture/tile)))
 
 ;; UI State
 
@@ -254,6 +260,7 @@
                                      :modal/switch-form
                                      :modal/unlock-conditions-form
                                      :modal/connection-trigger-creation
+                                     :modal/texture-selection
                                      ::npc-line-id
                                      ::dialogue-state]))
 
@@ -303,6 +310,10 @@
 (s/def ::dialogue-state
   (s/keys :req-un [::line-id]
           :opt-un [::description]))
+
+(s/def :modal/texture-selection
+  (s/keys :req-un [:texture-selection/file
+                   :texture-selection/tile]))
 
 ;; Invariants
 
@@ -434,7 +445,7 @@
                                               :entities
                                               :triggers}
                             :active-walk-state true
-                            :active-texture (first background-textures)}
+                            :active-texture ["PathAndObjects_0.png" (Point. 4 1)]}
           :ui/positions {}
           :characters {}
           :locations {}

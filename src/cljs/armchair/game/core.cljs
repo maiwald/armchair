@@ -13,11 +13,11 @@
                                      camera-tile-width
                                      camera-tile-height
                                      camera-scale]]
-            [armchair.textures :refer [load-textures sprite-lookup]]
+            [armchair.textures :refer [load-textures]]
             [armchair.math :as m]
             [armchair.util :as u]
             [com.rpl.specter
-             :refer [nthpath ALL]
+             :refer [nthpath ALL MAP-KEYS MAP-VALS FIRST]
              :refer-macros [select transform]]))
 
 ;; Definitions
@@ -107,15 +107,16 @@
 
 (defn draw-texture [texture coord]
   (when (some? @texture-atlas)
-    (c/draw-image! @ctx (get @texture-atlas texture (@texture-atlas :missing_texture)) coord)))
+    (c/draw-image! @ctx (get @texture-atlas texture
+                             (@texture-atlas "missing_texture.png"))
+                   coord)))
 
-(defn draw-sprite-texture [texture dest-coord]
+(defn draw-sprite-texture [[file {:keys [x y]}] dest-coord]
   (when (some? @texture-atlas)
-    (if-let [[file [x-offset y-offset]] (get sprite-lookup texture)]
-      (if-let [sprite-sheet (get @texture-atlas file)]
-        (c/draw-image! @ctx sprite-sheet (m/Point. x-offset y-offset) dest-coord)
-        (c/draw-image! @ctx (@texture-atlas :missing_texture) dest-coord))
-      (c/draw-image! @ctx (@texture-atlas :missing_texture) dest-coord))))
+    (if-let [sprite-sheet (get @texture-atlas file)]
+      (c/draw-image! @ctx sprite-sheet (m/Point. (* tile-size x)
+                                                 (* tile-size y)) dest-coord)
+      (c/draw-image! @ctx (@texture-atlas "missing_texture.png") dest-coord))))
 
 (defn draw-texture-rotated [texture coord deg]
   (when (some? @texture-atlas)
@@ -141,7 +142,7 @@
 
 (defn draw-direction-indicator [{{:keys [coord direction]} :player}]
   (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
-    (draw-texture-rotated :arrow coord rotation)))
+    (draw-texture-rotated "arrow.png" coord rotation)))
 
 (defn button [rect
               {:keys [mouse-clicked?
@@ -328,49 +329,81 @@
 
 ;; Animations
 
+(defn add-animation-textures [animation-map]
+  (transform [MAP-VALS MAP-VALS ALL FIRST]
+             {:hare_down_idle1 ["hare.png" (m/Point. 6 0)]
+              :hare_down_idle2 ["hare.png" (m/Point. 7 0)]
+              :hare_down_walking1 ["hare.png" (m/Point. 2 0)]
+              :hare_down_walking2 ["hare.png" (m/Point. 3 0)]
+              :hare_left_idle ["hare.png" (m/Point. 13 0)]
+              :hare_left_walking1 ["hare.png" (m/Point. 8 0)]
+              :hare_left_walking2 ["hare.png" (m/Point. 9 0)]
+              :hare_right_idle ["hare.png" (m/Point. 12 0)]
+              :hare_right_walking1 ["hare.png" (m/Point. 10 0)]
+              :hare_right_walking2 ["hare.png" (m/Point. 11 0)]
+              :hare_up_idle1 ["hare.png" (m/Point. 4 0)]
+              :hare_up_idle2 ["hare.png" (m/Point. 5 0)]
+              :hare_up_walking1 ["hare.png" (m/Point. 0 0)]
+              :hare_up_walking2 ["hare.png" (m/Point. 1 0)]
+              :guy_down_idle ["guy_sprite_sheet.png" (m/Point. 1 0)]
+              :guy_down_walking1 ["guy_sprite_sheet.png" (m/Point. 0 0)]
+              :guy_down_walking2 ["guy_sprite_sheet.png" (m/Point. 2 0)]
+              :guy_left_idle ["guy_sprite_sheet.png" (m/Point. 1 1)]
+              :guy_left_walking1 ["guy_sprite_sheet.png" (m/Point. 0 1)]
+              :guy_left_walking2 ["guy_sprite_sheet.png" (m/Point. 2 1)]
+              :guy_right_idle ["guy_sprite_sheet.png" (m/Point. 1 2)]
+              :guy_right_walking1 ["guy_sprite_sheet.png" (m/Point. 0 2)]
+              :guy_right_walking2 ["guy_sprite_sheet.png" (m/Point. 2 2)]
+              :guy_up_idle ["guy_sprite_sheet.png" (m/Point. 1 3)]
+              :guy_up_walking1 ["guy_sprite_sheet.png" (m/Point. 0 3)]
+              :guy_up_walking2 ["guy_sprite_sheet.png" (m/Point. 2 3)]}
+             animation-map))
+
 (def hare-animations
-  {:idle {:up
-          [[:hare_up_idle1 200]
-           [:hare_up_idle2 200]]
-          :down
-          [[:hare_down_idle1 200]
-           [:hare_down_idle2 200]]
-          :left
-          [[:hare_left_walking2 200]
-           [:hare_left_idle 200]]
-          :right
-          [[:hare_right_walking2 200]
-           [:hare_right_idle 200]]}
-   :walking {:up
-             [[:hare_up_walking1 (quot tile-move-time 2)]
-              [:hare_up_walking2 (quot tile-move-time 2)]]
-             :down
-             [[:hare_down_walking1 (quot tile-move-time 2)]
-              [:hare_down_walking2 (quot tile-move-time 2)]]
-             :left
-             [[:hare_left_walking1 (quot tile-move-time 2)]
-              [:hare_left_walking2 (quot tile-move-time 2)]]
-             :right
-             [[:hare_right_walking1 (quot tile-move-time 2)]
-              [:hare_right_walking2 (quot tile-move-time 2)]]}})
+  (add-animation-textures
+    {:idle {:up
+            [[:hare_up_idle1 200]
+             [:hare_up_idle2 200]]
+            :down
+            [[:hare_down_idle1 200]
+             [:hare_down_idle2 200]]
+            :left
+            [[:hare_left_walking2 200]
+             [:hare_left_idle 200]]
+            :right
+            [[:hare_right_walking2 200]
+             [:hare_right_idle 200]]}
+     :walking {:up
+               [[:hare_up_walking1 (quot tile-move-time 2)]
+                [:hare_up_walking2 (quot tile-move-time 2)]]
+               :down
+               [[:hare_down_walking1 (quot tile-move-time 2)]
+                [:hare_down_walking2 (quot tile-move-time 2)]]
+               :left
+               [[:hare_left_walking1 (quot tile-move-time 2)]
+                [:hare_left_walking2 (quot tile-move-time 2)]]
+               :right
+               [[:hare_right_walking1 (quot tile-move-time 2)]
+                [:hare_right_walking2 (quot tile-move-time 2)]]}}))
 
 (def guy-animations
-  {:idle {:up [[:guy_up_idle 200]]
-          :down [[:guy_down_idle 200]]
-          :left [[:guy_left_idle 200]]
-          :right [[:guy_right_idle 200]]}
-   :walking {:up
-             [[:guy_up_walking1 (quot tile-move-time 2)]
-              [:guy_up_walking2 (quot tile-move-time 2)]]
-             :down
-             [[:guy_down_walking1 (quot tile-move-time 2)]
-              [:guy_down_walking2 (quot tile-move-time 2)]]
-             :left
-             [[:guy_left_walking1 (quot tile-move-time 2)]
-              [:guy_left_walking2 (quot tile-move-time 2)]]
-             :right
-             [[:guy_right_walking1 (quot tile-move-time 2)]
-              [:guy_right_walking2 (quot tile-move-time 2)]]}})
+  (add-animation-textures
+    {:idle {:up [[:guy_up_idle 200]]
+            :down [[:guy_down_idle 200]]
+            :left [[:guy_left_idle 200]]
+            :right [[:guy_right_idle 200]]}
+     :walking {:up
+               [[:guy_up_walking1 (quot tile-move-time 2)]
+                [:guy_up_walking2 (quot tile-move-time 2)]]
+               :down
+               [[:guy_down_walking1 (quot tile-move-time 2)]
+                [:guy_down_walking2 (quot tile-move-time 2)]]
+               :left
+               [[:guy_left_walking1 (quot tile-move-time 2)]
+                [:guy_left_walking2 (quot tile-move-time 2)]]
+               :right
+               [[:guy_right_walking1 (quot tile-move-time 2)]
+                [:guy_right_walking2 (quot tile-move-time 2)]]}}))
 
 (defn anim->data [now frames]
   {:start (m/round now)

@@ -10,14 +10,14 @@
                                    translate-point
                                    relative-point
                                    global-point
+                                   rect->point-seq
                                    rect-contains?]]
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
-            [armchair.modals.dialogue-creation :as dialogue-creation]
-            [armchair.textures :refer [texture-path background-textures]]))
+            [armchair.textures :refer [image-path]]))
 
 (defn dnd-texture [texture]
   [:div.dnd-texture
-   [:img {:src (texture-path texture)
+   [:img {:src (image-path texture)
           :style {:height (str config/tile-size "px")
                   :width (str config/tile-size "px")
                   :max-width (str config/tile-size "px")
@@ -33,7 +33,7 @@
        (u/relative-cursor e)
        u/coord->tile))
 
-(defn tile-paint-canvas [{:keys [on-paint dimension]}]
+(defn tile-paint-canvas [{:keys [on-paint dimension texture]}]
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
     (letfn [(set-current-tile [e] (reset! current-tile (get-tile e)))
@@ -47,7 +47,7 @@
                              (not (contains? @painted-tiles tile)))
                     (swap! painted-tiles conj tile)
                     (paint-fn tile)))))]
-      (fn [{:keys [on-paint]}]
+      (fn [{:keys [on-paint texture]}]
         (let [paint (make-paint on-paint)]
           [:div {:class "level__layer"
                  :on-mouse-enter set-current-tile
@@ -62,11 +62,19 @@
                  :on-mouse-up stop-painting}
            (if-let [tile @current-tile]
              (let [{:keys [x y]} (u/tile->coord tile)]
-               [:div {:class "interactor interactor_paint"
-                      :style {:height (px config/tile-size)
-                              :width (px config/tile-size)
-                              :top (px y)
-                              :left (px x)}}]))])))))
+               (if (some? texture)
+                 [:div {:style {:position "absolute"
+                                :opacity ".8"
+                                :height (px config/tile-size)
+                                :width (px config/tile-size)
+                                :top (px y)
+                                :left (px x)}}
+                  [c/sprite-texture texture]]
+                 [:div {:class "interactor interactor_paint"
+                        :style {:height (px config/tile-size)
+                                :width (px config/tile-size)
+                                :top (px y)
+                                :left (px x)}}])))])))))
 
 (defn sidebar-widget [{title :title}]
   (into [:div {:class "location-editor__sidebar-widget"}
@@ -112,7 +120,7 @@
 
 (defn sidebar-resize [location-id]
   (let [{:keys [width height]} (<sub [:location-editor/dimensions location-id])]
-    [sidebar-widget {:title (str "Size: " width "x" height)}
+    [sidebar-widget {:title (str "Size: " width " x " height)}
      [:div {:class "resize-container"}
       [:div {:class "resize-container__reference"}
        [:div {:class "resizer resizer_horizontal resizer_top"}
@@ -128,19 +136,12 @@
         [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [c/icon "arrow-left" "shrink"]]
         [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [c/icon "arrow-right" "extend"]]]]]]))
 
-(defn sidebar-texture-select [location-id]
+(defn sidebar-texture-select []
   (let [{:keys [active-texture]} (<sub [:location-editor/ui])]
-    [sidebar-widget {:title "Background Textures"}
-     [:ul {:class "tile-grid"}
-      (for [texture background-textures]
-        [:li {:key (str "texture-select:" texture)
-              :title texture
-              :class ["tile-grid__item"
-                      (when (= texture active-texture) "tile-grid__item_active")]
-              :style {:width (u/px config/tile-size)
-                      :height (u/px config/tile-size)}}
-         [:a {:on-click #(>evt [:location-editor/set-active-texture texture])}
-          [c/sprite-texture texture]]])]]))
+    [sidebar-widget {:title "Active Texture"}
+     [:a {:class "active-texture"
+          :on-click (e-> #(>evt [:armchair.modals.texture-selection/open active-texture]))}
+       [c/sprite-texture active-texture]]]))
 
 (defn sidebar-collision [location-id]
   (let [{:keys [active-walk-state]} (<sub [:location-editor/ui])]
@@ -174,7 +175,7 @@
      [:span {:class "tile-list__item__image"
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
-      [c/sprite-texture :hare_down_idle1 "Player"]]
+      [c/sprite-texture ["hare.png" (Point. 6 0)] "Player"]]
      [:span {:class "tile-list__item__label"} "Place Player"]]]])
 
 (defn sidebar-triggers []
@@ -190,7 +191,7 @@
      [:span {:class "tile-list__item__image"
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
-      [:img {:src (texture-path :exit)
+      [:img {:src (image-path "exit.png")
              :title "Exit"}]]
      [:span {:class "tile-list__item__label"} "Place new Exit"]]]])
 
@@ -217,7 +218,7 @@
      [c/button {:title "Create Character"
                 :icon "plus"
                 :fill true
-                :on-click #(>evt [:open-character-modal])}]]))
+                :on-click #(>evt [:armchair.modals.character-form/open])}]]))
 
 (defn sidebar [location-id]
   (let [{:keys [active-pane active-layer]} (<sub [:location-editor/ui])]
@@ -235,8 +236,8 @@
                (case active-layer
                  (:background1 :background2 :foreground1 :foreground2)
                  [:<>
-                  [sidebar-tool]
-                  [sidebar-texture-select location-id]]
+                  [sidebar-texture-select]
+                  [sidebar-tool]]
 
                  :collision
                  [sidebar-collision]
@@ -257,22 +258,22 @@
 
 (defn do-all-tiles [rect layer-title f]
   [:<>
-   (for [x (range (:x rect) (+ (:x rect) (:w rect)))
-         y (range (:y rect) (+ (:y rect) (:h rect)))
-         :let [tile (Point. x y)]]
-     (if-let [tile-data (f tile)]
-       [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
-              :class "level__tile"
-              :style (tile-style (global-point tile rect))}
-        tile-data]))])
+   (for [tile (rect->point-seq rect)
+         :let [tile-data (f tile)]
+         :when (some? tile-data)]
+     [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
+            :class "level__tile"
+            :style (tile-style (global-point tile rect))}
+      tile-data])])
 
 (defn do-some-tiles [rect coll layer-title f]
-  [:<> (for [[tile item] coll
-             :when (rect-contains? rect tile)]
-         [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
-                :class "level__tile"
-                :style (tile-style (global-point tile rect))}
-          (f tile item)])])
+  [:<>
+   (for [[tile item] coll
+         :when (rect-contains? rect tile)]
+     [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
+            :class "level__tile"
+            :style (tile-style (global-point tile rect))}
+      (f tile item)])])
 
 (defn dropzone [{:keys [dimension highlight occupied on-drop]}]
   [do-all-tiles dimension "dropzone"
@@ -301,7 +302,7 @@
     [:div {:key (str "location-cell:player:" position)
            :class "level__tile"
            :style (tile-style (global-point position rect))}
-     [c/sprite-texture :hare_down_idle1 "Player"]]))
+     [c/sprite-texture ["hare.png" (Point. 6 0)] "Player"]]))
 
 (defn entity-layer [location-id override-rect]
   (let [{:keys [player-position
@@ -321,7 +322,7 @@
         rect (or override-rect dimension)]
     [do-some-tiles rect connection-triggers "connection-trigger"
      (fn [tile {:keys [display-name]}]
-       [:img {:src (texture-path :exit)
+       [:img {:src (image-path "exit.png")
               :title (str "to " display-name)}])]))
 
 (defn collision-layer [rect blocked]
@@ -357,13 +358,17 @@
               (if (or (not (fn? selectable?))
                       (selectable? tile))
                 (on-select tile))))]
-    [:div
+    [:div {:style {:position "absolute"
+                   :top 0
+                   :left 0
+                   :width (u/px (* config/tile-size (:w dimension)))
+                   :height (u/px (* config/tile-size (:h dimension)))}}
      (when selected
        [:div {:key "location-cell:selected"
               :class "level__tile level__tile_highlight"
               :style (tile-style (global-point selected dimension))}])
      (when (fn? selectable?)
-       [do-all-tiles dimension "selectors"
+       [do-all-tiles dimension "disabled-selectors"
         (fn [tile]
           (if-not (selectable? tile)
             [:div {:class ["interactor" "interactor_disabled"]}]))])
@@ -410,7 +415,7 @@
          [:header display-name]
          [:ul.level-popover__quick-links
           [:li [:a {:on-click #(do (>evt [:close-popover])
-                                   (>evt [:open-character-modal id]))}
+                                   (>evt [:armchair.modals.character-form/open id]))}
                 [c/icon "user"] "Edit Character"]]
           (if (some? dialogue-id)
             [:li [:a {:on-click #(do (>evt [:close-popover])
@@ -424,7 +429,7 @@
                           :options dialogue-options
                           :on-change set-dialogue}]
            [:a.new-dialogue {:on-click #(do (>evt [:close-popover])
-                                            (>evt [::dialogue-creation/open character-id location-id tile]))}
+                                            (>evt [:armchair.modals.dialogue-creation/open character-id location-id tile]))}
             "Create new Dialogue"]]]
          [c/button {:title "Remove Character"
                     :type :danger
@@ -501,6 +506,7 @@
         {:keys [active-pane
                 active-layer
                 visible-layers
+                active-texture
                 highlight]} (<sub [:location-editor/ui])
         dropzone-fn (if-let [[dnd-type dnd-payload] (<sub [:location-editor/dnd-payload])]
                       (case dnd-type
@@ -537,6 +543,7 @@
           (:background1 :background2 :foreground1 :foreground2)
           [tile-paint-canvas
            {:dimension dimension
+            :texture active-texture
             :on-paint #(>evt [:location-editor/paint location-id active-layer %])}]
 
           :collision

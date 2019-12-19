@@ -23,7 +23,7 @@
      {:columns [:texture :character :synopsis :actions]
       :collection dialogues
       :cell-views {:character (fn [{:keys [id display-name]}]
-                                [:a {:on-click #(>evt [:open-character-modal id])}
+                                [:a {:on-click #(>evt [:armchair.modals.character-form/open id])}
                                  display-name])
                    :texture (fn [texture]
                               [c/sprite-texture texture])
@@ -52,8 +52,8 @@
                                             :on-click #(when (js/confirm "Are you sure you want to delete this character?")
                                                          (>evt [:delete-character id]))}])
                                [c/button {:icon "edit"
-                                          :on-click #(>evt [:open-character-modal id])}]])}
-      :new-resource #(>evt [:open-character-modal])}]))
+                                          :on-click #(>evt [:armchair.modals.character-form/open id])}]])}
+      :new-resource #(>evt [:armchair.modals.character-form/open])}]))
 
 (defn switch-management []
   (let [switches (<sub [:switch-list])]
