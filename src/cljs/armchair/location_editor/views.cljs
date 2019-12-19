@@ -174,7 +174,7 @@
      [:span {:class "tile-list__item__image"
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
-      [c/sprite-texture :human "Player"]]
+      [c/sprite-texture :hare_down_idle1 "Player"]]
      [:span {:class "tile-list__item__label"} "Place Player"]]]])
 
 (defn sidebar-triggers []
@@ -301,7 +301,7 @@
     [:div {:key (str "location-cell:player:" position)
            :class "level__tile"
            :style (tile-style (global-point position rect))}
-     [c/sprite-texture :human "Player"]]))
+     [c/sprite-texture :hare_down_idle1 "Player"]]))
 
 (defn entity-layer [location-id override-rect]
   (let [{:keys [player-position
@@ -466,7 +466,7 @@
                                   (set-dnd-texture! e)
                                   (.setData (.-dataTransfer e) "text/plain" ":player")
                                   (>evt [:location-editor/start-entity-drag [:player]]))}
-           [dnd-texture :human]])])
+           [dnd-texture :hare_down_idle1]])])
 
      [do-some-tiles dimension characters "character-select"
       (fn [tile {:keys [texture display-name]}]
