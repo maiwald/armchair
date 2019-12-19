@@ -3,9 +3,9 @@
 - drag and drop preview images are broken
 
 # TODO
+- select and paint multiple texture sprites
 - restructure navigation
 - zoom in dialogue editor
-- select and paint multiple texture sprites
 - sounds & music
 - state invariants
 - save file for game state
@@ -28,7 +28,6 @@
 - stage direction dialogue nodes
 - separate moving viewport from moving dialogue node positions
 - copy and paste for background texture sets
-- organize and cluster background textures
 - remove slds dependency
 - validation error notifications and form states
 - redesign dialogue screen to use pixel font
