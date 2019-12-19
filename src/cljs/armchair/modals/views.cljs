@@ -22,7 +22,7 @@
 
 (defn npc-line-form-modal [line-id]
   (let [line (<sub [:dialogue/modal-line line-id])]
-    [slds/modal {:title "NPC Line"
+    [slds/modal {:title "Character Line"
                  :close-handler #(>evt [:close-modal])}
      [:<>
       [input/select {:label "Character"
