@@ -245,12 +245,12 @@
                    option-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
     [:div {:class "content-wrapper"}
      [:div {:class "new-item-button"}
+      [c/button {:title "New Character Line"
+                 :icon "plus"
+                 :on-click #(>evt [:create-npc-line dialogue-id])}]
       [c/button {:title "New Player Line"
                  :icon "plus"
                  :on-click #(>evt [:create-player-line dialogue-id])}]
-      [c/button {:title "New NPC Line"
-                 :icon "plus"
-                 :on-click #(>evt [:create-npc-line dialogue-id])}]
       [c/button {:title "New Trigger Node"
                  :icon "plus"
                  :on-click #(>evt [:create-trigger-node dialogue-id])}]
