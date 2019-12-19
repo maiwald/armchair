@@ -9,12 +9,16 @@
 (defn clip [u-bound value]
   (min u-bound (max 0 value)))
 
-(defn rect-top-left [rect]
-  (Point. (:x rect) (:y rect)))
+(defn rect-top-left [{:keys [x y]}]
+  (Point. x y))
 
-(defn rect-bottom-right [rect]
-  (Point. (+ -1 (:x rect) (:w rect))
-          (+ -1 (:y rect) (:h rect))))
+(defn rect-bottom-right [{:keys [x y w h]}]
+  (Point. (+ -1 x w) (+ -1 y h)))
+
+(defn rect->point-seq [{:keys [x y w h]}]
+  (for [x (range x (+ x w))
+        y (range y (+ y h))]
+    (Point. x y)))
 
 (defn rect-contains? [rect point]
   (let [bottom-right (rect-bottom-right rect)]

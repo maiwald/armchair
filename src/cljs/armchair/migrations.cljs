@@ -11,9 +11,10 @@
              :refer-macros [select setval transform]]
             [armchair.config :as config]
             [armchair.math :as math :refer [Point Rect]]
-            [armchair.util :as u]))
+            [armchair.util :as u]
+            [armchair.migrations.textures :refer [texture-lookup]]))
 
-(def db-version 14)
+(def db-version 15)
 
 (def migrations
   "Map of migrations. Key is the version we are coming from."
@@ -121,6 +122,7 @@
                (setval [:triggers MAP-VALS ds-trigger?] NONE)
                (setval [:triggers MAP-VALS :switch-kind] NONE)
                (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)] NONE))))
+
    11 (fn [db]
         "Introduce nodes for initial dialogue lines"
         (let [initial-line-positions (u/map-values
@@ -150,10 +152,21 @@
             (transform [:dialogues MAP-VALS]
                        (fn [d]
                          (dissoc d :location-id :location-position))))))
+
    13 (fn [db]
         "Remove nil dialogue states"
-        (setval [:dialogues MAP-VALS :states empty?] NONE db))})
+        (setval [:dialogues MAP-VALS :states empty?] NONE db))
 
+   14 (fn [db]
+        "Migrate to file based sprite format"
+        (->> db
+          (transform [:locations MAP-VALS
+                      (multi-path :background1
+                                  :background2
+                                  :foreground1
+                                  :foreground2) MAP-VALS]
+                     texture-lookup)
+          (transform [:characters MAP-VALS :texture] texture-lookup)))})
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)
