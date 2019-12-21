@@ -506,6 +506,7 @@
         {:keys [active-pane
                 active-layer
                 visible-layers
+                active-tool
                 active-texture
                 highlight]} (<sub [:location-editor/ui])
         dropzone-fn (if-let [[dnd-type dnd-payload] (<sub [:location-editor/dnd-payload])]
@@ -543,7 +544,7 @@
           (:background1 :background2 :foreground1 :foreground2)
           [tile-paint-canvas
            {:dimension dimension
-            :texture active-texture
+            :texture (if (not= active-tool :eraser) active-texture)
             :on-paint #(>evt [:location-editor/paint location-id active-layer %])}]
 
           :collision
