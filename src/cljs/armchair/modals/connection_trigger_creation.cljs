@@ -39,14 +39,17 @@
                   target-id
                   target-position
                   symmetric?]} (get-in db [:modal :connection-trigger-creation])]
-      (-> db
-          (dissoc :modal)
-          (assoc-in [:locations location-id :connection-triggers location-position]
-                    [target-id target-position])
-          (cond->
-            symmetric?
-            (assoc-in [:locations target-id :connection-triggers target-position]
-                      [location-id location-position]))))))
+      (if (and (some? target-id)
+               (some? target-position))
+        (-> db
+            (dissoc :modal)
+            (assoc-in [:locations location-id :connection-triggers location-position]
+                      [target-id target-position])
+            (cond->
+              symmetric?
+              (assoc-in [:locations target-id :connection-triggers target-position]
+                        [location-id location-position])))
+        db))))
 
 ;; Subscriptions
 
