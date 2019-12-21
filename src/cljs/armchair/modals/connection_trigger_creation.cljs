@@ -71,7 +71,7 @@
           (update-symmetric [e] (>evt [::update-symmetric (e->val e)]))
           (update-position [position] (>evt [::update-target-position position]))
           (save [] (>evt [::save]))]
-    (fn [{:keys [target-id target-position]}]
+    (fn [{:keys [target-id target-position symmetric?]}]
       (let [location-options (<sub [::location-options])]
         [slds/modal {:title "New Exit"
                      :close-handler close-modal
@@ -80,8 +80,10 @@
                         :on-change update-target
                         :options location-options
                         :value target-id}]
+         (if (some? target-id)
+           [:<>
+            [input/label "Position"]
+            [position-select target-id update-position target-position]])
          [input/checkbox {:label "Also add reverse exit"
                           :on-change update-symmetric
-                          :checked? symmetric?}]
-         [input/label "Position"]
-         [position-select target-id update-position target-position]]))))
+                          :checked? symmetric?}]]))))
