@@ -3,34 +3,39 @@
 - drag and drop preview images are broken
 
 # TODO
-- select and paint multiple texture sprites
 - restructure navigation
+- select and paint multiple texture sprites
 - zoom in dialogue editor
 - sounds & music
+
+# nice things
+- location preview in map
+- separate moving viewport from moving node positions
+- validation error notifications and form states
 - state invariants
+- remove slds dependency
 - save file for game state
 - desktop version for easier file access
 - release to itch.io as free game ;)
 
-# nice things
-- cache static level parts in one image once insted of building it every frame
-- prevent queueing multiple interactions
-- prevent connecting multiple trigger and player nodes
-- custom layers and layer order
-- allow whole layers to be treated as not-walkable
-- show player silhouette when behind foreground texture
-- show incoming connections in location editor
+## dialogue editor
 - allow creating switches in dialogue editor
-- show debug state variables in game
-- typing animation for dialogue screens
-- movement behaviour when holding and releasing arrow key
-- location preview in map
-- stage direction dialogue nodes
-- separate moving viewport from moving dialogue node positions
-- copy and paste for background texture sets
-- remove slds dependency
-- validation error notifications and form states
-- redesign dialogue screen to use pixel font
-- brush sizes & fill tool for location editor
-- show previews in character avatar selection
 - quick-add (with autofocus) for next dialogue node
+- prevent connecting multiple trigger and player nodes
+
+## location editor
+- show incoming connections in location editor
+- brush sizes & fill tool for location editor
+- custom layers and layer order
+- add ability to dim layers to focus on only one
+- allow whole layers to be treated as not-walkable
+- copy and paste for background texture sets
+
+## game
+- show debug state variables in game
+- movement behaviour when holding and releasing arrow key
+- prevent queueing multiple interactions
+- cache static level parts in one image once insted of building it every frame
+- show player silhouette when behind foreground texture
+- redesign dialogue screen to use pixel font
+- typing animation for dialogue screens
