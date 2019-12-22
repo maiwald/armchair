@@ -288,7 +288,7 @@
                                      (>evt [:location-editor/set-highlight tile])))
               :on-drop (when-not occupied? (e-> #(on-drop tile)))}]))])
 
-(defn texture-layer [location-id layer-id override-rect]
+(defn texture-layer [{:keys [location-id layer-id override-rect]}]
   (let [location (<sub [:location-editor/location location-id])
         rect (or override-rect (:dimension location))
         layer (get location layer-id)]
@@ -342,10 +342,18 @@
     [:div {:class "level"
            :style {:width (u/px (* config/tile-size (:w dimension)))
                    :height (u/px (* config/tile-size (:h dimension)))}}
-     [texture-layer location-id :background1 dimension]
-     [texture-layer location-id :background2 dimension]
-     [texture-layer location-id :foreground1 dimension]
-     [texture-layer location-id :foreground2 dimension]
+     [texture-layer {:location-id location-id
+                     :layer-id :background1
+                     :override-rect dimension}]
+     [texture-layer {:location-id location-id
+                     :layer-id :background2
+                     :override-rect dimension}]
+     [texture-layer {:location-id location-id
+                     :layer-id :foreground1
+                     :override-rect dimension}]
+     [texture-layer {:location-id location-id
+                     :layer-id :foreground2
+                     :override-rect dimension}]
      [entity-layer location-id dimension]
      [conntection-trigger-layer location-id dimension]
      [:div {:key "location-cell:highlight"
@@ -386,10 +394,14 @@
             :style {:width (u/px (* config/tile-size (:w dimension)))
                     :height (u/px (* config/tile-size (:h dimension)))
                     :margin "auto"}}
-      [texture-layer location-id :background1]
-      [texture-layer location-id :background2]
-      [texture-layer location-id :foreground1]
-      [texture-layer location-id :foreground2]
+      [texture-layer {:location-id location-id
+                      :layer-id :background1}]
+      [texture-layer {:location-id location-id
+                      :layer-id :background2}]
+      [texture-layer {:location-id location-id
+                      :layer-id :foreground1}]
+      [texture-layer {:location-id location-id
+                      :layer-id :foreground2}]
       [entity-layer location-id]
       [conntection-trigger-layer location-id]
       [tile-select {:dimension dimension
@@ -537,7 +549,8 @@
 
           (:background1 :background2 :foreground1 :foreground2)
           ^{:key (str "layer:" layer-id)}
-          [texture-layer location-id layer-id]))
+          [texture-layer {:location-id location-id
+                          :layer-id layer-id}]))
 
       (when (= :level active-pane)
         (case active-layer
