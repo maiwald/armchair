@@ -1,14 +1,14 @@
 (defproject armchair "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [org.clojure/clojurescript "1.10.520"]
+                 [org.clojure/clojurescript "1.10.597"]
                  [reagent "0.8.1"]
-                 [re-frame "0.10.8"]
+                 [re-frame "0.10.9"]
                  [tailrecursion/cljs-priority-map "1.2.1"]
                  [cljsjs/react-select "1.2.1-1"]
                  [cljsjs/filesaverjs "1.3.3-0"]
                  [com.cognitect/transit-cljs "0.8.256"]
                  [bidi "2.1.6"]
-                 [com.rpl/specter "1.1.2"]]
+                 [com.rpl/specter "1.1.3"]]
 
   :plugins [[lein-cljsbuild "1.1.5"]]
 
@@ -23,10 +23,10 @@
 
   :profiles
   {:dev
-   {:dependencies [[binaryage/devtools "0.9.10"]
+   {:dependencies [[binaryage/devtools "0.9.11"]
                    [figwheel-sidecar "0.5.19"]
-                   [cider/piggieback "0.4.1"]
-                   [day8.re-frame/re-frame-10x "0.4.2"]]
+                   [cider/piggieback "0.4.2"]
+                   [day8.re-frame/re-frame-10x "0.4.5"]]
     :plugins      [[lein-figwheel "0.5.19"]
                    [lein-ancient "0.6.15"]]
     :source-paths ["src/cljs" "dev"]
