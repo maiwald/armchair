@@ -526,7 +526,7 @@
               (update :interaction
                       (fn [{:keys [options selected-option] :as interaction}]
                         (assoc interaction :selected-option
-                               (mod ((case action :up dec :down dec) selected-option)
+                               (mod ((case action :up dec :down inc) selected-option)
                                     (count options))))))
           :interact
           (let [{:keys [options selected-option]} (:interaction state)
