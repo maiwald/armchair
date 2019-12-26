@@ -388,91 +388,29 @@ header#global-header
     li
       font-size: .8rem
 
-    .navigation-container
+    .navigation
       display: flex
-
-    .navigation__item
-      display: flex
-      position: relative
-      align-items: stretch
-      user-select: none
-
-      & > a:hover
-        background: $primary-light
-
-      &.is-active > a
-        background: $primary-light
-
-      a
-        display: flex
-        align-content: center
-        align-items: center
-        padding: 0 .75rem
-        color: #555
-        text-decoration: none
-
-        .navigation__item__type
-          position: absolute
-          top: 4px
-          color: #aaa
-          font-size: .6rem
-
-        .navigation__item__title
-          flex-grow: 1
-
-    ol.breadcrumb
       flex-grow: 1
 
-      li::before
+      &__item
         display: flex
-        align-self: center
-        color: grey
-        content: ">"
-
-    .resources
-      width: 120px
-
-      a
-        width: 100%
-
-        i
-          margin-left: .4rem
-
-      &.is-active > a
-        background: $primary-light
-
-      &__dropdown-list
-        z-index: 4
-        position: absolute
-        justify-content: stretch
+        position: relative
         align-items: stretch
-        background: white
-        border: 1px solid #eee
-        border-radius: 5px
-        box-shadow: 1px 1px 0 0 rgba(0, 0, 0, .2)
-        left: 0
-        top: $height
+        user-select: none
 
-        li
+        & > a:hover, &.is-active > a
+          background: $primary-light
+
+        a
           display: flex
-          align-items: stretch
-          justify-content: stretch
-          border-bottom: 1px solid lightgrey
-
-          &:last-child
-            border-bottom: 0
-
-          a
-            width: 100%
-            min-width: 120px
-            padding: .5rem .75rem
-
-            &:hover
-              background: $primary-light
+          align-content: center
+          align-items: center
+          padding: 0 .75rem
+          color: #555
+          text-decoration: none
 
     ul.functions
       margin: 10px
-      border-left: 1px solid lightgrey
       display: flex
       user-select: none
 

@@ -171,24 +171,3 @@
                                   :character-id character-id
                                   :character-name (:display-name character)
                                   :character-color (:color character)}))))})))
-
-(reg-sub
-  :breadcrumb
-  :<- [:current-page]
-  :<- [:db-locations]
-  :<- [:db-dialogues]
-  :<- [:db-characters]
-  (fn [[current-page locations dialogues characters]]
-    (let [{page-name :handler
-           page-params :route-params} (match-route routes current-page)
-          id (when (:id page-params) (uuid (:id page-params)))]
-      (condp = page-name
-        :location-edit {:location {:id id
-                                   :display-name
-                                   (get-in locations [id :display-name])}}
-        :dialogue-edit (let [{:keys [character-id synopsis]} (get dialogues id)
-                             character-name (get-in characters [character-id :display-name])]
-                         {:dialogue {:id id
-                                     :character-name character-name
-                                     :synopsis synopsis}})
-        nil))))
