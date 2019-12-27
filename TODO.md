@@ -1,6 +1,7 @@
 # BUGS
 - flickering inputs in character modal
 - drag and drop preview images are broken
+- deleting initial line in dialogue editor does not delete reference
 
 # TODO
 - restructure navigation
