@@ -186,6 +186,10 @@
           (dissoc :dragging :cursor)))))
 
 (reg-event-meta
+  :cancel-dragging
+  (fn [db] (dissoc db :dragging :cursor)))
+
+(reg-event-meta
   :open-popover
   (fn [db [_ reference content]]
     (assoc db :popover {:reference reference
