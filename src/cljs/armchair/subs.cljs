@@ -5,7 +5,7 @@
              :refer [collect-one ALL FIRST LAST MAP-VALS]
              :refer-macros [select]]
             [armchair.routes :refer [page-data]]
-            [armchair.math :refer [translate-point point-delta]]
+            [armchair.math :as m :refer [translate-point point-delta]]
             [armchair.util :as u]))
 
 (reg-sub :db-characters #(:characters %))
@@ -146,13 +146,21 @@
 (reg-sub
   :location-map
   :<- [:db-locations]
-  (fn [locations _]
+  :<- [:ui/positions]
+  (fn [[locations positions] _]
     (let [connections (->> locations
                            (select [ALL (collect-one FIRST) LAST :connection-triggers MAP-VALS FIRST])
                            (map set)
                            distinct
-                           (map sort))]
-      {:location-ids (keys locations)
+                           (map sort))
+          positions (vals (select-keys positions (keys locations)))]
+      {:dimensions (m/rect-resize
+                     (m/containing-rect positions)
+                     {:left 200
+                      :right 200
+                      :top 200
+                      :bottom 200})
+       :location-ids (keys locations)
        :connections connections})))
 
 (reg-sub

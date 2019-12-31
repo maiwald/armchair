@@ -25,6 +25,21 @@
     (and (<= (:x rect) (:x point) (:x bottom-right))
          (<= (:y rect) (:y point) (:y bottom-right)))))
 
+(defn containing-rect [points]
+  (let [[min-p max-p] (reduce
+                        (fn [[{min-x :x min-y :y}
+                              {max-x :x max-y :y}]
+                             {:keys [x y]}]
+                          [(Point. (min min-x x) (min min-y y))
+                           (Point. (max max-x x) (max max-y y))])
+                        [(Point. ##Inf ##Inf)
+                         (Point. ##-Inf ##-Inf)]
+                        points)]
+    (Rect. (:x min-p)
+           (:y min-p)
+           (abs (- (:x max-p) (:x min-p)))
+           (abs (- (:y max-p) (:y min-p))))))
+
 (defn rect-intersects? [a b]
   (and (< (:x a) (+ (:x b) (:w b)))
        (< (:x b) (+ (:x a) (:w a)))
@@ -32,8 +47,7 @@
        (< (:y b) (+ (:y a) (:h a)))))
 
 (defn rect-resize [{:keys [x y w h]}
-                   {:keys [top left right bottom]
-                    :or [top 0 left 0 right 0 bottom 0]}]
+                   {:keys [top left right bottom]}]
   (Rect. (- x left) (- y top)
          (+ w left right) (+ h top bottom)))
 
