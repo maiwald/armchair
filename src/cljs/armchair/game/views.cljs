@@ -76,7 +76,7 @@
                                :height (px h)}}]))}))))
 
 (defn game-view []
-  [:div {:class "content-wrapper"}
+  [:<>
    [game-canvas (<sub [:game/data])]
    [:div {:id "game-help"}
     [:p "Use mouse for movement, selection and interaction."]
