@@ -3,7 +3,7 @@
             [reagent.core :as r]
             [armchair.config :as config]
             [armchair.textures :refer [image-path]]
-            [armchair.math :refer [abs clip point-delta translate-point]]
+            [armchair.math :as m :refer [abs clip point-delta translate-point]]
             [armchair.util :as u :refer [stop-e! >evt <sub e->left?]]))
 
 ;; Drag & Drop
@@ -44,8 +44,8 @@
                                    ["Q" ctrl-x ctrl-y (:x m) (:y m) "T" (:x end) (:y end)]
                                    ["L" (:x end) (:y end)])))}]))
 
-(defn drag-item [item-id component]
-  (let [position (<sub [:ui/position item-id])
+(defn drag-item [item-id dimensions component]
+  (let [position (m/global-point (<sub [:ui/position item-id]) dimensions)
         dragging? (<sub [:dragging-item? item-id])]
     [:div {:on-mouse-down stop-e!
            :class ["graph__item"
@@ -53,10 +53,9 @@
            :style {:left (:x position) :top (:y position)}}
      [component item-id]]))
 
-(defn drag-canvas [{:keys [kind nodes]}]
+(defn drag-canvas [{:keys [kind nodes dimensions]}]
   (let [connecting? (some? (<sub [:connector]))
         dragging? (<sub [:dragging?])
-        mouse-down (start-dragging-handler (-> nodes vals flatten set))
         mouse-move (when (or dragging? connecting?)
                      #(>evt [:move-cursor (e->graph-cursor %)]))
         mouse-up (cond
@@ -65,13 +64,14 @@
     [:div {:class (cond-> ["graph"]
                     dragging? (conj "graph_is-dragging")
                     connecting? (conj "graph_is-connecting"))
-           :on-mouse-down mouse-down
            :on-mouse-move mouse-move
            :on-mouse-up mouse-up}
-     (into [:div] (r/children (r/current-component)))
-     (for [[item-component ids] nodes
-           id ids]
-       ^{:key (str kind id)} [drag-item id item-component])]))
+     [:div.graph__scroll {:style {:width (u/px (:w dimensions))
+                                  :height (u/px (:h dimensions))}}
+       (into [:<>] (r/children (r/current-component)))
+       (for [[item-component ids] nodes
+             id ids]
+         ^{:key (str kind id)} [drag-item id dimensions item-component])]]))
 
 ;; Icon
 

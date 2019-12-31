@@ -70,7 +70,9 @@
                                           :on-click #(>evt [::switch-form/open id])}]])}}]))
 
 (defn location-component [location-id]
-  (let [{:keys [dimension display-name preview-image-src]} (<sub [:location-map/location location-id])]
+  (let [{:keys [dimension
+                display-name
+                preview-image-src]} (<sub [:location-map/location location-id])]
     [:div.location
      [c/graph-node {:title [:a {:on-click #(>navigate :location-edit :id location-id)
                                 :on-mouse-down u/stop-e!}
@@ -85,22 +87,23 @@
                :style {:width (u/px (/ (* config/tile-size (:w dimension)) 2))
                        :height (u/px (/ (* config/tile-size (:h dimension)) 2))}}])]]))
 
-(defn location-connection [start end]
-  (let [start-pos (<sub [:ui/position start])
-        end-pos (<sub [:ui/position end])]
+(defn location-connection [dimensions start end]
+  (let [start-pos (m/global-point (<sub [:ui/position start]) dimensions)
+        end-pos (m/global-point (<sub [:ui/position end]) dimensions)]
     [connection {:start (m/translate-point start-pos (/ config/line-width 2) 15)
                  :end (m/translate-point end-pos (/ config/line-width 2) 15)}]))
 
 (defn location-management []
-  (let [{:keys [location-ids connections]} (<sub [:location-map])]
+  (let [{:keys [dimensions location-ids connections]} (<sub [:location-map])]
     [drag-canvas {:kind "location"
+                  :dimensions dimensions
                   :nodes {location-component location-ids}}
      [:svg {:class "graph__connection-container" :version "1.1"
             :baseProfile "full"
             :xmlns "http://www.w3.org/2000/svg"}
       (for [[start end] connections]
         ^{:key (str "location-connection" start "->" end)}
-        [location-connection start end])]]))
+        [location-connection dimensions start end])]]))
 
 ;; Navigation
 

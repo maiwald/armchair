@@ -7,7 +7,7 @@
             [armchair.config :as config]
             [armchair.slds :as slds]
             [armchair.input :as input]
-            [armchair.math :as math :refer [Point translate-point]]
+            [armchair.math :as m :refer [Point translate-point]]
             [armchair.modals.unlock-conditions-form :as unlock-conditions-form]
             [armchair.modals.switch-form :as switch-form]
             [armchair.modals.trigger-creation :as trigger-creation]
@@ -35,12 +35,13 @@
                           :value @text-state}])})))
 
 (defn get-option-start-position [elem]
-  (let [graph (aget (js/document.getElementsByClassName "graph") 0)]
+  (let [graph (aget (js/document.getElementsByClassName "graph__scroll") 0)]
     (when (and (some? elem) (some? graph))
       (let [rect (u/get-rect elem)
-            top-offset (:y (u/get-rect graph))]
-        (translate-point (math/rect-point rect)
-                         (:w rect) (- top-offset))))))
+            graph-rect (u/get-rect graph)]
+        (translate-point (m/rect-point rect)
+                         (- (:w rect) (:x graph-rect))
+                         (- (:y graph-rect)))))))
 
 (defn connector [{:keys [connected? connector disconnector]}]
   (if connected?
@@ -210,31 +211,32 @@
 
 (def top-offset 55)
 
-(defn line-connection [start end]
-  (let [start-pos (<sub [:ui/position start])
-        end-pos (<sub [:ui/position end])]
+(defn line-connection [dimensions start end]
+  (let [start-pos (m/global-point (<sub [:ui/position start]) dimensions)
+        end-pos (m/global-point (<sub [:ui/position end]) dimensions)]
     [curved-connection
      {:start (translate-point start-pos (+ config/line-width 15) top-offset)
       :end (translate-point end-pos 0 top-offset)}]))
 
-(defn case-connection [start index end]
-  (let [start-pos (<sub [:ui/position start])
-        end-pos (<sub [:ui/position end])]
+(defn case-connection [dimensions start index end]
+  (let [start-pos (m/global-point (<sub [:ui/position start]) dimensions)
+        end-pos (m/global-point (<sub [:ui/position end]) dimensions)]
     [curved-connection
      {:start (translate-point start-pos (+ config/line-width 15) (+ (* index 34)
                                                                     top-offset))
       :end (translate-point end-pos 0 top-offset)}]))
 
-(defn option-connection [start index end]
+(defn option-connection [dimensions start index end]
   (let [_ (<sub [:ui/position start])
-        end-pos (<sub [:ui/position end])]
+        end-pos (m/global-point (<sub [:ui/position end]) dimensions)]
     (if-let [start-pos (get-option-start-position (get @option-position-lookup [start index]))]
       [curved-connection
        {:start (translate-point start-pos 35 20)
         :end (translate-point end-pos 0 top-offset)}])))
 
 (defn dialogue-editor [dialogue-id]
-  (if-let [{:keys [npc-line-ids
+  (if-let [{:keys [dimensions
+                   npc-line-ids
                    player-line-ids
                    trigger-node-ids
                    case-node-ids
@@ -243,6 +245,7 @@
                    case-connections
                    option-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
     [drag-canvas {:kind "line"
+                  :dimensions dimensions
                   :nodes {npc-line-component npc-line-ids
                           player-line-component player-line-ids
                           trigger-node-component trigger-node-ids
@@ -254,14 +257,14 @@
       (if-let [connector (<sub [:connector])]
         [connection connector])
       (if-let [[start end] initial-line-connection]
-        [line-connection start end])
+        [line-connection dimensions start end])
       (for [[start end] line-connections]
         ^{:key (str "line-connection:" start "->" end)}
-        [line-connection start end])
+        [line-connection dimensions start end])
       (for [[start index end] case-connections]
         ^{:key (str "case-connection:" start ":" index "->" end)}
-        [case-connection start index end])
+        [case-connection dimensions start index end])
       (for [[start index end] option-connections]
         ^{:key (str "response-connection:" start ":" index "->" end)}
-        [option-connection start index end])]]
+        [option-connection dimensions start index end])]]
     [:span "Dialogue not found."]))
