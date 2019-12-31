@@ -40,7 +40,8 @@
 (set! (.-onkeyup js/window)
       (fn [e]
         (when (= "Escape" (.-code e))
-          (>evt [:close-modal]))
+          (>evt [:close-modal])
+          (>evt [:cancel-dragging]))
         (when (.-ctrlKey e)
           (condp = (.-code e)
             "KeyZ" (>evt [:undo])
