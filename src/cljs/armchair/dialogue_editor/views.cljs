@@ -243,7 +243,7 @@
                    line-connections
                    case-connections
                    option-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
-    [:div {:class "content-wrapper"}
+    [:<>
      [:div {:class "new-item-button"}
       [c/button {:title "New Character Line"
                  :icon "plus"
