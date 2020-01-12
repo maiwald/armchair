@@ -3,19 +3,6 @@
             [armchair.util :as u]
             [armchair.components :as c]))
 
-(defn form []
-  (into [:div {:class "slds-form slds-form_stacked"}]
-        (r/children (r/current-component))))
-
-(defn form-title [title]
-  [:div {:class "slds-text-heading_small"} title])
-
-(defn label [label & children]
-  [:div {:class "slds-form-element"}
-   [:label {:class "slds-form-element__label"} label]
-   (into [:div {:class "slds-form-element__control"}]
-         children)])
-
 (defn radio-button-group [{:keys [label options active on-change]}]
   (let [id (gensym "radio-button-group")]
     [:fieldset {:class "slds-form-element"}
