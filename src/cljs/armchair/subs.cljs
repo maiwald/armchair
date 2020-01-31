@@ -171,3 +171,37 @@
                                   :character-id character-id
                                   :character-name (:display-name character)
                                   :character-color (:color character)}))))})))
+
+(reg-sub
+  :creation-buttons
+  :<- [:current-page]
+  (fn [current-page]
+    (let [{page-name :handler
+           page-params :route-params} (match-route routes current-page)]
+      (case page-name
+        :locations [{:title "New Location"
+                     :icon "plus"
+                     :event [:open-location-creation]}]
+        :dialogues [{:title "New Dialogue"
+                     :icon "plus"
+                     :event [:armchair.modals.dialogue-creation/open]}]
+        :characters [{:title "New Character"
+                      :icon "plus"
+                      :event [:armchair.modals.character-form/open]}]
+        :switches [{:title "New Switch"
+                      :icon "plus"
+                      :event [:armchair.modals.switch-form/open]}]
+        :dialogue-edit (let [id (uuid (:id page-params))]
+                         [{:title "New Character Line"
+                           :icon "plus"
+                           :event [:create-npc-line id]}
+                          {:title "New Player Line"
+                           :icon "plus"
+                           :event [:create-player-line id]}
+                          {:title "New Trigger Node"
+                           :icon "plus"
+                           :event [:create-trigger-node id]}
+                          {:title "New Switch Node"
+                           :icon "plus"
+                           :event [:armchair.modals.case-node-creation/open id]}])
+        nil))))
