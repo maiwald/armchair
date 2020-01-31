@@ -11,7 +11,6 @@
             [armchair.modals.unlock-conditions-form :as unlock-conditions-form]
             [armchair.modals.switch-form :as switch-form]
             [armchair.modals.trigger-creation :as trigger-creation]
-            [armchair.modals.case-node-creation :as case-node-creation]
             [armchair.util :as u :refer [<sub >evt stop-e! prevent-e! e->val e->left?]]))
 
 (def option-position-lookup (r/atom {}))
@@ -65,7 +64,7 @@
     [c/graph-node {:title character-name
                    :item-id line-id
                    :color character-color
-                     :on-connect-end #(>evt [:dialogue-editor/end-connecting-lines line-id])
+                   :on-connect-end #(>evt [:dialogue-editor/end-connecting-lines line-id])
                    :actions [(when-not (some? state)
                                ["tag" "Create named state" #(>evt [:open-dialogue-state-modal line-id])])
                              ["trash" "Delete" #(>evt [:dialogue-editor/delete-node line-id])]
@@ -243,40 +242,26 @@
                    line-connections
                    case-connections
                    option-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
-    [:<>
-     [:div {:class "new-item-button"}
-      [c/button {:title "New Character Line"
-                 :icon "plus"
-                 :on-click #(>evt [:create-npc-line dialogue-id])}]
-      [c/button {:title "New Player Line"
-                 :icon "plus"
-                 :on-click #(>evt [:create-player-line dialogue-id])}]
-      [c/button {:title "New Trigger Node"
-                 :icon "plus"
-                 :on-click #(>evt [:create-trigger-node dialogue-id])}]
-      [c/button {:title "New Switch Node"
-                 :icon "plus"
-                 :on-click #(>evt [::case-node-creation/open dialogue-id])}]]
-     [drag-canvas {:kind "line"
-                   :nodes {npc-line-component npc-line-ids
-                           player-line-component player-line-ids
-                           trigger-node-component trigger-node-ids
-                           case-node-component case-node-ids
-                           initial-line-component (list dialogue-id)}}
-      [:svg {:class "graph__connection-container" :version "1.1"
-             :baseProfile "full"
-             :xmlns "http://www.w3.org/2000/svg"}
-       (if-let [connector (<sub [:connector])]
-         [connection connector])
-       (if-let [[start end] initial-line-connection]
-         [line-connection start end])
-       (for [[start end] line-connections]
-         ^{:key (str "line-connection:" start "->" end)}
-         [line-connection start end])
-       (for [[start index end] case-connections]
-         ^{:key (str "case-connection:" start ":" index "->" end)}
-         [case-connection start index end])
-       (for [[start index end] option-connections]
-         ^{:key (str "response-connection:" start ":" index "->" end)}
-         [option-connection start index end])]]]
+    [drag-canvas {:kind "line"
+                  :nodes {npc-line-component npc-line-ids
+                          player-line-component player-line-ids
+                          trigger-node-component trigger-node-ids
+                          case-node-component case-node-ids
+                          initial-line-component (list dialogue-id)}}
+     [:svg {:class "graph__connection-container" :version "1.1"
+            :baseProfile "full"
+            :xmlns "http://www.w3.org/2000/svg"}
+      (if-let [connector (<sub [:connector])]
+        [connection connector])
+      (if-let [[start end] initial-line-connection]
+        [line-connection start end])
+      (for [[start end] line-connections]
+        ^{:key (str "line-connection:" start "->" end)}
+        [line-connection start end])
+      (for [[start index end] case-connections]
+        ^{:key (str "case-connection:" start ":" index "->" end)}
+        [case-connection start index end])
+      (for [[start index end] option-connections]
+        ^{:key (str "response-connection:" start ":" index "->" end)}
+        [option-connection start index end])]]
     [:span "Dialogue not found."]))
