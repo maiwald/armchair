@@ -4,8 +4,7 @@
             [com.rpl.specter
              :refer [collect-one ALL FIRST LAST MAP-VALS]
              :refer-macros [select]]
-            [armchair.routes :refer [routes]]
-            [bidi.bidi :refer [match-route]]
+            [armchair.routes :refer [page-data]]
             [armchair.math :refer [translate-point point-delta]]
             [armchair.util :as u]))
 
@@ -176,8 +175,7 @@
   :creation-buttons
   :<- [:current-page]
   (fn [current-page]
-    (let [{page-name :handler
-           page-params :route-params} (match-route routes current-page)]
+    (let [{:keys [page-name page-params]} (page-data current-page)]
       (case page-name
         :locations [{:title "New Location"
                      :icon "plus"
