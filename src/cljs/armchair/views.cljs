@@ -11,9 +11,8 @@
             [armchair.math :as m]
             [armchair.util :as u :refer [<sub >evt]]
             [armchair.config :as config]
-            [armchair.routes :refer [routes >navigate]]
-            [armchair.game.views :refer [game-view]]
-            [bidi.bidi :refer [match-route]]))
+            [armchair.routes :refer [page-data >navigate]]
+            [armchair.game.views :refer [game-view]]))
 
 ;; Components
 
@@ -112,7 +111,7 @@
 ;; Navigation
 
 (defn navigation [page-name]
-  [:header {:id "global-header"}
+  [:header#global-header
    [:div.logo "Armchair"]
    [:nav
     (if (= page-name :game)
@@ -147,32 +146,39 @@
        [icon "upload"] "load from file"]]
      [:li [:a {:on-click #(>evt [:reset-db])} "reset"]]]]])
 
-(defn creation-buttons []
-  (if-let [buttons (<sub [:creation-buttons])]
-    [:div.new-item-button
-     (for [{:keys [title icon event]} buttons]
-       ^{:key (str title event)}
-       [c/button {:title title
-                  :icon icon
-                  :on-click #(>evt event)}])]))
+(defn toolbar [buttons]
+  [:div#toolbar
+   (for [{:keys [title icon event]} buttons]
+     ^{:key (str title event)}
+     [c/button {:title title
+                :icon icon
+                :on-click #(>evt event)}])])
 
-;; Root
+;; Page
+
+(defn content-component [page-name page-params]
+  (case page-name
+    :game          [game-view]
+    :locations     [location-management]
+    :location-edit [location-editor (uuid (:id page-params))]
+    :dialogues     [dialogue-management]
+    :dialogue-edit [dialogue-editor (uuid (:id page-params))]
+    :characters    [character-management]
+    :switches      [switch-management]
+    [:div "Page not found"]))
 
 (defn root []
-  (let [{page-name :handler
-         page-params :route-params} (match-route routes (<sub [:current-page]))]
-    [:div {:id "page"}
+  (let [{:keys [page-name page-params]} (page-data (<sub [:current-page]))
+        creation-buttons (<sub [:creation-buttons])]
+    [:<>
      [modal]
      [c/popover]
-     [navigation page-name]
-     [creation-buttons]
-     [:div {:id "content"}
-      (case page-name
-        :game          [game-view]
-        :locations     [location-management]
-        :location-edit [location-editor (uuid (:id page-params))]
-        :dialogues     [dialogue-management]
-        :dialogue-edit [dialogue-editor (uuid (:id page-params))]
-        :characters    [character-management]
-        :switches      [switch-management]
-        [:div "Page not found"])]]))
+     [:div#page
+      [:div#page__navigation
+       [navigation page-name]]
+      (if (some? creation-buttons)
+        [:div#page__toolbar
+         [toolbar creation-buttons]])
+      [:div#page__content
+       ; [:div#page__inspector]
+       [content-component page-name page-params]]]]))

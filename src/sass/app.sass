@@ -5,23 +5,30 @@
 
 @import "location_editor"
 
-=fill-container
+#page
   position: absolute
   top: 0
   left: 0
   height: 100%
   width: 100%
-
-#page
-  +fill-container
   display: flex
   flex-direction: column
 
-  #content
+  &__content
+    overflow: scroll
     display: flex
     position: relative
     flex-direction: column
     flex-grow: 1
+
+#toolbar
+  top: 0
+  left: 0
+  right: 0
+  padding: 8px
+  border-bottom: 1px solid $primary
+  background: $primary-light
+  display: flex
 
 .graph
   flex-grow: 1
@@ -48,7 +55,11 @@
 
 
   &__connection-container
-    +fill-container
+    position: absolute
+    top: 0
+    left: 0
+    height: 100%
+    width: 100%
     z-index: 1
 
   &__connection
@@ -95,16 +106,6 @@
     cursor: -moz-grab
     cursor: -webkit-grab
     cursor: grab
-
-.new-item-button
-  z-index: 3
-  top: 0
-  left: 0
-  right: 0
-  padding: 8px
-  border-bottom: 1px solid $primary
-  background: $primary-light
-  display: flex
 
 .line
   &__options
@@ -315,33 +316,39 @@
     position: absolute
 
 #game
-  align-self: center
-  user-select: none
-  margin: 40px 0 10px
+  display: flex
+  width: 100%
+  height: 100%
+  flex-direction: column
+  align-items: center
 
-#game-help
-  p
-    margin-top: 10px
-    text-align: center
+  &__view
+    user-select: none
+    margin: 40px 0 10px
 
-  span
-    display: inline-block
-    border: 1px solid #dcdcdc
-    padding: 4px 10px 3px
-    box-shadow: inset 0px 1px 0px 0px #ffffff
-    background: -webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ededed), color-stop(1, #dfdfdf) )
-    background: -moz-linear-gradient( center top, #ededed 5%, #dfdfdf 100% )
-    border-radius: 4px
-    color: #777777
-    font-family: arial
-    font-size: .8rem
-    font-weight: bold
-    font-style: normal
-    line-height: 1rem
-    text-decoration: none
-    text-transform: uppercase
-    text-align: center
-    text-shadow: 1px 1px 0px #ffffff
+  &__help
+    p
+      margin-top: 10px
+      text-align: center
+
+    span
+      display: inline-block
+      border: 1px solid #dcdcdc
+      padding: 4px 10px 3px
+      box-shadow: inset 0px 1px 0px 0px #ffffff
+      background: -webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ededed), color-stop(1, #dfdfdf) )
+      background: -moz-linear-gradient( center top, #ededed 5%, #dfdfdf 100% )
+      border-radius: 4px
+      color: #777777
+      font-family: arial
+      font-size: .8rem
+      font-weight: bold
+      font-style: normal
+      line-height: 1rem
+      text-decoration: none
+      text-transform: uppercase
+      text-align: center
+      text-shadow: 1px 1px 0px #ffffff
 
 .slds-radio_button
   i.fas

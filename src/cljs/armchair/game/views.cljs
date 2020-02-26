@@ -63,22 +63,21 @@
          (fn []
            (let [w (* tile-size camera-tile-width camera-scale)
                  h (* tile-size camera-tile-height camera-scale)]
-             [:canvas {:id "game"
-                       :on-mouse-down on-pointer-down
-                       :on-mouse-up on-pointer-up
-                       :on-mouse-move on-pointer-move
-                       :on-touch-start on-pointer-down
-                       :on-touch-end on-pointer-down
-                       :on-touch-move on-pointer-move
-                       :width w
-                       :height h
-                       :style {:width (px w)
-                               :height (px h)}}]))}))))
+             [:canvas#game__view {:on-mouse-down on-pointer-down
+                                  :on-mouse-up on-pointer-up
+                                  :on-mouse-move on-pointer-move
+                                  :on-touch-start on-pointer-down
+                                  :on-touch-end on-pointer-down
+                                  :on-touch-move on-pointer-move
+                                  :width w
+                                  :height h
+                                  :style {:width (px w)
+                                          :height (px h)}}]))}))))
 
 (defn game-view []
-  [:<>
+  [:div#game
    [game-canvas (<sub [:game/data])]
-   [:div {:id "game-help"}
+   [:div#game__help
     [:p "Use mouse for movement, selection and interaction."]
     [:p
      "On keyboard use "
