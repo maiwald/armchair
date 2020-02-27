@@ -168,17 +168,27 @@
     [:div "Page not found"]))
 
 (defn root []
-  (let [{:keys [page-name page-params]} (page-data (<sub [:current-page]))
-        creation-buttons (<sub [:creation-buttons])]
-    [:<>
-     [modal]
-     [c/popover]
-     [:div#page
-      [:div#page__navigation
-       [navigation page-name]]
-      (if (some? creation-buttons)
-        [:div#page__toolbar
-         [toolbar creation-buttons]])
-      [:div#page__content
-       ; [:div#page__inspector]
-       [content-component page-name page-params]]]]))
+  (letfn [(scrollToTop []
+            (-> js/document
+                (.getElementById "page__content")
+                (.-scrollTop)
+                (set! 0)))]
+    (r/create-class
+      {:component-did-mount scrollToTop
+       :component-did-update scrollToTop
+       :reagent-render
+       (fn []
+         (let [{:keys [page-name page-params]} (page-data (<sub [:current-page]))
+               creation-buttons (<sub [:creation-buttons])]
+           [:<>
+            [modal]
+            [c/popover]
+            [:div#page
+             [:div#page__navigation
+              [navigation page-name]]
+             (if (some? creation-buttons)
+               [:div#page__toolbar
+                [toolbar creation-buttons]])
+             [:div#page__content
+              ; [:div#page__inspector]
+              [content-component page-name page-params]]]]))})))
