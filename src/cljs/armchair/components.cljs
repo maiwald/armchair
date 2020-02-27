@@ -99,31 +99,6 @@
           :on-click on-remove}
       [icon "times-circle" "Delete state"]])])
 
-;; Dropdown
-
-(defn dropdown [title items]
-  (let [^boolean open (r/atom false)
-        toggle-fn (fn []
-                    (swap! open not)
-                    nil)
-        item-click-fn (fn [handler]
-                        (fn []
-                          (reset! open false)
-                          (handler)
-                          nil))]
-    (fn [title items]
-      [:div.dropdown
-       [:div.dropdown__button
-        [:div.dropdown__button__title title]
-        [:div.dropdown__button__toggle
-         [:a {:on-click toggle-fn} [icon "caret-down"]]]]
-       (when @open
-         [:ul.dropdown__menu
-          (for [{:keys [title on-click]} items]
-            [:li {:key (str "dropdown" title)
-                  :on-click (item-click-fn on-click)}
-             title])])])))
-
 ;; Graph Node
 
 (defn graph-node [{id :item-id}]
