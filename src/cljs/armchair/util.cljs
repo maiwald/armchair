@@ -4,7 +4,7 @@
             [armchair.math :as math :refer [Point Rect]]
             [armchair.config :refer [tile-size]]
             [com.rpl.specter
-             :refer [must ALL NONE MAP-VALS MAP-KEYS]
+             :refer [collect-one must ALL FIRST LAST NONE MAP-VALS MAP-KEYS]
              :refer-macros [transform]]))
 
 (defn px [v] (str v "px"))
@@ -54,7 +54,7 @@
   (reduce-kv (fn [acc k v] (assoc acc v k)) {} m))
 
 (defn map-values [f m]
-  (transform [MAP-VALS] f m))
+  (transform [ALL (collect-one FIRST) LAST] #(f %2 %1) m))
 
 (defn map-keys [f m]
   (transform [MAP-KEYS] f m))

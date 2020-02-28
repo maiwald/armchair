@@ -156,6 +156,12 @@
 
 ;; Page
 
+(defn inspector []
+  (let [[inspector-type {:keys [location-id location-position]}] (<sub [:ui/inspector])]
+    (case inspector-type
+      :placement [armchair.location-editor.views/placement-inspector location-id location-position]
+      :exit [armchair.location-editor.views/trigger-inspector location-id location-position])))
+
 (defn content-component [page-name page-params]
   (case page-name
     :game          [game-view]
@@ -179,10 +185,10 @@
        :reagent-render
        (fn []
          (let [{:keys [page-name page-params]} (page-data (<sub [:current-page]))
-               creation-buttons (<sub [:creation-buttons])]
+               creation-buttons (<sub [:creation-buttons])
+               inspector? (<sub [:ui/inspector?])]
            [:<>
             [modal]
-            [c/popover]
             [:div#page
              [:div#page__navigation
               [navigation page-name]]
@@ -190,5 +196,5 @@
                [:div#page__toolbar
                 [toolbar creation-buttons]])
              [:div#page__content
-              ; [:div#page__inspector]
-              [content-component page-name page-params]]]]))})))
+              [content-component page-name page-params]
+              (if inspector? [:div#page__inspector [inspector]])]]]))})))

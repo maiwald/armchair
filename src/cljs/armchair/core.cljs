@@ -47,12 +47,3 @@
             "KeyZ" (>evt [:undo])
             "KeyY" (>evt [:redo])
             nil))))
-
-;; Popover
-
-(defn close-popover []
-  (when (some? (<sub [:popover]))
-    (re-frame/dispatch [:close-popover])))
-
-(set! (.-onmouseup js/window) close-popover)
-(set! (.-ondragstart js/window) close-popover)

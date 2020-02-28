@@ -44,18 +44,22 @@
 
 ;; UI State
 
-(s/def ::cursor-start :type/point)
-(s/def ::connecting-lines (s/keys :req-un [::cursor-start]
-                                  :opt-un [::line-id ::dialogue-id ::index]))
-(s/def ::connecting-locations (s/keys :req-un [::cursor-start ::location-id]))
 (s/def :ui/connecting (s/or :lines ::connecting-lines
                             :locations ::connecting-locations))
+(s/def ::cursor-start :type/point)
 
-(s/def :ui/dragging (s/keys :req-un [::cursor-start ::ids]))
+(s/def ::connecting-lines (s/keys :req-un [::cursor-start]
+                                  :opt-un [::line-id ::dialogue-id ::index]))
+
+(s/def ::connecting-locations (s/keys :req-un [::cursor-start ::location-id]))
 
 (s/def :ui/cursor :type/point)
-
+(s/def :ui/dragging (s/keys :req-un [::cursor-start ::ids]))
 (s/def :ui/positions (s/map-of uuid? :type/point))
+
+(s/def :ui/inspector (s/tuple :inspector/type :inspector/data))
+(s/def :inspector/type #{:placement :exit})
+(s/def :inspector/data map?)
 
 (s/def ::current-page (s/nilable string?))
 
@@ -350,6 +354,7 @@
                               :opt-un [:ui/connecting
                                        :ui/dragging
                                        :ui/cursor
+                                       :ui/inspector
                                        :modal/modal])))
 
 (s/def :state/player

@@ -1,7 +1,6 @@
 (ns armchair.components
   (:require [clojure.string :refer [join]]
             [reagent.core :as r]
-            [reagent.dom :as rd]
             [armchair.config :as config]
             [armchair.textures :refer [image-path]]
             [armchair.math :refer [abs clip point-delta translate-point]]
@@ -170,49 +169,3 @@
                    (when (= id active) "is-active")]
            :on-click #(on-change id)}
       title])])
-
-;; Popover
-
-(defn popover-trigger [{content :popover}]
-  (into [:div {:style {:width "100%"
-                       :height "100%"}
-               :on-mouse-up u/stop-e!
-               :on-click #(>evt [:open-popover (.-currentTarget %) content])}]
-        (r/children (r/current-component))))
-
-(defn popover-positioned []
-  (let [position (r/atom [-9999 -9999])
-        get-position (fn [this]
-                       (let [offset 8
-                             rect (u/get-rect (rd/dom-node this))
-                             ref-rect (u/get-rect (:reference (r/props this)))]
-                         [(clip
-                            (- (.-innerWidth js/window) (:w rect))
-                            (+ (- (:x ref-rect) (/ (:w rect) 2))
-                               (/ (:w ref-rect) 2)))
-                          (clip
-                            (- (.-innerHeight js/window) (:h rect))
-                            (- (:y ref-rect) (:h rect) offset))]))]
-    (r/create-class
-      {:display-name "popover-positioned"
-       :component-did-mount
-       (fn [this]
-         (reset! position (get-position this)))
-
-       :component-did-update
-       (fn [this]
-         (let [new-position (get-position this)]
-           (if (not= @position new-position)
-             (reset! position new-position))))
-
-       :reagent-render
-       (fn [{:keys [content reference]}]
-         [:div {:on-mouse-up u/stop-e!
-                :class "popover"
-                :style {:left (u/px (first @position))
-                        :top (u/px (second @position))}}
-          content])})))
-
-(defn popover []
-  (if-let [data (<sub [:popover])]
-    [popover-positioned data]))

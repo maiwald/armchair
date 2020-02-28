@@ -156,7 +156,7 @@
     &_draggable
       cursor: grab
       border-radius: 5px
-      border: 2px solid yellow
+      border: 2px solid $primary-light
 
     &_dropzone
       background-color: rgba(255, 255, 0, .4)
@@ -164,55 +164,8 @@
     &_disabled
       background-color: rgba(255, 0, 0, .2)
 
-.level-popover
-  max-width: 230px
-
-  header
-    font-family: Verdana
-    font-size: .9rem
-    border-bottom: 1px solid #ddd
-    padding: 0 2px 5px
-
-  &__quick-links
-    display: flex
-    flex-direction: row
-
-    li
-      text-align: center
-      flex-grow: 1
-      font-size: .7rem
-
-      margin: 4px 4px 0 0
-      &:last-child
-        margin-right: 0
-
-      a
-        display: block
-        padding: 5px
-        background-color: $primary-light
-
-        i
-          float: left
-          margin: 2px 4px 0 2px
-
-  &__reference
-    display: flex
-    flex-direction: column
-    padding: 0 2px
-    margin: 8px 0
-
-    &__title
-      font-size: .7rem
-      color: $text-light
-
-    &__payload
-      select
-        font-size: .8rem
-
-      .new-dialogue
-        font-size: .8rem
-        display: block
-        margin-top: -8px
+    &_focus
+      border: 2px solid yellow
 
 .level-layers
   &__item

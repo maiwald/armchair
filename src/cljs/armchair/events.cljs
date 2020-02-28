@@ -190,11 +190,12 @@
   (fn [db] (dissoc db :dragging :cursor)))
 
 (reg-event-meta
-  :open-popover
-  (fn [db [_ reference content]]
-    (assoc db :popover {:reference reference
-                        :content content})))
+  :inspect
+  (fn [db [_ inspector-type & inspector-data]]
+    (assoc db :ui/inspector
+           [inspector-type {:location-id (first inspector-data)
+                            :location-position (second inspector-data)}])))
 
 (reg-event-meta
-  :close-popover
-  (fn [db] (dissoc db :popover)))
+  :close-inspector
+  (fn [db] (dissoc db :ui/inspector)))
