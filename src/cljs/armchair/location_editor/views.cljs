@@ -33,7 +33,7 @@
        (u/relative-cursor e)
        u/coord->tile))
 
-(defn tile-paint-canvas [{:keys [on-paint dimension texture]}]
+(defn tile-paint-canvas [{:keys [on-paint texture]}]
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
     (letfn [(set-current-tile [e] (reset! current-tile (get-tile e)))
@@ -42,7 +42,7 @@
             (stop-painting [] (reset! painted-tiles nil))
             (make-paint [paint-fn]
               (fn [e]
-                (let [tile (translate-point (get-tile e) (:x dimension) (:y dimension))]
+                (let [tile (get-tile e)]
                   (when (and (some? @painted-tiles)
                              (not (contains? @painted-tiles tile)))
                     (swap! painted-tiles conj tile)
@@ -556,14 +556,14 @@
         (case active-layer
           (:background1 :background2 :foreground1 :foreground2)
           [tile-paint-canvas
-           {:dimension dimension
-            :texture (if (not= active-tool :eraser) active-texture)
-            :on-paint #(>evt [:location-editor/paint location-id active-layer %])}]
+           {:texture (if (not= active-tool :eraser) active-texture)
+            :on-paint #(>evt [:location-editor/paint location-id active-layer
+                              (translate-point % (:x dimension) (:y dimension))])}]
 
           :collision
           [tile-paint-canvas
-           {:dimension dimension
-            :on-paint #(>evt [:location-editor/set-walkable location-id %])}]
+           {:on-paint #(>evt [:location-editor/set-walkable location-id
+                              (translate-point % (:x dimension) (:y dimension))])}]
 
           :entities
           [edit-entity-layer location-id]
