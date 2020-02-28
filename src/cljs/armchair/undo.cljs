@@ -1,6 +1,5 @@
 (ns armchair.undo
-  (:require [re-frame.core :refer [after reg-event-db reg-sub]]
-            [re-frame.db :refer [app-db]]
+  (:require [re-frame.core :refer [->interceptor reg-event-db reg-sub]]
             [armchair.db :refer [content-data]]
             [armchair.local-storage :as ls]))
 
@@ -17,12 +16,15 @@
 (reg-sub :can-redo? can-redo?)
 
 (def record-undo
-  (after (fn [db]
-           (let [new-state (content-data db)
-                 undo-checkpoint (content-data @app-db)]
-             (when-not (= new-state undo-checkpoint)
-               (reset! redo-list [])
-               (swap! undo-list conj undo-checkpoint))))))
+  (->interceptor
+    :id ::record-undo
+    :after (fn [context]
+             (let [new-state (content-data (get-in context [:effects :db]))
+                   undo-checkpoint (content-data (get-in context [:coeffects :db]))]
+               (when-not (= new-state undo-checkpoint)
+                 (reset! redo-list [])
+                 (swap! undo-list conj undo-checkpoint)))
+             context)))
 
 (reg-event-db
   :undo
