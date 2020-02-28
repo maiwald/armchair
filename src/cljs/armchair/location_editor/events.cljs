@@ -99,7 +99,7 @@
                   {:character-id character-id}))))
 
 (reg-event-data
-  :location-editor/remove-character
+  :location-editor/remove-placement
   (fn [db [_ location-id tile]]
     (-> db
         (cond-> (let [[inspector-type {inspector-location-id :location-id

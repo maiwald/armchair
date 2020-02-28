@@ -184,8 +184,8 @@
                       :icon "plus"
                       :event [:armchair.modals.character-form/open]}]
         :switches [{:title "New Switch"
-                      :icon "plus"
-                      :event [:armchair.modals.switch-form/open]}]
+                    :icon "plus"
+                    :event [:armchair.modals.switch-form/open]}]
         :dialogue-edit (let [id (uuid (:id page-params))]
                          [{:title "New Character Line"
                            :icon "plus"

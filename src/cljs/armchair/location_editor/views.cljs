@@ -141,7 +141,7 @@
     [sidebar-widget {:title "Active Texture"}
      [:a {:class "active-texture"
           :on-click (e-> #(>evt [:armchair.modals.texture-selection/open active-texture]))}
-       [c/sprite-texture active-texture]]]))
+      [c/sprite-texture active-texture]]]))
 
 (defn sidebar-collision [location-id]
   (let [{:keys [active-walk-state]} (<sub [:location-editor/ui])]
@@ -448,7 +448,7 @@
         [c/button {:title "Remove Character"
                    :type :danger
                    :fill true
-                   :on-click #(>evt [:location-editor/remove-character location-id tile])}]]])))
+                   :on-click #(>evt [:location-editor/remove-placement location-id tile])}]]])))
 
 (defn trigger-inspector [location-id tile]
   (let [{:keys [display-name target-id target-position]}
