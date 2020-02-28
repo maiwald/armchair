@@ -156,14 +156,10 @@
                                                   :background2
                                                   :foreground1
                                                   :foreground2
-                                                  :connection-triggers) MAP-KEYS out-of-bounds?] NONE)
+                                                  :connection-triggers
+                                                  :placements)
+                                      MAP-KEYS out-of-bounds?] NONE)
                              (setval [:blocked ALL out-of-bounds?] NONE))))
-
-           ;; remove OOB dialogues
-           (transform [:dialogues
-                       MAP-VALS
-                       #(loc-and-out-of-bounds? (:location-id %) (:location-position %))]
-                      #(dissoc % :location-id :location-position))
 
            ;; remove incoming OOB connections
            (setval [:locations MAP-VALS :connection-triggers ALL
