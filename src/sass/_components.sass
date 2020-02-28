@@ -162,34 +162,3 @@ $graph-node-border-radius: 5px
     &.is-active
       background-color: $primary-light
       border-bottom: 2px solid $primary
-
-.popover
-  position: absolute
-  display: block
-  background: #fff
-  min-width: 180px
-  padding: 4px
-  border-radius: 5px
-  border: 1px solid #eee
-  box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, .4)
-  box-sizing: border-box
-  z-index: 4
-
-  &::after
-    $arrow-size: 4px
-    content: ""
-    position: absolute
-    left: 50%
-    width: 0
-    height: 0
-    margin-left: - $arrow-size
-    bottom: - 2 * $arrow-size
-    box-sizing: border-box
-
-    border: $arrow-size solid black
-    border-color: transparent transparent #fff #fff
-
-    transform-origin: 0 0
-    transform: rotate(-45deg)
-
-    box-shadow: -3px 3px 3px 1px rgba(0, 0, 0, 0.4)

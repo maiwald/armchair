@@ -81,6 +81,12 @@
   :location-editor/move-placement
   (fn [db [_ location-id from to]]
     (-> db
+        (cond-> (let [[inspector-type {inspector-id :location-id
+                                       inspector-position :location-position}] (:ui/inspector db)]
+                  (and (= inspector-type :placement)
+                       (= inspector-id location-id)
+                       (= inspector-position from)))
+          (assoc-in [:ui/inspector 1 :location-position] to))
         (update :location-editor dissoc :highlight :dnd-payload)
         (update-in [:locations location-id :placements] rename-keys {from to}))))
 
@@ -95,7 +101,20 @@
 (reg-event-data
   :location-editor/remove-character
   (fn [db [_ location-id tile]]
-    (update-in db [:locations location-id :placements] dissoc tile)))
+    (-> db
+        (cond-> (let [[inspector-type {inspector-location-id :location-id
+                                       inspector-location-position :location-position}] (:ui/inspector db)]
+                  (and (= inspector-type :placement)
+                       (= inspector-location-id location-id)
+                       (= inspector-location-position tile)))
+          (dissoc :ui/inspector))
+        (update-in [:locations location-id :placements] dissoc tile))))
+
+(reg-event-data
+  :location-editor/set-placement-character
+  (fn [db [_ location-id tile character-id]]
+    (assoc-in db [:locations location-id :placements tile]
+              {:character-id character-id})))
 
 (reg-event-data
   :location-editor/set-placement-dialogue
@@ -106,21 +125,34 @@
 
 (reg-event-data
   :location-editor/move-trigger
-  (fn [db [_ location from to]]
+  (fn [db [_ location-id from to]]
     (let [new-db (update db :location-editor dissoc :highlight :dnd-payload)]
       (if (some? from)
-        (update-in new-db
-                   [:locations location :connection-triggers]
-                   rename-keys {from to})
+        (-> new-db
+            (cond-> (let [[inspector-type {inspector-location-id :location-id
+                                           inspector-location-position :location-position}] (:ui/inspector db)]
+                      (and (= inspector-type :exit)
+                           (= inspector-location-id location-id)
+                           (= inspector-location-position from)))
+              (assoc-in [:ui/inspector 1 :location-position] to))
+          (update-in [:locations location-id :connection-triggers]
+                     rename-keys {from to}))
         (assoc-in new-db
                   [:modal :connection-trigger-creation]
-                  {:location-id location
+                  {:location-id location-id
                    :location-position to})))))
 
 (reg-event-data
   :location-editor/remove-trigger
-  (fn [db [_ location from]]
-    (update-in db [:locations location :connection-triggers] dissoc from)))
+  (fn [db [_ location-id tile]]
+    (-> db
+        (cond-> (let [[inspector-type {inspector-location-id :location-id
+                                       inspector-location-position :location-position}] (:ui/inspector db)]
+                  (and (= inspector-type :exit)
+                       (= inspector-location-id location-id)
+                       (= inspector-location-position tile)))
+          (dissoc :ui/inspector))
+      (update-in [:locations location-id :connection-triggers] dissoc tile))))
 
 (reg-event-data
   :location-editor/paint

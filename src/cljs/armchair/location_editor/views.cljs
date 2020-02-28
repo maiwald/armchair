@@ -409,64 +409,70 @@
                     :selected selected
                     :selectable? (fn [tile] (not (contains? occupied tile)))}]]]))
 
-(defn character-popover [location-id tile]
-  (letfn [(set-dialogue [e]
-            (let [e-value (e->val e)
-                  value (if (= e-value "nil") nil (uuid e-value))]
-              (>evt [:location-editor/set-placement-dialogue
-                     location-id tile value])))]
-    (fn [location-id title]
-      (let [{:keys [id
-                    character-id
-                    dialogue-id
-                    display-name
-                    dialogue-synopsis
-                    dialogue-options]}
-            (<sub [:location-editor/character-popover location-id tile])]
-        [:div {:class "level-popover"}
-         [:header display-name]
-         [:ul.level-popover__quick-links
-          [:li [:a {:on-click #(do (>evt [:close-popover])
-                                   (>evt [:armchair.modals.character-form/open id]))}
-                [c/icon "user"] "Edit Character"]]
-          (if (some? dialogue-id)
-            [:li [:a {:on-click #(do (>evt [:close-popover])
-                                     (>navigate :dialogue-edit :id dialogue-id))}
-                  [c/icon "comments"] "Edit Dialogue"]])]
-         [:div.level-popover__reference
-          [:span.level-popover__reference__title "Dialogue"]
-          [:div.level-popover__reference__payload
-           [input/select {:value dialogue-id
-                          :nil-value "No Dialogue"
-                          :options dialogue-options
-                          :on-change set-dialogue}]
-           [:a.new-dialogue {:on-click #(do (>evt [:close-popover])
-                                            (>evt [:armchair.modals.dialogue-creation/open character-id location-id tile]))}
-            "Create new Dialogue"]]]
-         [c/button {:title "Remove Character"
-                    :type :danger
-                    :fill true
-                    :on-click #(do (>evt [:close-popover])
-                                   (>evt [:location-editor/remove-character location-id tile]))}]]))))
+(defn placement-inspector [location-id tile]
+  (let [{:keys [character-id
+                character-options
+                dialogue-id
+                dialogue-options]}
+        (<sub [:location-editor/placement-inspector location-id tile])]
+    (letfn [(set-character [e]
+              (>evt [:location-editor/set-placement-character
+                     location-id tile (-> e e->val uuid)]))
+            (set-dialogue [e]
+              (let [e-value (e->val e)
+                    value (if (= e-value "nil") nil (uuid e-value))]
+                (>evt [:location-editor/set-placement-dialogue
+                       location-id tile value])))]
+      [:div#inspector
+       [:header
+        [:span.title "Dialogue"]
+        [:a.close-button {:on-click #(>evt [:close-inspector])}
+         [c/icon "times"]]]
+       [:div.inspector__content
+        [:div.inspector__property
+         [:span.inspector__property__title "Character"]
+         [:div.inspector__property__payload
+          [input/select {:value character-id
+                         :options character-options
+                         :on-change set-character}]]]
+        [:div.inspector__property
+         [:span.inspector__property__title "Dialogue"]
+         [:div.inspector__property__payload
+          [input/select {:value dialogue-id
+                         :nil-value "No Dialogue"
+                         :options dialogue-options
+                         :on-change set-dialogue}]
+          [:a.new-dialogue {:on-click #(>evt [:armchair.modals.dialogue-creation/open character-id location-id tile])}
+           "Create new Dialogue"]]]]
+       [:div.inspector__actions
+        [c/button {:title "Remove Character"
+                   :type :danger
+                   :fill true
+                   :on-click #(>evt [:location-editor/remove-character location-id tile])}]]])))
 
-(defn trigger-popover [location-id tile]
-  (let [{:keys [id display-name position]
-         {normalized-x :x normalized-y :y} :position-normalized}
-        (<sub [:location-editor/trigger-popover location-id tile])]
-    [:div {:class "level-popover"}
-     [:header "Trigger"]
-     [:div.level-popover__reference
-      [:span.level-popover__reference__title "Exit to"]
-      [:span.level-popover__reference__payload
-       [:a {:on-click #(do (>evt [:close-popover])
-                           (>navigate :location-edit :id id))}
-        (str display-name " [" normalized-x " " normalized-y "]")]
-       [location-preview id position]]]
-     [c/button {:title "Remove Exit"
-                :type :danger
-                :fill true
-                :on-click #(do (>evt [:close-popover])
-                               (>evt [:location-editor/remove-trigger location-id tile]))}]]))
+(defn trigger-inspector [location-id tile]
+  (let [{:keys [display-name target-id target-position]}
+        (<sub [:location-editor/trigger-inspector location-id tile])]
+    [:div#inspector
+     [:header
+      [:span.title "Exit"]
+      [:a.close-button {:on-click #(>evt [:close-inspector])}
+       [c/icon "times"]]]
+     [:div.inspector__content
+      [:div.inspector__property.inspector__property_inline
+       [:div.inspector__property__title "To"]
+       [:div.inspector__property__payload
+        [:a {:on-click #(>navigate :location-edit :id target-id)}
+         (str display-name)]]]
+      [:div.inspector__property
+       [:div.inspector__property__title "Preview"]
+       [:div.inspector__property__payload {:style {:margin "5px auto 0"}}
+        [location-preview target-id target-position]]]]
+     [:div.inspector__actions
+      [c/button {:title "Remove Exit"
+                 :type :danger
+                 :fill true
+                 :on-click #(>evt [:location-editor/remove-trigger location-id tile])}]]]))
 
 (defn edit-entity-layer [location-id]
   (let [{:keys [player-position
@@ -486,30 +492,30 @@
            [dnd-texture :hare_down_idle1]])])
 
      [do-some-tiles dimension characters "character-select"
-      (fn [tile {:keys [texture display-name]}]
-        [:div {:class "interactor interactor_draggable"
+      (fn [tile {:keys [texture display-name inspecting?]}]
+        [:div {:class ["interactor" "interactor_draggable" (if inspecting? "interactor_focus")]
                :title display-name
                :draggable true
+               :on-click #(>evt [:inspect :placement location-id tile])
                :on-drag-start (fn [e]
                                 (set-dnd-texture! e)
                                 (.setData (.-dataTransfer e) "text/plain" display-name)
                                 (>evt [:location-editor/start-entity-drag [:placement tile]]))}
-         [c/popover-trigger {:popover [character-popover location-id tile]}]
          [dnd-texture texture]])]]))
 
 (defn edit-trigger-layer [location-id]
   (let [{:keys [dimension
                 connection-triggers]} (<sub [:location-editor/connection-trigger-layer location-id])]
     [do-some-tiles dimension connection-triggers "connection-select"
-     (fn [tile display-name]
-       [:div {:class "interactor interactor_draggable"
+     (fn [tile {:keys [display-name inspecting?]}]
+       [:div {:class ["interactor" "interactor_draggable" (if inspecting? "interactor_focus")]
               :title (str "to " display-name)
               :draggable true
+              :on-click #(>evt [:inspect :exit location-id tile])
               :on-drag-start (fn [e]
                                (set-dnd-texture! e)
                                (.setData (.-dataTransfer e) "text/plain" display-name)
                                (>evt [:location-editor/start-entity-drag [:connection-trigger tile]]))}
-        [c/popover-trigger {:popover [trigger-popover location-id tile]}]
         [dnd-texture :exit]])]))
 
 (defn canvas [location-id]
@@ -552,7 +558,8 @@
           [texture-layer {:location-id location-id
                           :layer-id layer-id}]))
 
-      (when (= :level active-pane)
+      (case active-pane
+        :level
         (case active-layer
           (:background1 :background2 :foreground1 :foreground2)
           [tile-paint-canvas
@@ -569,7 +576,11 @@
           [edit-entity-layer location-id]
 
           :triggers
-          [edit-trigger-layer location-id]))
+          [edit-trigger-layer location-id])
+
+        [:<>
+         [edit-entity-layer location-id]
+         [edit-trigger-layer location-id]])
 
       (when (fn? dropzone-fn)
         [dropzone {:dimension dimension

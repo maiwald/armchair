@@ -1,5 +1,5 @@
 (ns armchair.routes
-  (:require [re-frame.core :refer [dispatch]]
+  (:require [re-frame.core :refer [dispatch dispatch-sync]]
             [bidi.bidi :refer [match-route path-for]]))
 
 (set! (.-onpopstate js/window)
@@ -24,5 +24,6 @@
 (defn >navigate [& args]
   (let [url (apply path-for (into [routes] args))]
     (js/history.pushState #js{} "" (str "#" url))
-    (dispatch [:show-page url])
+    (dispatch-sync [:close-inspector])
+    (dispatch-sync [:show-page url])
     nil))

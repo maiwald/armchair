@@ -24,7 +24,9 @@
 
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
-(reg-sub :popover #(:popover %))
+
+(reg-sub :ui/positions #(:ui/positions %))
+(reg-sub :ui/inspector #(:ui/inspector %))
 
 (reg-sub
   :character-list
@@ -66,11 +68,6 @@
     (let [option-id (get-in lines [line-id :options index])]
       (get-in options [option-id :text]))))
 
-
-(reg-sub
-  :ui/positions
-  (fn [db]
-    (:ui/positions db)))
 
 (reg-sub
   :ui/position
@@ -203,3 +200,8 @@
                            :icon "plus"
                            :event [:armchair.modals.case-node-creation/open id]}])
         nil))))
+
+(reg-sub
+  :ui/inspector?
+  :<- [:ui/inspector]
+  some?)

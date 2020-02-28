@@ -37,13 +37,18 @@
   :location-editor/characters
   :<- [:db-locations]
   :<- [:db-characters]
-  (fn [[locations characters] [_ location-id]]
+  :<- [:ui/inspector]
+  (fn [[locations characters [inspector-type {inspector-location-id :location-id
+                                              inspector-location-position :location-position}]] [_ location-id]]
     (->> (locations location-id)
          :placements
          (u/map-values
-           (fn [{:keys [character-id]}]
+           (fn [{:keys [character-id]} tile]
              (let [character (characters character-id)]
-               (select-keys character [:texture :display-name])))))))
+               (merge (select-keys character [:texture :display-name])
+                      {:inspecting? (and (= inspector-type :placement)
+                                         (= inspector-location-id location-id)
+                                         (= inspector-location-position tile))})))))))
 
 (reg-sub
   :location-editor/location
@@ -54,12 +59,17 @@
 (reg-sub
   :location-editor/connection-trigger-layer
   :<- [:db-locations]
-  (fn [locations [_ location-id]]
+  :<- [:ui/inspector]
+  (fn [[locations [inspector-type {inspector-location-id :location-id
+                                   inspector-location-position :location-position}]] [_ location-id]]
     (let [{:keys [dimension connection-triggers]} (locations location-id)]
       {:dimension dimension
        :connection-triggers (u/map-values
-                              (fn [[target-id _]]
-                                (get-in locations [target-id :display-name]))
+                              (fn [[target-id _] tile]
+                                {:display-name (get-in locations [target-id :display-name])
+                                 :inspecting? (and (= inspector-type :exit)
+                                                   (= inspector-location-id location-id)
+                                                   (= inspector-location-position tile))})
                               connection-triggers)})))
 
 (reg-sub
@@ -99,34 +109,32 @@
        :height (:h dimension)})))
 
 (reg-sub
-  :location-editor/character-popover
+  :location-editor/placement-inspector
   :<- [:db-locations]
   :<- [:db-dialogues]
   :<- [:db-characters]
-  (fn [[locations dialogues characters] [_ location-id tile]]
-    (let [placement (get-in locations [location-id :placements tile])
-          {:keys [character-id dialogue-id]} placement
-          character (characters character-id)
+  :<- [:character-options]
+  (fn [[locations dialogues characters character-options] [_ location-id tile]]
+    (let [{:keys [character-id dialogue-id]} (get-in locations [location-id :placements tile])
+          texture (get-in characters [character-id :texture])
           dialogue-options (->> dialogues
                                 (u/filter-map #(= character-id (:character-id %)))
                                 (u/map-values :synopsis))]
-      (merge {:id character-id
-              :character-id character-id
-              :dialogue-id dialogue-id
-              :dialogue-synopsis (get-in dialogues [dialogue-id :synopsis])
-              :dialogue-options dialogue-options}
-             (select-keys character [:texture :display-name])))))
+      {:character-id character-id
+       :character-options character-options
+       :dialogue-id dialogue-id
+       :dialogue-options dialogue-options
+       :texture texture})))
 
 (reg-sub
-  :location-editor/trigger-popover
+  :location-editor/trigger-inspector
   :<- [:db-locations]
   (fn [locations [_ location-id tile]]
     (let [[target-id position] (get-in locations [location-id :connection-triggers tile])
-          {:keys [dimension display-name]} (locations target-id)]
-      {:id target-id
-       :position position
-       :position-normalized (global-point position dimension)
-       :display-name display-name})))
+          display-name (get-in locations [target-id :display-name])]
+      {:display-name display-name
+       :target-id target-id
+       :target-position position})))
 
 (reg-sub
   :location-editor/occupied-tiles
