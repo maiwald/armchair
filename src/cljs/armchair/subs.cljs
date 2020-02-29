@@ -28,6 +28,8 @@
 (reg-sub :ui/positions #(:ui/positions %))
 (reg-sub :ui/inspector #(:ui/inspector %))
 
+(reg-sub :ui/location-preview-cache (fn [db] (:ui/location-preview-cache db)))
+
 (reg-sub
   :character-list
   :<- [:db-characters]
@@ -156,17 +158,13 @@
 (reg-sub
   :location-map/location
   :<- [:db-locations]
-  :<- [:db-characters]
-  (fn [[locations characters] [_ location-id]]
-    (let [location (get locations location-id)]
+  :<- [:ui/location-preview-cache]
+  (fn [[locations preview-cache] [_ location-id]]
+    (let [location (get locations location-id)
+          preview-image-src (get preview-cache location-id)]
       {:display-name (:display-name location)
-       :characters (->> location :placements
-                        (map (fn [[_ {:keys [character-id dialogue-id]}]]
-                               (let [character (get characters character-id)]
-                                 {:dialogue-id dialogue-id
-                                  :character-id character-id
-                                  :character-name (:display-name character)
-                                  :character-color (:color character)}))))})))
+       :dimension (:dimension location)
+       :preview-image-src preview-image-src})))
 
 (reg-sub
   :creation-buttons

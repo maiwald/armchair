@@ -3,7 +3,7 @@
             [com.rpl.specter
              :refer [keypath ALL MAP-KEYS MAP-VALS]
              :refer-macros [select select-one!]]
-            [armchair.math :refer [global-point]]
+            [armchair.math :as m :refer [global-point]]
             [armchair.util :as u]))
 
 (reg-sub

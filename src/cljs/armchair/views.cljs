@@ -70,26 +70,20 @@
                                           :on-click #(>evt [::switch-form/open id])}]])}}]))
 
 (defn location-component [location-id]
-  (let [{:keys [display-name characters]} (<sub [:location-map/location location-id])]
+  (let [{:keys [dimension display-name preview-image-src]} (<sub [:location-map/location location-id])]
     [:div.location
      [c/graph-node {:title [:a {:on-click #(>navigate :location-edit :id location-id)
                                 :on-mouse-down u/stop-e!}
                             display-name]
                     :item-id location-id
+                    :width nil
                     :actions [["trash" "Delete"
                                #(when (js/confirm "Are you sure you want to delete this location?")
                                   (>evt [:delete-location location-id]))]]}
-      [:ul {:class "location__characters"}
-       (for [{:keys [dialogue-id
-                     character-id
-                     character-name
-                     character-color]} characters]
-         [:li {:key (str "location-dialogue-" location-id " - " character-id)}
-          [:a {:style {:background-color character-color}
-               :class (when-not dialogue-id "disabled")
-               :on-mouse-down u/stop-e!
-               :on-click (when dialogue-id #(>navigate :dialogue-edit :id dialogue-id))}
-           character-name]])]]]))
+      (if (some? preview-image-src)
+        [:img {:src preview-image-src
+               :style {:width (u/px (/ (* config/tile-size (:w dimension)) 2))
+                       :height (u/px (/ (* config/tile-size (:h dimension)) 2))}}])]]))
 
 (defn location-connection [start end]
   (let [start-pos (<sub [:ui/position start])

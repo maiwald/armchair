@@ -1,5 +1,5 @@
 (ns armchair.events
-  (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
+  (:require [re-frame.core :refer [dispatch reg-event-db reg-event-fx after]]
             [com.rpl.specter
              :refer [must ALL NONE MAP-VALS]
              :refer-macros [select setval]]
@@ -28,12 +28,20 @@
                           (:cljs.spec.alpha/problems explain)))))
              200))))
 
-(defn reg-event-data [id handler]
-  (reg-event-db id
-                [(when debug? validate)
-                 record-undo
-                 ls/store]
-                handler))
+(defn reg-event-data
+  ([id handler]
+   (reg-event-db id
+                 [(when debug? validate)
+                  record-undo
+                  ls/store]
+                 handler))
+  ([id interceptors handler]
+   (reg-event-db id
+                 [(when debug? validate)
+                  record-undo
+                  interceptors
+                  ls/store]
+                 handler)))
 
 (defn reg-event-meta [id handler]
   (reg-event-db id [(when debug? validate)] handler))
@@ -47,14 +55,25 @@
 (reg-event-data
   :reset-db
   (fn [db]
-    (merge db (content-data default-db))))
+    (let [new-db (merge db (content-data default-db))]
+      (dispatch [:armchair.location-previews/regenerate-all])
+      new-db)))
 
 (reg-event-meta
   :load-storage-state
   (fn [db]
-    (if-let [serialized (ls/get-data)]
-      (merge db (migrate (deserialize-db serialized)))
-      db)))
+    (let [new-db (if-let [serialized (ls/get-data)]
+                   (merge db (migrate (deserialize-db serialized)))
+                   db)]
+      (dispatch [:armchair.location-previews/regenerate-all])
+      new-db)))
+
+(reg-event-data
+  :upload-state
+  (fn [db [_ json]]
+    (let [new-db (merge db (migrate (deserialize-db json)))]
+      (dispatch [:armchair.location-previews/regenerate-all])
+      new-db)))
 
 (reg-event-fx
   :download-state
@@ -69,11 +88,6 @@
                         ".json")]
       (js/saveAs blob filename))
     {}))
-
-(reg-event-data
-  :upload-state
-  (fn [db [_ json]]
-    (merge db (migrate (deserialize-db json)))))
 
 ;; Character CRUD
 

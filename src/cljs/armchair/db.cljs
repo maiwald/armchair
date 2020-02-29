@@ -405,18 +405,23 @@
 
 ;; Serialization
 
-(defn content-data [db]
-  (let [content-keys [:ui/positions
-                      :player
-                      :locations
-                      :characters
-                      :dialogues
-                      :player-options
-                      :lines
-                      :triggers
-                      :switches
-                      :switch-values]]
-    (select-keys db content-keys)))
+(def content-keys
+  [:ui/positions
+   :player
+   :locations
+   :characters
+   :dialogues
+   :player-options
+   :lines
+   :triggers
+   :switches
+   :switch-values])
+
+(def undo-keys
+  (conj content-keys :ui/location-preview-cache))
+
+(defn content-data [db] (select-keys db content-keys))
+(defn undo-data [db] (select-keys db undo-keys))
 
 (defn serialize-db [db]
   (let [w (t/writer :json
@@ -452,6 +457,7 @@
                             :active-walk-state true
                             :active-texture ["PathAndObjects_0.png" (Point. 4 1)]}
           :ui/positions {}
+          :ui/location-preview-cache {}
           :characters {}
           :locations {}
           :dialogues {}

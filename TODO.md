@@ -5,12 +5,13 @@
 
 # TODO
 - restructure navigation
+  - add ability to jump to dialogue or character from inspector
+  - let connections connect to actual entrances and exits
 - select and paint multiple texture sprites
 - zoom in dialogue editor
 - sounds & music
 
 # nice things
-- location preview in map
 - separate moving viewport from moving node positions
 - validation error notifications and form states
 - state invariants
@@ -18,6 +19,7 @@
 - save file for game state
 - desktop version for easier file access
 - release to itch.io as free game ;)
+- consistently rename dimension to dimensions or frame something
 
 ## dialogue editor
 - allow creating switches in dialogue editor
@@ -25,6 +27,7 @@
 - prevent connecting multiple trigger and player nodes
 
 ## location editor
+- allow connections to be bi-directional again
 - show incoming connections in location editor
 - brush sizes & fill tool for location editor
 - custom layers and layer order

@@ -1,10 +1,10 @@
 (ns armchair.location-editor.events
   (:require [armchair.events :refer [reg-event-data reg-event-meta]]
+            [armchair.location-previews :refer [build-location-preview]]
             [clojure.set :refer [rename-keys]]
             [com.rpl.specter
              :refer [multi-path ALL NONE MAP-KEYS MAP-VALS]
              :refer-macros [setval transform]]
-            [armchair.undo :refer [record-undo]]
             [armchair.math :refer [rect-resize rect-contains?]]
             [armchair.util :as u]))
 
@@ -156,6 +156,7 @@
 
 (reg-event-data
   :location-editor/paint
+  [build-location-preview]
   (fn [db [_ location-id layer-id tile]]
     (let [{:keys [active-tool active-texture]} (:location-editor db)]
       (case active-tool
@@ -170,6 +171,7 @@
 
 (reg-event-data
   :location-editor/resize-smaller
+  [build-location-preview]
   (fn [db [_ location-id direction]]
     (let [dimension (get-in db [:locations location-id :dimension])
           side (case direction
@@ -201,6 +203,7 @@
 
 (reg-event-data
   :location-editor/resize-larger
+  [build-location-preview]
   (fn [db [_ location-id direction]]
     (let [side (case direction
                  :up :top
