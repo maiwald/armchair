@@ -108,11 +108,12 @@
                         (fn [e]
                           (u/prevent-e! e)
                           (>evt [:end-dragging])))]
-    (fn [{:keys [title color actions on-connect-end]}]
+    (fn [{:keys [title color width actions on-connect-end]
+          :or {color "gray" width (u/px config/line-width)}}]
       [:div {:class "graph-node"
              :on-mouse-up (when (some? (<sub [:connector])) on-connect-end)
              :style {:border-color color
-                     :width (u/px config/line-width)}}
+                     :width width}}
        [:div {:class "graph-node__header"
               :on-mouse-down start-dragging
               :on-mouse-up stop-dragging}

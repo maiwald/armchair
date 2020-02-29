@@ -13,7 +13,7 @@
                                      camera-tile-width
                                      camera-tile-height
                                      camera-scale]]
-            [armchair.textures :refer [load-textures]]
+            [armchair.textures :refer [image-files load-textures]]
             [armchair.math :as m]
             [armchair.util :as u]
             [com.rpl.specter
@@ -649,6 +649,7 @@
   (let [input-chan (chan)
         quit (atom false)]
     (load-textures
+      image-files
       (fn [loaded-atlas]
         (reset! texture-atlas loaded-atlas)
         (start-input-loop input-chan)

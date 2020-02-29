@@ -31,16 +31,16 @@
 (defn image-path [file-name]
   (str "images/" (image-files file-name "missing_texture.png")))
 
-(defn load-textures [callback]
+(defn load-textures [files callback]
   (let [atlas (atom {})
         loaded (chan)]
     (run! (fn [file-name]
             (let [image (js/Image.)]
               (set! (.-onload image) #(put! loaded [file-name image]))
               (set! (.-src image) (image-path file-name))))
-          (conj image-files "missing_texture.png" "arrow.png"))
+          files)
     (take! (go
-             (while (not= (count @atlas) (count image-files))
+             (while (not= (count @atlas) (count files))
                (let [[file-name image] (<! loaded)]
                  (swap! atlas assoc file-name image)))
              @atlas)
