@@ -69,6 +69,8 @@
                                [c/button {:icon "edit"
                                           :on-click #(>evt [::switch-form/open id])}]])}}]))
 
+(def map-scale 0.5)
+
 (defn location-component [location-id]
   (let [{:keys [dimension
                 display-name
@@ -84,8 +86,8 @@
                                   (>evt [:delete-location location-id]))]]}
       (if (some? preview-image-src)
         [:img {:src preview-image-src
-               :style {:width (u/px (/ (* config/tile-size (:w dimension)) 2))
-                       :height (u/px (/ (* config/tile-size (:h dimension)) 2))}}])]]))
+               :style {:width (u/px (* config/tile-size (:w dimension) map-scale))
+                       :height (u/px (* config/tile-size (:h dimension) map-scale))}}])]]))
 
 (defn location-connection [dimensions start end]
   (let [start-pos (m/global-point (<sub [:ui/position start]) dimensions)
@@ -94,7 +96,7 @@
                  :end (m/translate-point end-pos (/ config/line-width 2) 15)}]))
 
 (defn location-management []
-  (let [{:keys [dimensions location-ids connections]} (<sub [:location-map])]
+  (let [{:keys [dimensions location-ids connections]} (<sub [:location-map map-scale])]
     [drag-canvas {:kind "location"
                   :dimensions dimensions
                   :nodes {location-component location-ids}}
