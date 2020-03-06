@@ -29,7 +29,8 @@
 (reg-sub :ui/positions #(:ui/positions %))
 (reg-sub :ui/inspector #(:ui/inspector %))
 
-(reg-sub :ui/location-preview-cache (fn [db] (:ui/location-preview-cache db)))
+(reg-sub :ui/location-preview-cache #(:ui/location-preview-cache %))
+(reg-sub :ui/location-map-scroll-offset #(:ui/location-map-scroll-offset %))
 
 (reg-sub
   :character-list
@@ -148,7 +149,8 @@
   :location-map
   :<- [:db-locations]
   :<- [:ui/positions]
-  (fn [[locations positions] [_ map-scale]]
+  :<- [:ui/location-map-scroll-offset]
+  (fn [[locations positions scroll-offset] [_ map-scale]]
     (let [connections (->> locations
                            (select [ALL (collect-one FIRST) LAST :connection-triggers MAP-VALS FIRST])
                            (map set)
@@ -165,6 +167,7 @@
                       :right 200
                       :top 200
                       :bottom 200})
+       :scroll-offset scroll-offset
        :location-ids (keys locations)
        :connections connections})))
 

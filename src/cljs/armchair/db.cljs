@@ -56,6 +56,7 @@
 (s/def :ui/cursor :type/point)
 (s/def :ui/dragging (s/keys :req-un [::cursor-start ::ids]))
 (s/def :ui/positions (s/map-of uuid? :type/point))
+(s/def :ui/location-map-scroll-offset :type/point)
 
 (s/def :ui/inspector (s/tuple :inspector/type :inspector/data))
 (s/def :inspector/type #{:location :placement :exit})
@@ -355,6 +356,7 @@
                                        :ui/dragging
                                        :ui/cursor
                                        :ui/inspector
+                                       :ui/location-map-scroll-offset
                                        :modal/modal])))
 
 (s/def :state/player

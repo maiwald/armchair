@@ -53,25 +53,36 @@
            :style {:left (:x position) :top (:y position)}}
      [component item-id]]))
 
-(defn drag-canvas [{:keys [kind nodes dimensions]}]
-  (let [connecting? (some? (<sub [:connector]))
-        dragging? (<sub [:dragging?])
-        mouse-move (when (or dragging? connecting?)
-                     #(>evt [:move-cursor (e->graph-cursor %)]))
-        mouse-up (cond
-                   connecting? #(>evt [:abort-connecting])
-                   dragging? #(>evt [:end-dragging]))]
-    [:div {:class (cond-> ["graph"]
-                    dragging? (conj "graph_is-dragging")
-                    connecting? (conj "graph_is-connecting"))
-           :on-mouse-move mouse-move
-           :on-mouse-up mouse-up}
-     [:div.graph__scroll {:style {:width (u/px (:w dimensions))
-                                  :height (u/px (:h dimensions))}}
-       (into [:<>] (r/children (r/current-component)))
-       (for [[item-component ids] nodes
-             id ids]
-         ^{:key (str kind id)} [drag-item id dimensions item-component])]]))
+(defn drag-canvas []
+  (let [elem (atom nil)]
+    (r/create-class
+      {:display-name "drag-canvas"
+       :component-did-mount
+       (fn [this]
+         (if-let [{:keys [x y]} (:scroll-offset (r/props this))]
+           (.scrollTo @elem x y)))
+       :reagent-render
+       (fn [{:keys [on-scroll kind nodes dimensions]}]
+         (let [connecting? (some? (<sub [:connector]))
+               dragging? (<sub [:dragging?])
+               mouse-move (when (or dragging? connecting?)
+                            #(>evt [:move-cursor (e->graph-cursor %)]))
+               mouse-up (cond
+                          connecting? #(>evt [:abort-connecting])
+                          dragging? #(>evt [:end-dragging]))]
+           [:div {:ref #(reset! elem %)
+                  :class (cond-> ["graph"]
+                           dragging? (conj "graph_is-dragging")
+                           connecting? (conj "graph_is-connecting"))
+                  :on-scroll on-scroll
+                  :on-mouse-move mouse-move
+                  :on-mouse-up mouse-up}
+            [:div.graph__scroll-content {:style {:width (u/px (:w dimensions))
+                                                 :height (u/px (:h dimensions))}}
+             (into [:<>] (r/children (r/current-component)))
+             (for [[item-component ids] nodes
+                   id ids]
+               ^{:key (str kind id)} [drag-item id dimensions item-component])]]))})))
 
 ;; Icon
 
