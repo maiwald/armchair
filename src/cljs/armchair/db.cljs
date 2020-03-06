@@ -58,7 +58,7 @@
 (s/def :ui/positions (s/map-of uuid? :type/point))
 
 (s/def :ui/inspector (s/tuple :inspector/type :inspector/data))
-(s/def :inspector/type #{:placement :exit})
+(s/def :inspector/type #{:location :placement :exit})
 (s/def :inspector/data map?)
 
 (s/def ::current-page (s/nilable string?))

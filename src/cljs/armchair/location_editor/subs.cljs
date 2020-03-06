@@ -88,17 +88,27 @@
   :<- [:db-characters]
   (fn [characters]
     (->> characters
-      (map (fn [[id {:keys [texture display-name]}]]
-             {:character-id id
-              :display-name display-name
-              :texture texture}))
-      (sort-by :display-name))))
+         (map (fn [[id {:keys [texture display-name]}]]
+                {:character-id id
+                 :display-name display-name
+                 :texture texture}))
+         (sort-by :display-name))))
 
 (reg-sub
-  :location-editor/display-name
+  :location-editor/location-inspector
   :<- [:db-locations]
-  (fn [locations [_ location-id]]
-    (get-in locations [location-id :display-name])))
+  :<- [:db-characters]
+  (fn [[locations characters] [_ location-id]]
+    (let [location (locations location-id)]
+      {:display-name (:display-name location)
+       :characters (->> location :placements
+                        (map (fn [[_ {:keys [character-id dialogue-id]}]]
+                               (let [character (get characters character-id)]
+                                 {:dialogue-id dialogue-id
+                                  :character-id character-id
+                                  :character-name (:display-name character)
+                                  :character-color (:color character)})))
+                        (sort-by :character-name))})))
 
 (reg-sub
   :location-editor/dimensions
