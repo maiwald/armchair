@@ -10,6 +10,8 @@
             [armchair.dialogue-editor.subs]
             [armchair.location-editor.events]
             [armchair.location-editor.subs]
+            [armchair.location-map.events]
+            [armchair.location-map.subs]
             [armchair.location-previews]
             [armchair.game.subs]
             [armchair.util :refer [>evt <sub]]
