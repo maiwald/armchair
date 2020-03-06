@@ -36,8 +36,8 @@
 (defn location-map []
   (let [update-offset (debounce
                         (fn [offset]
-                          (>evt [:update-location-map-offset offset]))
-                        100)
+                          (>evt [:location-map/update-offset offset]))
+                        200)
         on-scroll (fn [e]
                     (let [target (.-currentTarget e)
                           offset (m/Point. (.-scrollLeft target) (.-scrollTop target))]

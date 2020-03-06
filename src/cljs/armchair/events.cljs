@@ -213,8 +213,3 @@
 (reg-event-meta
   :close-inspector
   (fn [db] (dissoc db :ui/inspector)))
-
-(reg-event-meta
-  :update-location-map-offset
-  (fn [db [_ offset]]
-    (assoc db :ui/location-map-scroll-offset offset)))
