@@ -12,7 +12,8 @@
             [armchair.util :as u :refer [<sub >evt]]
             [armchair.config :as config]
             [armchair.routes :refer [page-data >navigate]]
-            [armchair.game.views :refer [game-view]]))
+            [armchair.game.views :refer [game-view]]
+            [goog.functions :refer [debounce]]))
 
 ;; Components
 
@@ -96,17 +97,25 @@
     [connection {:start (m/translate-point start-pos (/ config/line-width 2) 15)
                  :end (m/translate-point end-pos (/ config/line-width 2) 15)}]))
 
-(defn location-management []
-  (let [{:keys [dimensions location-ids connections]} (<sub [:location-map map-scale])]
-    [drag-canvas {:kind "location"
-                  :dimensions dimensions
-                  :nodes {location-component location-ids}}
-     [:svg {:class "graph__connection-container" :version "1.1"
-            :baseProfile "full"
-            :xmlns "http://www.w3.org/2000/svg"}
-      (for [[start end] connections]
-        ^{:key (str "location-connection" start "->" end)}
-        [location-connection dimensions start end])]]))
+(defn location-map []
+  (let [update-offset (debounce #(>evt [:update-location-map-offset %]) 200)
+        on-scroll (fn [e]
+                    (let [target (.-currentTarget e)
+                          offset (m/Point. (.-scrollLeft target) (.-scrollTop target))]
+                      (update-offset offset)))]
+    (fn []
+      (let [{:keys [dimensions scroll-offset location-ids connections]} (<sub [:location-map map-scale])]
+        [drag-canvas {:kind "location"
+                      :dimensions dimensions
+                      :scroll-offset scroll-offset
+                      :on-scroll on-scroll
+                      :nodes {location-component location-ids}}
+         [:svg {:class "graph__connection-container" :version "1.1"
+                :baseProfile "full"
+                :xmlns "http://www.w3.org/2000/svg"}
+          (for [[start end] connections]
+            ^{:key (str "location-connection" start "->" end)}
+            [location-connection dimensions start end])]]))))
 
 ;; Navigation
 
@@ -166,7 +175,7 @@
 (defn content-component [page-name page-params]
   (case page-name
     :game          [game-view]
-    :locations     [location-management]
+    :locations     [location-map]
     :location-edit [location-editor (uuid (:id page-params))]
     :dialogues     [dialogue-management]
     :dialogue-edit [dialogue-editor (uuid (:id page-params))]
