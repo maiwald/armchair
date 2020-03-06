@@ -86,6 +86,7 @@
                                   (>evt [:delete-location location-id]))]]}
       (if (some? preview-image-src)
         [:img {:src preview-image-src
+               :on-click #(>evt [:inspect :location location-id])
                :style {:width (u/px (* config/tile-size (:w dimension) map-scale))
                        :height (u/px (* config/tile-size (:h dimension) map-scale))}}])]]))
 
@@ -159,7 +160,8 @@
   (let [[inspector-type {:keys [location-id location-position]}] (<sub [:ui/inspector])]
     (case inspector-type
       :placement [armchair.location-editor.views/placement-inspector location-id location-position]
-      :exit [armchair.location-editor.views/trigger-inspector location-id location-position])))
+      :exit [armchair.location-editor.views/trigger-inspector location-id location-position]
+      :location [armchair.location-editor.views/location-inspector location-id])))
 
 (defn content-component [page-name page-params]
   (case page-name
