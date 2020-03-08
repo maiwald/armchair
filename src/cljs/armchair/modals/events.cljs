@@ -1,5 +1,6 @@
 (ns armchair.modals.events
-  (:require [armchair.config :as config]
+  (:require [re-frame.core :refer [dispatch]]
+            [armchair.config :as config]
             [armchair.events :refer [reg-event-data reg-event-meta]]
             [armchair.math :refer [Rect]]
             [armchair.util :as u]))
@@ -43,6 +44,7 @@
     (assert-location-creation-modal db)
     (let [id (random-uuid)
           display-name (get-in db [:modal :location-creation])]
+      (dispatch [:armchair.location-previews/generate-preview id])
       (-> db
           (dissoc :modal)
           (assoc-in [:ui/positions id] config/default-ui-position)
@@ -55,6 +57,7 @@
                                      :foreground2 {}
                                      :blocked #{}
                                      :connection-triggers {}
+                                     :placements {}
                                      :display-name display-name})))))
 
 (reg-event-meta

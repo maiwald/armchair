@@ -41,6 +41,14 @@
                                     (u/tile->coord (global-point tile rect))))))
           (callback (.toDataURL canvas)))))))
 
+(reg-event-meta
+  ::generate-preview
+  (fn [db [_ location-id]]
+    (let [location (get-in db [:locations location-id])]
+      (location-preview-url location
+                            #(dispatch [::store location-id %])))
+    db))
+
 (def build-location-preview
   (->interceptor
     :id ::build-preview
