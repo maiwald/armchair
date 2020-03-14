@@ -38,11 +38,15 @@
   :location-map/location
   :<- [:db-locations]
   :<- [:ui/location-preview-cache]
-  (fn [[locations preview-cache] [_ location-id]]
+  :<- [:ui/inspector]
+  (fn [[locations
+        preview-cache
+        [inspector-type {inspector-location-id :location-id}]]
+       [_ location-id]]
     (let [location (get locations location-id)
           preview-image-src (get preview-cache location-id)]
       {:display-name (:display-name location)
        :dimension (:dimension location)
-       :preview-image-src preview-image-src})))
-
-
+       :preview-image-src preview-image-src
+       :inspecting? (and (= inspector-type :location)
+                         (= inspector-location-id location-id))})))
