@@ -54,35 +54,47 @@
      [component item-id]]))
 
 (defn drag-canvas []
-  (let [elem (atom nil)]
+  (let [elem (atom nil)
+        drag-offset (atom nil)]
     (r/create-class
       {:display-name "drag-canvas"
        :component-did-mount
        (fn [this]
+         (reset! drag-offset nil)
          (if-let [{:keys [x y]} (:scroll-offset (r/props this))]
            (.scrollTo @elem x y)))
        :reagent-render
        (fn [{:keys [on-scroll kind nodes dimensions]}]
          (let [connecting? (some? (<sub [:connector]))
-               dragging? (<sub [:dragging?])
-               mouse-move (when (or dragging? connecting?)
-                            #(>evt [:move-cursor (e->graph-cursor %)]))
-               mouse-up (cond
-                          connecting? #(>evt [:abort-connecting])
-                          dragging? #(>evt [:end-dragging]))]
+               dragging? (<sub [:dragging?])]
            [:div {:ref #(reset! elem %)
                   :class (cond-> ["graph"]
                            dragging? (conj "graph_is-dragging")
                            connecting? (conj "graph_is-connecting"))
                   :on-scroll on-scroll
-                  :on-mouse-move mouse-move
-                  :on-mouse-up mouse-up}
-            [:div.graph__scroll-content {:style {:width (u/px (:w dimensions))
-                                                 :height (u/px (:h dimensions))}}
+                  :on-mouse-down (fn [e]
+                                   (reset! drag-offset (e->graph-cursor e)))
+                  :on-mouse-move (fn [e]
+                                   (if (or dragging? connecting?)
+                                     (>evt [:move-cursor (e->graph-cursor e)]))
+                                   (if-some [offset @drag-offset]
+                                     (let [cursor (e->graph-cursor e)
+                                           [dx dy] (m/point-delta cursor offset)]
+                                       (.scrollBy @elem dx dy)
+                                       (reset! drag-offset cursor))))
+                  :on-mouse-up (fn [e]
+                                 (cond
+                                   connecting? (>evt [:abort-connecting])
+                                   dragging? (>evt [:end-dragging]))
+                                 (reset! drag-offset nil))}
+            [:div.graph__scroll-content
+             {:style {:width (u/px (:w dimensions))
+                      :height (u/px (:h dimensions))}}
              (into [:<>] (r/children (r/current-component)))
              (for [[item-component ids] nodes
                    id ids]
-               ^{:key (str kind id)} [drag-item id dimensions item-component])]]))})))
+               ^{:key (str kind ":" id)}
+               [drag-item id dimensions item-component])]]))})))
 
 ;; Icon
 
