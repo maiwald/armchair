@@ -13,12 +13,6 @@
                            (.getElementsByClassName "graph")
                            (aget 0))))
 
-(defn start-dragging-handler [ids]
-  (fn [e]
-    (when (e->left? e)
-      (u/prevent-e! e)
-      (>evt [:start-dragging ids (e->graph-cursor e)]))))
-
 (defn connection [{:keys [kind start end]}]
   [:line {:class ["graph__connection"
                   (when (= kind :connector) "graph__connection_is-connector")]
@@ -126,7 +120,11 @@
 
 (defn graph-node [{id :item-id}]
   (let [dragging? (<sub [:dragging-item? id])
-        start-dragging (start-dragging-handler #{id})
+        connecting? (some? (<sub [:connector]))
+        start-dragging (fn [e]
+                         (when (e->left? e)
+                           (u/prevent-e! e)
+                           (>evt [:start-dragging #{id} (e->graph-cursor e)])))
         stop-dragging (when dragging?
                         (fn [e]
                           (u/prevent-e! e)
@@ -134,7 +132,7 @@
     (fn [{:keys [title color width actions on-connect-end]
           :or {color "gray" width (u/px config/line-width)}}]
       [:div {:class "graph-node"
-             :on-mouse-up (when (some? (<sub [:connector])) on-connect-end)
+             :on-mouse-up (if connecting? on-connect-end)
              :style {:border-color color
                      :width width}}
        [:div {:class "graph-node__header"
