@@ -409,33 +409,6 @@
                     :selected selected
                     :selectable? (fn [tile] (not (contains? occupied tile)))}]]]))
 
-(defn location-inspector [location-id]
-  (let [{:keys [display-name characters]} (<sub [:location-editor/location-inspector location-id])]
-    [:div#inspector
-     [:header
-      [:span.title "Location"]
-      [:a.close-button {:on-click #(>evt [:close-inspector])}
-       [c/icon "times"]]]
-     [:div.inspector__content
-      [:div.inspector__property.inspector__property_inline
-       [:span.inspector__property__title "Name"]
-       [:div.inspector__property__payload
-        [input/text
-         {:on-change #(>evt [:location-editor/update-name location-id (e->val %)])
-          :value display-name}]]]
-      [:div.inspector__content
-       [:div.inspector__property
-        [:span.inspector__property__title "Characters"]
-        [:div.inspector__property__payload
-         (for [{:keys [character-id character-name]} characters]
-           [:p {:key (str location-id ":" character-id)}
-            character-name])]]]]
-     [:div.inspector__actions
-      [c/button {:title "Delete Location"
-                 :type :danger
-                 :fill true
-                 :on-click #(>evt [:delete-location location-id])}]]]))
-
 (defn placement-inspector [location-id tile]
   (let [{:keys [character-id
                 character-options

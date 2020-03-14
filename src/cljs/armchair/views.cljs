@@ -2,9 +2,10 @@
   (:require [reagent.core :as r]
             [armchair.slds :as slds]
             [armchair.components :as c :refer [icon]]
-            [armchair.location-editor.views :refer [location-editor]]
+            [armchair.location-editor.views :refer [location-editor trigger-inspector placement-inspector]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
-            [armchair.location-map.views :refer [location-map]]
+            [armchair.location-map.views :refer [location-map location-inspector]]
+            [armchair.modals.views :refer [modal]]
             [armchair.modals.views :refer [modal]]
             [armchair.modals.dialogue-creation :as dialogue-creation]
             [armchair.modals.switch-form :as switch-form]
@@ -119,9 +120,9 @@
 (defn inspector []
   (let [[inspector-type {:keys [location-id location-position]}] (<sub [:ui/inspector])]
     (case inspector-type
-      :placement [armchair.location-editor.views/placement-inspector location-id location-position]
-      :exit [armchair.location-editor.views/trigger-inspector location-id location-position]
-      :location [armchair.location-editor.views/location-inspector location-id])))
+      :placement [placement-inspector location-id location-position]
+      :exit [trigger-inspector location-id location-position]
+      :location [location-inspector location-id])))
 
 (defn content-component [page-name page-params]
   (case page-name
@@ -158,4 +159,6 @@
                 [toolbar creation-buttons]])
              [:div#page__content
               [content-component page-name page-params]
-              (if inspector? [:div#page__inspector [inspector]])]]]))})))
+              (if inspector?
+                [:div#page__inspector
+                 [inspector]])]]]))})))
