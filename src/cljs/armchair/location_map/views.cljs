@@ -8,6 +8,8 @@
             [armchair.routes :refer [>navigate]]
             [goog.functions :refer [debounce]]))
 
+(def map-scale 0.5)
+
 (defn e->point [e]
   (m/Point. (.-clientX e) (.-clientY e)))
 
@@ -26,10 +28,6 @@
          {:on-change #(>evt [:location-editor/update-name location-id (e->val %)])
           :value display-name}]]]]
      [:div.inspector__actions
-      [c/button {:title "Edit Objects"
-                 :icon "map-marker-alt"
-                 :fill true
-                 :on-click #(>navigate :location-edit :id location-id)}]
       [c/button {:title "Edit Tilemap"
                  :icon "map"
                  :fill true
@@ -46,8 +44,6 @@
                  :type :danger
                  :fill true
                  :on-click #(>evt [:delete-location location-id])}]]]))
-
-(def map-scale 0.5)
 
 (defn scroll-container []
   ; these don't need to be r/atoms because we dont need reactivity here
@@ -85,7 +81,7 @@
 (defn drag-container []
   (let [dragging? (<sub [:dragging?])]
     (into [:div
-           {:class ["graph" (if dragging? "graph_is-dragging")]
+           {:class ["drag-container" (if dragging? "drag-container_is-dragging")]
             :on-mouse-move (if dragging? #(>evt [:move-cursor (e->point %)]))}]
           (r/children (r/current-component)))))
 
@@ -106,37 +102,49 @@
                           (u/prevent-e! e)
                           (>evt [:end-dragging])))]
     [:div {:class ["location"
-                   "graph__item"
                    (when inspecting? "location_is-inspecting")
-                   (when dragging? "graph__item_is-dragging")]
+                   (when dragging? "location_is-dragging")]
            :on-mouse-down u/stop-e!
            :style {:left (:x position) :top (:y position)}}
-     [:div {:class "graph-node"}
-      [:header {:class "graph-node__header"
-                :on-mouse-down start-dragging
-                :on-mouse-up stop-dragging}
-       [:p {:class "graph-node__header__title"}
-        [:a {:on-click #(>navigate :location-edit :id location-id)
-             :on-mouse-down u/stop-e!}
-         display-name]]]
-      [:div {:class "graph-node__content"}
-       (if (some? preview-image-src)
-         [:img {:src preview-image-src
-                :on-click #(>evt [:inspect :location location-id])
-                :style {:width (u/px (* scale (:w dimension)))
-                        :height (u/px (* scale (:h dimension)))}}])]]]))
+     [:header {:class "location__header"
+               :on-mouse-down start-dragging
+               :on-mouse-up stop-dragging}
+      [:p {:class "location__header__title"}
+       display-name]]
+     [:div {:class "location__content"}
+      (if (some? preview-image-src)
+        [:img {:src preview-image-src
+               :on-click #(>evt [:inspect :location location-id])
+               :style {:width (u/px (* scale (:w dimension)))
+                       :height (u/px (* scale (:h dimension)))}}])]]))
 
-(defn location-connection [dimensions start end]
-  (let [start-pos (m/global-point (<sub [:ui/position start]) dimensions)
-        end-pos (m/global-point (<sub [:ui/position end]) dimensions)]
-    [connection {:start (m/translate-point start-pos (/ config/line-width 2) 15)
-                 :end (m/translate-point end-pos (/ config/line-width 2) 15)}]))
+(defn location-connection [dimensions
+                           [start-location start-position]
+                           [end-location end-position]]
+  (let [start-pos (m/global-point (<sub [:ui/position start-location]) dimensions)
+        end-pos (m/global-point (<sub [:ui/position end-location]) dimensions)
+        scale (fn [c] (m/round (+ (* c config/tile-size map-scale)
+                                  (* (/ config/tile-size 2) map-scale)
+                                  1)))]
+    [:line {:class ["location-connection"]
+            :x1 (+ (:x start-pos) (scale (:x start-position)))
+            :y1 (+ (:y start-pos) 34 (scale (:y start-position)))
+            :x2 (+ (:x end-pos) (scale (:x end-position)))
+            :y2 (+ (:y end-pos) 34 (scale (:y end-position)))}]))
+
+(defn connections [dimensions]
+  (let [cs (<sub [:location-map/connections])]
+    [:svg {:class "location-connections" :version "1.1"
+           :baseProfile "full"
+           :xmlns "http://www.w3.org/2000/svg"}
+     (for [[start end] cs]
+       ^{:key (str "location-connection" start "->" end)}
+       [location-connection dimensions start end])]))
 
 (defn location-map []
   (let [{:keys [dimensions
                 scroll-offset
-                location-ids
-                connections]} (<sub [:location-map map-scale])
+                location-ids]} (<sub [:location-map map-scale])
         update-offset (debounce #(>evt [:location-map/update-offset %]) 200)
         on-scroll (fn [e]
                     (let [target (.-currentTarget e)
@@ -144,16 +152,11 @@
                                    (.-scrollLeft target)
                                    (.-scrollTop target))]
                       (update-offset offset)))]
-    [scroll-container {:dimensions dimensions
-                       :scroll-offset scroll-offset
-                       :on-scroll on-scroll}
-     [drag-container
-      (for [id location-ids]
-        ^{:key (str "location:" id)}
-        [location id (fn [position] (m/global-point position dimensions))])
-      [:svg {:class "graph__connection-container" :version "1.1"
-             :baseProfile "full"
-             :xmlns "http://www.w3.org/2000/svg"}
-       (for [[start end] connections]
-         ^{:key (str "location-connection" start "->" end)}
-         [location-connection dimensions start end])]]]))
+      [scroll-container {:dimensions dimensions
+                         :scroll-offset scroll-offset
+                         :on-scroll on-scroll}
+       [drag-container
+        (for [id location-ids]
+          ^{:key (str "location:" id)}
+          [location id (fn [position] (m/global-point position dimensions))])
+        [connections dimensions]]]))

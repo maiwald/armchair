@@ -8,33 +8,6 @@
             [armchair.math :as m :refer [Point translate-point point-delta]]))
 
 (reg-sub
-  :location-map
-  :<- [:db-locations]
-  :<- [:ui/positions]
-  :<- [:ui/location-map-scroll-offset]
-  (fn [[locations positions scroll-offset] [_ map-scale]]
-    (let [connections (->> locations
-                           (select [ALL (collect-one FIRST) LAST :connection-triggers MAP-VALS FIRST])
-                           (map set)
-                           distinct
-                           (map sort))
-          scale (* config/tile-size map-scale)
-          positions (mapcat (fn [[id {{:keys [w h]} :dimension}]]
-                              (let [p (positions id)]
-                                [p (translate-point p (* w scale) (* h scale))]))
-                            locations)
-          dimensions (m/rect-resize
-                       (m/containing-rect positions)
-                       {:left 200
-                        :right 200
-                        :top 200
-                        :bottom 200})]
-      {:dimensions dimensions
-       :scroll-offset scroll-offset
-       :location-ids (keys locations)
-       :connections connections})))
-
-(reg-sub
   :location-map/location
   :<- [:db-locations]
   :<- [:ui/location-preview-cache]
@@ -50,3 +23,32 @@
        :preview-image-src preview-image-src
        :inspecting? (and (= inspector-type :location)
                          (= inspector-location-id location-id))})))
+(reg-sub
+  :location-map/connections
+  :<- [:db-locations]
+  (fn [locations]
+    (letfn [(->global-pos [location-id position]
+              (m/global-point position (-> location-id locations :dimension)))]
+      (->> locations
+        (select [ALL (collect-one FIRST) LAST :connection-triggers ALL])
+        (map (fn [[from-id [from-position [to-id to-position]]]]
+               (vector [from-id (->global-pos from-id from-position)]
+                       [to-id (->global-pos to-id to-position)])))))))
+
+(reg-sub
+  :location-map
+  :<- [:db-locations]
+  :<- [:ui/positions]
+  :<- [:ui/location-map-scroll-offset]
+  (fn [[locations positions scroll-offset] [_ map-scale]]
+    (let [scale (* config/tile-size map-scale)
+          map-dimensions (->> locations
+                              (mapcat (fn [[id {{:keys [w h]} :dimension}]]
+                                        (let [p (positions id)]
+                                          [p (translate-point p (* w scale) (* h scale))])))
+                              (m/containing-rect))]
+      {:dimensions (m/rect-resize
+                     map-dimensions
+                     {:left 200 :right 200 :top 200 :bottom 200})
+       :scroll-offset scroll-offset
+       :location-ids (keys locations)})))
