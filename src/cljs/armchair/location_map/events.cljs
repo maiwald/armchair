@@ -5,3 +5,17 @@
   :location-map/update-offset
   (fn [db [_ offset]]
     (assoc db :ui/location-map-scroll-offset offset)))
+
+(reg-event-meta
+  :location-map/zoom-in
+  (fn [db]
+    (swap! armchair.location-map.views/map-scale
+           (fn [scale] (min 1.5 (+ scale 0.1))))
+    db))
+
+(reg-event-meta
+  :location-map/zoom-out
+  (fn [db]
+    (swap! armchair.location-map.views/map-scale
+           (fn [scale] (max 0.2 (- scale 0.1))))
+    db))

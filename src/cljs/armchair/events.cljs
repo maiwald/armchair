@@ -182,21 +182,25 @@
 
 (reg-event-meta
   :start-dragging
-  (fn [db [_ ids cursor]]
+  (fn [db [_ ids cursor scale]]
     (cond-> db
-      (not (contains? db :dragging)) (assoc :dragging {:ids ids
-                                                       :cursor-start cursor}
-                                            :cursor cursor))))
+      (not (contains? db :dragging))
+      (assoc :dragging {:ids ids
+                        :cursor-start cursor
+                        :scale (or scale 1)}
+             :cursor cursor))))
 
 (reg-event-data
   :end-dragging
   (fn [{:keys [dragging cursor] :as db}]
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
-    (let [{:keys [cursor-start ids]} dragging
-          [dx dy] (m/point-delta cursor-start cursor)]
+    (let [{:keys [cursor-start ids scale]} dragging
+          [dx dy] (m/point-delta cursor-start cursor)
+          scaled-dx (m/round (/ dx scale))
+          scaled-dy (m/round (/ dy scale))]
       (-> db
-          (u/update-in-map :ui/positions ids m/translate-point dx dy)
+          (u/update-in-map :ui/positions ids m/translate-point scaled-dx scaled-dy)
           (dissoc :dragging :cursor)))))
 
 (reg-event-meta

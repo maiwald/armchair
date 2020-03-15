@@ -57,6 +57,10 @@
          (* factor (:w rect))
          (* factor (:h rect))))
 
+(defn point-scale [point factor]
+  (Point. (* factor (:x point))
+          (* factor (:y point))))
+
 (defn point-delta [start end]
   [(- (:x end) (:x start))
    (- (:y end) (:y start))])

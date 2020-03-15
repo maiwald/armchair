@@ -8,7 +8,7 @@
             [armchair.routes :refer [>navigate]]
             [goog.functions :refer [debounce]]))
 
-(def map-scale 0.5)
+(def map-scale (r/atom 0.5))
 
 (defn e->point [e]
   (m/Point. (.-clientX e) (.-clientY e)))
@@ -90,13 +90,13 @@
                 display-name
                 preview-image-src
                 inspecting?]} (<sub [:location-map/location location-id])
-        scale (* config/tile-size map-scale)
+        scale (* config/tile-size @map-scale)
         dragging? (<sub [:dragging-item? location-id])
         position (->position (<sub [:ui/position location-id]))
         start-dragging (fn [e]
                          (when (e->left? e)
                            (u/prevent-e! e)
-                           (>evt [:start-dragging #{location-id} (e->point e)])))
+                           (>evt [:start-dragging #{location-id} (e->point e) @map-scale])))
         stop-dragging (when dragging?
                         (fn [e]
                           (u/prevent-e! e)
@@ -121,10 +121,10 @@
 (defn location-connection [dimensions
                            [start-location start-position]
                            [end-location end-position]]
-  (let [start-pos (m/global-point (<sub [:ui/position start-location]) dimensions)
-        end-pos (m/global-point (<sub [:ui/position end-location]) dimensions)
-        scale (fn [c] (m/round (+ (* c config/tile-size map-scale)
-                                  (* (/ config/tile-size 2) map-scale)
+  (let [start-pos (m/global-point (m/point-scale (<sub [:ui/position start-location]) @map-scale) dimensions)
+        end-pos (m/global-point (m/point-scale (<sub [:ui/position end-location]) @map-scale) dimensions)
+        scale (fn [c] (m/round (+ (* c config/tile-size @map-scale)
+                                  (* (/ config/tile-size 2) @map-scale)
                                   1)))]
     [:line {:class ["location-connection"]
             :x1 (+ (:x start-pos) (scale (:x start-position)))
@@ -144,7 +144,7 @@
 (defn location-map []
   (let [{:keys [dimensions
                 scroll-offset
-                location-ids]} (<sub [:location-map map-scale])
+                location-ids]} (<sub [:location-map @map-scale])
         update-offset (debounce #(>evt [:location-map/update-offset %]) 200)
         on-scroll (fn [e]
                     (let [target (.-currentTarget e)
@@ -158,5 +158,5 @@
        [drag-container
         (for [id location-ids]
           ^{:key (str "location:" id)}
-          [location id (fn [position] (m/global-point position dimensions))])
+          [location id (fn [position] (m/global-point (m/point-scale position @map-scale) dimensions))])
         [connections dimensions]]]))
