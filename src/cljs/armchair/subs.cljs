@@ -73,13 +73,13 @@
 (reg-sub
   :ui/position
   :<- [:ui/positions]
-  :<- [:db-dragging]
   :<- [:db-cursor]
-  (fn [[positions {:keys [ids cursor-start]} cursor] [_ id]]
+  :<- [:db-dragging]
+  (fn [[positions cursor {:keys [ids cursor-start scale]}] [_ id]]
     (let [position (get positions id)]
       (if (contains? ids id)
         (let [[dx dy] (point-delta cursor-start cursor)]
-          (translate-point position dx dy))
+          (translate-point position (/ dx scale) (/ dy scale)))
         position))))
 
 (reg-sub
@@ -142,7 +142,13 @@
       (case page-name
         :locations [{:title "New Location"
                      :icon "plus"
-                     :event [:open-location-creation]}]
+                     :event [:open-location-creation]}
+                    {:title "Zoom In"
+                     :icon "plus"
+                     :event [:location-map/zoom-in]}
+                    {:title "Zoom Out"
+                     :icon "minus"
+                     :event [:location-map/zoom-out]}]
         :dialogues [{:title "New Dialogue"
                      :icon "plus"
                      :event [:armchair.modals.dialogue-creation/open]}]

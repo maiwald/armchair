@@ -44,11 +44,13 @@
     (let [scale (* config/tile-size map-scale)
           map-dimensions (->> locations
                               (mapcat (fn [[id {{:keys [w h]} :dimension}]]
-                                        (let [p (positions id)]
+                                        (let [p (-> (positions id)
+                                                    (m/point-scale map-scale))]
                                           [p (translate-point p (* w scale) (* h scale))])))
                               (m/containing-rect))]
       {:dimensions (m/rect-resize
                      map-dimensions
-                     {:left 200 :right 200 :top 200 :bottom 200})
+                     (zipmap [:left :right :top :bottom]
+                             (repeat (* map-scale 400))))
        :scroll-offset scroll-offset
        :location-ids (keys locations)})))
