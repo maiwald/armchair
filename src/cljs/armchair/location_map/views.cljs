@@ -111,7 +111,7 @@
                :on-mouse-up stop-dragging}
       [:p {:class "location__header__title"}
        display-name]]
-     [:div {:class "location__content"}
+     [:div {:class "location__preview"}
       (if (some? preview-image-src)
         [:img {:src preview-image-src
                :on-click #(>evt [:inspect :location location-id])
@@ -128,9 +128,9 @@
                                   1)))]
     [:line {:class ["location-connection"]
             :x1 (+ (:x start-pos) (scale (:x start-position)))
-            :y1 (+ (:y start-pos) 34 (scale (:y start-position)))
+            :y1 (+ (:y start-pos) (scale (:y start-position)))
             :x2 (+ (:x end-pos) (scale (:x end-position)))
-            :y2 (+ (:y end-pos) 34 (scale (:y end-position)))}]))
+            :y2 (+ (:y end-pos) (scale (:y end-position)))}]))
 
 (defn connections [dimensions]
   (let [cs (<sub [:location-map/connections])]
