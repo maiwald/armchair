@@ -9,13 +9,11 @@
 (reg-event-meta
   :location-map/zoom-in
   (fn [db]
-    (swap! armchair.location-map.views/map-scale
-           (fn [scale] (min 1.5 (+ scale 0.1))))
-    db))
+    (update db :ui/location-map-zoom-scale
+            (fn [scale] (min 1.5 (+ scale 0.1))))))
 
 (reg-event-meta
   :location-map/zoom-out
   (fn [db]
-    (swap! armchair.location-map.views/map-scale
-           (fn [scale] (max 0.2 (- scale 0.1))))
-    db))
+    (update db :ui/location-map-zoom-scale
+            (fn [scale] (max 0.2 (- scale 0.1))))))
