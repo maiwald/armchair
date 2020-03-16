@@ -28,6 +28,7 @@
 
 (reg-sub :ui/location-preview-cache #(:ui/location-preview-cache %))
 (reg-sub :ui/location-map-scroll-offset #(:ui/location-map-scroll-offset %))
+(reg-sub :ui/location-map-zoom-scale #(:ui/location-map-zoom-scale %))
 
 (reg-sub
   :character-list

@@ -57,6 +57,7 @@
 (s/def :ui/dragging (s/keys :req-un [::cursor-start ::ids]))
 (s/def :ui/positions (s/map-of uuid? :type/point))
 (s/def :ui/location-map-scroll-offset :type/point)
+(s/def :ui/location-map-zoom-scale float?)
 
 (s/def :ui/inspector (s/tuple :inspector/type :inspector/data))
 (s/def :inspector/type #{:location :placement :exit})
@@ -460,6 +461,7 @@
                             :active-texture ["PathAndObjects_0.png" (Point. 4 1)]}
           :ui/positions {}
           :ui/location-preview-cache {}
+          :ui/location-map-zoom-scale 0.5
           :characters {}
           :locations {}
           :dialogues {}

@@ -8,8 +8,6 @@
             [armchair.routes :refer [>navigate]]
             [goog.functions :refer [debounce]]))
 
-(def map-scale (r/atom 0.5))
-
 (defn e->point [e]
   (m/Point. (.-clientX e) (.-clientY e)))
 
@@ -85,18 +83,19 @@
             :on-mouse-move (if dragging? #(>evt [:move-cursor (e->point %)]))}]
           (r/children (r/current-component)))))
 
-(defn location [location-id ->position]
-  (let [{:keys [dimension
-                display-name
+(defn location [location-id]
+  (let [{:keys [display-name
                 preview-image-src
+                preview-image-w
+                preview-image-h
+                zoom-scale
                 inspecting?]} (<sub [:location-map/location location-id])
-        scale (* config/tile-size @map-scale)
         dragging? (<sub [:dragging-item? location-id])
-        position (->position (<sub [:ui/position location-id]))
+        position (<sub [:location-map/location-position location-id])
         start-dragging (fn [e]
                          (when (e->left? e)
                            (u/prevent-e! e)
-                           (>evt [:start-dragging #{location-id} (e->point e) @map-scale])))
+                           (>evt [:start-dragging #{location-id} (e->point e) zoom-scale])))
         stop-dragging (when dragging?
                         (fn [e]
                           (u/prevent-e! e)
@@ -115,36 +114,32 @@
       (if (some? preview-image-src)
         [:img {:src preview-image-src
                :on-click #(>evt [:inspect :location location-id])
-               :style {:width (u/px (* scale (:w dimension)))
-                       :height (u/px (* scale (:h dimension)))}}])]]))
+               :style {:width (u/px preview-image-w)
+                       :height (u/px preview-image-h)}}])]]))
 
-(defn location-connection [dimensions
-                           [start-location start-position]
-                           [end-location end-position]]
-  (let [start-pos (m/global-point (m/point-scale (<sub [:ui/position start-location]) @map-scale) dimensions)
-        end-pos (m/global-point (m/point-scale (<sub [:ui/position end-location]) @map-scale) dimensions)
-        scale (fn [c] (m/round (+ (* c config/tile-size @map-scale)
-                                  (* (/ config/tile-size 2) @map-scale)
-                                  1)))]
+(defn location-connection [[start-location start-offset]
+                           [end-location end-offset]]
+  (let [start-pos (<sub [:location-map/location-position start-location])
+        end-pos (<sub [:location-map/location-position end-location])]
     [:line {:class ["location-connection"]
-            :x1 (+ (:x start-pos) (scale (:x start-position)))
-            :y1 (+ (:y start-pos) (scale (:y start-position)))
-            :x2 (+ (:x end-pos) (scale (:x end-position)))
-            :y2 (+ (:y end-pos) (scale (:y end-position)))}]))
+            :x1 (+ (:x start-pos) (:x start-offset))
+            :y1 (+ (:y start-pos) (:y start-offset))
+            :x2 (+ (:x end-pos) (:x end-offset))
+            :y2 (+ (:y end-pos) (:y end-offset))}]))
 
-(defn connections [dimensions]
+(defn connections []
   (let [cs (<sub [:location-map/connections])]
     [:svg {:class "location-connections" :version "1.1"
            :baseProfile "full"
            :xmlns "http://www.w3.org/2000/svg"}
      (for [[start end] cs]
        ^{:key (str "location-connection" start "->" end)}
-       [location-connection dimensions start end])]))
+       [location-connection start end])]))
 
 (defn location-map []
   (let [{:keys [dimensions
                 scroll-offset
-                location-ids]} (<sub [:location-map @map-scale])
+                location-ids]} (<sub [:location-map])
         update-offset (debounce #(>evt [:location-map/update-offset %]) 200)
         on-scroll (fn [e]
                     (let [target (.-currentTarget e)
@@ -158,5 +153,5 @@
        [drag-container
         (for [id location-ids]
           ^{:key (str "location:" id)}
-          [location id (fn [position] (m/global-point (m/point-scale position @map-scale) dimensions))])
-        [connections dimensions]]]))
+          [location id])
+        [connections]]]))
