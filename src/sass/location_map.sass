@@ -54,8 +54,11 @@
       white-space: nowrap
 
   &__preview
-    border: 1px solid $gray
+    border: 3px solid $gray
     user-select: none
+
+  &_is-inspecting > &__preview
+    border: 3px solid rgba($primary, .8)
 
 .location-connections
   pointer-events: none
