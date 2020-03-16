@@ -29,7 +29,7 @@
                    [day8.re-frame/re-frame-10x "0.4.5"]]
     :plugins      [[lein-figwheel "0.5.19"]
                    [lein-ancient "0.6.15"]]
-    :source-paths ["src/cljs" "dev"]
+    :source-paths ["src/cljs"]
     :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}}}
 
 
