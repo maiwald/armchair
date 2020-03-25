@@ -211,31 +211,31 @@
 
 (def top-offset 55)
 
-(defn line-connection [dimensions start end]
-  (let [start-pos (m/global-point (<sub [:ui/position start]) dimensions)
-        end-pos (m/global-point (<sub [:ui/position end]) dimensions)]
+(defn line-connection [bounds start end]
+  (let [start-pos (m/global-point (<sub [:ui/position start]) bounds)
+        end-pos (m/global-point (<sub [:ui/position end]) bounds)]
     [curved-connection
      {:start (translate-point start-pos (+ config/line-width 15) top-offset)
       :end (translate-point end-pos 0 top-offset)}]))
 
-(defn case-connection [dimensions start index end]
-  (let [start-pos (m/global-point (<sub [:ui/position start]) dimensions)
-        end-pos (m/global-point (<sub [:ui/position end]) dimensions)]
+(defn case-connection [bounds start index end]
+  (let [start-pos (m/global-point (<sub [:ui/position start]) bounds)
+        end-pos (m/global-point (<sub [:ui/position end]) bounds)]
     [curved-connection
      {:start (translate-point start-pos (+ config/line-width 15) (+ (* index 34)
                                                                     top-offset))
       :end (translate-point end-pos 0 top-offset)}]))
 
-(defn option-connection [dimensions start index end]
+(defn option-connection [bounds start index end]
   (let [_ (<sub [:ui/position start])
-        end-pos (m/global-point (<sub [:ui/position end]) dimensions)]
+        end-pos (m/global-point (<sub [:ui/position end]) bounds)]
     (if-let [start-pos (get-option-start-position (get @option-position-lookup [start index]))]
       [curved-connection
        {:start (translate-point start-pos 35 20)
         :end (translate-point end-pos 0 top-offset)}])))
 
 (defn dialogue-editor [dialogue-id]
-  (if-let [{:keys [dimensions
+  (if-let [{:keys [bounds
                    npc-line-ids
                    player-line-ids
                    trigger-node-ids
@@ -245,7 +245,7 @@
                    case-connections
                    option-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
     [drag-canvas {:kind "line"
-                  :dimensions dimensions
+                  :bounds bounds
                   :nodes {npc-line-component npc-line-ids
                           player-line-component player-line-ids
                           trigger-node-component trigger-node-ids
@@ -257,14 +257,14 @@
       (if-let [connector (<sub [:connector])]
         [connection connector])
       (if-let [[start end] initial-line-connection]
-        [line-connection dimensions start end])
+        [line-connection bounds start end])
       (for [[start end] line-connections]
         ^{:key (str "line-connection:" start "->" end)}
-        [line-connection dimensions start end])
+        [line-connection bounds start end])
       (for [[start index end] case-connections]
         ^{:key (str "case-connection:" start ":" index "->" end)}
-        [case-connection dimensions start index end])
+        [case-connection bounds start index end])
       (for [[start index end] option-connections]
         ^{:key (str "response-connection:" start ":" index "->" end)}
-        [option-connection dimensions start index end])]]
+        [option-connection bounds start index end])]]
     [:span "Dialogue not found."]))

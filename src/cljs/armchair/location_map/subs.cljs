@@ -1,11 +1,10 @@
 (ns armchair.location-map.subs
   (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
             [com.rpl.specter
-             :refer [collect-one ALL FIRST LAST MAP-VALS]
+             :refer [collect-one ALL FIRST LAST]
              :refer-macros [select]]
             [armchair.config :as config]
-            [armchair.util :as u]
-            [armchair.math :as m :refer [Point translate-point point-delta]]))
+            [armchair.math :as m :refer [translate-point]]))
 
 (reg-sub
   :location-map/location
@@ -19,7 +18,7 @@
         zoom-scale]
        [_ location-id]]
     (let [{:keys [display-name]
-           {:keys [w h]} :dimension} (get locations location-id)
+           {:keys [w h]} :bounds} (get locations location-id)
           preview-image-src (get preview-cache location-id)]
       {:display-name display-name
        :zoom-scale zoom-scale
@@ -30,20 +29,18 @@
                          (= inspector-location-id location-id))})))
 
 (reg-sub
-  :location-map/dimensions
+  :location-map/bounds
   :<- [:db-locations]
   :<- [:ui/positions]
   :<- [:ui/location-map-zoom-scale]
   (fn [[locations positions zoom-scale]]
-    (let [scale (* config/tile-size zoom-scale)
-          map-dimensions (->> locations
-                              (mapcat (fn [[id {{:keys [w h]} :dimension}]]
-                                        (let [p (-> (positions id)
-                                                    (m/point-scale zoom-scale))]
-                                          [p (translate-point p (* w scale) (* h scale))])))
-                              (m/containing-rect))]
+    (let [scale (* config/tile-size zoom-scale)]
       (m/rect-resize
-        map-dimensions
+        (->> locations
+             (mapcat (fn [[id {{:keys [w h]} :bounds}]]
+                       (let [p (m/point-scale (positions id) zoom-scale)]
+                         [p (translate-point p (* w scale) (* h scale))])))
+             m/containing-rect)
         (zipmap [:left :right :top :bottom]
                 (repeat (* zoom-scale 400)))))))
 
@@ -52,11 +49,11 @@
   (fn [[_ location-id]]
     [(subscribe [:ui/position location-id])
      (subscribe [:ui/location-map-zoom-scale])
-     (subscribe [:location-map/dimensions])])
-  (fn [[position zoom-scale dimensions]]
+     (subscribe [:location-map/bounds])])
+  (fn [[position zoom-scale bounds]]
     (-> position
         (m/point-scale zoom-scale)
-        (m/global-point dimensions))))
+        (m/global-point bounds))))
 
 (reg-sub
   :location-map/connections
@@ -66,7 +63,7 @@
     (let [center-tile-offset (+ 1 (* (/ config/tile-size 2) zoom-scale))]
       (letfn [(tile-offset [location-id position]
                 (-> position
-                    (m/global-point (-> location-id locations :dimension))
+                    (m/global-point (-> location-id locations :bounds))
                     (m/point-scale (* config/tile-size zoom-scale))
                     (m/translate-point center-tile-offset center-tile-offset)))]
         (->> locations
@@ -78,9 +75,9 @@
 (reg-sub
   :location-map
   :<- [:db-locations]
-  :<- [:location-map/dimensions]
+  :<- [:location-map/bounds]
   :<- [:ui/location-map-scroll-offset]
-  (fn [[locations dimensions scroll-offset]]
-    {:dimensions dimensions
+  (fn [[locations bounds scroll-offset]]
+    {:bounds bounds
      :scroll-offset scroll-offset
      :location-ids (keys locations)}))

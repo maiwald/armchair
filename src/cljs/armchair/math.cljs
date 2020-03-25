@@ -68,7 +68,7 @@
 (defn rect-point [{:keys [x y]}]
   (Point. x y))
 
-(defn translate-point [{:keys [x y] :as point} dx dy]
+(defn translate-point [{:keys [x y]} dx dy]
   (Point. (+ x dx) (+ y dy)))
 
 (defn global-point

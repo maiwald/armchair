@@ -85,6 +85,6 @@
                   :style {:max-width "none"
                           :display "block"}}]
            [:div.level-layer
-            [tile-select {:dimension (m/rect-scale image-size (/ 1 config/tile-size))
+            [tile-select {:bounds (m/rect-scale image-size (/ 1 config/tile-size))
                           :on-select update-tile
                           :selected tile}]]]]]))))

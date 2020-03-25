@@ -6,8 +6,6 @@
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
             [armchair.location-map.views :refer [location-map location-inspector]]
             [armchair.modals.views :refer [modal]]
-            [armchair.modals.views :refer [modal]]
-            [armchair.modals.dialogue-creation :as dialogue-creation]
             [armchair.modals.switch-form :as switch-form]
             [armchair.util :as u :refer [<sub >evt]]
             [armchair.config :as config]
@@ -103,7 +101,7 @@
       [:a {:on-click #(>evt [:download-state])}
        [icon "download"] "save to file"]]
      [:li
-      [:a {:on-click (fn [e] (u/upload-json! #(>evt [:upload-state %])))}
+      [:a {:on-click (fn [] (u/upload-json! #(>evt [:upload-state %])))}
        [icon "upload"] "load from file"]]
      [:li [:a {:on-click #(>evt [:reset-db])} "reset"]]]]])
 
@@ -154,11 +152,11 @@
             [:div#page
              [:div#page__navigation
               [navigation page-name]]
-             (if (some? creation-buttons)
+             (when (some? creation-buttons)
                [:div#page__toolbar
                 [toolbar creation-buttons]])
              [:div#page__content
               [content-component page-name page-params]
-              (if inspector?
+              (when inspector?
                 [:div#page__inspector
                  [inspector]])]]]))})))

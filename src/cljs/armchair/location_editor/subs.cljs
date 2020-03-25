@@ -62,8 +62,8 @@
   :<- [:ui/inspector]
   (fn [[locations [inspector-type {inspector-location-id :location-id
                                    inspector-location-position :location-position}]] [_ location-id]]
-    (let [{:keys [dimension connection-triggers]} (locations location-id)]
-      {:dimension dimension
+    (let [{:keys [bounds connection-triggers]} (locations location-id)]
+      {:bounds bounds
        :connection-triggers (u/map-values
                               (fn [[target-id _] tile]
                                 {:display-name (get-in locations [target-id :display-name])
@@ -79,7 +79,7 @@
      (subscribe [:location-editor/characters location-id])
      (subscribe [:location-editor/player-position location-id])])
   (fn [[locations characters player-position] [_ location-id]]
-    {:dimension (get-in locations [location-id :dimension])
+    {:bounds (get-in locations [location-id :bounds])
      :characters characters
      :player-position player-position}))
 
@@ -114,9 +114,9 @@
   :location-editor/dimensions
   :<- [:db-locations]
   (fn [locations [_ location-id]]
-    (let [dimension (get-in locations [location-id :dimension])]
-      {:width (:w dimension)
-       :height (:h dimension)})))
+    (let [bounds (get-in locations [location-id :bounds])]
+      {:width (:w bounds)
+       :height (:h bounds)})))
 
 (reg-sub
   :location-editor/placement-inspector

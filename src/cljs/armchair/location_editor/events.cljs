@@ -173,19 +173,19 @@
   :location-editor/resize-smaller
   [build-location-preview]
   (fn [db [_ location-id direction]]
-    (let [dimension (get-in db [:locations location-id :dimension])
+    (let [bounds (get-in db [:locations location-id :bounds])
           side (case direction
                  :up :top
                  :down :bottom
                  :left :left
                  :right :right)
-          new-dimension (rect-resize dimension {side -1})
-          out-of-bounds? (fn [point] (not (rect-contains? new-dimension point)))
+          new-bounds (rect-resize bounds {side -1})
+          out-of-bounds? (fn [point] (not (rect-contains? new-bounds point)))
           loc-and-out-of-bounds? (fn [id point] (and (= location-id id)
                                                      (out-of-bounds? point)))]
       (->> (update-in db [:locations location-id]
                       (fn [location]
-                        (->> (assoc location :dimension new-dimension)
+                        (->> (assoc location :bounds new-bounds)
                              (setval [(multi-path :background1
                                                   :background2
                                                   :foreground1
@@ -210,6 +210,6 @@
                  :down :bottom
                  :left :left
                  :right :right)]
-      (update-in db [:locations location-id :dimension]
-                 (fn [dimension]
-                   (rect-resize dimension {side 1}))))))
+      (update-in db [:locations location-id :bounds]
+                 (fn [bounds]
+                   (rect-resize bounds {side 1}))))))
