@@ -2,11 +2,10 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.set :refer [subset?]]
             [com.rpl.specter
-             :refer [must ALL NONE MAP-VALS]
+             :refer [must NONE MAP-VALS]
              :refer-macros [setval]]
             [cognitect.transit :as t]
             [armchair.migrations :refer [db-version migrate]]
-            [armchair.textures :refer [tile-sprite-sheets]]
             [armchair.config :as config]
             [armchair.math :refer [Point Rect]]
             [armchair.util :as u])

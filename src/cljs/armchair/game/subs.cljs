@@ -1,10 +1,9 @@
 (ns armchair.game.subs
   (:require [clojure.spec.alpha :as s]
-            [clojure.set :refer [rename-keys]]
             [re-frame.core :refer [reg-sub]]
             [com.rpl.specter
-             :refer [must ALL NONE MAP-VALS]
-             :refer-macros [select setval transform]]
+             :refer [must ALL]
+             :refer-macros [transform]]
             [armchair.config :as config]
             [armchair.util :as u]))
 
@@ -119,8 +118,7 @@
   :game/locations
   :<- [:db-locations]
   :<- [:db-characters]
-  :<- [:db-dialogues]
-  (fn [[locations characters dialogues]]
+  (fn [[locations characters]]
     (u/map-values
       (fn [location]
         (-> location

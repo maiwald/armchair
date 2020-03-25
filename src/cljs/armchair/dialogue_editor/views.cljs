@@ -3,11 +3,9 @@
             [armchair.components
              :as c
              :refer [icon drag-canvas curved-connection connection e->graph-cursor]]
-            [armchair.routes :refer [>navigate]]
             [armchair.config :as config]
-            [armchair.slds :as slds]
             [armchair.input :as input]
-            [armchair.math :as m :refer [Point translate-point]]
+            [armchair.math :as m :refer [translate-point]]
             [armchair.modals.unlock-conditions-form :as unlock-conditions-form]
             [armchair.modals.switch-form :as switch-form]
             [armchair.modals.trigger-creation :as trigger-creation]
@@ -70,7 +68,7 @@
                                ["tag" "Create named state" #(>evt [:open-dialogue-state-modal line-id])])
                              ["trash" "Delete" #(>evt [:dialogue-editor/delete-node line-id])]
                              ["edit" "Edit" #(>evt [:open-npc-line-modal line-id])]]}
-     (if (some? state)
+     (when (some? state)
        [:div {:class "line__state"}
         [c/tag {:title state
                 :icon "tag"
@@ -85,13 +83,13 @@
        [inline-textarea {:text text
                          :on-change #(>evt [:update-line line-id :text %])}]]]]))
 
-(defn player-line-option-component [line-id index option total-count]
+(defn player-line-option-component [line-id index]
   (let [handle-text-change #(>evt [:dialogue-editor/update-option line-id index %])
         edit-condition #(>evt [::unlock-conditions-form/open line-id index])
         move-up #(>evt [:dialogue-editor/move-option line-id index :up])
         move-down #(>evt [:dialogue-editor/move-option line-id index :down])
         delete #(>evt [:dialogue-editor/delete-option line-id index])]
-    (fn [line-id index {:keys [text connected? conditions condition-conjunction]}]
+    (fn [line-id index {:keys [text connected? conditions condition-conjunction]} total-count]
       [:li
        [c/action-wrapper {:actions
                           [[:div.action {:on-click edit-condition}
@@ -126,8 +124,8 @@
                             :on-change handle-text-change}]]]]])))
 
 (defn player-line-component [line-id]
-  (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-node line-id]))
-          (action-add-option [e] (>evt [:dialogue-editor/add-option line-id]))]
+  (letfn [(action-delete [] (>evt [:dialogue-editor/delete-node line-id]))
+          (action-add-option [] (>evt [:dialogue-editor/add-option line-id]))]
     (fn [line-id]
       (let [options (<sub [:dialogue-editor/player-line-options line-id])]
         [c/graph-node {:title "Player"
@@ -156,8 +154,8 @@
       [icon "times-circle"]]]))
 
 (defn trigger-node-component [id]
-  (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-node id]))
-          (action-add-trigger [e] (>evt [::trigger-creation/open id]))]
+  (letfn [(action-delete [] (>evt [:dialogue-editor/delete-node id]))
+          (action-add-trigger [] (>evt [::trigger-creation/open id]))]
     (fn [id]
       (let [{:keys [trigger-ids connected?]} (<sub [:dialogue-editor/trigger-node id])]
         [c/graph-node {:title "Triggers"
@@ -191,7 +189,7 @@
                          :on-change #(>evt [:dialogue-editor/update-synopsis id %])}]]]]))
 
 (defn case-node-component [id]
-  (letfn [(action-delete [e] (>evt [:dialogue-editor/delete-node id]))]
+  (letfn [(action-delete [] (>evt [:dialogue-editor/delete-node id]))]
     (fn [id]
       (let [{:keys [switch-name clauses]} (<sub [:dialogue-editor/case-node id])]
         [c/graph-node {:title switch-name

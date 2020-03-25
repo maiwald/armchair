@@ -3,7 +3,7 @@
             [reagent.core :as r]
             [armchair.config :as config]
             [armchair.textures :refer [image-path]]
-            [armchair.math :as m :refer [abs clip point-delta translate-point]]
+            [armchair.math :as m :refer [abs point-delta translate-point]]
             [armchair.util :as u :refer [stop-e! >evt <sub e->left?]]))
 
 ;; Drag & Drop
@@ -69,14 +69,14 @@
                   :on-mouse-down (fn [e]
                                    (reset! drag-offset (e->graph-cursor e)))
                   :on-mouse-move (fn [e]
-                                   (if (or dragging? connecting?)
+                                   (when (or dragging? connecting?)
                                      (>evt [:move-cursor (e->graph-cursor e)]))
                                    (if-some [offset @drag-offset]
                                      (let [cursor (e->graph-cursor e)
                                            [dx dy] (m/point-delta cursor offset)]
                                        (.scrollBy @elem dx dy)
                                        (reset! drag-offset cursor))))
-                  :on-mouse-up (fn [e]
+                  :on-mouse-up (fn []
                                  (cond
                                    connecting? (>evt [:abort-connecting])
                                    dragging? (>evt [:end-dragging]))
@@ -132,7 +132,7 @@
     (fn [{:keys [title color width actions on-connect-end]
           :or {color "gray" width (u/px config/line-width)}}]
       [:div {:class "graph-node"
-             :on-mouse-up (if connecting? on-connect-end)
+             :on-mouse-up (when connecting? on-connect-end)
              :style {:border-color color
                      :width width}}
        [:div {:class "graph-node__header"
@@ -160,7 +160,7 @@
 ;; Button
 
 (defn button [{glyph :icon btn-type :type
-               :keys [title on-click danger fill]}]
+               :keys [title on-click fill]}]
   [:button {:class ["button"
                     (when fill "button_fill")
                     (when (= btn-type :danger) "button_danger")]

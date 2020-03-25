@@ -4,9 +4,8 @@
             [clojure.set :refer [rename-keys]]
             [com.rpl.specter
              :refer [multi-path ALL NONE MAP-KEYS MAP-VALS]
-             :refer-macros [setval transform]]
-            [armchair.math :refer [rect-resize rect-contains?]]
-            [armchair.util :as u]))
+             :refer-macros [setval]]
+            [armchair.math :refer [rect-resize rect-contains?]]))
 
 (reg-event-data
   :location-editor/update-name
@@ -37,7 +36,7 @@
 
 (reg-event-meta
   :location-editor/unset-highlight
-  (fn [db [_ tile]]
+  (fn [db]
     (update db :location-editor dissoc :highlight)))
 
 (reg-event-meta

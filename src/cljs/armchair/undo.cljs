@@ -7,10 +7,10 @@
 (defonce redo-list (atom []))
 
 (defn can-undo? []
-  (not (empty? @undo-list)))
+  (seq @undo-list))
 
 (defn can-redo? []
-  (not (empty? @redo-list)))
+  (seq @redo-list))
 
 (reg-sub :can-undo? can-undo?)
 (reg-sub :can-redo? can-redo?)

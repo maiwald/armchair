@@ -1,7 +1,6 @@
 (ns armchair.local-storage
   (:require [re-frame.core :refer [after]]
-            [cognitect.transit :as t]
-            [armchair.db :refer [serialize-db deserialize-db]]))
+            [armchair.db :refer [serialize-db]]))
 
 (def DB-KEY "armchair-data")
 (def storage (.-localStorage js/window))

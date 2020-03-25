@@ -1,7 +1,7 @@
 (ns armchair.modals.views
   (:require [armchair.slds :as slds]
             [armchair.input :as input]
-            [armchair.util :as u :refer [<sub >evt stop-e! e->val]]
+            [armchair.util :as u :refer [<sub >evt e->val]]
             [armchair.modals.character-form]
             [armchair.modals.dialogue-creation]
             [armchair.modals.trigger-creation]
@@ -11,7 +11,7 @@
             [armchair.modals.unlock-conditions-form]
             [armchair.modals.texture-selection]))
 
-(defn dialogue-state-modal [{:keys [line-id description]}]
+(defn dialogue-state-modal [{:keys [description]}]
   [slds/modal {:title "Dialogue State"
                :confirm-handler #(>evt [:create-dialogue-state])
                :close-handler #(>evt [:close-modal])}

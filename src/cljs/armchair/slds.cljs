@@ -1,7 +1,6 @@
 (ns armchair.slds
   (:require [reagent.core :as r]
-            [armchair.util :as u]
-            [armchair.components :as c]))
+            [armchair.util :as u]))
 
 (defn radio-button-group [{:keys [label options active on-change]}]
   (let [id (gensym "radio-button-group")]
@@ -30,7 +29,7 @@
                   :background-color color}}
    value])
 
-(defn data-table [{:keys [table-id id columns cell-views title collection]
+(defn data-table [{:keys [table-id id columns cell-views collection]
                    :or {id :id}}]
   [:table {:class "slds-table slds-table_bordered slds-table_cell-buffer"}
    [:thead {:class "slds-text-title_caps"}
@@ -49,7 +48,7 @@
             [cell-view (get item column) item]
             (get item column))])])]])
 
-(defn modal [{:keys [title close-handler confirm-handler width]}]
+(defn modal [{:keys [title close-handler confirm-handler]}]
   [:div
    [:section {:class ["slds-modal"
                       "slds-fade-in-open"]}
