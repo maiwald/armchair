@@ -24,8 +24,8 @@
                            :location-position [0 0]})
            (u/update-values :dialogues rename-keys {:description :synopsis})))
 
+   ; Extract player options from lines
    2 (fn [db]
-       "Extract player options from lines"
        (let [player-lines (u/where-map :kind :player (:lines db))]
          (reduce (fn [new-db [line-id {:keys [options] :as line}]]
                    (let [new-options (mapv #(assoc %
@@ -39,15 +39,15 @@
                  db
                  player-lines)))
 
+   ; Remove inline state trigger and information concepts
    3 (fn [db]
-       "Remove inline state trigger and information concepts"
        (-> db
            (dissoc :infos)
            (u/update-values :lines dissoc :state-triggers :info-ids)
            (u/update-values :player-options dissoc :state-triggers :required-info-ids)))
 
+   ; Make location connections unidirectional
    4 (fn [db]
-       "Make location connections unidirectional"
        (let [incoming (->> db
                            (select [:locations ALL (collect-one FIRST) LAST :connection-triggers ALL])
                            (reduce (fn [acc [location-id [target-position target-id]]]
@@ -58,8 +58,8 @@
                          (fn [location-id target-id]
                            [target-id (get-in incoming [target-id location-id])])))))
 
+   ; Store blocked tiles instead of walkable
    5 (fn [db]
-       "Store blocked tiles instead of walkable"
        (letfn [(inverse [[[x1 y1] [x2 y2]] tiles]
                  (set (for [x (range x1 (inc x2))
                             y (range y1 (inc y2))
@@ -73,8 +73,8 @@
                  (assoc :blocked (inverse dimension walk-set))))
            db)))
 
+   ; Migrate to multiple location layers
    6 (fn [db]
-       "Migrate to multiple location layers"
        (transform [:locations MAP-VALS]
                   #(-> %
                        (assoc :background2 {}
@@ -82,18 +82,18 @@
                               :foreground2 {})
                        (rename-keys {:background :background1}))
                   db))
+   ; Remove nil as value for line text
    7 (fn [db]
-       "Remove nil as value for line text"
        (setval [:lines MAP-VALS (must :text) nil?] "" db))
 
+   ; Remove next-line-id key instead of storing nil
    8 (fn [db]
-       "Remove next-line-id key instead of storing nil"
        (->> db
          (setval [:lines MAP-VALS #(nil? (:next-line-id %)) :next-line-id] NONE)
          (setval [:player-options MAP-VALS #(nil? (:next-line-id %)) :next-line-id] NONE)))
 
+   ; Migrate to Point and Rect records
    9 (fn [db]
-       "Migrate to Point and Rect records"
        (letfn [(to-point [[x y]]
                  (Point. x y))
                (to-rect [[[x1 y1] [x2 y2]]]
@@ -114,8 +114,8 @@
            (transform [:dialogues MAP-VALS (must :location-position)] to-point)
            (transform [:ui/positions MAP-VALS] to-point))))
 
+   ; Remove triggers for dialogue states
    10 (fn [db]
-        "Remove triggers for dialogue states"
         (let [ds-trigger? (fn [t] (= (:switch-kind t) :dialogue-state))
               trigger-ids (set (select [:triggers MAP-VALS ds-trigger? :entity/id] db))]
           (->> db
@@ -123,8 +123,8 @@
                (setval [:triggers MAP-VALS :switch-kind] NONE)
                (setval [:lines MAP-VALS (must :trigger-ids) ALL #(contains? trigger-ids %)] NONE))))
 
+   ; Introduce nodes for initial dialogue lines
    11 (fn [db]
-        "Introduce nodes for initial dialogue lines"
         (let [initial-line-positions (u/map-values
                                        #(math/translate-point
                                           (get-in db [:ui/positions (:initial-line-id %)])
@@ -132,8 +132,8 @@
                                        (:dialogues db))]
           (update db :ui/positions merge initial-line-positions)))
 
+   ; Move character/dialogue combination into location placements
    12 (fn [db]
-        "Move character/dialogue combination into location placements"
         (let [placements (->> db :dialogues vals
                               (remove #(nil? (:location-position %)))
                               (group-by :location-id)
@@ -153,12 +153,12 @@
                        (fn [d]
                          (dissoc d :location-id :location-position))))))
 
+   ; Remove nil dialogue states
    13 (fn [db]
-        "Remove nil dialogue states"
         (setval [:dialogues MAP-VALS :states empty?] NONE db))
 
+   ; Migrate to file based sprite format
    14 (fn [db]
-        "Migrate to file based sprite format"
         (->> db
           (transform [:locations MAP-VALS
                       (multi-path :background1
