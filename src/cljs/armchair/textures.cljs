@@ -1,11 +1,6 @@
 (ns armchair.textures
   (:require [clojure.core.async :refer [go chan take! put! <!]]
-            [armchair.config :refer [tile-size]]
-            [armchair.util :as u]
-            [armchair.math :refer [Point Rect]]
-            [com.rpl.specter
-             :refer [multi-path MAP-VALS]
-             :refer-macros [select]]))
+            [armchair.math :refer [Rect]]))
 
 (def tile-sprite-sheets
   {"32x32_map_tile_v3.1.png" (Rect. 0 0 736 928)

@@ -3,7 +3,7 @@
             [bidi.bidi :refer [match-route path-for]]))
 
 (set! (.-onpopstate js/window)
-      (fn [e] (dispatch [:show-page (subs js/location.hash 1)])))
+      (fn [] (dispatch [:show-page (subs js/location.hash 1)])))
 
 (def routes
   ["/" [["game" :game]

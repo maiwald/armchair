@@ -1,9 +1,5 @@
 (ns armchair.location-editor.subs
   (:require [re-frame.core :refer [reg-sub subscribe]]
-            [com.rpl.specter
-             :refer [keypath ALL MAP-KEYS MAP-VALS]
-             :refer-macros [select select-one!]]
-            [armchair.math :as m :refer [global-point]]
             [armchair.util :as u]))
 
 (reg-sub
@@ -161,9 +157,8 @@
 (reg-sub
   :location-editor/physically-occupied-tiles
   :<- [:db-locations]
-  :<- [:db-dialogues]
   :<- [:db-player]
-  (fn [[locations dialogues player] [_ location-id]]
+  (fn [[locations player] [_ location-id]]
     (let [{:keys [blocked placements]} (get locations location-id)
           player (when (= location-id (:location-id player))
                    [(:location-position player)])]

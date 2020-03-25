@@ -9,7 +9,7 @@
             [armchair.slds :as slds]
             [armchair.input :as input]
             [armchair.components :as c]
-            [armchair.util :as u :refer [<sub >evt stop-e! e->val]]
+            [armchair.util :as u :refer [<sub >evt e->val]]
             [armchair.events :refer [reg-event-data reg-event-meta]]))
 
 ;; Events

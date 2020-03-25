@@ -3,7 +3,6 @@
             [armchair.db :as db]
             [armchair.config :as config]
             [armchair.events :refer [reg-event-data reg-event-meta]]
-            [armchair.undo :refer [record-undo]]
             [armchair.util :as u]))
 
 (reg-event-data

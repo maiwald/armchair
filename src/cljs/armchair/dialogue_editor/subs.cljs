@@ -28,7 +28,7 @@
   :<- [:db-switches]
   :<- [:db-switch-values]
   (fn [[lines player-options switches switch-values] [_ line-id]]
-    (let [{:keys [options dialogue-id]} (lines line-id)]
+    (let [{:keys [options]} (lines line-id)]
       (mapv
         (fn [option-id]
           (let [{:keys [text condition next-line-id]} (player-options option-id)]
@@ -48,10 +48,9 @@
 (reg-sub
   :dialogue-editor/trigger
   :<- [:db-triggers]
-  :<- [:db-dialogues]
   :<- [:db-switches]
   :<- [:db-switch-values]
-  (fn [[triggers dialogues switches switch-values] [_ trigger-id]]
+  (fn [[triggers switches switch-values] [_ trigger-id]]
     (let [{:keys [switch-id switch-value]} (triggers trigger-id)]
       {:switch-id switch-id
        :switch-name (get-in switches [switch-id :display-name])
@@ -94,11 +93,10 @@
   :<- [:db-lines]
   :<- [:db-player-options]
   :<- [:db-dialogues]
-  :<- [:db-characters]
   :<- [:db-switches]
   :<- [:db-switch-values]
   :<- [:ui/positions]
-  (fn [[lines player-options dialogues characters switches switch-values positions] [_ dialogue-id]]
+  (fn [[lines player-options dialogues switches switch-values positions] [_ dialogue-id]]
     (if-let [dialogue (get dialogues dialogue-id)]
       (let [dialogue-lines (u/where-map :dialogue-id dialogue-id lines)
             lines-by-kind (group-by :kind (vals dialogue-lines))]

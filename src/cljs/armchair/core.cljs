@@ -14,7 +14,7 @@
             [armchair.location-map.subs]
             [armchair.location-previews]
             [armchair.game.subs]
-            [armchair.util :refer [>evt <sub]]
+            [armchair.util :refer [>evt]]
             [armchair.routes :as routes]
             [armchair.views :as views]
             [armchair.config :as config]))

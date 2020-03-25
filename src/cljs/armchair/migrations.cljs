@@ -27,7 +27,7 @@
    ; Extract player options from lines
    2 (fn [db]
        (let [player-lines (u/where-map :kind :player (:lines db))]
-         (reduce (fn [new-db [line-id {:keys [options] :as line}]]
+         (reduce (fn [new-db [line-id {:keys [options]}]]
                    (let [new-options (mapv #(assoc %
                                                    :entity/id (random-uuid)
                                                    :entity/type :player-option)

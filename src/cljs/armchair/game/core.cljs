@@ -2,11 +2,9 @@
   (:require [clojure.core.async :refer [<!
                                         chan
                                         close!
-                                        go-loop
-                                        put!
-                                        sliding-buffer]]
+                                        go-loop]]
             [clojure.spec.alpha :as s]
-            [clojure.set :refer [subset? union intersection difference]]
+            [clojure.set :refer [intersection difference]]
             [armchair.game.canvas :as c]
             [armchair.game.pathfinding :as path]
             [armchair.config :refer [tile-size
@@ -17,7 +15,7 @@
             [armchair.math :as m]
             [armchair.util :as u]
             [com.rpl.specter
-             :refer [nthpath ALL MAP-KEYS MAP-VALS FIRST]
+             :refer [nthpath ALL MAP-VALS FIRST]
              :refer-macros [select transform]]))
 
 ;; Definitions
@@ -78,7 +76,7 @@
 
 (defn interactable? [state tile]
   (let [{l :location-id} (:player state)
-        {:keys [bounds blocked characters]} (get-in @data [:locations l])]
+        characters (get-in @data [:locations l :characters])]
     (contains? characters tile)))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]

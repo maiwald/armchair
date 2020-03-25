@@ -1,8 +1,7 @@
 (ns armchair.subs
-  (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
+  (:require [re-frame.core :refer [reg-sub]]
             [clojure.string :refer [join]]
             [armchair.routes :refer [page-data]]
-            [armchair.config :as config]
             [armchair.math :as m :refer [translate-point point-delta]]
             [armchair.util :as u]))
 
@@ -55,7 +54,7 @@
            (fn [[id {:keys [display-name value-ids default]}]]
              (letfn [(value-name [value-id]
                        (str (get-in switch-values [value-id :display-name])
-                            (if (= default value-id) "*")))]
+                            (when (= default value-id) "*")))]
                {:id id
                 :display-name display-name
                 :values (->> value-ids (map value-name) (join ", "))})))

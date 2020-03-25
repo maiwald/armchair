@@ -2,8 +2,7 @@
   (:require [re-frame.core :refer [dispatch]]
             [armchair.config :as config]
             [armchair.events :refer [reg-event-data reg-event-meta]]
-            [armchair.math :refer [Rect]]
-            [armchair.util :as u]))
+            [armchair.math :refer [Rect]]))
 
 (defn assert-no-open-modal [db]
   (assert (not (contains? db :modal))
@@ -19,7 +18,7 @@
 
 (reg-event-meta
   :close-modal
-  (fn [db [_ modal-fn | args]]
+  (fn [db]
     (dissoc db :modal)))
 
 (reg-event-meta

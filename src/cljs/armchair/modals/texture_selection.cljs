@@ -18,7 +18,7 @@
 
 (reg-event-meta
   ::open
-  (fn [db [_ dialogue-id]]
+  (fn [db]
     (assert-no-open-modal db)
     (assoc-in db [:modal :texture-selection]
               (zipmap (list :file :tile)
@@ -60,7 +60,7 @@
 ;; Views
 
 (defn modal []
-  (letfn [(close-modal [e] (>evt [:close-modal]))
+  (letfn [(close-modal [] (>evt [:close-modal]))
           (update-file [e] (>evt [::update-file (e->val e)]))
           (update-tile [tile] (>evt [::update-tile tile]))
           (save [] (>evt [::save]))]

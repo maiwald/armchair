@@ -1,10 +1,10 @@
 (ns armchair.util
-  (:require [clojure.set :refer [intersection subset?]]
+  (:require [clojure.set :refer [subset?]]
             [re-frame.core :as re-frame]
             [armchair.math :as math :refer [Point Rect]]
             [armchair.config :refer [tile-size]]
             [com.rpl.specter
-             :refer [collect-one must ALL FIRST LAST NONE MAP-VALS MAP-KEYS]
+             :refer [collect-one ALL FIRST LAST MAP-VALS MAP-KEYS]
              :refer-macros [transform]]))
 
 (defn px [v] (str v "px"))

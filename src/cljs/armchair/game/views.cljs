@@ -17,7 +17,7 @@
     "ArrowLeft" "KeyA" "KeyH"
     "Space" "Enter"})
 
-(defn game-canvas [game-data]
+(defn game-canvas []
   (let [game-handle (atom nil)]
     (letfn [(on-key-down [e]
               (when-not (or (.-altKey e)
@@ -31,9 +31,9 @@
               (when-let [keycode (allowed-keys (.-code e))]
                 (prevent-e! e)
                 (put! (:input @game-handle) [:key-state [keycode :up]])))
-            (on-pointer-down [e]
+            (on-pointer-down []
               (put! (:input @game-handle) [:mouse-state :down]))
-            (on-pointer-up [e]
+            (on-pointer-up []
               (put! (:input @game-handle) [:mouse-state :up]))
             (on-pointer-move [e]
               (let [point (u/relative-cursor e (.-currentTarget e))]
@@ -48,7 +48,7 @@
            (.addEventListener js/document "keyup" on-key-up))
 
          :component-will-unmount
-         (fn [this]
+         (fn []
            (.removeEventListener js/document "keydown" on-key-down)
            (.removeEventListener js/document "keyup" on-key-up)
            (end-game @game-handle))

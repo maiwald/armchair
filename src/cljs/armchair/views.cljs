@@ -8,7 +8,6 @@
             [armchair.modals.views :refer [modal]]
             [armchair.modals.switch-form :as switch-form]
             [armchair.util :as u :refer [<sub >evt]]
-            [armchair.config :as config]
             [armchair.routes :refer [page-data >navigate]]
             [armchair.game.views :refer [game-view]]))
 

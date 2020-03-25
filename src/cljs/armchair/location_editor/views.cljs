@@ -33,7 +33,7 @@
        (u/relative-cursor e)
        u/coord->tile))
 
-(defn tile-paint-canvas [{:keys [on-paint texture]}]
+(defn tile-paint-canvas []
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
     (letfn [(set-current-tile [e] (reset! current-tile (get-tile e)))
@@ -143,7 +143,7 @@
           :on-click (e-> #(>evt [:armchair.modals.texture-selection/open active-texture]))}
       [c/sprite-texture active-texture]]]))
 
-(defn sidebar-collision [location-id]
+(defn sidebar-collision []
   (let [{:keys [active-walk-state]} (<sub [:location-editor/ui])]
     [sidebar-widget {:title "Collision State"}
      [:ul {:class "tile-grid"}
@@ -196,7 +196,7 @@
      [:span {:class "tile-list__item__label"} "Place new Exit"]]]])
 
 
-(defn sidebar-npcs [location-id]
+(defn sidebar-npcs []
   (let [available-characters (<sub [:location-editor/available-characters])]
     [sidebar-widget {:title "Available Characters"}
      [:ul {:class "tile-list"}
@@ -214,7 +214,7 @@
                          :height (str config/tile-size "px")}}
           [c/sprite-texture texture display-name]]
          [:span {:class "tile-list__item__label"} display-name]])]
-     (if (empty? available-characters) "There are no characters.")
+     (when (empty? available-characters) "There are no characters.")
      [c/button {:title "Create Character"
                 :icon "plus"
                 :fill true
@@ -248,7 +248,7 @@
                  :entities
                  [:<>
                   [sidebar-player]
-                  [sidebar-npcs location-id]])])]))
+                  [sidebar-npcs]])])]))
 
 (defn tile-style [{:keys [x y]}]
   {:width (str config/tile-size "px")
@@ -311,7 +311,7 @@
         rect (or override-rect bounds)]
     [:<>
      [do-some-tiles rect characters "npc"
-      (fn [tile {:keys [display-name texture]}]
+      (fn [_tile {:keys [display-name texture]}]
         [c/sprite-texture texture display-name])]
      (when (some? player-position)
        [player-tile rect player-position])]))
@@ -321,7 +321,7 @@
                 connection-triggers]} (<sub [:location-editor/connection-trigger-layer location-id])
         rect (or override-rect bounds)]
     [do-some-tiles rect connection-triggers "connection-trigger"
-     (fn [tile {:keys [display-name]}]
+     (fn [_tile {:keys [display-name]}]
        [:img {:src (image-path "exit.png")
               :title (str "to " display-name)}])]))
 
@@ -363,8 +363,8 @@
 (defn tile-select [{:keys [bounds on-select selected selectable?]}]
   (letfn [(on-click [e]
             (let [tile (relative-point (get-tile e) bounds)]
-              (if (or (not (fn? selectable?))
-                      (selectable? tile))
+              (when (or (not (fn? selectable?))
+                        (selectable? tile))
                 (on-select tile))))]
     [:div {:style {:position "absolute"
                    :top 0
@@ -493,7 +493,7 @@
 
      [do-some-tiles bounds characters "character-select"
       (fn [tile {:keys [texture display-name inspecting?]}]
-        [:div {:class ["interactor" "interactor_draggable" (if inspecting? "interactor_focus")]
+        [:div {:class ["interactor" "interactor_draggable" (when inspecting? "interactor_focus")]
                :title display-name
                :draggable true
                :on-click #(>evt [:inspect :placement location-id tile])
@@ -508,7 +508,7 @@
                 connection-triggers]} (<sub [:location-editor/connection-trigger-layer location-id])]
     [do-some-tiles bounds connection-triggers "connection-select"
      (fn [tile {:keys [display-name inspecting?]}]
-       [:div {:class ["interactor" "interactor_draggable" (if inspecting? "interactor_focus")]
+       [:div {:class ["interactor" "interactor_draggable" (when inspecting? "interactor_focus")]
               :title (str "to " display-name)
               :draggable true
               :on-click #(>evt [:inspect :exit location-id tile])
@@ -519,8 +519,7 @@
         [dnd-texture :exit]])]))
 
 (defn canvas [location-id]
-  (let [{:keys [bounds blocked]
-         :as location} (<sub [:location-editor/location location-id])
+  (let [{:keys [bounds blocked]} (<sub [:location-editor/location location-id])
         {:keys [active-pane
                 active-layer
                 visible-layers
@@ -563,7 +562,7 @@
         (case active-layer
           (:background1 :background2 :foreground1 :foreground2)
           [tile-paint-canvas
-           {:texture (if (not= active-tool :eraser) active-texture)
+           {:texture (when (not= active-tool :eraser) active-texture)
             :on-paint #(>evt [:location-editor/paint location-id active-layer
                               (translate-point % (:x bounds) (:y bounds))])}]
 
