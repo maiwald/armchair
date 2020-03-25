@@ -10,7 +10,7 @@
             [armchair.math :refer [Point Rect global-point]]
             [armchair.util :as u]))
 
-(defn location-preview-url [{rect :dimension :as location} callback]
+(defn location-preview-url [{rect :bounds :as location} callback]
   (let [texture-files (-> (select [(multi-path :background1
                                                :background2
                                                :foreground1

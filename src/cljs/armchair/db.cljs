@@ -105,7 +105,7 @@
 (s/def :location/location
   (s/keys :req [:entity/id
                 :entity/type]
-          :req-un [:location/dimension
+          :req-un [:location/bounds
                    ::display-name
                    :location/background1
                    :location/background2
@@ -118,7 +118,7 @@
 (s/def :location/position :type/point)
 (s/def :location/texture-layer (s/map-of :location/position ::texture))
 
-(s/def :location/dimension :type/rect)
+(s/def :location/bounds :type/rect)
 (s/def :location/background1 :location/texture-layer)
 (s/def :location/background2 :location/texture-layer)
 (s/def :location/foreground1 :location/texture-layer)

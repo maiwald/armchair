@@ -1,10 +1,9 @@
 (ns armchair.location-map.views
   (:require [reagent.core :as r]
-            [armchair.components :as c :refer [connection]]
+            [armchair.components :as c]
             [armchair.input :as input]
             [armchair.math :as m]
-            [armchair.util :as u :refer [stop-e! <sub >evt e->val e->left?]]
-            [armchair.config :as config]
+            [armchair.util :as u :refer [<sub >evt e->val e->left?]]
             [armchair.routes :refer [>navigate]]
             [goog.functions :refer [debounce]]))
 
@@ -54,7 +53,7 @@
          (if-let [{:keys [x y]} (:scroll-offset (r/props this))]
            (.scrollTo @scroll-elem x y)))
        :reagent-render
-       (fn [{:keys [on-scroll dimensions]}]
+       (fn [{:keys [on-scroll width height]}]
          [:div
           {:ref #(reset! scroll-elem %)
            :style {:width "100%"
@@ -68,19 +67,19 @@
                                     [dx dy] (m/point-delta cursor @prev-cursor)]
                                 (.scrollBy @scroll-elem dx dy)
                                 (reset! prev-cursor cursor))))
-           :on-mouse-up (fn [e] (reset! prev-cursor nil))}
+           :on-mouse-up (fn [] (reset! prev-cursor nil))}
           (into [:div
                  {:style {:min-width "100%"
                           :min-height "100%"
-                          :width (u/px (:w dimensions))
-                          :height (u/px (:h dimensions))}}]
+                          :width (u/px width)
+                          :height (u/px height)}}]
                 (r/children (r/current-component)))])})))
 
 (defn drag-container []
   (let [dragging? (<sub [:dragging?])]
     (into [:div
-           {:class ["drag-container" (if dragging? "drag-container_is-dragging")]
-            :on-mouse-move (if dragging? #(>evt [:move-cursor (e->point %)]))}]
+           {:class ["drag-container" (when dragging? "drag-container_is-dragging")]
+            :on-mouse-move (when dragging? #(>evt [:move-cursor (e->point %)]))}]
           (r/children (r/current-component)))))
 
 (defn location [location-id]
@@ -111,7 +110,7 @@
       [:p {:class "location__header__title"}
        display-name]]
      [:div {:class "location__preview"}
-      (if (some? preview-image-src)
+      (when (some? preview-image-src)
         [:img {:src preview-image-src
                :on-click #(>evt [:inspect :location location-id])
                :style {:width (u/px preview-image-w)
@@ -137,9 +136,7 @@
        [location-connection start end])]))
 
 (defn location-map []
-  (let [{:keys [dimensions
-                scroll-offset
-                location-ids]} (<sub [:location-map])
+  (let [{:keys [bounds scroll-offset location-ids]} (<sub [:location-map])
         update-offset (debounce #(>evt [:location-map/update-offset %]) 200)
         on-scroll (fn [e]
                     (let [target (.-currentTarget e)
@@ -147,7 +144,8 @@
                                    (.-scrollLeft target)
                                    (.-scrollTop target))]
                       (update-offset offset)))]
-      [scroll-container {:dimensions dimensions
+      [scroll-container {:width (:w bounds)
+                         :height (:h bounds)
                          :scroll-offset scroll-offset
                          :on-scroll on-scroll}
        [drag-container

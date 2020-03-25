@@ -38,8 +38,8 @@
                                    ["Q" ctrl-x ctrl-y (:x m) (:y m) "T" (:x end) (:y end)]
                                    ["L" (:x end) (:y end)])))}]))
 
-(defn drag-item [item-id dimensions component]
-  (let [position (m/global-point (<sub [:ui/position item-id]) dimensions)
+(defn drag-item [item-id bounds component]
+  (let [position (m/global-point (<sub [:ui/position item-id]) bounds)
         dragging? (<sub [:dragging-item? item-id])]
     [:div {:on-mouse-down stop-e!
            :class ["graph__item"
@@ -58,7 +58,7 @@
          (if-let [{:keys [x y]} (:scroll-offset (r/props this))]
            (.scrollTo @elem x y)))
        :reagent-render
-       (fn [{:keys [on-scroll kind nodes dimensions]}]
+       (fn [{:keys [on-scroll kind nodes bounds]}]
          (let [connecting? (some? (<sub [:connector]))
                dragging? (<sub [:dragging?])]
            [:div {:ref #(reset! elem %)
@@ -82,13 +82,13 @@
                                    dragging? (>evt [:end-dragging]))
                                  (reset! drag-offset nil))}
             [:div.graph__scroll-content
-             {:style {:width (u/px (:w dimensions))
-                      :height (u/px (:h dimensions))}}
+             {:style {:width (u/px (:w bounds))
+                      :height (u/px (:h bounds))}}
              (into [:<>] (r/children (r/current-component)))
              (for [[item-component ids] nodes
                    id ids]
                ^{:key (str kind ":" id)}
-               [drag-item id dimensions item-component])]]))})))
+               [drag-item id bounds item-component])]]))})))
 
 ;; Icon
 

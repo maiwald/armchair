@@ -19,7 +19,6 @@
 - save file for game state
 - desktop version for easier file access
 - release to itch.io as free game ;)
-- consistently rename dimension to dimensions or frame something
 
 ## dialogue editor
 - allow creating switches in dialogue editor

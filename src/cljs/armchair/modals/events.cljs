@@ -50,7 +50,7 @@
           (assoc-in [:ui/positions id] config/default-ui-position)
           (assoc-in [:locations id] {:entity/id id
                                      :entity/type :location
-                                     :dimension (Rect. 0 0 3 3)
+                                     :bounds (Rect. 0 0 3 3)
                                      :background1 {}
                                      :background2 {}
                                      :foreground1 {}

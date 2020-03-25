@@ -102,13 +102,13 @@
     (if-let [dialogue (get dialogues dialogue-id)]
       (let [dialogue-lines (u/where-map :dialogue-id dialogue-id lines)
             lines-by-kind (group-by :kind (vals dialogue-lines))]
-        {:dimensions (m/rect-resize
-                       (m/containing-rect
-                         (map positions (conj (keys dialogue-lines) dialogue-id)))
-                       {:left 100
-                        :right (+ config/line-width 100)
-                        :top 100
-                        :bottom 400})
+        {:bounds (m/rect-resize
+                   (m/containing-rect
+                     (map positions (conj (keys dialogue-lines) dialogue-id)))
+                   {:left 100
+                    :right (+ config/line-width 100)
+                    :top 100
+                    :bottom 400})
          :npc-line-ids (map :entity/id (lines-by-kind :npc))
          :player-line-ids (map :entity/id (lines-by-kind :player))
          :trigger-node-ids (map :entity/id (lines-by-kind :trigger))

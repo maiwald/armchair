@@ -70,15 +70,15 @@
 
 (defn walkable? [state tile]
   (let [{l :location-id} (:player state)
-        {:keys [dimension blocked characters]} (get-in @data [:locations l])]
+        {:keys [bounds blocked characters]} (get-in @data [:locations l])]
     (and
-      (m/rect-contains? dimension tile)
+      (m/rect-contains? bounds tile)
       (not (or (contains? blocked tile)
                (contains? characters tile))))))
 
 (defn interactable? [state tile]
   (let [{l :location-id} (:player state)
-        {:keys [dimension blocked characters]} (get-in @data [:locations l])]
+        {:keys [bounds blocked characters]} (get-in @data [:locations l])]
     (contains? characters tile)))
 
 (defn interaction-tile [{{:keys [position direction]} :player}]
@@ -242,18 +242,18 @@
       (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
     (let [l (get-in state [:player :location-id])
           {:keys [characters
-                  dimension
+                  bounds
                   background1
                   background2
                   foreground1
                   foreground2]} (get-in @data [:locations l])]
-      (draw-background dimension background1 camera)
-      (draw-background dimension background2 camera)
+      (draw-background bounds background1 camera)
+      (draw-background bounds background2 camera)
       (draw-highlight (:highlight state))
       (draw-player (:player state))
       (draw-characters characters camera)
-      (draw-background dimension foreground1 camera)
-      (draw-background dimension foreground2 camera))
+      (draw-background bounds foreground1 camera)
+      (draw-background bounds foreground2 camera))
       ; (draw-direction-indicator @ctx state)
       ; (draw-camera camera))
     (c/reset-transform! @ctx)
@@ -595,10 +595,10 @@
 (defn camera-rect [player-coord location-id]
   (let [w (* camera-tile-width tile-size)
         h (* camera-tile-height tile-size)
-        loc-dim (get-in @data [:locations location-id :dimension])
-        dim (m/rect-scale loc-dim tile-size)
-        left (camera-coord w (:x dim) (:w dim) (:x player-coord))
-        top (camera-coord h (:y dim) (:h dim) (:y player-coord))]
+        loc-bounds (get-in @data [:locations location-id :bounds])
+        bounds (m/rect-scale loc-bounds tile-size)
+        left (camera-coord w (:x bounds) (:w bounds) (:x player-coord))
+        top (camera-coord h (:y bounds) (:h bounds) (:y player-coord))]
     (m/Rect. left top w h)))
 
 (defn update-camera [state]

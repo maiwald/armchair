@@ -275,8 +275,8 @@
             :style (tile-style (global-point tile rect))}
       (f tile item)])])
 
-(defn dropzone [{:keys [dimension highlight occupied on-drop]}]
-  [do-all-tiles dimension "dropzone"
+(defn dropzone [{:keys [bounds highlight occupied on-drop]}]
+  [do-all-tiles bounds "dropzone"
    (fn [tile]
      (let [occupied? (contains? occupied tile)]
        [:div {:class ["interactor"
@@ -290,7 +290,7 @@
 
 (defn texture-layer [{:keys [location-id layer-id override-rect]}]
   (let [location (<sub [:location-editor/location location-id])
-        rect (or override-rect (:dimension location))
+        rect (or override-rect (:bounds location))
         layer (get location layer-id)]
     [do-all-tiles rect (str "texture-layer:" layer-id)
      (fn [tile]
@@ -307,8 +307,8 @@
 (defn entity-layer [location-id override-rect]
   (let [{:keys [player-position
                 characters
-                dimension]} (<sub [:location-editor/entity-layer location-id])
-        rect (or override-rect dimension)]
+                bounds]} (<sub [:location-editor/entity-layer location-id])
+        rect (or override-rect bounds)]
     [:<>
      [do-some-tiles rect characters "npc"
       (fn [tile {:keys [display-name texture]}]
@@ -317,9 +317,9 @@
        [player-tile rect player-position])]))
 
 (defn conntection-trigger-layer [location-id override-rect]
-  (let [{:keys [dimension
+  (let [{:keys [bounds
                 connection-triggers]} (<sub [:location-editor/connection-trigger-layer location-id])
-        rect (or override-rect dimension)]
+        rect (or override-rect bounds)]
     [do-some-tiles rect connection-triggers "connection-trigger"
      (fn [tile {:keys [display-name]}]
        [:img {:src (image-path "exit.png")
@@ -335,48 +335,48 @@
 
 (defn location-preview [location-id preview-tile]
   (let [tiles-around 3
-        dimension (Rect. (- (:x preview-tile) tiles-around)
-                         (- (:y preview-tile) tiles-around)
-                         (inc (* 2 tiles-around))
-                         (inc (* 2 tiles-around)))]
+        bounds (Rect. (- (:x preview-tile) tiles-around)
+                (- (:y preview-tile) tiles-around)
+                (inc (* 2 tiles-around))
+                (inc (* 2 tiles-around)))]
     [:div {:class "level"
-           :style {:width (u/px (* config/tile-size (:w dimension)))
-                   :height (u/px (* config/tile-size (:h dimension)))}}
+           :style {:width (u/px (* config/tile-size (:w bounds)))
+                   :height (u/px (* config/tile-size (:h bounds)))}}
      [texture-layer {:location-id location-id
                      :layer-id :background1
-                     :override-rect dimension}]
+                     :override-rect bounds}]
      [texture-layer {:location-id location-id
                      :layer-id :background2
-                     :override-rect dimension}]
+                     :override-rect bounds}]
      [texture-layer {:location-id location-id
                      :layer-id :foreground1
-                     :override-rect dimension}]
+                     :override-rect bounds}]
      [texture-layer {:location-id location-id
                      :layer-id :foreground2
-                     :override-rect dimension}]
-     [entity-layer location-id dimension]
-     [conntection-trigger-layer location-id dimension]
+                     :override-rect bounds}]
+     [entity-layer location-id bounds]
+     [conntection-trigger-layer location-id bounds]
      [:div {:key "location-cell:highlight"
             :class "level__tile level__tile_highlight"
-            :style (tile-style (global-point preview-tile dimension))}]]))
+            :style (tile-style (global-point preview-tile bounds))}]]))
 
-(defn tile-select [{:keys [dimension on-select selected selectable?]}]
+(defn tile-select [{:keys [bounds on-select selected selectable?]}]
   (letfn [(on-click [e]
-            (let [tile (relative-point (get-tile e) dimension)]
+            (let [tile (relative-point (get-tile e) bounds)]
               (if (or (not (fn? selectable?))
                       (selectable? tile))
                 (on-select tile))))]
     [:div {:style {:position "absolute"
                    :top 0
                    :left 0
-                   :width (u/px (* config/tile-size (:w dimension)))
-                   :height (u/px (* config/tile-size (:h dimension)))}}
+                   :width (u/px (* config/tile-size (:w bounds)))
+                   :height (u/px (* config/tile-size (:h bounds)))}}
      (when selected
        [:div {:key "location-cell:selected"
               :class "level__tile level__tile_highlight"
-              :style (tile-style (global-point selected dimension))}])
+              :style (tile-style (global-point selected bounds))}])
      (when (fn? selectable?)
-       [do-all-tiles dimension "disabled-selectors"
+       [do-all-tiles bounds "disabled-selectors"
         (fn [tile]
           (if-not (selectable? tile)
             [:div {:class ["interactor" "interactor_disabled"]}]))])
@@ -384,15 +384,15 @@
             :on-click on-click}]]))
 
 (defn position-select [location-id on-select selected]
-  (let [{:keys [dimension]} (<sub [:location-editor/location location-id])
+  (let [{:keys [bounds]} (<sub [:location-editor/location location-id])
         occupied (<sub [:location-editor/physically-occupied-tiles location-id])]
     [:div {:style {:overflow "scroll"
                    :background-color "#000"
                    :max-width (u/px 600)
                    :max-height (u/px 400)}}
      [:div {:class "level"
-            :style {:width (u/px (* config/tile-size (:w dimension)))
-                    :height (u/px (* config/tile-size (:h dimension)))
+            :style {:width (u/px (* config/tile-size (:w bounds)))
+                    :height (u/px (* config/tile-size (:h bounds)))
                     :margin "auto"}}
       [texture-layer {:location-id location-id
                       :layer-id :background1}]
@@ -404,7 +404,7 @@
                       :layer-id :foreground2}]
       [entity-layer location-id]
       [conntection-trigger-layer location-id]
-      [tile-select {:dimension dimension
+      [tile-select {:bounds bounds
                     :on-select on-select
                     :selected selected
                     :selectable? (fn [tile] (not (contains? occupied tile)))}]]]))
@@ -477,10 +477,10 @@
 (defn edit-entity-layer [location-id]
   (let [{:keys [player-position
                 characters
-                dimension]} (<sub [:location-editor/entity-layer location-id])]
+                bounds]} (<sub [:location-editor/entity-layer location-id])]
     [:<>
      (when player-position
-       [do-some-tiles dimension {player-position :player} "player-select"
+       [do-some-tiles bounds {player-position :player} "player-select"
         (fn [_ _]
           [:div {:class "interactor interactor_draggable"
                  :title "Player"
@@ -491,7 +491,7 @@
                                   (>evt [:location-editor/start-entity-drag [:player]]))}
            [dnd-texture :hare_down_idle1]])])
 
-     [do-some-tiles dimension characters "character-select"
+     [do-some-tiles bounds characters "character-select"
       (fn [tile {:keys [texture display-name inspecting?]}]
         [:div {:class ["interactor" "interactor_draggable" (if inspecting? "interactor_focus")]
                :title display-name
@@ -504,9 +504,9 @@
          [dnd-texture texture]])]]))
 
 (defn edit-trigger-layer [location-id]
-  (let [{:keys [dimension
+  (let [{:keys [bounds
                 connection-triggers]} (<sub [:location-editor/connection-trigger-layer location-id])]
-    [do-some-tiles dimension connection-triggers "connection-select"
+    [do-some-tiles bounds connection-triggers "connection-select"
      (fn [tile {:keys [display-name inspecting?]}]
        [:div {:class ["interactor" "interactor_draggable" (if inspecting? "interactor_focus")]
               :title (str "to " display-name)
@@ -519,7 +519,7 @@
         [dnd-texture :exit]])]))
 
 (defn canvas [location-id]
-  (let [{:keys [dimension blocked]
+  (let [{:keys [bounds blocked]
          :as location} (<sub [:location-editor/location location-id])
         {:keys [active-pane
                 active-layer
@@ -535,8 +535,8 @@
                         :connection-trigger #(>evt [:location-editor/move-trigger location-id dnd-payload %])))]
     [:div {:class "level-wrap"}
      [:div {:class "level"
-            :style {:width (u/px (* config/tile-size (:w dimension)))
-                    :height (u/px (* config/tile-size (:h dimension)))}}
+            :style {:width (u/px (* config/tile-size (:w bounds)))
+                    :height (u/px (* config/tile-size (:h bounds)))}}
 
       (for [[layer-id] (reverse config/location-editor-layers)
             :when (contains? visible-layers layer-id)]
@@ -547,7 +547,7 @@
 
           :collision
           ^{:key "layer::collision"}
-          [collision-layer dimension blocked]
+          [collision-layer bounds blocked]
 
           :triggers
           ^{:key "layer::triggers"}
@@ -565,12 +565,12 @@
           [tile-paint-canvas
            {:texture (if (not= active-tool :eraser) active-texture)
             :on-paint #(>evt [:location-editor/paint location-id active-layer
-                              (translate-point % (:x dimension) (:y dimension))])}]
+                              (translate-point % (:x bounds) (:y bounds))])}]
 
           :collision
           [tile-paint-canvas
            {:on-paint #(>evt [:location-editor/set-walkable location-id
-                              (translate-point % (:x dimension) (:y dimension))])}]
+                              (translate-point % (:x bounds) (:y bounds))])}]
 
           :entities
           [edit-entity-layer location-id]
@@ -583,7 +583,7 @@
          [edit-trigger-layer location-id]])
 
       (when (fn? dropzone-fn)
-        [dropzone {:dimension dimension
+        [dropzone {:bounds bounds
                    :highlight highlight
                    :occupied (<sub [:location-editor/occupied-tiles location-id])
                    :on-drop dropzone-fn}])]]))

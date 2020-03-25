@@ -14,7 +14,7 @@
             [armchair.util :as u]
             [armchair.migrations.textures :refer [texture-lookup]]))
 
-(def db-version 15)
+(def db-version 16)
 
 (def migrations
   "Map of migrations. Key is the version we are coming from."
@@ -166,7 +166,11 @@
                                   :foreground1
                                   :foreground2) MAP-VALS]
                      texture-lookup)
-          (transform [:characters MAP-VALS :texture] texture-lookup)))})
+          (transform [:characters MAP-VALS :texture] texture-lookup)))
+
+   ; Rename location dimensions to bounds
+   15 (fn [db]
+        (u/update-values db :locations rename-keys {:dimension :bounds}))})
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)
