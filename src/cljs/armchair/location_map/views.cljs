@@ -51,7 +51,10 @@
        :component-did-mount
        (fn [this]
          (if-let [{:keys [x y]} (:scroll-offset (r/props this))]
-           (.scrollTo @scroll-elem x y)))
+           (.scrollTo @scroll-elem x y)
+           (.scrollTo @scroll-elem
+                      (/ (- (.-scrollWidth @scroll-elem) (.-clientWidth @scroll-elem)) 2)
+                      (/ (- (.-scrollHeight @scroll-elem) (.-clientHeight @scroll-elem)) 2))))
        :reagent-render
        (fn [{:keys [on-scroll width height]}]
          [:div
