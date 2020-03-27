@@ -1,13 +1,14 @@
 (ns armchair.util
   (:require [clojure.set :refer [subset?]]
             [re-frame.core :as re-frame]
-            [armchair.math :as math :refer [Point Rect]]
+            [armchair.math :refer [round Point Rect]]
             [armchair.config :refer [tile-size]]
             [com.rpl.specter
              :refer [collect-one ALL FIRST LAST MAP-VALS MAP-KEYS]
              :refer-macros [transform]]))
 
-(defn px [v] (str v "px"))
+(defn px [v]
+  (str (round v) "px"))
 
 (defn truncate [s n]
   (if (< (count s) n)
