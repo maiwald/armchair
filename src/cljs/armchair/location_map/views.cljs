@@ -139,20 +139,21 @@
        [location-connection start end])]))
 
 (defn location-map []
-  (let [{:keys [bounds scroll-offset location-ids]} (<sub [:location-map])
-        update-offset (debounce #(>evt [:location-map/update-offset %]) 200)
+  (let [update-offset (debounce #(>evt [:location-map/update-offset %]) 200)
         on-scroll (fn [e]
                     (let [target (.-currentTarget e)
                           offset (m/Point.
                                    (.-scrollLeft target)
                                    (.-scrollTop target))]
                       (update-offset offset)))]
-      [scroll-container {:width (:w bounds)
-                         :height (:h bounds)
-                         :scroll-offset scroll-offset
-                         :on-scroll on-scroll}
-       [drag-container
-        (for [id location-ids]
-          ^{:key (str "location:" id)}
-          [location id])
-        [connections]]]))
+    (fn []
+      (let [{:keys [bounds scroll-offset location-ids]} (<sub [:location-map])]
+        [scroll-container {:width (:w bounds)
+                           :height (:h bounds)
+                           :scroll-offset scroll-offset
+                           :on-scroll on-scroll}
+         [drag-container
+          (for [id location-ids]
+            ^{:key (str "location:" id)}
+            [location id])
+          [connections]]]))))
