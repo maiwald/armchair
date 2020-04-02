@@ -153,11 +153,7 @@
        [:li
         [:a {:on-click (fn [e] (u/upload-json! #(>evt [:upload-state %])))}
          [icon "upload"] "load from file"]]
-       [:li [:a {:on-click #(>evt [:reset-db])} "reset"]]
-       (when-not config/debug?
-         [:li [:a {:href "https://github.com/maiwald/armchair"
-                   :target "_blank"}
-               [icon "code-branch"] "source"]])]]]))
+       [:li [:a {:on-click #(>evt [:reset-db])} "reset"]]]]]))
 
 ;; Root
 
