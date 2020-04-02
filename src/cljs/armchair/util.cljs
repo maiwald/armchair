@@ -8,7 +8,9 @@
              :refer-macros [transform]]))
 
 (defn px [v]
-  (str (round v) "px"))
+  (if (zero? v)
+    v
+    (str (round v) "px")))
 
 (defn truncate [s n]
   (if (< (count s) n)

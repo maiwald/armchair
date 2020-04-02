@@ -10,8 +10,7 @@
   :location-editor/ui
   (fn [db]
     (select-keys (:location-editor db)
-                 [:highlight
-                  :active-pane
+                 [:active-pane
                   :active-tool
                   :visible-layers
                   :active-layer

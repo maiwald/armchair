@@ -30,16 +30,6 @@
     (assoc-in db [:location-editor :active-walk-state] value)))
 
 (reg-event-meta
-  :location-editor/set-highlight
-  (fn [db [_ tile]]
-    (assoc-in db [:location-editor :highlight] tile)))
-
-(reg-event-meta
-  :location-editor/unset-highlight
-  (fn [db]
-    (update db :location-editor dissoc :highlight)))
-
-(reg-event-meta
   :location-editor/set-active-pane
   (fn [db [_ pane]]
     (assoc-in db [:location-editor :active-pane] pane)))
@@ -66,13 +56,13 @@
 (reg-event-meta
   :location-editor/stop-entity-drag
   (fn [db]
-    (update db :location-editor dissoc :highlight :dnd-payload)))
+    (update db :location-editor dissoc :dnd-payload)))
 
 (reg-event-data
   :location-editor/move-player
   (fn [db [_ location-id position]]
     (-> db
-       (update :location-editor dissoc :highlight :dnd-payload)
+       (update :location-editor dissoc :dnd-payload)
        (assoc :player {:location-id location-id
                        :location-position position}))))
 
@@ -86,14 +76,14 @@
                        (= inspector-id location-id)
                        (= inspector-position from)))
           (assoc-in [:ui/inspector 1 :location-position] to))
-        (update :location-editor dissoc :highlight :dnd-payload)
+        (update :location-editor dissoc :dnd-payload)
         (update-in [:locations location-id :placements] rename-keys {from to}))))
 
 (reg-event-data
   :location-editor/place-character
   (fn [db [_ location-id character-id to]]
     (-> db
-        (update :location-editor dissoc :highlight :dnd-payload)
+        (update :location-editor dissoc :dnd-payload)
         (assoc-in [:locations location-id :placements to]
                   {:character-id character-id}))))
 
@@ -125,7 +115,7 @@
 (reg-event-data
   :location-editor/move-trigger
   (fn [db [_ location-id from to]]
-    (let [new-db (update db :location-editor dissoc :highlight :dnd-payload)]
+    (let [new-db (update db :location-editor dissoc :dnd-payload)]
       (if (some? from)
         (-> new-db
             (cond-> (let [[inspector-type {inspector-location-id :location-id
