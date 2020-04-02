@@ -33,6 +33,12 @@
        (u/relative-cursor e)
        u/coord->tile))
 
+(defn tile-style [{:keys [x y]}]
+  {:width (px config/tile-size)
+   :height (px config/tile-size)
+   :top (px (* y config/tile-size))
+   :left (px (* x config/tile-size))})
+
 (defn tile-paint-canvas []
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
@@ -61,20 +67,13 @@
                                   (paint e))
                  :on-mouse-up stop-painting}
            (if-let [tile @current-tile]
-             (let [{:keys [x y]} (u/tile->coord tile)]
-               (if (some? texture)
-                 [:div {:style {:position "absolute"
-                                :opacity ".8"
-                                :height (px config/tile-size)
-                                :width (px config/tile-size)
-                                :top (px y)
-                                :left (px x)}}
-                  [c/sprite-texture texture]]
-                 [:div {:class "interactor interactor_paint"
-                        :style {:height (px config/tile-size)
-                                :width (px config/tile-size)
-                                :top (px y)
-                                :left (px x)}}])))])))))
+             (if (some? texture)
+               [:div {:style (merge {:position "absolute"
+                                     :opacity ".8"}
+                                    (tile-style tile))}
+                [c/sprite-texture texture]]
+               [:div {:class "interactor interactor_paint"
+                      :style (tile-style tile)}]))])))))
 
 (defn sidebar-widget [{title :title}]
   (into [:div {:class "location-editor__sidebar-widget"}
@@ -250,12 +249,6 @@
                   [sidebar-player]
                   [sidebar-npcs]])])]))
 
-(defn tile-style [{:keys [x y]}]
-  {:width (str config/tile-size "px")
-   :height (str config/tile-size "px")
-   :top (* y config/tile-size)
-   :left (* x config/tile-size)})
-
 (defn do-all-tiles [rect layer-title f]
   [:<>
    (for [tile (rect->point-seq rect)
@@ -275,18 +268,30 @@
             :style (tile-style (global-point tile rect))}
       (f tile item)])])
 
-(defn dropzone [{:keys [bounds highlight occupied on-drop]}]
-  [do-all-tiles bounds "dropzone"
-   (fn [tile]
-     (let [occupied? (contains? occupied tile)]
-       [:div {:class ["interactor"
-                      (when (= tile highlight) "interactor_dropzone")
-                      (when occupied? "interactor_disabled")]
-              :on-drag-over u/prevent-e!
-              :on-drag-enter (e-> #(if occupied?
-                                     (>evt [:location-editor/unset-highlight])
-                                     (>evt [:location-editor/set-highlight tile])))
-              :on-drop (when-not occupied? (e-> #(on-drop tile)))}]))])
+(defn dropzone []
+  (let [current-tile (r/atom nil)]
+    (letfn [(set-current-tile [tile] (reset! current-tile tile))
+            (clear-current-tile [] (reset! current-tile nil))]
+      (fn [{:keys [occupied on-drop]}]
+        [:div {:on-drag-over (fn [e]
+                               (u/prevent-e! e)
+                               (set-current-tile (get-tile e)))
+               :on-drag-leave clear-current-tile
+               :on-drop (fn []
+                          (when-not (contains? occupied @current-tile)
+                            (on-drop @current-tile)))
+               :style {:position "absolute"
+                       :top 0
+                       :left 0
+                       :width "100%"
+                       :height "100%"
+                       :z-index 10}}
+         (when @current-tile
+           [:div {:class ["interactor"
+                          (if (contains? occupied @current-tile)
+                            "interactor_disabled"
+                            "interactor_dropzone")]
+                  :style (tile-style @current-tile)}])]))))
 
 (defn texture-layer [{:keys [location-id layer-id override-rect]}]
   (let [location (<sub [:location-editor/location location-id])
@@ -524,14 +529,13 @@
                 active-layer
                 visible-layers
                 active-tool
-                active-texture
-                highlight]} (<sub [:location-editor/ui])
+                active-texture]} (<sub [:location-editor/ui])
         dropzone-fn (if-let [[dnd-type dnd-payload] (<sub [:location-editor/dnd-payload])]
                       (case dnd-type
-                        :character          #(>evt [:location-editor/place-character location-id dnd-payload %])
-                        :player             #(>evt [:location-editor/move-player location-id %])
-                        :placement          #(>evt [:location-editor/move-placement location-id dnd-payload %])
-                        :connection-trigger #(>evt [:location-editor/move-trigger location-id dnd-payload %])))]
+                        :character          #(>evt [:location-editor/place-character location-id dnd-payload (relative-point % bounds)])
+                        :player             #(>evt [:location-editor/move-player location-id (relative-point % bounds)])
+                        :placement          #(>evt [:location-editor/move-placement location-id dnd-payload (relative-point % bounds)])
+                        :connection-trigger #(>evt [:location-editor/move-trigger location-id dnd-payload (relative-point % bounds)])))]
     [:div {:class "level-wrap"}
      [:div {:class "level"
             :style {:width (u/px (* config/tile-size (:w bounds)))
@@ -582,9 +586,7 @@
          [edit-trigger-layer location-id]])
 
       (when (fn? dropzone-fn)
-        [dropzone {:bounds bounds
-                   :highlight highlight
-                   :occupied (<sub [:location-editor/occupied-tiles location-id])
+        [dropzone {:occupied (<sub [:location-editor/occupied-tiles location-id])
                    :on-drop dropzone-fn}])]]))
 
 (defn location-editor [location-id]

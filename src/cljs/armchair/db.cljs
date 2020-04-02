@@ -74,15 +74,13 @@
                    :location-editor/active-tool
                    :location-editor/active-walk-state
                    :location-editor/active-texture]
-          :opt-un [:location-editor/highlight
-                   :location-editor/dnd-payload]))
+          :opt-un [:location-editor/dnd-payload]))
 
 (s/def :location-editor/active-pane #{:info :level})
 (s/def :location-editor/active-tool #{:brush :eraser})
 (s/def :location-editor/layers (set (map first config/location-editor-layers)))
 (s/def :location-editor/visible-layers (s/coll-of :location-editor/layers :kind set?))
 (s/def :location-editor/active-layer :location-editor/layers)
-(s/def :location-editor/highlight :type/point)
 (s/def :location-editor/active-texture ::texture)
 (s/def :location-editor/active-walk-state boolean?)
 
