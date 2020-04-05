@@ -6,9 +6,6 @@
 (defn round [x] (.round js/Math x))
 (defn abs [x] (.abs js/Math x))
 
-(defn clip [u-bound value]
-  (min u-bound (max 0 value)))
-
 (defn rect-top-left [{:keys [x y]}]
   (Point. x y))
 

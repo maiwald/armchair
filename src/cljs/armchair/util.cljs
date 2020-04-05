@@ -1,16 +1,14 @@
 (ns armchair.util
   (:require [clojure.set :refer [subset?]]
             [re-frame.core :as re-frame]
-            [armchair.math :refer [round Point Rect]]
+            [armchair.math :refer [Point Rect]]
             [armchair.config :refer [tile-size]]
             [com.rpl.specter
              :refer [collect-one ALL FIRST LAST MAP-VALS MAP-KEYS]
              :refer-macros [transform]]))
 
 (defn px [v]
-  (if (zero? v)
-    v
-    (str (round v) "px")))
+  (if (zero? v) v (str v "px")))
 
 (defn truncate [s n]
   (if (< (count s) n)
@@ -34,9 +32,13 @@
 (defn tile->coord [{:keys [x y]}]
   (Point. (* tile-size x) (* tile-size y)))
 
-(defn coord->tile [{:keys [x y]}]
-  (Point. (cond-> (quot x tile-size) (neg? x) dec)
-          (cond-> (quot y tile-size) (neg? y) dec)))
+(defn coord->tile
+  ([{:keys [x y]}]
+   (Point. (cond-> (quot x tile-size) (neg? x) dec)
+           (cond-> (quot y tile-size) (neg? y) dec)))
+  ([{:keys [x y]} zoom-scale]
+   (Point. (cond-> (quot (/ x zoom-scale) tile-size) (neg? x) dec)
+           (cond-> (quot (/ y zoom-scale) tile-size) (neg? y) dec))))
 
 (defn normalize-to-tile [coord]
   (-> coord coord->tile tile->coord))
@@ -128,8 +130,22 @@
 
 (defn relative-cursor [e elem]
   (let [rect (.getBoundingClientRect elem)]
-    (Point. (- (.-clientX e) (.-left rect) -1)
-            (- (.-clientY e) (.-top rect) -1))))
+    (Point. (- (.-clientX e) (.-left rect))
+            (- (.-clientY e) (.-top rect)))))
 
 (defn e->left? [e]
   (zero? (.-button e)))
+
+(defn e->point [e]
+  (Point. (.-clientX e) (.-clientY e)))
+
+(defn e->tile
+  ([e]
+   (e->tile e 1))
+  ([e zoom-scale]
+   (let [target (.-currentTarget e)
+         {:keys [x y]} (relative-cursor e target)
+         clamped-x (max 0 (min x (.-offsetWidth target)))
+         clamped-y (max 0 (min y (.-offsetHeight target)))
+         clamped-cursor (Point. clamped-x clamped-y)]
+     (coord->tile clamped-cursor zoom-scale))))

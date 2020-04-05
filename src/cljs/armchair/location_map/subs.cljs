@@ -20,11 +20,12 @@
         zoom-scale]
        [_ location-id]]
     (let [{:keys [display-name]
-           {:keys [w h]} :bounds} (get locations location-id)
+           {:keys [w h] :as bounds} :bounds} (get locations location-id)
           preview-image-background-src (get preview-cache-background location-id)
           preview-image-foreground-src (get preview-cache-foreground location-id)]
       {:display-name display-name
        :zoom-scale zoom-scale
+       :bounds bounds
        :preview-image-background-src preview-image-background-src
        :preview-image-foreground-src preview-image-foreground-src
        :preview-image-w (* zoom-scale config/tile-size w)
