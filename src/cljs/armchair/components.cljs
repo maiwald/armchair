@@ -100,6 +100,9 @@
                  (when (:fixed? options) "fa-fw")]
          :title title}]))
 
+(defn spinner []
+    [:i {:class ["fas fa-spinner fa-spin"]}])
+
 ;; Tag
 
 (defn tag [{glyph :icon :keys [title on-click on-remove]}]
