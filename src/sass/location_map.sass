@@ -53,9 +53,15 @@
       padding: 0 2px
       white-space: nowrap
 
+  &__loading
+    display: flex
+    align-items: center
+    justify-content: center
+    border: 3px solid $gray
+    background: white
+
   &__tilemap
-    $border: 3px
-    border: $border solid $gray
+    border: 3px solid $gray
     user-select: none
     box-sizing: content-box
 
@@ -70,6 +76,7 @@
 
   &__highlight
     border: 2px dashed $primary-light
+    background: rgba($primary, .4)
     position: absolute
 
 .location-connections

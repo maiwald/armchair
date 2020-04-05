@@ -106,52 +106,56 @@
                   :style (tile-style @highlight-tile zoom-scale)}])]))))
 
 (defn location [location-id]
-      (let [{:keys [display-name
-                    preview-image-background-src
-                    preview-image-foreground-src
-                    preview-image-w
-                    preview-image-h
-                    zoom-scale
-                    bounds
-                    inspecting?]} (<sub [:location-map/location location-id])
-            dragging? (<sub [:dragging-item? location-id])
-            position (<sub [:location-map/location-position location-id])
-            start-dragging (fn [e]
-                             (when (e->left? e)
-                               (u/prevent-e! e)
-                               (>evt [:start-dragging #{location-id} (u/e->point e) zoom-scale])))
-            stop-dragging (fn [e]
-                            (when dragging?
-                              (u/prevent-e! e)
-                              (>evt [:end-dragging])))
-            inspect-location #(>evt [:inspect :location location-id])]
-        [:div {:class ["location"
-                       (when inspecting? "location_is-inspecting")
-                       (when dragging? "location_is-dragging")]
-               :on-mouse-down u/stop-e!
-               :style {:left (:x position) :top (:y position)}}
-         [:header {:class "location__header"
-                   :on-mouse-down (fn [e]
-                                    (inspect-location)
-                                    (start-dragging e))
-                   :on-mouse-up stop-dragging}
-          [:p {:class "location__header__title"}
-           display-name]]
-         (when (and (some? preview-image-background-src)
-                    (some? preview-image-foreground-src))
-           [:div {:class "location__tilemap"
-                  :style {:width (u/px preview-image-w)
-                          :height (u/px preview-image-h)}}
-            [:img {:src preview-image-background-src
-                   :style {:width (u/px preview-image-w)
-                           :height (u/px preview-image-h)}}]
-            [:img {:src preview-image-foreground-src
-                   :style {:width (u/px preview-image-w)
-                           :height (u/px preview-image-h)}}]
-            [tile-select {:zoom-scale zoom-scale
-                          :width (u/px preview-image-w)
-                          :height (u/px preview-image-h)
-                          :on-select #(>evt [:inspect :placement location-id (m/relative-point % bounds)])}]])]))
+  (let [{:keys [display-name
+                preview-image-background-src
+                preview-image-foreground-src
+                preview-image-w
+                preview-image-h
+                zoom-scale
+                bounds
+                inspecting?]} (<sub [:location-map/location location-id])
+        dragging? (<sub [:dragging-item? location-id])
+        position (<sub [:location-map/location-position location-id])
+        start-dragging (fn [e]
+                         (when (e->left? e)
+                           (u/prevent-e! e)
+                           (>evt [:start-dragging #{location-id} (u/e->point e) zoom-scale])))
+        stop-dragging (fn [e]
+                        (when dragging?
+                          (u/prevent-e! e)
+                          (>evt [:end-dragging])))
+        inspect-location #(>evt [:inspect :location location-id])]
+    [:div {:class ["location"
+                   (when inspecting? "location_is-inspecting")
+                   (when dragging? "location_is-dragging")]
+           :on-mouse-down u/stop-e!
+           :style {:left (:x position) :top (:y position)}}
+     [:header {:class "location__header"
+               :on-mouse-down (fn [e]
+                                (inspect-location)
+                                (start-dragging e))
+               :on-mouse-up stop-dragging}
+      [:p {:class "location__header__title"}
+       display-name]]
+     (if (and (some? preview-image-background-src)
+              (some? preview-image-foreground-src))
+       [:div {:class "location__tilemap"
+              :style {:width (u/px preview-image-w)
+                      :height (u/px preview-image-h)}}
+        [:img {:src preview-image-background-src
+               :style {:width (u/px preview-image-w)
+                       :height (u/px preview-image-h)}}]
+        [:img {:src preview-image-foreground-src
+               :style {:width (u/px preview-image-w)
+                       :height (u/px preview-image-h)}}]
+        [tile-select {:zoom-scale zoom-scale
+                      :width (u/px preview-image-w)
+                      :height (u/px preview-image-h)
+                      :on-select #(>evt [:inspect :placement location-id (m/relative-point % bounds)])}]]
+       [:div {:class "location__loading"
+              :style {:width (u/px preview-image-w)
+                      :height (u/px preview-image-h)}}
+        [c/spinner]])]))
 
 (defn location-connection [[start-location start-offset]
                            [end-location end-offset]]
