@@ -28,11 +28,6 @@
         image (.querySelector (.-currentTarget e) ".dnd-texture img")]
     (.setDragImage (.-dataTransfer e) image offset offset)))
 
-(defn get-tile [e]
-  (->> (.-currentTarget e)
-       (u/relative-cursor e)
-       u/coord->tile))
-
 (defn tile-style [{:keys [x y]}]
   {:width (px config/tile-size)
    :height (px config/tile-size)
@@ -42,13 +37,13 @@
 (defn tile-paint-canvas []
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
-    (letfn [(set-current-tile [e] (reset! current-tile (get-tile e)))
+    (letfn [(set-current-tile [e] (reset! current-tile (u/e->tile e)))
             (clear-current-tile [] (reset! current-tile nil))
             (start-painting [] (reset! painted-tiles #{}))
             (stop-painting [] (reset! painted-tiles nil))
             (make-paint [paint-fn]
               (fn [e]
-                (let [tile (get-tile e)]
+                (let [tile (u/e->tile e)]
                   (when (and (some? @painted-tiles)
                              (not (contains? @painted-tiles tile)))
                     (swap! painted-tiles conj tile)
@@ -275,7 +270,7 @@
       (fn [{:keys [occupied on-drop]}]
         [:div {:on-drag-over (fn [e]
                                (u/prevent-e! e)
-                               (set-current-tile (get-tile e)))
+                               (set-current-tile (u/e->tile e)))
                :on-drag-leave clear-current-tile
                :on-drop (fn []
                           (when-not (contains? occupied @current-tile)
@@ -367,7 +362,7 @@
 
 (defn tile-select [{:keys [bounds on-select selected selectable?]}]
   (letfn [(on-click [e]
-            (let [tile (relative-point (get-tile e) bounds)]
+            (let [tile (relative-point (u/e->tile e) bounds)]
               (when (or (not (fn? selectable?))
                         (selectable? tile))
                 (on-select tile))))]
