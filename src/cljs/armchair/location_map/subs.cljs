@@ -9,20 +9,24 @@
 (reg-sub
   :location-map/location
   :<- [:db-locations]
-  :<- [:ui/location-preview-cache]
+  :<- [:ui/location-preview-cache-background]
+  :<- [:ui/location-preview-cache-foreground]
   :<- [:ui/inspector]
   :<- [:ui/location-map-zoom-scale]
   (fn [[locations
-        preview-cache
+        preview-cache-background
+        preview-cache-foreground
         [inspector-type {inspector-location-id :location-id}]
         zoom-scale]
        [_ location-id]]
     (let [{:keys [display-name]
            {:keys [w h]} :bounds} (get locations location-id)
-          preview-image-src (get preview-cache location-id)]
+          preview-image-background-src (get preview-cache-background location-id)
+          preview-image-foreground-src (get preview-cache-foreground location-id)]
       {:display-name display-name
        :zoom-scale zoom-scale
-       :preview-image-src preview-image-src
+       :preview-image-background-src preview-image-background-src
+       :preview-image-foreground-src preview-image-foreground-src
        :preview-image-w (* zoom-scale config/tile-size w)
        :preview-image-h (* zoom-scale config/tile-size h)
        :inspecting? (and (= inspector-type :location)

@@ -418,7 +418,10 @@
    :switch-values])
 
 (def undo-keys
-  (conj content-keys :ui/location-preview-cache))
+  (conj content-keys
+        :ui/location-preview-cache-background
+        :ui/location-preview-cache-foreground))
+
 
 (defn content-data [db] (select-keys db content-keys))
 (defn undo-data [db] (select-keys db undo-keys))
@@ -457,7 +460,8 @@
                             :active-walk-state true
                             :active-texture ["PathAndObjects_0.png" (Point. 4 1)]}
           :ui/positions {}
-          :ui/location-preview-cache {}
+          :ui/location-preview-cache-foreground {}
+          :ui/location-preview-cache-background {}
           :ui/location-map-zoom-scale 0.5
           :characters {}
           :locations {}
