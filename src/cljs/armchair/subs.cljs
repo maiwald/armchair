@@ -25,7 +25,8 @@
 (reg-sub :ui/positions #(:ui/positions %))
 (reg-sub :ui/inspector #(:ui/inspector %))
 
-(reg-sub :ui/location-preview-cache #(:ui/location-preview-cache %))
+(reg-sub :ui/location-preview-cache-background #(:ui/location-preview-cache-background %))
+(reg-sub :ui/location-preview-cache-foreground #(:ui/location-preview-cache-foreground %))
 (reg-sub :ui/location-map-scroll-offset #(:ui/location-map-scroll-offset %))
 (reg-sub :ui/location-map-zoom-scale #(:ui/location-map-zoom-scale %))
 

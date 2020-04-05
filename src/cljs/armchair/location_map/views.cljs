@@ -87,7 +87,8 @@
 
 (defn location [location-id]
   (let [{:keys [display-name
-                preview-image-src
+                preview-image-background-src
+                preview-image-foreground-src
                 preview-image-w
                 preview-image-h
                 zoom-scale
@@ -98,26 +99,34 @@
                          (when (e->left? e)
                            (u/prevent-e! e)
                            (>evt [:start-dragging #{location-id} (e->point e) zoom-scale])))
-        stop-dragging (when dragging?
-                        (fn [e]
+        stop-dragging (fn [e]
+                        (when dragging?
                           (u/prevent-e! e)
-                          (>evt [:end-dragging])))]
+                          (>evt [:end-dragging])))
+        inspect-location #(>evt [:inspect :location location-id])]
     [:div {:class ["location"
                    (when inspecting? "location_is-inspecting")
                    (when dragging? "location_is-dragging")]
            :on-mouse-down u/stop-e!
            :style {:left (:x position) :top (:y position)}}
      [:header {:class "location__header"
-               :on-mouse-down start-dragging
+               :on-mouse-down (fn [e]
+                                (inspect-location)
+                                (start-dragging e))
                :on-mouse-up stop-dragging}
       [:p {:class "location__header__title"}
        display-name]]
-     [:div {:class "location__preview"}
-      (when (some? preview-image-src)
-        [:img {:src preview-image-src
-               :on-click #(>evt [:inspect :location location-id])
+     (when (and (some? preview-image-background-src)
+                (some? preview-image-foreground-src))
+       [:div {:class "location__preview"
+              :style {:width (u/px preview-image-w)
+                      :height (u/px preview-image-h)}}
+        [:img {:src preview-image-background-src
                :style {:width (u/px preview-image-w)
-                       :height (u/px preview-image-h)}}])]]))
+                       :height (u/px preview-image-h)}}]
+        [:img {:src preview-image-foreground-src
+               :style {:width (u/px preview-image-w)
+                       :height (u/px preview-image-h)}}]])]))
 
 (defn location-connection [[start-location start-offset]
                            [end-location end-offset]]

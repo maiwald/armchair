@@ -56,6 +56,10 @@
   &__preview
     border: 3px solid $gray
     user-select: none
+    box-sizing: content-box
+
+    & > img
+      position: absolute
 
   &_is-inspecting > &__preview
     border: 3px solid rgba($primary, .8)
