@@ -55,7 +55,7 @@
 (s/def :ui/cursor :type/point)
 (s/def :ui/dragging (s/keys :req-un [::cursor-start ::ids]))
 (s/def :ui/positions (s/map-of uuid? :type/point))
-(s/def :ui/location-map-scroll-offset :type/point)
+(s/def :ui/location-map-scroll-center :type/point)
 (s/def :ui/location-map-zoom-scale float?)
 
 (s/def :ui/inspector (s/tuple :inspector/type :inspector/data))
@@ -354,7 +354,7 @@
                                        :ui/dragging
                                        :ui/cursor
                                        :ui/inspector
-                                       :ui/location-map-scroll-offset
+                                       :ui/location-map-scroll-center
                                        :modal/modal])))
 
 (s/def :state/player
@@ -462,7 +462,7 @@
           :ui/positions {}
           :ui/location-preview-cache-foreground {}
           :ui/location-preview-cache-background {}
-          :ui/location-map-zoom-scale 0.5
+          :ui/location-map-zoom-scale 0.6
           :characters {}
           :locations {}
           :dialogues {}

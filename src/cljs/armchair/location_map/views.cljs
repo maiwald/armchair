@@ -46,6 +46,13 @@
                  :fill true
                  :on-click #(>evt [:delete-location location-id])}]]]))
 
+(defn scroll-center-to-point [elem {:keys [x y]}]
+  (let [max-x (- (.-scrollWidth elem) (.-clientWidth elem))
+        max-y (- (.-scrollHeight elem) (.-clientHeight elem))]
+    (.scrollTo elem
+               (m/clamp 0 max-x (- x (/ (.-clientWidth elem) 2)))
+               (m/clamp 0 max-y (- y (/ (.-clientHeight elem) 2))))))
+
 (defn scroll-container []
   ; these don't need to be r/atoms because we dont need reactivity here
   (let [scroll-elem (atom nil)
@@ -54,18 +61,22 @@
       {:display-name "scroll-container"
        :component-did-mount
        (fn [this]
-         (if-let [{:keys [x y]} (:scroll-offset (r/props this))]
-           (.scrollTo @scroll-elem x y)
-           (.scrollTo @scroll-elem
-                      (/ (- (.-scrollWidth @scroll-elem) (.-clientWidth @scroll-elem)) 2)
-                      (/ (- (.-scrollHeight @scroll-elem) (.-clientHeight @scroll-elem)) 2))))
+         (scroll-center-to-point
+           @scroll-elem
+           (or (:scroll-center (r/props this))
+               (m/Point. (/ (.-scrollWidth @scroll-elem) 2)
+                         (/ (.-scrollHeight @scroll-elem) 2)))))
+       :component-did-update
+       (fn [this [_ {old-zoom-scale :zoom-scale}]]
+         (let [{new-zoom-scale :zoom-scale
+                center :scroll-center} (r/props this)]
+           (when (not= old-zoom-scale new-zoom-scale)
+             (scroll-center-to-point @scroll-elem center))))
        :reagent-render
        (fn [{:keys [on-scroll width height]}]
          [:div
           {:ref #(reset! scroll-elem %)
-           :style {:width "100%"
-                   :height "100%"
-                   :overflow "auto"}
+           :class "scroll-container"
            :on-scroll on-scroll
            :on-mouse-down (fn [e] (reset! prev-cursor (u/e->point e)))
            :on-mouse-move (fn [e]
@@ -76,9 +87,8 @@
                                 (reset! prev-cursor cursor))))
            :on-mouse-up (fn [] (reset! prev-cursor nil))}
           (into [:div
-                 {:style {:min-width "100%"
-                          :min-height "100%"
-                          :width (u/px width)
+                 {:class "scroll-content"
+                  :style {:width (u/px width)
                           :height (u/px height)}}]
                 (r/children (r/current-component)))])})))
 
@@ -129,7 +139,8 @@
                    (when inspecting? "location_is-inspecting")
                    (when dragging? "location_is-dragging")]
            :on-mouse-down u/stop-e!
-           :style {:left (:x position) :top (:y position)}}
+           :style {:left (u/px (:x position))
+                   :top (u/px (:y position))}}
      [:header {:class "location__header"
                :on-mouse-down (fn [e]
                                 (inspect-location)
@@ -176,19 +187,21 @@
        ^{:key (str "location-connection" start "->" end)}
        [location-connection start end])]))
 
+
+(defn e->scroll-center [e]
+  (let [target (.-currentTarget e)]
+    (m/Point. (+ (.-scrollLeft target) (/ (.-clientWidth target) 2))
+              (+ (.-scrollTop target) (/ (.-clientHeight target) 2)))))
+
 (defn location-map []
-  (let [update-offset (debounce #(>evt [:location-map/update-offset %]) 200)
-        on-scroll (fn [e]
-                    (let [target (.-currentTarget e)
-                          offset (m/Point.
-                                   (.-scrollLeft target)
-                                   (.-scrollTop target))]
-                      (update-offset offset)))]
+  (let [update-scroll-center (debounce #(>evt [:location-map/update-scroll-center %]) 200)
+        on-scroll (comp update-scroll-center e->scroll-center)]
     (fn []
-      (let [{:keys [bounds scroll-offset location-ids]} (<sub [:location-map])]
+      (let [{:keys [bounds scroll-center location-ids zoom-scale]} (<sub [:location-map])]
         [scroll-container {:width (:w bounds)
                            :height (:h bounds)
-                           :scroll-offset scroll-offset
+                           :scroll-center scroll-center
+                           :zoom-scale zoom-scale
                            :on-scroll on-scroll}
          [drag-container
           (for [id location-ids]

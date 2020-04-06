@@ -6,6 +6,9 @@
 (defn round [x] (.round js/Math x))
 (defn abs [x] (.abs js/Math x))
 
+(defn clamp [lower upper value]
+  (max lower (min value upper)))
+
 (defn rect-top-left [{:keys [x y]}]
   (Point. x y))
 
