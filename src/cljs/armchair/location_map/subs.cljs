@@ -4,28 +4,51 @@
              :refer [collect-one ALL FIRST LAST]
              :refer-macros [select]]
             [armchair.config :as config]
+            [armchair.util :as u]
             [armchair.math :as m :refer [translate-point]]))
 
 (reg-sub
+  :location-map/location-characters
+  (fn [[_ location-id]]
+    [(subscribe [:db/location location-id])
+     (subscribe [:db-characters])
+     (subscribe [:ui/inspector])])
+  (fn [[location characters [inspector-type {inspector-location-id :location-id
+                                             inspector-location-position :location-position}]] [_ location-id]]
+    (->> (:placements location)
+         (u/map-values
+           (fn [{:keys [character-id]} tile]
+             (let [character (characters character-id)]
+               (merge (select-keys character [:texture :display-name])
+                      {:inspecting? (and (= inspector-type :placement)
+                                         (= inspector-location-id location-id)
+                                         (= inspector-location-position tile))}))))
+         (u/map-keys (fn [tile] (m/global-point tile (:bounds location)))))))
+
+(reg-sub
   :location-map/location
-  :<- [:db-locations]
-  :<- [:ui/location-preview-cache-background]
-  :<- [:ui/location-preview-cache-foreground]
-  :<- [:ui/inspector]
-  :<- [:ui/location-map-zoom-scale]
-  (fn [[locations
+  (fn [[_ location-id]]
+    [(subscribe [:db/location location-id])
+     (subscribe [:location-map/location-characters location-id])
+     (subscribe [:ui/location-preview-cache-background])
+     (subscribe [:ui/location-preview-cache-foreground])
+     (subscribe [:ui/inspector])
+     (subscribe [:ui/location-map-zoom-scale])])
+  (fn [[location
+        characters
         preview-cache-background
         preview-cache-foreground
         [inspector-type {inspector-location-id :location-id}]
         zoom-scale]
        [_ location-id]]
     (let [{:keys [display-name]
-           {:keys [w h] :as bounds} :bounds} (get locations location-id)
+           {:keys [w h] :as bounds} :bounds} location
           preview-image-background-src (get preview-cache-background location-id)
           preview-image-foreground-src (get preview-cache-foreground location-id)]
       {:display-name display-name
        :zoom-scale zoom-scale
        :bounds bounds
+       :characters characters
        :preview-image-background-src preview-image-background-src
        :preview-image-foreground-src preview-image-foreground-src
        :preview-image-w (* zoom-scale config/tile-size w)
