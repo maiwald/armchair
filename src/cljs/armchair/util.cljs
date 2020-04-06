@@ -1,14 +1,14 @@
 (ns armchair.util
   (:require [clojure.set :refer [subset?]]
             [re-frame.core :as re-frame]
-            [armchair.math :refer [Point Rect]]
+            [armchair.math :refer [clamp round Point Rect]]
             [armchair.config :refer [tile-size]]
             [com.rpl.specter
              :refer [collect-one ALL FIRST LAST MAP-VALS MAP-KEYS]
              :refer-macros [transform]]))
 
 (defn px [v]
-  (if (zero? v) v (str v "px")))
+  (if (zero? v) v (str (round v) "px")))
 
 (defn truncate [s n]
   (if (< (count s) n)
@@ -145,7 +145,7 @@
   ([e zoom-scale]
    (let [target (.-currentTarget e)
          {:keys [x y]} (relative-cursor e target)
-         clamped-x (max 0 (min x (.-offsetWidth target)))
-         clamped-y (max 0 (min y (.-offsetHeight target)))
-         clamped-cursor (Point. clamped-x clamped-y)]
-     (coord->tile clamped-cursor zoom-scale))))
+         max-x (.-offsetWidth target)
+         max-y (.-offsetHeight target)]
+     (-> (Point. (clamp 0 max-x x) (clamp 0 max-y y))
+         (coord->tile zoom-scale)))))

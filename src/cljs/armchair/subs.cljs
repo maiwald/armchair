@@ -27,7 +27,7 @@
 
 (reg-sub :ui/location-preview-cache-background #(:ui/location-preview-cache-background %))
 (reg-sub :ui/location-preview-cache-foreground #(:ui/location-preview-cache-foreground %))
-(reg-sub :ui/location-map-scroll-offset #(:ui/location-map-scroll-offset %))
+(reg-sub :ui/location-map-scroll-center #(:ui/location-map-scroll-center %))
 (reg-sub :ui/location-map-zoom-scale #(:ui/location-map-zoom-scale %))
 
 (reg-sub

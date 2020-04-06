@@ -81,8 +81,10 @@
   :location-map
   :<- [:db-locations]
   :<- [:location-map/bounds]
-  :<- [:ui/location-map-scroll-offset]
-  (fn [[locations bounds scroll-offset]]
+  :<- [:ui/location-map-scroll-center]
+  :<- [:ui/location-map-zoom-scale]
+  (fn [[locations bounds scroll-center zoom-scale]]
     {:bounds bounds
-     :scroll-offset scroll-offset
+     :scroll-center scroll-center
+     :zoom-scale zoom-scale
      :location-ids (keys locations)}))

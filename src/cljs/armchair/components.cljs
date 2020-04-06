@@ -53,19 +53,16 @@
     (r/create-class
       {:display-name "drag-canvas"
        :component-did-mount
-       (fn [this]
-         (reset! drag-offset nil)
-         (if-let [{:keys [x y]} (:scroll-offset (r/props this))]
-           (.scrollTo @elem x y)))
+       (fn []
+         (reset! drag-offset nil))
        :reagent-render
-       (fn [{:keys [on-scroll kind nodes bounds]}]
+       (fn [{:keys [kind nodes bounds]}]
          (let [connecting? (some? (<sub [:connector]))
                dragging? (<sub [:dragging?])]
            [:div {:ref #(reset! elem %)
                   :class (cond-> ["graph"]
                            dragging? (conj "graph_is-dragging")
                            connecting? (conj "graph_is-connecting"))
-                  :on-scroll on-scroll
                   :on-mouse-down (fn [e]
                                    (reset! drag-offset (e->graph-cursor e)))
                   :on-mouse-move (fn [e]
