@@ -71,6 +71,13 @@
     & > *
       position: absolute !important
 
+    &__character
+      position: absolute
+
+      &_is-inspecting
+        margin: -2px
+        border: 2px dashed $primary
+
   &_is-inspecting > &__tilemap
     border: 3px solid rgba($primary, .8)
 

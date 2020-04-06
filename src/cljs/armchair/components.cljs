@@ -2,7 +2,7 @@
   (:require [clojure.string :refer [join]]
             [reagent.core :as r]
             [armchair.config :as config]
-            [armchair.textures :refer [image-path]]
+            [armchair.textures :refer [image-path image-size]]
             [armchair.math :as m :refer [abs point-delta translate-point]]
             [armchair.util :as u :refer [stop-e! >evt <sub e->left?]]))
 
@@ -171,15 +171,20 @@
 
 ;; Sprite Texture
 
-(defn sprite-texture [[file {:keys [x y]}] title]
-  [:div.sprite-texture
-   {:title title
-    :style {:width (u/px config/tile-size)
-            :height (u/px config/tile-size)
-            :background-image (str "url(" (image-path file) ")")
-            :background-position (str (u/px (- (* config/tile-size x)))
-                                      " "
-                                      (u/px (- (* config/tile-size y))))}}])
+(defn sprite-texture [[file {:keys [x y]}] title zoom-scale]
+  (let [{:keys [w h]} (image-size file)
+        zoom-scale (or zoom-scale 1)]
+    [:div.sprite-texture
+     {:title title
+      :style {:width (u/px (* zoom-scale config/tile-size))
+              :height (u/px (* zoom-scale config/tile-size))
+              :background-image (str "url(" (image-path file) ")")
+              :background-size (str (u/px (* w zoom-scale))
+                                    " "
+                                    (u/px (* h zoom-scale)))
+              :background-position (str (u/px (- (* zoom-scale config/tile-size x)))
+                                        " "
+                                        (u/px (- (* zoom-scale config/tile-size y))))}}]))
 
 ;; Tabs
 

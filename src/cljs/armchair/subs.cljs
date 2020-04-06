@@ -5,9 +5,14 @@
             [armchair.math :as m :refer [translate-point point-delta]]
             [armchair.util :as u]))
 
+(defn by-id [ressources [_ ressource-id]]
+  (get ressources ressource-id))
+
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
 (reg-sub :db-locations #(:locations %))
+(reg-sub :db/location :<- [:db-locations] by-id)
+
 (reg-sub :db-dialogues #(:dialogues %))
 (reg-sub :db-player #(:player %))
 (reg-sub :db-player-options #(:player-options %))

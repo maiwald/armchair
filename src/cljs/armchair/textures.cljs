@@ -1,5 +1,6 @@
 (ns armchair.textures
   (:require [clojure.core.async :refer [go chan take! put! <!]]
+            [armchair.config :refer [tile-size]]
             [armchair.math :refer [Rect]]))
 
 (def tile-sprite-sheets
@@ -22,6 +23,14 @@
         (concat (keys tile-sprite-sheets)
                 (keys character-sprite-sheets)
                 (keys animation-sprite-sheets))))
+
+(def image-sizes
+  (merge tile-sprite-sheets
+         character-sprite-sheets
+         animation-sprite-sheets))
+
+(defn image-size [file-name]
+  (get image-sizes file-name (Rect. 0 0 tile-size tile-size)))
 
 (defn image-path [file-name]
   (str "images/" (image-files file-name "missing_texture.png")))
