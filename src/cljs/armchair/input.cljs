@@ -1,5 +1,4 @@
-(ns armchair.input
-  (:require [cljsjs.react-select]))
+(ns armchair.input)
 
 (defn label [text]
   [:label {:class "input__label"} text])
@@ -51,17 +50,3 @@
                         :id id
                         :on-change on-change
                         :value value})]]))
-
-(defn multiselect [{:keys [label on-change values options]}]
-  (let [id (gensym "input-multiselect")]
-    [:div {:class "input input-multiselect"}
-     (when label
-       [:label {:class "input-multiselect__label input__label" :for id} label])
-     [:> js/Select {:id id
-                    :options options
-                    :multi true
-                    :complete true
-                    :onChange #(on-change (map :value (js->clj % :keywordize-keys true)))
-                    :matchProp "label"
-                    :ignoreCase true
-                    :value values}]]))
