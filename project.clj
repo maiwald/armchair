@@ -4,7 +4,6 @@
                  [reagent "0.8.1"]
                  [re-frame "0.10.9"]
                  [tailrecursion/cljs-priority-map "1.2.1"]
-                 [cljsjs/react-select "1.2.1-1"]
                  [cljsjs/filesaverjs "1.3.3-0"]
                  [com.cognitect/transit-cljs "0.8.256"]
                  [bidi "2.1.6"]
