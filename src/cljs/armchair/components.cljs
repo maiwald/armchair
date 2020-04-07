@@ -1,6 +1,7 @@
 (ns armchair.components
   (:require [clojure.string :refer [join]]
             [reagent.core :as r]
+            [reagent.dom :as rd]
             [armchair.config :as config]
             [armchair.textures :refer [image-path]]
             [armchair.math :refer [abs clip point-delta translate-point]]
@@ -183,7 +184,7 @@
   (let [position (r/atom [-9999 -9999])
         get-position (fn [this]
                        (let [offset 8
-                             rect (u/get-rect (r/dom-node this))
+                             rect (u/get-rect (rd/dom-node this))
                              ref-rect (u/get-rect (:reference (r/props this)))]
                          [(clip
                             (- (.-innerWidth js/window) (:w rect))

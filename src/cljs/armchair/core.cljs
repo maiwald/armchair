@@ -1,5 +1,5 @@
 (ns armchair.core
-  (:require [reagent.core :as reagent]
+  (:require [reagent.dom :refer [render]]
             [re-frame.core :as re-frame]
             [armchair.undo]
             [armchair.events]
@@ -23,8 +23,8 @@
 
 (defn mount-root []
   (re-frame/clear-subscription-cache!)
-  (reagent/render [views/root]
-                  (.getElementById js/document "app")))
+  (render [views/root]
+          (.getElementById js/document "app")))
 
 (defn ^:export init []
   (re-frame/dispatch-sync [:initialize-db])

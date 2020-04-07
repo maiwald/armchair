@@ -1,6 +1,7 @@
 (ns armchair.game.views
   (:require [clojure.core.async :refer [put!]]
             [reagent.core :as r]
+            [reagent.dom :as rd]
             [armchair.util :as u :refer [<sub prevent-e! px]]
             [armchair.config :refer [tile-size
                                      camera-tile-width
@@ -41,7 +42,7 @@
         {:display-name "game-canvas"
          :component-did-mount
          (fn [this]
-           (reset! game-handle (start-game (.getContext (r/dom-node this) "2d")
+           (reset! game-handle (start-game (.getContext (rd/dom-node this) "2d")
                                            (r/props this)))
            (.addEventListener js/document "keydown" on-key-down)
            (.addEventListener js/document "keyup" on-key-up))
@@ -55,7 +56,7 @@
          :component-did-update
          (fn [this]
            (end-game @game-handle)
-           (reset! game-handle (start-game (.getContext (r/dom-node this) "2d")
+           (reset! game-handle (start-game (.getContext (rd/dom-node this) "2d")
                                            (r/props this))))
 
          :reagent-render
