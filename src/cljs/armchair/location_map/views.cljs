@@ -170,7 +170,7 @@
         [tile-select {:zoom-scale zoom-scale
                       :width (u/px preview-image-w)
                       :height (u/px preview-image-h)
-                      :on-select #(>evt [:inspect :placement location-id (m/relative-point % bounds)])}]]
+                      :on-select #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}]]
        [:div {:class "location__loading"
               :style {:width (u/px preview-image-w)
                       :height (u/px preview-image-h)}}

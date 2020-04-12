@@ -18,6 +18,14 @@
                   :active-texture])))
 
 (reg-sub
+  :location-editor/tile-type
+  (fn [[_ location-id]]
+    (subscribe [:db/location location-id]))
+  (fn [location [_ _location-id tile]]
+    (cond
+      (contains? (:placements location) tile) :placement
+      (contains? (:connection-triggers location) tile) :trigger)))
+(reg-sub
   :location-editor/player-position
   (fn [{{:keys [location-id location-position]} :player} [_ current-location]]
     (when (= location-id current-location) location-position)))
