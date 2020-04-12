@@ -88,7 +88,7 @@
   :<- [:db-locations]
   :<- [:ui/location-map-zoom-scale]
   (fn [[locations zoom-scale]]
-    (let [center-tile-offset (+ 1 (* (/ config/tile-size 2) zoom-scale))]
+    (let [center-tile-offset (+ 1 (* zoom-scale config/tile-size 0.5))]
       (letfn [(tile-offset [location-id position]
                 (-> position
                     (m/global-point (-> location-id locations :bounds))
