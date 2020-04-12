@@ -7,7 +7,6 @@
             [armchair.routes :refer [>navigate]]
             [armchair.math :refer [Point
                                    Rect
-                                   translate-point
                                    relative-point
                                    global-point
                                    rect->point-seq
@@ -563,12 +562,12 @@
           [tile-paint-canvas
            {:texture (when (not= active-tool :eraser) active-texture)
             :on-paint #(>evt [:location-editor/paint location-id active-layer
-                              (translate-point % (:x bounds) (:y bounds))])}]
+                              (relative-point % bounds)])}]
 
           :collision
           [tile-paint-canvas
            {:on-paint #(>evt [:location-editor/set-walkable location-id
-                              (translate-point % (:x bounds) (:y bounds))])}]
+                              (relative-point % bounds)])}]
 
           :entities
           [edit-entity-layer location-id]

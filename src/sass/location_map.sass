@@ -21,6 +21,9 @@
     cursor: grabbing !important
 
 .location
+  $border: 3px
+  margin-left: -$border
+  margin-top: -$border
   position: absolute
   z-index: 2
   flex-direction: column
@@ -64,7 +67,7 @@
     background: white
 
   &__tilemap
-    border: 3px solid $gray
+    border: $border solid $gray
     user-select: none
     box-sizing: content-box
 
