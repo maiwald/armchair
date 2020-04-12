@@ -176,15 +176,29 @@
                       :height (u/px preview-image-h)}}
         [c/spinner]])]))
 
-(defn location-connection [[start-location start-offset]
-                           [end-location end-offset]]
-  (let [start-pos (<sub [:location-map/location-position start-location])
-        end-pos (<sub [:location-map/location-position end-location])]
-    [:line {:class ["location-connection"]
-            :x1 (+ (:x start-pos) (:x start-offset))
-            :y1 (+ (:y start-pos) (:y start-offset))
-            :x2 (+ (:x end-pos) (:x end-offset))
-            :y2 (+ (:y end-pos) (:y end-offset))}]))
+(defn location-connection [[start-location start-tile]
+                           [end-location end-tile]]
+  (let [tile-size (<sub [:location-map/tile-size])
+        {start-tile :tile start-tile-center :tile-center} (<sub [:location-map/connection-position start-location start-tile])
+        {end-tile :tile end-tile-center :tile-center} (<sub [:location-map/connection-position end-location end-tile])]
+    [:<>
+     [:rect {:stroke "red"
+             :stroke-width 1
+             :fill "none"
+             :x (:x start-tile)
+             :y (:y start-tile)
+             :height tile-size :width tile-size}]
+     [:rect {:stroke "red"
+             :stroke-width 1
+             :fill "none"
+             :x (:x end-tile)
+             :y (:y end-tile)
+             :height tile-size :width tile-size}]
+     [:line {:class ["location-connection"]
+             :x1 (:x start-tile-center)
+             :y1 (:y start-tile-center)
+             :x2 (:x end-tile-center)
+             :y2 (:y end-tile-center)}]]))
 
 (defn connections []
   (let [cs (<sub [:location-map/connections])]

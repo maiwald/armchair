@@ -9,7 +9,7 @@
 (defn clamp [lower upper value]
   (max lower (min value upper)))
 
-(defn rect-top-left [{:keys [x y]}]
+(defn rect-point [{:keys [x y]}]
   (Point. x y))
 
 (defn rect-bottom-right [{:keys [x y w h]}]
@@ -65,20 +65,18 @@
   [(- (:x end) (:x start))
    (- (:y end) (:y start))])
 
-(defn rect-point [{:keys [x y]}]
-  (Point. x y))
-
-(defn translate-point [{:keys [x y]} dx dy]
-  (Point. (+ x dx) (+ y dy)))
+(defn translate-point
+  ([{:keys [x y]} {dx :x dy :y}]
+   (Point. (+ x dx) (+ y dy)))
+  ([{:keys [x y]} dx dy]
+   (Point. (+ x dx) (+ y dy))))
 
 (defn global-point
   "Convert rect-relative point to a global point"
-  [point rect]
-  (let [[dx dy] (point-delta (rect-top-left rect) point)]
-    (Point. dx dy)))
+  [{px :x py :y} {rx :x ry :y}]
+  (Point. (- px rx) (- py ry)))
 
 (defn relative-point
   "Convert global point to a rect-relative point"
-  [point rect]
-  (let [{:keys [x y]} (rect-top-left rect)]
-    (translate-point point x y)))
+  [{px :x py :y} {rx :x ry :y}]
+  (Point. (+ px rx) (+ py ry)))

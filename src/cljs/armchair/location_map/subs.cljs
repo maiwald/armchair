@@ -8,6 +8,11 @@
             [armchair.math :as m :refer [translate-point]]))
 
 (reg-sub
+  :location-map/tile-size
+  :<- [:ui/location-map-zoom-scale]
+  (fn [zoom-scale] (* config/tile-size zoom-scale)))
+
+(reg-sub
   :location-map/location-characters
   (fn [[_ location-id]]
     [(subscribe [:db/location location-id])
@@ -61,16 +66,16 @@
   :<- [:db-locations]
   :<- [:ui/positions]
   :<- [:ui/location-map-zoom-scale]
-  (fn [[locations positions zoom-scale]]
-    (let [scale (* config/tile-size zoom-scale)]
-      (m/rect-resize
-        (->> locations
-             (mapcat (fn [[id {{:keys [w h]} :bounds}]]
-                       (let [p (m/point-scale (positions id) zoom-scale)]
-                         [p (translate-point p (* w scale) (* h scale))])))
-             m/containing-rect)
-        (zipmap [:left :right :top :bottom]
-                (repeat (* zoom-scale 400)))))))
+  :<- [:location-map/tile-size]
+  (fn [[locations positions zoom-scale tile-size]]
+    (m/rect-resize
+      (->> locations
+           (mapcat (fn [[id {{:keys [w h]} :bounds}]]
+                     (let [p (m/point-scale (positions id) zoom-scale)]
+                       [p (translate-point p (* w tile-size) (* h tile-size))])))
+           m/containing-rect)
+      (zipmap [:left :right :top :bottom]
+              (repeat (* zoom-scale 400))))))
 
 (reg-sub
   :location-map/location-position
@@ -84,21 +89,30 @@
         (m/global-point bounds))))
 
 (reg-sub
+  :location-map/connection-position
+  (fn [[_ location-id]]
+    [(subscribe [:db/location location-id])
+     (subscribe [:location-map/location-position location-id])
+     (subscribe [:location-map/tile-size])])
+  (fn [[location location-position tile-size] [_ _location-id tile]]
+    (let [tile-center-offset (+ 1 (* tile-size 0.5))
+          tile-position (-> tile
+                            (m/global-point (:bounds location))
+                            (m/point-scale tile-size))]
+      {:tile (-> tile-position
+                 (m/translate-point location-position))
+       :tile-center (-> tile-position
+                        (m/translate-point location-position)
+                        (m/translate-point tile-center-offset tile-center-offset))})))
+
+(reg-sub
   :location-map/connections
   :<- [:db-locations]
-  :<- [:ui/location-map-zoom-scale]
-  (fn [[locations zoom-scale]]
-    (let [center-tile-offset (+ 1 (* zoom-scale config/tile-size 0.5))]
-      (letfn [(tile-offset [location-id position]
-                (-> position
-                    (m/global-point (-> location-id locations :bounds))
-                    (m/point-scale (* config/tile-size zoom-scale))
-                    (m/translate-point center-tile-offset center-tile-offset)))]
-        (->> locations
-          (select [ALL (collect-one FIRST) LAST :connection-triggers ALL])
-          (map (fn [[from-id [from-position [to-id to-position]]]]
-                 (vector [from-id (tile-offset from-id from-position)]
-                         [to-id (tile-offset to-id to-position)]))))))))
+  (fn [locations]
+    (->> locations
+         (select [ALL (collect-one FIRST) LAST :connection-triggers ALL])
+         (map (fn [[from-id [from-position to]]]
+                (vector [from-id from-position] to))))))
 
 (reg-sub
   :location-map
