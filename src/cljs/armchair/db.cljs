@@ -59,7 +59,7 @@
 (s/def :ui/location-map-zoom-scale float?)
 
 (s/def :ui/inspector (s/tuple :inspector/type :inspector/data))
-(s/def :inspector/type #{:location :placement :exit})
+(s/def :inspector/type #{:location :tile})
 (s/def :inspector/data map?)
 
 (s/def ::current-page (s/nilable string?))

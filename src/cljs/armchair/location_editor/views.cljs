@@ -473,6 +473,12 @@
                  :fill true
                  :on-click #(>evt [:location-editor/remove-trigger location-id tile])}]]]))
 
+(defn tile-inspector [location-id tile]
+  (case (<sub [:location-editor/tile-type location-id tile])
+    :placement [placement-inspector location-id tile]
+    :trigger [trigger-inspector location-id tile]
+    nil))
+
 (defn edit-entity-layer [location-id]
   (let [{:keys [player-position
                 characters
@@ -495,7 +501,7 @@
         [:div {:class ["interactor" "interactor_draggable" (when inspecting? "interactor_focus")]
                :title display-name
                :draggable true
-               :on-click #(>evt [:inspect :placement location-id tile])
+               :on-click #(>evt [:inspect :tile location-id tile])
                :on-drag-start (fn [e]
                                 (set-dnd-texture! e)
                                 (.setData (.-dataTransfer e) "text/plain" display-name)
@@ -510,7 +516,7 @@
        [:div {:class ["interactor" "interactor_draggable" (when inspecting? "interactor_focus")]
               :title (str "to " display-name)
               :draggable true
-              :on-click #(>evt [:inspect :exit location-id tile])
+              :on-click #(>evt [:inspect :tile location-id tile])
               :on-drag-start (fn [e]
                                (set-dnd-texture! e)
                                (.setData (.-dataTransfer e) "text/plain" display-name)
