@@ -105,12 +105,12 @@
     (let [location (locations location-id)]
       {:display-name (:display-name location)
        :characters (->> location :placements
-                        (map (fn [[_ {:keys [character-id dialogue-id]}]]
+                        (map (fn [[_ {:keys [character-id]}]]
                                (let [character (get characters character-id)]
-                                 {:dialogue-id dialogue-id
-                                  :character-id character-id
+                                 {:character-id character-id
                                   :character-name (:display-name character)
                                   :character-color (:color character)})))
+                        distinct
                         (sort-by :character-name))})))
 
 (reg-sub
