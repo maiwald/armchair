@@ -5,6 +5,7 @@
             [armchair.location-editor.views :refer [location-editor tile-inspector]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
             [armchair.location-map.views :refer [location-map location-inspector]]
+            [armchair.ressources :refer [ressources]]
             [armchair.modals.views :refer [modal]]
             [armchair.modals.switch-form :as switch-form]
             [armchair.util :as u :refer [<sub >evt]]
@@ -148,13 +149,18 @@
            [:<>
             [modal]
             [:div#page
-             [:div#page__navigation
+             [:div#page__header
               [navigation page-name]]
-             (when (some? creation-buttons)
-               [:div#page__toolbar
-                [toolbar creation-buttons]])
-             [:div#page__content
-              [content-component page-name page-params]
-              (when inspector?
-                [:div#page__inspector
-                 [inspector]])]]]))})))
+             [:div#page__workspace
+              (when-not (= page-name :game)
+                [:div#page__workspace__ressources
+                 [ressources]])
+              [:div#page__workspace__main
+               (when (some? creation-buttons)
+                 [:div#page__toolbar
+                  [toolbar creation-buttons]])
+               [:div#page__content
+                [content-component page-name page-params]
+                (when inspector?
+                  [:div#page__inspector
+                   [inspector]])]]]]]))})))

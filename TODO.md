@@ -5,14 +5,22 @@
 
 # TODO
 - restructure navigation
-  - add ability to jump to dialogue or character from inspector
-  - let connections connect to actual entrances and exits
+  - placing exits, characters, player, etc
+  - editing connections
+  - add ability to jump to dialogue or character from placement inspector
+  - consolidate location editor sidebar
+- improved dialogue editor and state management
 - select and paint multiple texture sprites
+- Dialogue Structure (Quests?)
 - zoom in dialogue editor
 - sounds & music
 
 # nice things
-- separate moving viewport from moving node positions
+- search
+- locate ressources
+- pinch to zoom
+- remove urls + custom history back/forward?
+- distinguish between data stored in local storage and in files (e.g. location map scroll position)
 - validation error notifications and form states
 - state invariants
 - remove slds dependency
