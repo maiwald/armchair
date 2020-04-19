@@ -160,6 +160,7 @@
    [:ul {:class "tile-list"}
     [:li {:class "tile-list__item"
           :draggable true
+          :on-drag-end #(>evt [:location-editor/stop-entity-drag])
           :on-drag-start (fn [e]
                            (set-dnd-texture! e)
                            (.setData (.-dataTransfer e) "text/plain" ":player")
@@ -176,6 +177,7 @@
    [:ul {:class "tile-list"}
     [:li {:class "tile-list__item"
           :draggable true
+          :on-drag-end #(>evt [:location-editor/stop-entity-drag])
           :on-drag-start (fn [e]
                            (set-dnd-texture! e)
                            (.setData (.-dataTransfer e) "text/plain" ":exit")
@@ -197,6 +199,7 @@
         [:li {:key (str "character-select" display-name)
               :class "tile-list__item"
               :draggable true
+              :on-drag-end #(>evt [:location-editor/stop-entity-drag])
               :on-drag-start (fn [e]
                                (set-dnd-texture! e)
                                (.setData (.-dataTransfer e) "text/plain" display-name)
@@ -591,8 +594,7 @@
 
 (defn location-editor [location-id]
   (if (<sub [:location-editor/location-exists? location-id])
-    [:div {:class "location-editor"
-           :on-drag-end #(>evt [:location-editor/stop-entity-drag])}
+    [:div {:class "location-editor"}
      [:div {:class "location-editor__sidebar"}
       [sidebar location-id]]
      [:div {:class "location-editor__canvas"}
