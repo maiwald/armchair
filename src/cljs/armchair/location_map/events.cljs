@@ -1,6 +1,6 @@
 (ns armchair.location-map.events
   (:require [armchair.events :refer [reg-event-meta]]
-            [armchair.math :refer [point-scale]]))
+            [armchair.math :refer [round point-scale]]))
 
 (reg-event-meta
   :location-map/update-scroll-center
@@ -11,7 +11,7 @@
   :location-map/zoom-in
   (fn [db]
     (let [scale (:ui/location-map-zoom-scale db)
-          new-scale (min 1.5 (+ scale 0.3))]
+          new-scale (min 1.6 (round (+ scale 0.2) 1))]
       (-> db
           (assoc :ui/location-map-zoom-scale new-scale)
           (update :ui/location-map-scroll-center point-scale (/ new-scale scale))))))
@@ -20,7 +20,7 @@
   :location-map/zoom-out
   (fn [db]
     (let [scale (:ui/location-map-zoom-scale db)
-          new-scale (max 0.3 (- scale 0.3))]
+          new-scale (max 0.2 (round (- scale 0.2) 1))]
       (-> db
           (assoc :ui/location-map-zoom-scale new-scale)
           (update :ui/location-map-scroll-center point-scale (/ new-scale scale))))))
