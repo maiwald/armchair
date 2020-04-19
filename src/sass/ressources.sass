@@ -1,0 +1,110 @@
+@import "colors"
+
+#ressources
+  $tab-height: 50px
+  display: flex
+  flex-direction: row
+  flex: 1
+
+  border-right: 1px solid darken(grey, 10%)
+
+  .ressource_selectors
+    display: flex
+    flex-direction: column
+    align-content: flex-start
+
+    background: darkgrey
+
+    .ressource_selector
+      display: flex
+      align-items: center
+      justify-content: center
+      width: $tab-height
+      height: $tab-height
+
+      &:hover
+        cursor: pointer
+        background: grey
+
+      &__settings
+        position: absolute
+        bottom: 0
+
+      &.is-active
+        background-color: darken(grey, 10%)
+        &:hover
+          background-color: darken(grey, 15%)
+
+  .ressource_panel
+    display: flex
+    flex-direction: column
+    width: 280px
+    background: lightgray
+
+  .ressource_list
+    overflow-x: hidden
+    overflow-y: auto
+
+    &::-webkit-scrollbar
+      width: 10px
+
+    &::-webkit-scrollbar-track
+      background-color: lightgray
+
+    &::-webkit-scrollbar-thumb
+      border: 2px solid lightgray
+      border-radius: 20px
+      background-color: darkgrey
+
+    .ressource
+      $padding: 5px
+      $border-radius: 5px
+      display: flex
+      flex-direction: row
+      align-items: center
+      margin: 5px 3px
+
+      border: 1px solid $gray
+      border-radius: $border-radius
+
+      cursor: pointer
+
+      &__drag_handle
+        cursor: -moz-grab
+        cursor: -webkit-grab
+        cursor: grab
+        padding: $padding
+        background: lighten($gray, 20%)
+        border-top-left-radius: $border-radius - 1
+        border-bottom-left-radius: $border-radius - 1
+        align-self: stretch
+        display: flex
+        align-items: center
+        justify-content: center
+        color: rgba($text-regular, .2)
+
+      &:hover .ressource__drag_handle
+        color: rgba($text-regular, .9)
+
+      &__icon
+        box-sizing: content-box
+        padding: $padding
+        padding-right: 0
+
+      &__label
+        padding: $padding
+        color: $text-regular
+        flex: 1
+
+      &__action
+        padding: $padding
+        padding-left: 0
+        color: $text-light
+
+        &:hover
+          cursor: pointer
+          color: $text-regular
+
+.drag-ghost
+  position: absolute
+  left: -9999999px

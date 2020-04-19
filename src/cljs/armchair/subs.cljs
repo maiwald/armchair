@@ -66,6 +66,15 @@
                 :values (->> value-ids (map value-name) (join ", "))})))
          (sort-by :display-name))))
 
+(reg-sub
+  :location-list
+  :<- [:db-locations]
+  (fn [locations _]
+    (->> locations
+         (map (fn [[id {:keys [display-name]}]]
+                {:id id
+                 :display-name display-name}))
+         (sort-by :display-name))))
 
 (reg-sub
   :dialogue/player-line-option
@@ -149,12 +158,12 @@
         :locations [{:title "New Location"
                      :icon "plus"
                      :event [:open-location-creation]}
-                    {:title "Zoom In"
-                     :icon "plus"
-                     :event [:location-map/zoom-in]}
                     {:title "Zoom Out"
                      :icon "minus"
-                     :event [:location-map/zoom-out]}]
+                     :event [:location-map/zoom-out]}
+                    {:title "Zoom In"
+                     :icon "plus"
+                     :event [:location-map/zoom-in]}]
         :dialogues [{:title "New Dialogue"
                      :icon "plus"
                      :event [:armchair.modals.dialogue-creation/open]}]
