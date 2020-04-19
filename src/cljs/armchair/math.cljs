@@ -3,7 +3,12 @@
 (defrecord Point [x y])
 (defrecord Rect [x y w h])
 
-(defn round [x] (.round js/Math x))
+(defn round
+  ([x] (js/Math.round x))
+  ([x decimals]
+   (let [factor (js/Math.pow 10 decimals)]
+     (/ (js/Math.round (+ (* factor x) js/Number.EPSILON)) factor))))
+
 (defn abs [x] (.abs js/Math x))
 
 (defn clamp [lower upper value]
