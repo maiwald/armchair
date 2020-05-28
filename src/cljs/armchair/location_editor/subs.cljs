@@ -150,18 +150,6 @@
        :target-position position})))
 
 (reg-sub
-  :location-editor/occupied-tiles
-  :<- [:db-locations]
-  :<- [:db-player]
-  (fn [[locations player] [_ location-id]]
-    (let [location (get locations location-id)
-          player (when (= location-id (:location-id player))
-                   [(:location-position player)])]
-      (set (concat (keys (:connection-triggers location))
-                   (keys (:placements location))
-                   player)))))
-
-(reg-sub
   :location-editor/physically-occupied-tiles
   :<- [:db-locations]
   :<- [:db-player]

@@ -3,6 +3,7 @@
             [armchair.slds :as slds]
             [armchair.input :as input]
             [armchair.components :as c]
+            [armchair.components.tile-map :refer [tile-dropzone]]
             [armchair.config :as config]
             [armchair.routes :refer [>navigate]]
             [armchair.math :refer [Point
@@ -26,12 +27,6 @@
   (let [offset (/ config/tile-size 2)
         image (.querySelector (.-currentTarget e) ".dnd-texture img")]
     (.setDragImage (.-dataTransfer e) image offset offset)))
-
-(defn tile-style [{:keys [x y]}]
-  {:width (px config/tile-size)
-   :height (px config/tile-size)
-   :top (px (* y config/tile-size))
-   :left (px (* x config/tile-size))})
 
 (defn tile-paint-canvas []
   (let [painted-tiles (r/atom nil)
@@ -64,10 +59,10 @@
              (if (some? texture)
                [:div {:style (merge {:position "absolute"
                                      :opacity ".8"}
-                                    (tile-style tile))}
+                                    (u/tile-style tile))}
                 [c/sprite-texture texture]]
                [:div {:class "interactor interactor_paint"
-                      :style (tile-style tile)}]))])))))
+                      :style (u/tile-style tile)}]))])))))
 
 (defn sidebar-widget [{title :title}]
   (into [:div {:class "location-editor__sidebar-widget"}
@@ -253,7 +248,7 @@
          :when (some? tile-data)]
      [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
             :class "level__tile"
-            :style (tile-style (global-point tile rect))}
+            :style (u/tile-style (global-point tile rect))}
       tile-data])])
 
 (defn do-some-tiles [rect coll layer-title f]
@@ -262,33 +257,8 @@
          :when (rect-contains? rect tile)]
      [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
             :class "level__tile"
-            :style (tile-style (global-point tile rect))}
+            :style (u/tile-style (global-point tile rect))}
       (f tile item)])])
-
-(defn dropzone []
-  (let [current-tile (r/atom nil)]
-    (letfn [(set-current-tile [tile] (reset! current-tile tile))
-            (clear-current-tile [] (reset! current-tile nil))]
-      (fn [{:keys [occupied on-drop]}]
-        [:div {:on-drag-over (fn [e]
-                               (u/prevent-e! e)
-                               (set-current-tile (u/e->tile e)))
-               :on-drag-leave clear-current-tile
-               :on-drop (fn []
-                          (when-not (contains? occupied @current-tile)
-                            (on-drop @current-tile)))
-               :style {:position "absolute"
-                       :top 0
-                       :left 0
-                       :width "100%"
-                       :height "100%"
-                       :z-index 10}}
-         (when @current-tile
-           [:div {:class ["interactor"
-                          (if (contains? occupied @current-tile)
-                            "interactor_disabled"
-                            "interactor_dropzone")]
-                  :style (tile-style @current-tile)}])]))))
 
 (defn texture-layer [{:keys [location-id layer-id override-rect]}]
   (let [location (<sub [:location-editor/location location-id])
@@ -303,7 +273,7 @@
   (when (rect-contains? rect position)
     [:div {:key (str "location-cell:player:" position)
            :class "level__tile"
-           :style (tile-style (global-point position rect))}
+           :style (u/tile-style (global-point position rect))}
      [c/sprite-texture ["hare.png" (Point. 6 0)] "Player"]]))
 
 (defn entity-layer [location-id override-rect]
@@ -360,7 +330,7 @@
      [conntection-trigger-layer location-id bounds]
      [:div {:key "location-cell:highlight"
             :class "level__tile level__tile_highlight"
-            :style (tile-style (global-point preview-tile bounds))}]]))
+            :style (u/tile-style (global-point preview-tile bounds))}]]))
 
 (defn tile-select [{:keys [bounds on-select selected selectable?]}]
   (letfn [(on-click [e]
@@ -376,7 +346,7 @@
      (when selected
        [:div {:key "location-cell:selected"
               :class "level__tile level__tile_highlight"
-              :style (tile-style (global-point selected bounds))}])
+              :style (u/tile-style (global-point selected bounds))}])
      (when (fn? selectable?)
        [do-all-tiles bounds "disabled-selectors"
         (fn [tile]
@@ -589,8 +559,8 @@
          [edit-trigger-layer location-id]])
 
       (when (fn? dropzone-fn)
-        [dropzone {:occupied (<sub [:location-editor/occupied-tiles location-id])
-                   :on-drop dropzone-fn}])]]))
+        [tile-dropzone {:occupied (<sub [:location/occupied-tiles location-id])
+                        :on-drop dropzone-fn}])]]))
 
 (defn location-editor [location-id]
   (if (<sub [:location-editor/location-exists? location-id])

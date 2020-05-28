@@ -1,8 +1,8 @@
 (ns armchair.subs
-  (:require [re-frame.core :refer [reg-sub]]
+  (:require [re-frame.core :refer [reg-sub subscribe]]
             [clojure.string :refer [join]]
             [armchair.routes :refer [page-data]]
-            [armchair.math :as m :refer [translate-point point-delta]]
+            [armchair.math :as m :refer [translate-point point-delta global-point]]
             [armchair.util :as u]))
 
 (defn by-id [ressources [_ ressource-id]]
@@ -75,6 +75,20 @@
                 {:id id
                  :display-name display-name}))
          (sort-by :display-name))))
+
+(reg-sub
+  :location/occupied-tiles
+  (fn [[_ location-id]]
+    [(subscribe [:db/location location-id])
+     (subscribe [:db-player])])
+  (fn [[location player] [_ location-id]]
+    (let [player (when (= location-id (:location-id player))
+                   [(:location-position player)])]
+      (set (map
+             #(global-point % (:bounds location))
+             (concat (keys (:connection-triggers location))
+                    (keys (:placements location))
+                    player))))))
 
 (reg-sub
   :dialogue/player-line-option

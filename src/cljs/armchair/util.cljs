@@ -149,3 +149,12 @@
          max-y (.-offsetHeight target)]
      (-> (Point. (clamp 0 max-x x) (clamp 0 max-y y))
          (coord->tile zoom-scale)))))
+
+(defn tile-style
+  ([tile] (tile-style tile 1))
+  ([{:keys [x y]} zoom-scale]
+   {:width (px (* tile-size zoom-scale))
+    :height (px (* tile-size zoom-scale))
+    :top (px (* y tile-size zoom-scale))
+    :left (px (* x tile-size zoom-scale))}))
+
