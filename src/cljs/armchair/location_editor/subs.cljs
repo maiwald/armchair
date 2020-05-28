@@ -3,10 +3,6 @@
             [armchair.util :as u]))
 
 (reg-sub
-  :location-editor/dnd-payload
-  (fn [db] (get-in db [:location-editor :dnd-payload])))
-
-(reg-sub
   :location-editor/ui
   (fn [db]
     (select-keys (:location-editor db)

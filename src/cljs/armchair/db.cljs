@@ -73,8 +73,7 @@
                    :location-editor/active-pane
                    :location-editor/active-tool
                    :location-editor/active-walk-state
-                   :location-editor/active-texture]
-          :opt-un [:location-editor/dnd-payload]))
+                   :location-editor/active-texture]))
 
 (s/def :location-editor/active-pane #{:info :level})
 (s/def :location-editor/active-tool #{:brush :eraser})
@@ -352,6 +351,7 @@
                                        ::switch-values]
                               :opt-un [:ui/connecting
                                        :ui/dragging
+                                       :ui/dnd
                                        :ui/cursor
                                        :ui/inspector
                                        :ui/location-map-scroll-center

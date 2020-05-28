@@ -142,10 +142,10 @@
    [:ul {:class "tile-list"}
     [:li {:class "tile-list__item"
           :draggable true
-          :on-drag-end #(>evt [:location-editor/stop-entity-drag])
+          :on-drag-end #(>evt [:stop-entity-drag])
           :on-drag-start (fn [e]
                            (.setData (.-dataTransfer e) "text/plain" ":player")
-                           (>evt [:location-editor/start-entity-drag [:player]]))}
+                           (>evt [:start-entity-drag [:player]]))}
      [:span {:class "tile-list__item__image"
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
@@ -157,10 +157,10 @@
    [:ul {:class "tile-list"}
     [:li {:class "tile-list__item"
           :draggable true
-          :on-drag-end #(>evt [:location-editor/stop-entity-drag])
+          :on-drag-end #(>evt [:stop-entity-drag])
           :on-drag-start (fn [e]
                            (.setData (.-dataTransfer e) "text/plain" ":exit")
-                           (>evt [:location-editor/start-entity-drag [:connection-trigger]]))}
+                           (>evt [:start-entity-drag [:connection-trigger]]))}
      [:span {:class "tile-list__item__image"
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
@@ -177,10 +177,10 @@
         [:li {:key (str "character-select" display-name)
               :class "tile-list__item"
               :draggable true
-              :on-drag-end #(>evt [:location-editor/stop-entity-drag])
+              :on-drag-end #(>evt [:stop-entity-drag])
               :on-drag-start (fn [e]
                                (.setData (.-dataTransfer e) "text/plain" display-name)
-                               (>evt [:location-editor/start-entity-drag [:character character-id]]))}
+                               (>evt [:start-entity-drag [:character character-id]]))}
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
                          :height (str config/tile-size "px")}}
@@ -446,8 +446,8 @@
                  :draggable true
                  :on-drag-start (fn [e]
                                   (.setData (.-dataTransfer e) "text/plain" ":player")
-                                  (>evt [:location-editor/start-entity-drag [:player]]))
-                 :on-drag-end #(>evt [:location-editor/stop-entity-drag])}])])
+                                  (>evt [:start-entity-drag [:player]]))
+                 :on-drag-end #(>evt [:stop-entity-drag])}])])
 
      [do-some-tiles bounds characters "character-select"
       (fn [tile {:keys [display-name inspecting?]}]
@@ -457,8 +457,8 @@
                :on-click #(>evt [:inspect :tile location-id tile])
                :on-drag-start (fn [e]
                                 (.setData (.-dataTransfer e) "text/plain" display-name)
-                                (>evt [:location-editor/start-entity-drag [:placement tile]]))
-               :on-drag-end #(>evt [:location-editor/stop-entity-drag])}])]]))
+                                (>evt [:start-entity-drag [:placement tile]]))
+               :on-drag-end #(>evt [:stop-entity-drag])}])]]))
 
 (defn edit-trigger-layer [location-id]
   (let [{:keys [bounds
@@ -471,8 +471,8 @@
               :on-click #(>evt [:inspect :tile location-id tile])
               :on-drag-start (fn [e]
                                (.setData (.-dataTransfer e) "text/plain" display-name)
-                               (>evt [:location-editor/start-entity-drag [:connection-trigger tile]]))
-              :on-drag-end #(>evt [:location-editor/stop-entity-drag])}])]))
+                               (>evt [:start-entity-drag [:connection-trigger tile]]))
+              :on-drag-end #(>evt [:stop-entity-drag])}])]))
 
 (defn canvas [location-id]
   (let [{:keys [bounds blocked]} (<sub [:location-editor/location location-id])
@@ -481,7 +481,7 @@
                 visible-layers
                 active-tool
                 active-texture]} (<sub [:location-editor/ui])
-        dropzone-fn (if-let [[dnd-type dnd-payload] (<sub [:location-editor/dnd-payload])]
+        dropzone-fn (if-let [[dnd-type dnd-payload] (<sub [:ui/dnd])]
                       (case dnd-type
                         :character          #(>evt [:location-editor/place-character location-id dnd-payload (relative-point % bounds)])
                         :player             #(>evt [:location-editor/move-player location-id (relative-point % bounds)])
