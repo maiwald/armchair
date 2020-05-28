@@ -169,7 +169,7 @@
   (fn [db [_ path]]
     (assoc db :current-page path)))
 
-;; Mouse, Drag & Drop
+;; Mouse, Dragging UI
 
 (reg-event-meta
   :move-cursor
@@ -206,6 +206,20 @@
 (reg-event-meta
   :cancel-dragging
   (fn [db] (dissoc db :dragging :cursor)))
+
+;; Drag & Drop
+
+(reg-event-meta
+  :start-entity-drag
+  (fn [db [_ payload]]
+    (assoc db :ui/dnd payload)))
+
+(reg-event-meta
+  :stop-entity-drag
+  (fn [db]
+    (dissoc db :ui/dnd)))
+
+;; Inspector
 
 (reg-event-meta
   :inspect

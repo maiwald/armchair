@@ -35,6 +35,8 @@
 (reg-sub :ui/location-map-scroll-center #(:ui/location-map-scroll-center %))
 (reg-sub :ui/location-map-zoom-scale #(:ui/location-map-zoom-scale %))
 
+(reg-sub :ui/dnd #(:ui/dnd %))
+
 (reg-sub
   :character-list
   :<- [:db-characters]

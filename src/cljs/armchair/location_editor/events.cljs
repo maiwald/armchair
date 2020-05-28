@@ -48,21 +48,11 @@
                    (disj visible-layers layer-id)
                    (conj visible-layers layer-id))))))
 
-(reg-event-meta
-  :location-editor/start-entity-drag
-  (fn [db [_ payload]]
-    (assoc-in db [:location-editor :dnd-payload] payload)))
-
-(reg-event-meta
-  :location-editor/stop-entity-drag
-  (fn [db]
-    (update db :location-editor dissoc :dnd-payload)))
-
 (reg-event-data
   :location-editor/move-player
   (fn [db [_ location-id position]]
     (-> db
-       (update :location-editor dissoc :dnd-payload)
+       (dissoc :ui/dnd)
        (assoc :player {:location-id location-id
                        :location-position position}))))
 
@@ -76,14 +66,14 @@
                        (= inspector-id location-id)
                        (= inspector-position from)))
           (assoc-in [:ui/inspector 1 :location-position] to))
-        (update :location-editor dissoc :dnd-payload)
+        (dissoc :ui/dnd)
         (update-in [:locations location-id :placements] rename-keys {from to}))))
 
 (reg-event-data
   :location-editor/place-character
   (fn [db [_ location-id character-id to]]
     (-> db
-        (update :location-editor dissoc :dnd-payload)
+        (dissoc :ui/dnd)
         (assoc-in [:locations location-id :placements to]
                   {:character-id character-id}))))
 
@@ -115,7 +105,7 @@
 (reg-event-data
   :location-editor/move-trigger
   (fn [db [_ location-id from to]]
-    (let [new-db (update db :location-editor dissoc :dnd-payload)]
+    (let [new-db (dissoc db :ui/dnd)]
       (if (some? from)
         (-> new-db
             (cond-> (let [[inspector-type {inspector-location-id :location-id

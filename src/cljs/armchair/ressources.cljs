@@ -22,7 +22,7 @@
 (defn character [{:keys [id display-name texture]}]
   [:li.ressource {:draggable true
                   :on-click #(>evt [:armchair.modals.character-form/open id])
-                  :on-drag-end #(>evt [:location-editor/stop-entity-drag])
+                  :on-drag-end #(>evt [:stop-entity-drag])
                   :on-drag-start (fn [e]
                                    (let [offset (/ config/tile-size 2)
                                          ghost (-> e
@@ -30,7 +30,7 @@
                                                    (.getElementsByClassName "drag-ghost")
                                                    (aget 0))]
                                      (.setDragImage (.-dataTransfer e) ghost offset offset))
-                                   (>evt [:location-editor/start-entity-drag [:character id]]))}
+                                   (>evt [:start-entity-drag [:character id]]))}
    [:div.drag-ghost
     [c/sprite-texture texture display-name]]
    [:span.ressource__drag_handle

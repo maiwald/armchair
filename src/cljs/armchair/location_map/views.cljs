@@ -145,7 +145,7 @@
         [:img {:src preview-image-foreground-src
                :style {:width (u/px preview-image-w)
                        :height (u/px preview-image-h)}}]
-        (if-let [[dnd-type dnd-payload] (<sub [:location-editor/dnd-payload])]
+        (if-let [[dnd-type dnd-payload] (<sub [:ui/dnd])]
           (case dnd-type
             :character
             [tile-dropzone {:zoom-scale zoom-scale
