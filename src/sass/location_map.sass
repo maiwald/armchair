@@ -70,10 +70,7 @@
     border: $border solid $gray
     user-select: none
     box-sizing: content-box
-
-    &:hover img
-      filter: grayscale(.8)
-      opacity: .6
+    position: relative
 
     & > *
       position: absolute !important
@@ -87,14 +84,6 @@
 
   &_is-inspecting > &__tilemap
     border: 3px solid rgba($primary, .8)
-
-.tile-select
-  position: relative
-
-  &__highlight
-    border: 2px dashed $primary-light
-    background: rgba($primary, .4)
-    position: absolute
 
 .location-connections
   pointer-events: none

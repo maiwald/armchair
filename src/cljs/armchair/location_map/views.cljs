@@ -1,18 +1,12 @@
 (ns armchair.location-map.views
   (:require [reagent.core :as r]
-            [armchair.config :as config]
             [armchair.components :as c]
+            [armchair.components.tile-map :refer [tile-select tile-dropzone]]
             [armchair.input :as input]
             [armchair.math :as m]
             [armchair.util :as u :refer [<sub >evt e->val e->left?]]
             [armchair.routes :refer [>navigate]]
             [goog.functions :refer [debounce]]))
-
-(defn tile-style [{:keys [x y]} zoom-scale]
-  {:width (u/px (* config/tile-size zoom-scale))
-   :height (u/px (* config/tile-size zoom-scale))
-   :top (u/px (* y config/tile-size zoom-scale))
-   :left (u/px (* x config/tile-size zoom-scale))})
 
 (defn location-inspector [location-id]
   (let [{:keys [display-name characters]} (<sub [:location-editor/location-inspector location-id])]
@@ -99,22 +93,6 @@
             :on-mouse-move (when dragging? #(>evt [:move-cursor (u/e->point %)]))}]
           (r/children (r/current-component)))))
 
-(defn tile-select []
-  (let [highlight-tile (r/atom nil)]
-    (fn [{:keys [zoom-scale on-select width height]}]
-      (let [set-highlight (fn [e] (reset! highlight-tile (u/e->tile e zoom-scale)))
-            clear-highlight (fn [] (reset! highlight-tile nil))]
-        [:div {:class "tile-select"
-               :on-mouse-move set-highlight
-               :on-mouse-leave clear-highlight
-               :on-click set-highlight
-               :style {:width width
-                       :height height}}
-         (when (some? @highlight-tile)
-           [:div {:class "tile-select__highlight"
-                  :on-click #(on-select @highlight-tile)
-                  :style (tile-style @highlight-tile zoom-scale)}])]))))
-
 (defn location [location-id]
   (let [{:keys [display-name
                 characters
@@ -162,15 +140,20 @@
            (for [[tile {:keys [texture display-name inspecting?]}] characters]
              [:div {:key (str "location-character:" location-id ",tile:" (pr-str tile))
                     :class ["location__tilemap__character" (when inspecting? "location__tilemap__character_is-inspecting")]
-                    :style (tile-style tile zoom-scale)}
+                    :style (u/tile-style tile zoom-scale)}
               [c/sprite-texture texture display-name zoom-scale]])])
         [:img {:src preview-image-foreground-src
                :style {:width (u/px preview-image-w)
                        :height (u/px preview-image-h)}}]
-        [tile-select {:zoom-scale zoom-scale
-                      :width (u/px preview-image-w)
-                      :height (u/px preview-image-h)
-                      :on-select #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}]]
+        (if-let [[dnd-type dnd-payload] (<sub [:location-editor/dnd-payload])]
+          (case dnd-type
+            :character
+            [tile-dropzone {:zoom-scale zoom-scale
+                            :occupied (<sub [:location/occupied-tiles location-id])
+                            :on-drop #(>evt [:location-editor/place-character location-id dnd-payload (m/relative-point % bounds)])}]
+            nil)
+          [tile-select {:zoom-scale zoom-scale
+                        :on-select #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}])]
        [:div {:class "location__loading"
               :style {:width (u/px preview-image-w)
                       :height (u/px preview-image-h)}}
