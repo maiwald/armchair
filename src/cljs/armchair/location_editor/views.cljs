@@ -15,19 +15,6 @@
             [armchair.util :as u :refer [px <sub >evt e-> e->val]]
             [armchair.textures :refer [image-path]]))
 
-(defn dnd-texture [texture]
-  [:div.dnd-texture
-   [:img {:src (image-path texture)
-          :style {:height (str config/tile-size "px")
-                  :width (str config/tile-size "px")
-                  :max-width (str config/tile-size "px")
-                  :max-height (str config/tile-size "px")}}]])
-
-(defn set-dnd-texture! [e]
-  (let [offset (/ config/tile-size 2)
-        image (.querySelector (.-currentTarget e) ".dnd-texture img")]
-    (.setDragImage (.-dataTransfer e) image offset offset)))
-
 (defn tile-paint-canvas []
   (let [painted-tiles (r/atom nil)
         current-tile (r/atom nil)]
@@ -157,10 +144,8 @@
           :draggable true
           :on-drag-end #(>evt [:location-editor/stop-entity-drag])
           :on-drag-start (fn [e]
-                           (set-dnd-texture! e)
                            (.setData (.-dataTransfer e) "text/plain" ":player")
                            (>evt [:location-editor/start-entity-drag [:player]]))}
-     [dnd-texture :player]
      [:span {:class "tile-list__item__image"
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
@@ -174,10 +159,8 @@
           :draggable true
           :on-drag-end #(>evt [:location-editor/stop-entity-drag])
           :on-drag-start (fn [e]
-                           (set-dnd-texture! e)
                            (.setData (.-dataTransfer e) "text/plain" ":exit")
                            (>evt [:location-editor/start-entity-drag [:connection-trigger]]))}
-     [dnd-texture :exit]
      [:span {:class "tile-list__item__image"
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
@@ -196,10 +179,8 @@
               :draggable true
               :on-drag-end #(>evt [:location-editor/stop-entity-drag])
               :on-drag-start (fn [e]
-                               (set-dnd-texture! e)
                                (.setData (.-dataTransfer e) "text/plain" display-name)
                                (>evt [:location-editor/start-entity-drag [:character character-id]]))}
-         [dnd-texture texture]
          [:span {:class "tile-list__item__image"
                  :style {:width (str config/tile-size "px")
                          :height (str config/tile-size "px")}}
@@ -464,22 +445,18 @@
                  :title "Player"
                  :draggable true
                  :on-drag-start (fn [e]
-                                  (set-dnd-texture! e)
                                   (.setData (.-dataTransfer e) "text/plain" ":player")
-                                  (>evt [:location-editor/start-entity-drag [:player]]))}
-           [dnd-texture :hare_down_idle1]])])
+                                  (>evt [:location-editor/start-entity-drag [:player]]))}])])
 
      [do-some-tiles bounds characters "character-select"
-      (fn [tile {:keys [texture display-name inspecting?]}]
+      (fn [tile {:keys [display-name inspecting?]}]
         [:div {:class ["interactor" "interactor_draggable" (when inspecting? "interactor_focus")]
                :title display-name
                :draggable true
                :on-click #(>evt [:inspect :tile location-id tile])
                :on-drag-start (fn [e]
-                                (set-dnd-texture! e)
                                 (.setData (.-dataTransfer e) "text/plain" display-name)
-                                (>evt [:location-editor/start-entity-drag [:placement tile]]))}
-         [dnd-texture texture]])]]))
+                                (>evt [:location-editor/start-entity-drag [:placement tile]]))}])]]))
 
 (defn edit-trigger-layer [location-id]
   (let [{:keys [bounds
@@ -491,10 +468,8 @@
               :draggable true
               :on-click #(>evt [:inspect :tile location-id tile])
               :on-drag-start (fn [e]
-                               (set-dnd-texture! e)
                                (.setData (.-dataTransfer e) "text/plain" display-name)
-                               (>evt [:location-editor/start-entity-drag [:connection-trigger tile]]))}
-        [dnd-texture :exit]])]))
+                               (>evt [:location-editor/start-entity-drag [:connection-trigger tile]]))}])]))
 
 (defn canvas [location-id]
   (let [{:keys [bounds blocked]} (<sub [:location-editor/location location-id])
