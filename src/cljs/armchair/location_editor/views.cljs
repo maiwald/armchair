@@ -446,7 +446,8 @@
                  :draggable true
                  :on-drag-start (fn [e]
                                   (.setData (.-dataTransfer e) "text/plain" ":player")
-                                  (>evt [:location-editor/start-entity-drag [:player]]))}])])
+                                  (>evt [:location-editor/start-entity-drag [:player]]))
+                 :on-drag-end #(>evt [:location-editor/stop-entity-drag])}])])
 
      [do-some-tiles bounds characters "character-select"
       (fn [tile {:keys [display-name inspecting?]}]
@@ -456,7 +457,8 @@
                :on-click #(>evt [:inspect :tile location-id tile])
                :on-drag-start (fn [e]
                                 (.setData (.-dataTransfer e) "text/plain" display-name)
-                                (>evt [:location-editor/start-entity-drag [:placement tile]]))}])]]))
+                                (>evt [:location-editor/start-entity-drag [:placement tile]]))
+               :on-drag-end #(>evt [:location-editor/stop-entity-drag])}])]]))
 
 (defn edit-trigger-layer [location-id]
   (let [{:keys [bounds
@@ -469,7 +471,8 @@
               :on-click #(>evt [:inspect :tile location-id tile])
               :on-drag-start (fn [e]
                                (.setData (.-dataTransfer e) "text/plain" display-name)
-                               (>evt [:location-editor/start-entity-drag [:connection-trigger tile]]))}])]))
+                               (>evt [:location-editor/start-entity-drag [:connection-trigger tile]]))
+              :on-drag-end #(>evt [:location-editor/stop-entity-drag])}])]))
 
 (defn canvas [location-id]
   (let [{:keys [bounds blocked]} (<sub [:location-editor/location location-id])
