@@ -29,8 +29,13 @@
     :plugins      [[lein-figwheel "0.5.19"]
                    [lein-ancient "0.6.15"]]
     :source-paths ["src/cljs"]
-    :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}}}
+    :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}}
 
+   :test
+   {:dependencies [[org.seleniumhq.selenium/selenium-java "3.141.59"]
+                   [org.seleniumhq.selenium/selenium-support "3.141.59"]
+                   [org.seleniumhq.selenium/selenium-chrome-driver "3.141.59"]]
+    :source-paths ["test/clj"]}}
 
   :cljsbuild
   {:builds

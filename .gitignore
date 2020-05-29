@@ -6,6 +6,7 @@
 out
 .rebel_readline_history
 .lein-repl-history
+.lein-failures
 .nrepl-port
 .cljs_rhino_repl
 .sass-cache
