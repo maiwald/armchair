@@ -50,7 +50,8 @@
 (defn scroll-container []
   ; these don't need to be r/atoms because we dont need reactivity here
   (let [scroll-elem (atom nil)
-        prev-cursor (atom nil)]
+        prev-cursor (atom nil)
+        end-scrolling (fn [] (reset! prev-cursor nil))]
     (r/create-class
       {:display-name "scroll-container"
        :component-did-mount
@@ -79,7 +80,8 @@
                                     [dx dy] (m/point-delta cursor @prev-cursor)]
                                 (.scrollBy @scroll-elem dx dy)
                                 (reset! prev-cursor cursor))))
-           :on-mouse-up (fn [] (reset! prev-cursor nil))}
+           :on-mouse-leave end-scrolling
+           :on-mouse-up end-scrolling}
           (into [:div
                  {:class "scroll-content"
                   :style {:width (u/px width)
