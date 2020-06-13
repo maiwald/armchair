@@ -1,5 +1,6 @@
 (ns armchair.location-editor.subs
   (:require [re-frame.core :refer [reg-sub subscribe]]
+            [armchair.math :as m]
             [armchair.util :as u]))
 
 (reg-sub
@@ -122,28 +123,36 @@
   :<- [:db-locations]
   :<- [:db-dialogues]
   :<- [:db-characters]
-  :<- [:character-options]
-  (fn [[locations dialogues characters character-options] [_ location-id tile]]
-    (let [{:keys [character-id dialogue-id]} (get-in locations [location-id :placements tile])
-          texture (get-in characters [character-id :texture])
+  (fn [[locations dialogues characters] [_ location-id tile]]
+    (let [location (get locations location-id)
+          {:keys [character-id dialogue-id]} (get-in location [:placements tile])
           dialogue-options (->> dialogues
                                 (u/filter-map #(= character-id (:character-id %)))
                                 (u/map-values :synopsis))]
-      {:character-id character-id
-       :character-options character-options
+      {:location-display-name (:display-name location)
+       :location-tile (m/global-point tile (:bounds location))
+       :character-id character-id
+       :character-display-name (get-in characters [character-id :display-name])
        :dialogue-id dialogue-id
-       :dialogue-options dialogue-options
-       :texture texture})))
+       :dialogue-display-name (get-in dialogues [dialogue-id :synopsis])
+       :dialogue-options dialogue-options})))
 
 (reg-sub
   :location-editor/trigger-inspector
   :<- [:db-locations]
   (fn [locations [_ location-id tile]]
-    (let [[target-id position] (get-in locations [location-id :connection-triggers tile])
-          display-name (get-in locations [target-id :display-name])]
-      {:display-name display-name
+    (let [{source-display-name :display-name
+           source-bounds :bounds
+           :as location} (get locations location-id)
+          [target-id position] (get-in location [:connection-triggers tile])
+          {target-display-name :display-name
+           target-bounds :bounds} (get locations target-id)]
+      {:source-display-name source-display-name
+       :source-position-normalized (m/global-point tile source-bounds)
        :target-id target-id
-       :target-position position})))
+       :target-display-name target-display-name
+       :target-position position
+       :target-position-normalized (m/global-point position target-bounds)})))
 
 (reg-sub
   :location-editor/physically-occupied-tiles
