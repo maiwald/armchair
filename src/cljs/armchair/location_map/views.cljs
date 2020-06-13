@@ -89,9 +89,11 @@
                 (r/children (r/current-component)))])})))
 
 (defn drag-container []
-  (let [dragging? (<sub [:dragging?])]
+  (let [dragging? (<sub [:dragging?])
+        stop-dragging (when dragging? #(>evt [:end-dragging]))]
     (into [:div
            {:class ["drag-container" (when dragging? "drag-container_is-dragging")]
+            :on-mouse-leave stop-dragging
             :on-mouse-move (when dragging? #(>evt [:move-cursor (u/e->point %)]))}]
           (r/children (r/current-component)))))
 
