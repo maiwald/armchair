@@ -5,7 +5,6 @@
             [armchair.components :as c]
             [armchair.components.tile-map :refer [tile-dropzone]]
             [armchair.config :as config]
-            [armchair.routes :refer [>navigate]]
             [armchair.math :refer [Point
                                    Rect
                                    relative-point
@@ -289,9 +288,9 @@
 (defn location-preview [location-id preview-tile]
   (let [tiles-around 3
         bounds (Rect. (- (:x preview-tile) tiles-around)
-                (- (:y preview-tile) tiles-around)
-                (inc (* 2 tiles-around))
-                (inc (* 2 tiles-around)))]
+                      (- (:y preview-tile) tiles-around)
+                      (inc (* 2 tiles-around))
+                      (inc (* 2 tiles-around)))]
     [:div {:class "level"
            :style {:width (u/px (* config/tile-size (:w bounds)))
                    :height (u/px (* config/tile-size (:h bounds)))}}
@@ -362,9 +361,17 @@
                     :selected selected
                     :selectable? (fn [tile] (not (contains? occupied tile)))}]]]))
 
+(defn property [{title :title}]
+  [:div.inspector__property
+   [:span.inspector__property__title title]
+   (into [:div.inspector__property__payload]
+         (r/children (r/current-component)))])
+
 (defn placement-inspector [location-id tile]
-  (let [{:keys [character-id
-                character-options
+  (let [{:keys [location-display-name
+                location-tile
+                character-id
+                character-display-name
                 dialogue-id
                 dialogue-options]}
         (<sub [:location-editor/placement-inspector location-id tile])]
@@ -372,39 +379,46 @@
               (>evt [:location-editor/set-placement-character
                      location-id tile (-> e e->val uuid)]))
             (set-dialogue [e]
-              (let [e-value (e->val e)
-                    value (if (= e-value "nil") nil (uuid e-value))]
-                (>evt [:location-editor/set-placement-dialogue
-                       location-id tile value])))]
+              (>evt [:location-editor/set-placement-dialogue
+                     location-id tile (uuid (e->val e))]))
+            (unset-dialogue []
+              (>evt [:location-editor/set-placement-dialogue
+                     location-id tile nil]))]
       [:div#inspector
        [:header
-        [:span.title "Dialogue"]
+        [:span.title "Character"]
         [:a.close-button {:on-click #(>evt [:close-inspector])}
          [c/icon "times"]]]
        [:div.inspector__content
-        [:div.inspector__property
-         [:span.inspector__property__title "Character"]
-         [:div.inspector__property__payload
-          [input/select {:value character-id
-                         :options character-options
-                         :on-change set-character}]]]
-        [:div.inspector__property
-         [:span.inspector__property__title "Dialogue"]
-         [:div.inspector__property__payload
-          [input/select {:value dialogue-id
-                         :nil-value "No Dialogue"
-                         :options dialogue-options
-                         :on-change set-dialogue}]
-          [:a.new-dialogue {:on-click #(>evt [:armchair.modals.dialogue-creation/open character-id location-id tile])}
-           "Create new Dialogue"]]]]
+        [property {:title "Placement"}
+         (str
+           location-display-name
+           " [" (:x location-tile) "," (:y location-tile) "]")]
+        [property {:title "Character"}
+         [:a {:on-click #(>evt [:armchair.modals.character-form/open character-id])}
+          character-display-name]]
+        [property {:title "Dialogue"}
+         [input/select {:value dialogue-id
+                        :nil-value "No dialogue"
+                        :options dialogue-options
+                        :on-change set-dialogue}]
+         [c/button {:title "Create a new dialogue"
+                    :icon "plus"
+                    :fill true
+                    :on-click #(>evt [:armchair.modals.dialogue-creation/open character-id location-id tile])}]]]
        [:div.inspector__actions
-        [c/button {:title "Remove Character"
+        [c/button {:title "Clear tile"
                    :type :danger
                    :fill true
                    :on-click #(>evt [:location-editor/remove-placement location-id tile])}]]])))
 
 (defn trigger-inspector [location-id tile]
-  (let [{:keys [display-name target-id target-position]}
+  (let [{:keys [source-display-name
+                source-position-normalized
+                target-id
+                target-display-name
+                target-position
+                target-position-normalized]}
         (<sub [:location-editor/trigger-inspector location-id tile])]
     [:div#inspector
      [:header
@@ -412,14 +426,18 @@
       [:a.close-button {:on-click #(>evt [:close-inspector])}
        [c/icon "times"]]]
      [:div.inspector__content
-      [:div.inspector__property.inspector__property_inline
-       [:div.inspector__property__title "To"]
-       [:div.inspector__property__payload
-        [:a {:on-click #(>navigate :location-edit :id target-id)}
-         (str display-name)]]]
-      [:div.inspector__property
-       [:div.inspector__property__title "Preview"]
-       [:div.inspector__property__payload {:style {:margin "5px auto 0"}}
+      [property {:title "From"}
+       (str
+         source-display-name
+         " [" (:x source-position-normalized)
+         "," (:y source-position-normalized) "]")]
+      [property {:title "To"}
+       (str
+         target-display-name
+         " [" (:x target-position-normalized)
+         "," (:y target-position-normalized) "]")]
+      [property {:title "Preview"}
+       [:div {:style {:margin "5px auto 0"}}
         [location-preview target-id target-position]]]]
      [:div.inspector__actions
       [c/button {:title "Remove Exit"

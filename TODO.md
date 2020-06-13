@@ -4,7 +4,7 @@
 
 # TODO
 - restructure navigation
-  - placing exits, player, dialogues
+  - placing exits, player
   - editing connections
   - add ability to jump to dialogue or character from placement inspector
   - consolidate location editor sidebar
