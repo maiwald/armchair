@@ -165,20 +165,20 @@
                            [end-location end-tile]]
   (let [tile-size (<sub [:location-map/tile-size])
         {start-tile :tile start-tile-center :tile-center} (<sub [:location-map/connection-position start-location start-tile])
-        {end-tile :tile end-tile-center :tile-center} (<sub [:location-map/connection-position end-location end-tile])]
+        {end-tile-center :tile-center} (<sub [:location-map/connection-position end-location end-tile])]
     [:<>
      [:rect {:stroke "red"
              :stroke-width 1
              :fill "none"
              :x (:x start-tile)
              :y (:y start-tile)
-             :height tile-size :width tile-size}]
-     [:rect {:stroke "red"
-             :stroke-width 1
-             :fill "none"
-             :x (:x end-tile)
-             :y (:y end-tile)
-             :height tile-size :width tile-size}]
+             :width tile-size
+             :height tile-size}]
+     [:rect {:fill "yellow"
+             :x (- (:x end-tile-center) 3)
+             :y (- (:y end-tile-center) 3)
+             :width 6
+             :height 6}]
      [:line {:class ["location-connection"]
              :x1 (:x start-tile-center)
              :y1 (:y start-tile-center)
