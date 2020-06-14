@@ -96,11 +96,13 @@
   (fn [db [_ character-id]]
     (let [line-count (->> (:lines db)
                           (u/filter-map #(= (:character-id %) character-id))
-                          count)]
+                          count)
+          character-placement? (fn [p] (= (-> p second :character-id)
+                                          character-id))]
       (if (zero? line-count)
         (-> (setval [:locations MAP-VALS
                      :placements ALL
-                     (fn [[_ {c-id :character-id}]] (= c-id character-id))]
+                     character-placement?]
                     NONE db)
             (update :characters dissoc character-id))
         db))))
