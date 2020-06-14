@@ -4,6 +4,8 @@
 
 # TODO
 - restructure navigation
+  - inspector highlight
+  - remove management pages
   - placing exits, player
   - editing connections
   - add ability to jump to dialogue or character from placement inspector

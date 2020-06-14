@@ -21,7 +21,7 @@
     cursor: grabbing !important
 
 .location
-  $border: 3px
+  $border: 5px
   margin-left: -$border
   margin-top: -$border
   position: absolute
@@ -66,10 +66,14 @@
     border: 3px solid $gray
     background: white
 
-  &__tilemap
-    border: $border solid $gray
+  &__tilemap-wrapper
+    $padding: 2px
+    border: ($border - $padding) solid $gray
+    padding: $padding
     user-select: none
     box-sizing: content-box
+
+  &__tilemap
     position: relative
 
     & > *
@@ -79,11 +83,12 @@
       position: absolute
 
       &_is-inspecting
-        margin: -2px
-        border: 2px dashed $primary
+        box-sizing: content-box
+        margin: -2px 0 0 -2px
+        border: 2px dashed white
 
-  &_is-inspecting > &__tilemap
-    border: 3px solid rgba($primary, .8)
+  &_is-inspecting > &__tilemap-wrapper
+    border-color: rgba($primary, .8)
 
 .location-connections
   pointer-events: none
