@@ -91,5 +91,5 @@
   ::store
   (fn [db [_ location-id background foreground]]
     (-> db
-      (assoc-in [:ui/location-preview-cache-background location-id] background)
-      (assoc-in [:ui/location-preview-cache-foreground location-id] foreground))))
+        (assoc-in [:ui/location-preview-cache-background location-id] background)
+        (assoc-in [:ui/location-preview-cache-foreground location-id] foreground))))

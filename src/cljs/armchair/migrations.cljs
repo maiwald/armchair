@@ -89,8 +89,8 @@
    ; Remove next-line-id key instead of storing nil
    8 (fn [db]
        (->> db
-         (setval [:lines MAP-VALS #(nil? (:next-line-id %)) :next-line-id] NONE)
-         (setval [:player-options MAP-VALS #(nil? (:next-line-id %)) :next-line-id] NONE)))
+            (setval [:lines MAP-VALS #(nil? (:next-line-id %)) :next-line-id] NONE)
+            (setval [:player-options MAP-VALS #(nil? (:next-line-id %)) :next-line-id] NONE)))
 
    ; Migrate to Point and Rect records
    9 (fn [db]
@@ -139,19 +139,19 @@
                               (group-by :location-id)
                               (u/map-values
                                 (fn [ds]
-                                   (->> ds
-                                        (group-by :location-position)
-                                        (u/map-values
-                                          (fn [[d]]
-                                            {:character-id (:character-id d)
-                                             :dialogue-id (:entity/id d)}))))))]
+                                  (->> ds
+                                       (group-by :location-position)
+                                       (u/map-values
+                                         (fn [[d]]
+                                           {:character-id (:character-id d)
+                                            :dialogue-id (:entity/id d)}))))))]
           (->> db
-            (transform [:locations MAP-VALS]
-                       (fn [l]
-                         (assoc l :placements (get placements (:entity/id l) {}))))
-            (transform [:dialogues MAP-VALS]
-                       (fn [d]
-                         (dissoc d :location-id :location-position))))))
+               (transform [:locations MAP-VALS]
+                          (fn [l]
+                            (assoc l :placements (get placements (:entity/id l) {}))))
+               (transform [:dialogues MAP-VALS]
+                          (fn [d]
+                            (dissoc d :location-id :location-position))))))
 
    ; Remove nil dialogue states
    13 (fn [db]
@@ -160,13 +160,13 @@
    ; Migrate to file based sprite format
    14 (fn [db]
         (->> db
-          (transform [:locations MAP-VALS
-                      (multi-path :background1
-                                  :background2
-                                  :foreground1
-                                  :foreground2) MAP-VALS]
-                     texture-lookup)
-          (transform [:characters MAP-VALS :texture] texture-lookup)))
+             (transform [:locations MAP-VALS
+                         (multi-path :background1
+                                     :background2
+                                     :foreground1
+                                     :foreground2) MAP-VALS]
+                        texture-lookup)
+             (transform [:characters MAP-VALS :texture] texture-lookup)))
 
    ; Rename location dimensions to bounds
    15 (fn [db]

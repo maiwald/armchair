@@ -98,7 +98,7 @@
          :title title}]))
 
 (defn spinner []
-    [:i {:class ["fas fa-spinner fa-spin"]}])
+  [:i {:class ["fas fa-spinner fa-spin"]}])
 
 ;; Tag
 
