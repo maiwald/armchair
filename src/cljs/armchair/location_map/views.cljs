@@ -2,43 +2,9 @@
   (:require [reagent.core :as r]
             [armchair.components :as c]
             [armchair.components.tile-map :refer [tile-select tile-dropzone]]
-            [armchair.input :as input]
             [armchair.math :as m]
-            [armchair.util :as u :refer [<sub >evt e->val e->left?]]
-            [armchair.routes :refer [>navigate]]
+            [armchair.util :as u :refer [<sub >evt e->left?]]
             [goog.functions :refer [debounce]]))
-
-(defn location-inspector [location-id]
-  (let [{:keys [display-name characters]} (<sub [:location-editor/location-inspector location-id])]
-    [:div#inspector
-     [:header
-      [:span.title "Location"]
-      [:a.close-button {:on-click #(>evt [:close-inspector])}
-       [c/icon "times"]]]
-     [:div.inspector__content
-      [:div.inspector__property.inspector__property_inline
-       [:span.inspector__property__title "Name"]
-       [:div.inspector__property__payload
-        [input/text
-         {:on-change #(>evt [:location-editor/update-name location-id (e->val %)])
-          :value display-name}]]]]
-     [:div.inspector__actions
-      [c/button {:title "Edit Tilemap"
-                 :icon "map"
-                 :fill true
-                 :on-click #(>navigate :location-edit :id location-id)}]]
-     [:div.inspector__content
-      [:div.inspector__property
-       [:span.inspector__property__title "Characters"]
-       [:div.inspector__property__payload
-        (for [{:keys [character-id character-name]} characters]
-          [:p {:key (str location-id ":" character-id)}
-           character-name])]]]
-     [:div.inspector__actions
-      [c/button {:title "Delete Location"
-                 :type :danger
-                 :fill true
-                 :on-click #(>evt [:delete-location location-id])}]]]))
 
 (defn scroll-center-to-point [elem {:keys [x y]}]
   (let [max-x (- (.-scrollWidth elem) (.-clientWidth elem))

@@ -1,0 +1,72 @@
+@import "../colors"
+
+$color-background: #eaeaea
+$color-seperator: darken($color-background, 10%)
+
+#inspector
+  flex: 1
+  width: 300px
+  border-left: 1px solid darken(grey, 10%)
+  background: $color-background
+
+  header
+    display: flex
+    flex-direction: row
+    align-items: baseline
+    background: $color-background
+    border-bottom: 1px solid $color-seperator
+
+    .title
+      padding: 10px
+      flex: 1
+      font: 1rem/1.2rem Verdana, sans-serif
+
+    .close-button
+      margin-right: 10px
+      font-size: 1rem
+
+  .inspector
+    &__content
+      overflow-x: hidden
+      overflow-y: auto
+
+    &__actions
+      padding: 5px
+
+      border-bottom: 1px solid $color-seperator
+      &:last-child
+        border-bottom: 0
+
+      button
+        margin-bottom: 5px
+        &:last-child
+          margin-bottom: 0
+
+.inspector__property
+  display: flex
+  flex-direction: column
+  padding: 10px
+
+  border-bottom: 1px solid $color-seperator
+
+  &_inline
+    flex-direction: row
+    align-items: baseline
+    justify-content: space-between
+
+  &__title
+    font-size: .7rem
+    color: $text-light
+    padding-bottom: 3px
+
+  &_inline &__title
+    padding-bottom: 0
+
+  &__payload
+    select
+      font-size: .8rem
+
+    .new-dialogue
+      font-size: .8rem
+      display: block
+      margin-top: -8px
