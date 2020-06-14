@@ -14,7 +14,7 @@
         ["characters" :characters]
         ["switches" :switches]]])
 
-(def root (str "#" (path-for routes :game)))
+(def root (str "#" (path-for routes :locations)))
 
 (defn page-data [url]
   (let [{:keys [handler route-params]} (match-route routes url)]
