@@ -97,71 +97,79 @@
             :on-mouse-move (when dragging? #(>evt [:move-cursor (u/e->point %)]))}]
           (r/children (r/current-component)))))
 
-(defn location [location-id]
-  (let [{:keys [display-name
-                characters
-                preview-image-background-src
-                preview-image-foreground-src
-                preview-image-w
-                preview-image-h
-                zoom-scale
-                bounds
-                inspecting?]} (<sub [:location-map/location location-id])
-        dragging? (<sub [:dragging-item? location-id])
-        position (<sub [:location-map/location-position location-id])
-        start-dragging (fn [e]
-                         (when (e->left? e)
-                           (u/prevent-e! e)
-                           (>evt [:start-dragging #{location-id} (u/e->point e) zoom-scale])))
-        stop-dragging (fn [e]
-                        (when dragging?
-                          (u/prevent-e! e)
-                          (>evt [:end-dragging])))
-        inspect-location #(>evt [:inspect :location location-id])]
-    [:div {:class ["location"
-                   (when inspecting? "location_is-inspecting")
-                   (when dragging? "location_is-dragging")]
-           :on-mouse-down u/stop-e!
-           :style {:left (u/px (:x position))
-                   :top (u/px (:y position))}}
-     [:header {:class "location__header"
-               :on-mouse-down (fn [e]
-                                (inspect-location)
-                                (start-dragging e))
-               :on-mouse-up stop-dragging}
-      [:p {:class "location__header__title"}
-       display-name]]
-     (if (and (some? preview-image-background-src)
-              (some? preview-image-foreground-src))
-       [:div {:class "location__tilemap"
-              :style {:width (u/px preview-image-w)
-                      :height (u/px preview-image-h)}}
-        [:img {:src preview-image-background-src
-               :style {:width (u/px preview-image-w)
-                       :height (u/px preview-image-h)}}]
-        (when (seq characters)
-          [:div
-           (for [[tile {:keys [texture display-name inspecting?]}] characters]
-             [:div {:key (str "location-character:" location-id ",tile:" (pr-str tile))
-                    :class ["location__tilemap__character" (when inspecting? "location__tilemap__character_is-inspecting")]
-                    :style (u/tile-style tile zoom-scale)}
-              [c/sprite-texture texture display-name zoom-scale]])])
-        [:img {:src preview-image-foreground-src
-               :style {:width (u/px preview-image-w)
-                       :height (u/px preview-image-h)}}]
-        (if-let [[dnd-type dnd-payload] (<sub [:ui/dnd])]
-          (case dnd-type
-            :character
-            [tile-dropzone {:zoom-scale zoom-scale
-                            :occupied (<sub [:location/occupied-tiles location-id])
-                            :on-drop #(>evt [:location-editor/place-character location-id dnd-payload (m/relative-point % bounds)])}]
-            nil)
-          [tile-select {:zoom-scale zoom-scale
-                        :on-select #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}])]
-       [:div {:class "location__loading"
-              :style {:width (u/px preview-image-w)
-                      :height (u/px preview-image-h)}}
-        [c/spinner]])]))
+(defn location []
+  (let [mouse-down-start (atom nil)]
+    (fn [location-id]
+      (let [{:keys [display-name
+                    characters
+                    preview-image-background-src
+                    preview-image-foreground-src
+                    preview-image-w
+                    preview-image-h
+                    zoom-scale
+                    bounds
+                    inspecting?]} (<sub [:location-map/location location-id])
+            dragging? (<sub [:dragging-item? location-id])
+            position (<sub [:location-map/location-position location-id])
+            start-dragging (fn [e]
+                             (when (e->left? e)
+                               (u/prevent-e! e)
+                               (>evt [:start-dragging #{location-id} (u/e->point e) zoom-scale])))
+            stop-dragging (fn [e]
+                            (when dragging?
+                              (u/prevent-e! e)
+                              (>evt [:end-dragging])))
+            inspect-location #(>evt [:inspect :location location-id])]
+        [:div {:class ["location"
+                       (when inspecting? "location_is-inspecting")
+                       (when dragging? "location_is-dragging")]
+               :on-mouse-down u/stop-e!
+               :style {:left (u/px (:x position))
+                       :top (u/px (:y position))}}
+         [:header {:class "location__header"
+                   :on-mouse-down (fn [e]
+                                    (reset! mouse-down-start (js/Date.now))
+                                    (start-dragging e))
+                   :on-mouse-up (fn [e]
+                                  ;; should this count as click or just a drag?
+                                  (when (and (some? @mouse-down-start)
+                                             (< (- (js/Date.now) @mouse-down-start) 200))
+                                    (inspect-location)
+                                    (reset! mouse-down-start nil))
+                                  (stop-dragging e))}
+          [:p {:class "location__header__title"}
+           display-name]]
+         (if (and (some? preview-image-background-src)
+                  (some? preview-image-foreground-src))
+           [:div {:class "location__tilemap"
+                  :style {:width (u/px preview-image-w)
+                          :height (u/px preview-image-h)}}
+            [:img {:src preview-image-background-src
+                   :style {:width (u/px preview-image-w)
+                           :height (u/px preview-image-h)}}]
+            (when (seq characters)
+              [:div
+               (for [[tile {:keys [texture display-name inspecting?]}] characters]
+                 [:div {:key (str "location-character:" location-id ",tile:" (pr-str tile))
+                        :class ["location__tilemap__character" (when inspecting? "location__tilemap__character_is-inspecting")]
+                        :style (u/tile-style tile zoom-scale)}
+                  [c/sprite-texture texture display-name zoom-scale]])])
+            [:img {:src preview-image-foreground-src
+                   :style {:width (u/px preview-image-w)
+                           :height (u/px preview-image-h)}}]
+            (if-let [[dnd-type dnd-payload] (<sub [:ui/dnd])]
+              (case dnd-type
+                :character
+                [tile-dropzone {:zoom-scale zoom-scale
+                                :occupied (<sub [:location/occupied-tiles location-id])
+                                :on-drop #(>evt [:location-editor/place-character location-id dnd-payload (m/relative-point % bounds)])}]
+                nil)
+              [tile-select {:zoom-scale zoom-scale
+                            :on-select #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}])]
+           [:div {:class "location__loading"
+                  :style {:width (u/px preview-image-w)
+                          :height (u/px preview-image-h)}}
+            [c/spinner]])]))))
 
 (defn location-connection [[start-location start-tile]
                            [end-location end-tile]]
