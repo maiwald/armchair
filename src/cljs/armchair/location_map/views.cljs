@@ -107,31 +107,32 @@
            display-name]]
          (if (and (some? preview-image-background-src)
                   (some? preview-image-foreground-src))
-           [:div {:class "location__tilemap"
-                  :style {:width (u/px preview-image-w)
-                          :height (u/px preview-image-h)}}
-            [:img {:src preview-image-background-src
+           [:div {:class "location__tilemap-wrapper"}
+            [:div {:class "location__tilemap"
                    :style {:width (u/px preview-image-w)
-                           :height (u/px preview-image-h)}}]
-            (when (seq characters)
-              [:div
-               (for [[tile {:keys [texture display-name inspecting?]}] characters]
-                 [:div {:key (str "location-character:" location-id ",tile:" (pr-str tile))
-                        :class ["location__tilemap__character" (when inspecting? "location__tilemap__character_is-inspecting")]
-                        :style (u/tile-style tile zoom-scale)}
-                  [c/sprite-texture texture display-name zoom-scale]])])
-            [:img {:src preview-image-foreground-src
-                   :style {:width (u/px preview-image-w)
-                           :height (u/px preview-image-h)}}]
-            (if-let [[dnd-type dnd-payload] (<sub [:ui/dnd])]
-              (case dnd-type
-                :character
-                [tile-dropzone {:zoom-scale zoom-scale
-                                :occupied (<sub [:location/occupied-tiles location-id])
-                                :on-drop #(>evt [:location-editor/place-character location-id dnd-payload (m/relative-point % bounds)])}]
-                nil)
-              [tile-select {:zoom-scale zoom-scale
-                            :on-select #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}])]
+                           :height (u/px preview-image-h)}}
+             [:img {:src preview-image-background-src
+                    :style {:width (u/px preview-image-w)
+                            :height (u/px preview-image-h)}}]
+             (when (seq characters)
+               [:div
+                (for [[tile {:keys [texture display-name inspecting?]}] characters]
+                  [:div {:key (str "location-character:" location-id ",tile:" (pr-str tile))
+                         :class ["location__tilemap__character" (when inspecting? "location__tilemap__character_is-inspecting")]
+                         :style (u/tile-style tile zoom-scale)}
+                   [c/sprite-texture texture display-name zoom-scale]])])
+             [:img {:src preview-image-foreground-src
+                    :style {:width (u/px preview-image-w)
+                            :height (u/px preview-image-h)}}]
+             (if-let [[dnd-type dnd-payload] (<sub [:ui/dnd])]
+               (case dnd-type
+                 :character
+                 [tile-dropzone {:zoom-scale zoom-scale
+                                 :occupied (<sub [:location/occupied-tiles location-id])
+                                 :on-drop #(>evt [:location-editor/place-character location-id dnd-payload (m/relative-point % bounds)])}]
+                 nil)
+               [tile-select {:zoom-scale zoom-scale
+                             :on-select #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}])]]
            [:div {:class "location__loading"
                   :style {:width (u/px preview-image-w)
                           :height (u/px preview-image-h)}}

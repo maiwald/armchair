@@ -25,7 +25,7 @@
            (fn [{:keys [character-id]} tile]
              (let [character (characters character-id)]
                (merge (select-keys character [:texture :display-name])
-                      {:inspecting? (and (= inspector-type :placement)
+                      {:inspecting? (and (= inspector-type :tile)
                                          (= inspector-location-id location-id)
                                          (= inspector-location-position tile))}))))
          (u/map-keys (fn [tile] (m/global-point tile (:bounds location)))))))
