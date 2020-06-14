@@ -1,21 +1,9 @@
 (ns armchair.ressources
   (:require [armchair.config :as config]
-            [armchair.events :refer [reg-event-meta]]
-            [re-frame.core :refer [reg-sub]]
             [armchair.components :as c]
+            [armchair.components.sidebar :refer [sidebar]]
             [armchair.routes :refer [>navigate]]
             [armchair.util :as u :refer [<sub >evt]]))
-
-(reg-event-meta
-  ::set-tab
-  (fn [db [_ ressource]]
-    (if (= (:ui/active-ressource db) ressource)
-      (dissoc db :ui/active-ressource)
-      (assoc db :ui/active-ressource ressource))))
-
-(reg-sub
-  ::active-ressource
-  (fn [db] (:ui/active-ressource db)))
 
 (def icon-size 20)
 
@@ -58,48 +46,47 @@
     [c/icon "grip-vertical"]]
    [:span.ressource__label display-name]])
 
-
 (defn ressources []
-  (let [active-ressource (<sub [::active-ressource])]
-    [:aside#ressources
-     [:ul.ressource_selectors
-      (for [[ressource [icon label]] (array-map
-                                       :characters ["user-friends" "Characters"]
-                                       :dialogues ["comments" "Dialogues"]
-                                       :locations ["map" "Locations"]
-                                       :switches ["database" "Switches"])]
-        ^{:key (str "ressource-selector-" ressource)}
-        [:li.ressource_selector
-         {:class (when (= ressource active-ressource) "is-active")
-          :on-click #(>evt [::set-tab ressource])}
-         [c/icon icon label {:fixed? true}]])
-      [:li.ressource_selector.ressource_selector__settings
-       [c/icon "cog" "Settings" {:fixed? true}]]]
-     (when (some? active-ressource)
-       [:div.ressource_panel
-        (case active-ressource
-          :characters
-          (let [characters (<sub [:character-list])]
-            [:ol.ressource_list
-             (for [{:keys [display-name] :as c} characters]
-              ^{:key (str "character-select" display-name)}
-              [character c])])
-          :dialogues
-          (let [dialogues (<sub [:dialogue-list])]
-            [:ol.ressource_list
-             (for [{:keys [id] :as d} dialogues]
-              ^{:key (str "dialogue-select" id)}
-              [dialogue d])])
-          :locations
-          (let [locations (<sub [:location-list])]
-            [:ol.ressource_list
-             (for [{:keys [id] :as l} locations]
-              ^{:key (str "location-select" id)}
-              [location l])])
-          :switches
-          (let [switches (<sub [:switch-list])]
-            [:ol.ressource_list
-             (for [{:keys [id] :as s} switches]
-              ^{:key (str "switch-select" id)}
-              [switch s])])
-          nil)])]))
+  [sidebar
+   {:panels (array-map
+              :characters
+              {:label "Characters"
+               :icon "user-friends"
+               :component (let [characters (<sub [:character-list])]
+                            [:ol.ressource_list
+                             (for [{:keys [display-name] :as c} characters]
+                               ^{:key (str "character-select" display-name)}
+                               [character c])])}
+
+              :dialogues
+              {:label "Dialogues"
+               :icon "comments"
+               :component (let [dialogues (<sub [:dialogue-list])]
+                            [:ol.ressource_list
+                             (for [{:keys [id] :as d} dialogues]
+                               ^{:key (str "dialogue-select" id)}
+                               [dialogue d])])}
+
+              :locations
+              {:label "Locations"
+               :icon "map"
+               :component (let [locations (<sub [:location-list])]
+                            [:ol.ressource_list
+                             (for [{:keys [id] :as l} locations]
+                               ^{:key (str "location-select" id)}
+                               [location l])])}
+
+              :switches
+              {:label "Switches"
+               :icon "database"
+               :component (let [switches (<sub [:switch-list])]
+                            [:ol.ressource_list
+                             (for [{:keys [id] :as s} switches]
+                               ^{:key (str "switch-select" id)}
+                               [switch s])])}
+
+              :settings
+              {:label "Settings"
+               :icon "cog"
+               :bottom? true
+               :component "Settings"})}])

@@ -14,7 +14,7 @@
     flex-direction: row
     overflow: hidden
 
-    &__ressources
+    &__ressources, &__inspector
       display: flex
 
     &__main
@@ -31,12 +31,6 @@
     overflow-y: auto
     position: relative
 
-  &__inspector
-    position: absolute
-    z-index: 300
-    right: 0
-    margin: 12px 22px
-
 #toolbar
   top: 0
   left: 0
@@ -47,19 +41,16 @@
   display: flex
 
 #inspector
-  width: 280px
-  border: 1px solid lightgrey
-  $border-radius: 5px
-  border-radius: $border-radius
-  background: #fafafa
+  flex: 1
+  width: 300px
+  border-left: 1px solid darken(grey, 10%)
+  background: #eaeaea
 
   header
     display: flex
     flex-direction: row
     align-items: baseline
     background: #eaeaea
-    border-top-left-radius: $border-radius
-    border-top-right-radius: $border-radius
     border-bottom: 1px solid lightgrey
 
     .title
