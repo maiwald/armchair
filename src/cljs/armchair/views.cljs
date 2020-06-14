@@ -2,10 +2,11 @@
   (:require [reagent.core :as r]
             [armchair.slds :as slds]
             [armchair.components :as c :refer [icon]]
-            [armchair.location-editor.views :refer [location-editor tile-inspector]]
+            [armchair.location-editor.views :refer [location-editor]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
-            [armchair.location-map.views :refer [location-map location-inspector]]
-            [armchair.ressources :refer [ressources]]
+            [armchair.location-map.views :refer [location-map]]
+            [armchair.components.ressources :refer [ressources]]
+            [armchair.components.inspector :refer [inspector]]
             [armchair.modals.views :refer [modal]]
             [armchair.modals.switch-form :as switch-form]
             [armchair.util :as u :refer [<sub >evt]]
@@ -115,11 +116,6 @@
 
 ;; Page
 
-(defn inspector []
-  (let [[inspector-type {:keys [location-id location-position]}] (<sub [:ui/inspector])]
-    (case inspector-type
-      :tile [tile-inspector location-id location-position]
-      :location [location-inspector location-id])))
 
 (defn content-component [page-name page-params]
   (case page-name

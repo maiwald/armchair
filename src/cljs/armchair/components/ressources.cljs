@@ -1,4 +1,4 @@
-(ns armchair.ressources
+(ns armchair.components.ressources
   (:require [armchair.config :as config]
             [armchair.components :as c]
             [armchair.components.sidebar :refer [sidebar]]
