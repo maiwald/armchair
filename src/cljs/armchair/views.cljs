@@ -160,7 +160,7 @@
                  [:div#page__toolbar
                   [toolbar creation-buttons]])
                [:div#page__content
-                [content-component page-name page-params]
-                (when inspector?
-                  [:div#page__inspector
-                   [inspector]])]]]]]))})))
+                [content-component page-name page-params]]]
+              (when inspector?
+                [:div#page__workspace__inspector
+                 [inspector]])]]]))})))
