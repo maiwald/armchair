@@ -47,7 +47,8 @@
         (and (some? file) (some? tile))
         (->
           (dissoc :modal)
-          (assoc-in [:location-editor :active-texture] [file tile]))))))
+          (update :location-editor merge {:active-texture [file tile]
+                                          :active-tool :brush}))))))
 
 ;; Subscriptions
 
