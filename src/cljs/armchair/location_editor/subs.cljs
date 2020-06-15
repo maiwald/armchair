@@ -119,25 +119,6 @@
        :height (:h bounds)})))
 
 (reg-sub
-  :location-editor/placement-inspector
-  :<- [:db-locations]
-  :<- [:db-dialogues]
-  :<- [:db-characters]
-  (fn [[locations dialogues characters] [_ location-id tile]]
-    (let [location (get locations location-id)
-          {:keys [character-id dialogue-id]} (get-in location [:placements tile])
-          dialogue-options (->> dialogues
-                                (u/filter-map #(= character-id (:character-id %)))
-                                (u/map-values :synopsis))]
-      {:location-display-name (:display-name location)
-       :location-tile (m/global-point tile (:bounds location))
-       :character-id character-id
-       :character-display-name (get-in characters [character-id :display-name])
-       :dialogue-id dialogue-id
-       :dialogue-display-name (get-in dialogues [dialogue-id :synopsis])
-       :dialogue-options dialogue-options})))
-
-(reg-sub
   :location-editor/trigger-inspector
   :<- [:db-locations]
   (fn [locations [_ location-id tile]]

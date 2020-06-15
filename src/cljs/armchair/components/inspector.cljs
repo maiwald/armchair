@@ -1,8 +1,10 @@
 (ns armchair.components.inspector
   (:require [reagent.core :as r]
+            [re-frame.core :refer [reg-sub subscribe]]
             [armchair.util :as u :refer [<sub >evt e->val]]
             [armchair.components :as c]
             [armchair.routes :refer [>navigate]]
+            [armchair.math :refer [global-point]]
             [armchair.input :as input]
             [armchair.location-editor.views :refer [location-preview]]))
 
@@ -12,14 +14,34 @@
    (into [:div.inspector__property__payload]
          (r/children (r/current-component)))])
 
+(reg-sub
+  ::placement-data
+  (fn [[_ location-id]]
+    [(subscribe [:db/location location-id])
+     (subscribe [:db-dialogues])
+     (subscribe [:db-characters])])
+  (fn [[location dialogues characters] [_ _location-id tile]]
+    (let [{:keys [character-id dialogue-id]} (get-in location [:placements tile])
+          dialogue-options (->> dialogues
+                                (u/filter-map #(= character-id (:character-id %)))
+                                (u/map-values :synopsis))]
+      {:location-display-name (:display-name location)
+       :location-tile (global-point tile (:bounds location))
+       :character-id character-id
+       :character-display-name (get-in characters [character-id :display-name])
+       :dialogue-id dialogue-id
+       :dialogue-display-name (get-in dialogues [dialogue-id :synopsis])
+       :dialogue-options dialogue-options})))
+
 (defn placement-inspector [location-id tile]
   (let [{:keys [location-display-name
                 location-tile
                 character-id
                 character-display-name
                 dialogue-id
+                dialogue-display-name
                 dialogue-options]}
-        (<sub [:location-editor/placement-inspector location-id tile])]
+        (<sub [::placement-data location-id tile])]
     (letfn [(set-character [e]
               (>evt [:location-editor/set-placement-character
                      location-id tile (-> e e->val uuid)]))
@@ -43,14 +65,23 @@
          [:a {:on-click #(>evt [:armchair.modals.character-form/open character-id])}
           character-display-name]]
         [property {:title "Dialogue"}
-         [input/select {:value dialogue-id
-                        :nil-value "No dialogue"
-                        :options dialogue-options
-                        :on-change set-dialogue}]
-         [c/button {:title "Create a new dialogue"
-                    :icon "plus"
-                    :fill true
-                    :on-click #(>evt [:armchair.modals.dialogue-creation/open character-id location-id tile])}]]]
+         (if (some? dialogue-id)
+           [:div.insprop_dialogue
+            [:a.insprop_dialogue__title
+             {:on-click #(>navigate :dialogue-edit :id dialogue-id)}
+             dialogue-display-name]
+            [:a.insprop_dialogue__remove
+             {:on-click unset-dialogue}
+             [c/icon "times" "remove dialogue"]]]
+           [:<>
+             [input/select {:value dialogue-id
+                            :nil-value "No dialogue"
+                            :options dialogue-options
+                            :on-change set-dialogue}]
+             [c/button {:title "Create a new dialogue"
+                        :icon "plus"
+                        :fill true
+                        :on-click #(>evt [:armchair.modals.dialogue-creation/open character-id location-id tile])}]])]]
        [:div.inspector__actions
         [c/button {:title "Clear tile"
                    :type :danger
