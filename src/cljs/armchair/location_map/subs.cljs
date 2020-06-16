@@ -18,17 +18,16 @@
     [(subscribe [:db/location location-id])
      (subscribe [:db-characters])
      (subscribe [:ui/inspector])])
-  (fn [[location characters [inspector-type {inspector-location-id :location-id
-                                             inspector-location-position :location-position}]] [_ location-id]]
-    (->> (:placements location)
+  (fn [[{:keys [placements bounds]} characters inspector] [_ location-id]]
+    (->> placements
          (u/map-values
            (fn [{:keys [character-id]} tile]
              (let [character (characters character-id)]
                (merge (select-keys character [:texture :display-name])
-                      {:inspecting? (and (= inspector-type :tile)
-                                         (= inspector-location-id location-id)
-                                         (= inspector-location-position tile))}))))
-         (u/map-keys (fn [tile] (m/global-point tile (:bounds location)))))))
+                      {:inspecting? (= inspector
+                                       [:tile {:location-id location-id
+                                               :location-position tile}])}))))
+         (u/map-keys (fn [tile] (m/global-point tile bounds))))))
 
 (reg-sub
   :location-map/location
@@ -43,7 +42,7 @@
         characters
         preview-cache-background
         preview-cache-foreground
-        [inspector-type {inspector-location-id :location-id}]
+        inspector
         zoom-scale]
        [_ location-id]]
     (let [{:keys [display-name]
@@ -58,8 +57,7 @@
        :preview-image-foreground-src preview-image-foreground-src
        :preview-image-w (* zoom-scale config/tile-size w)
        :preview-image-h (* zoom-scale config/tile-size h)
-       :inspecting? (and (= inspector-type :location)
-                         (= inspector-location-id location-id))})))
+       :inspecting? (= inspector [:location {:location-id location-id}])})))
 
 (reg-sub
   :location-map/bounds

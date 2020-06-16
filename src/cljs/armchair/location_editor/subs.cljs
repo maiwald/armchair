@@ -33,22 +33,24 @@
   (fn [locations [_ location-id]]
     (contains? locations location-id)))
 
+(defn inspecting-tile? [inspector location-id tile]
+  (= inspector
+     [:tile {:location-id location-id
+             :location-position tile}]))
+
 (reg-sub
   :location-editor/characters
-  :<- [:db-locations]
-  :<- [:db-characters]
-  :<- [:ui/inspector]
-  (fn [[locations characters [inspector-type {inspector-location-id :location-id
-                                              inspector-location-position :location-position}]] [_ location-id]]
-    (->> (locations location-id)
-         :placements
-         (u/map-values
-           (fn [{:keys [character-id]} tile]
-             (let [character (characters character-id)]
-               (merge (select-keys character [:texture :display-name])
-                      {:inspecting? (and (= inspector-type :placement)
-                                         (= inspector-location-id location-id)
-                                         (= inspector-location-position tile))})))))))
+  (fn [[_ location-id]]
+    [(subscribe [:db/location location-id])
+     (subscribe [:db-characters])
+     (subscribe [:ui/inspector])])
+  (fn [[{placements :placements} characters inspector] [_ location-id]]
+    (u/map-values
+      (fn [{:keys [character-id]} tile]
+        (let [character (characters character-id)]
+          (merge (select-keys character [:texture :display-name])
+                 {:inspecting? (inspecting-tile? inspector location-id tile)})))
+      placements)))
 
 (reg-sub
   :location-editor/location
@@ -60,16 +62,13 @@
   :location-editor/connection-trigger-layer
   :<- [:db-locations]
   :<- [:ui/inspector]
-  (fn [[locations [inspector-type {inspector-location-id :location-id
-                                   inspector-location-position :location-position}]] [_ location-id]]
+  (fn [[locations inspector] [_ location-id]]
     (let [{:keys [bounds connection-triggers]} (locations location-id)]
       {:bounds bounds
        :connection-triggers (u/map-values
                               (fn [[target-id _] tile]
                                 {:display-name (get-in locations [target-id :display-name])
-                                 :inspecting? (and (= inspector-type :exit)
-                                                   (= inspector-location-id location-id)
-                                                   (= inspector-location-position tile))})
+                                 :inspecting? (inspecting-tile? inspector location-id tile)})
                               connection-triggers)})))
 
 (reg-sub
