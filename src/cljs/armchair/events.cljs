@@ -227,8 +227,13 @@
   :inspect
   (fn [db [_ inspector-type & inspector-data]]
     (assoc db :ui/inspector
-           [inspector-type {:location-id (first inspector-data)
-                            :location-position (second inspector-data)}])))
+           [inspector-type
+            (case inspector-type
+              :location
+              {:location-id (first inspector-data)}
+              :tile
+              {:location-id (first inspector-data)
+               :location-position (second inspector-data)})])))
 
 (reg-event-meta
   :close-inspector
