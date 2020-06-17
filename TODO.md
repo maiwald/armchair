@@ -6,7 +6,8 @@
 
 # TODO
 - restructure navigation
-  - editing connections
+  - add player to ressources
+- editing connections
 - improved dialogue editor and state management
 - select and paint multiple texture sprites
 - Dialogue Structure (Quests?)
