@@ -159,17 +159,24 @@
 
 ;; Button
 
-(defn button [{glyph :icon btn-type :type
-               :keys [title on-click fill border]
-               :or {fill false border true}}]
+(defn button [{glyph :icon
+               btn-type :type
+               :keys [title on-click fill]
+               :or {fill false}}]
   [:button {:class ["button"
                     (when fill "button_fill")
-                    (when-not border "button_no-border")
                     (when (= btn-type :danger) "button_danger")]
             :on-click on-click
             :type "button"}
    (when (some? glyph) [:div {:class "button__icon"} [icon glyph title]])
    (when (some? title) [:div {:class "button__title"} title])])
+
+(defn icon-button [{glyph :icon
+                    :keys [title on-click]}]
+  [:button {:class ["icon-button"]
+            :on-click on-click
+            :type "button"}
+   [icon glyph title {:fixed? true}]])
 
 ;; Sprite Texture
 
@@ -198,3 +205,54 @@
                    (when (= id active) "is-active")]
            :on-click #(on-change id)}
       title])])
+
+;; Scroll Container
+
+(defn scroll-center-to-point [elem {:keys [x y]}]
+  (let [max-x (- (.-scrollWidth elem) (.-clientWidth elem))
+        max-y (- (.-scrollHeight elem) (.-clientHeight elem))]
+    (.scrollTo elem
+               (m/clamp 0 max-x (- x (/ (.-clientWidth elem) 2)))
+               (m/clamp 0 max-y (- y (/ (.-clientHeight elem) 2))))))
+
+(defn scroll-container []
+  ; these don't need to be r/atoms because we dont need reactivity here
+  (let [scroll-elem (atom nil)
+        prev-cursor (atom nil)
+        end-scrolling (fn [] (reset! prev-cursor nil))]
+    (r/create-class
+      {:display-name "scroll-container"
+       :component-did-mount
+       (fn [this]
+         (scroll-center-to-point
+           @scroll-elem
+           (or (:scroll-center (r/props this))
+               (m/Point. (/ (.-scrollWidth @scroll-elem) 2)
+                         (/ (.-scrollHeight @scroll-elem) 2)))))
+       :component-did-update
+       (fn [this [_ {old-zoom-scale :zoom-scale}]]
+         (let [{new-zoom-scale :zoom-scale
+                center :scroll-center} (r/props this)]
+           (when (not= old-zoom-scale new-zoom-scale)
+             (scroll-center-to-point @scroll-elem center))))
+       :reagent-render
+       (fn [{:keys [on-scroll width height]}]
+         [:div
+          {:ref #(reset! scroll-elem %)
+           :class "scroll-container"
+           :on-scroll on-scroll
+           :on-mouse-down (fn [e] (reset! prev-cursor (u/e->point e)))
+           :on-mouse-move (fn [e]
+                            (when (some? @prev-cursor)
+                              (let [cursor (u/e->point e)
+                                    [dx dy] (m/point-delta cursor @prev-cursor)]
+                                (.scrollBy @scroll-elem dx dy)
+                                (reset! prev-cursor cursor))))
+           :on-mouse-leave end-scrolling
+           :on-mouse-up end-scrolling}
+          (into [:div
+                 {:class "scroll-content"
+                  :style {:width (u/px width)
+                          :height (u/px height)}}]
+                (r/children (r/current-component)))])})))
+
