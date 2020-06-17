@@ -13,9 +13,10 @@
                                (u/prevent-e! e)
                                (set-current-tile (u/e->tile e zoom-scale)))
                :on-drag-leave clear-current-tile
-               :on-drop (fn []
-                          (when-not (contains? occupied @current-tile)
-                            (on-drop @current-tile)))}
+               :on-drop (fn [e]
+                          (let [drop-tile (u/e->tile e zoom-scale)]
+                            (when-not (contains? occupied drop-tile)
+                              (on-drop drop-tile))))}
          (when @current-tile
            [:div {:class ["dropzone__interactor"
                           (when (contains? occupied @current-tile)
@@ -31,15 +32,16 @@
         [:div {:class "tile-select"
                :draggable true
                :on-drag-start (fn [e]
-                                (if (contains? occupied @highlight-tile)
-                                  (do
-                                    (.setDragImage (.-dataTransfer e) (js/Image.) 0 0)
-                                    (on-drag-start (get occupied @highlight-tile)))
-                                  (u/prevent-e! e)))
+                                (let [tile (u/e->tile e zoom-scale)]
+                                  (if (contains? occupied tile)
+                                    (do
+                                      (.setDragImage (.-dataTransfer e) (js/Image.) 0 0)
+                                      (on-drag-start (get occupied tile)))
+                                    (u/prevent-e! e))))
                :on-drag-end on-drag-end
                :on-mouse-move set-highlight
                :on-mouse-leave clear-highlight
-               :on-click #(on-click @highlight-tile)}
+               :on-click (fn [e] (on-click (u/e->tile e zoom-scale)))}
          (when (some? @highlight-tile)
            [:div {:class "tile-select__highlight"
                   :style (u/tile-style @highlight-tile zoom-scale)}])]))))
