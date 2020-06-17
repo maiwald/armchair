@@ -81,6 +81,37 @@ $color-seperator: darken($color-background, 10%)
   &__remove
     padding: 5px 5px 5px 0
 
+.insprop_character
+  display: flex
+  background: white
+  border-radius: 6px
+  flex-direction: row
+  align-items: center
+
+  &__drag_handle
+    cursor: -moz-grab
+    cursor: -webkit-grab
+    cursor: grab
+    padding: 5px
+    background: lighten($gray, 20%)
+    border-top-left-radius: 6px
+    border-bottom-left-radius: 6px
+    align-self: stretch
+    display: flex
+    align-items: center
+    justify-content: center
+    color: rgba($text-regular, .2)
+
+  &__icon
+    box-sizing: content-box
+    padding: 5px
+    padding-right: 0
+
+  &__title
+    flex: 1
+    padding: 5px
+
+
 .insprop_active-texture
   display: flex
   border: 1px solid black

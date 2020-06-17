@@ -90,5 +90,6 @@
                   [toolbar creation-buttons]])
                [:div#page__content
                 [content-component page-name page-params]]]
-              [:div#page__workspace__inspector
-               [inspector page-name page-params]]]]]))})))
+              (when-not (= page-name :game)
+               [:div#page__workspace__inspector
+                [inspector page-name page-params]])]]]))})))
