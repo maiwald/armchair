@@ -6,7 +6,6 @@
 
 # TODO
 - restructure navigation
-  - consolidate location editor sidebar
   - placing exits, player
   - editing connections
 - improved dialogue editor and state management

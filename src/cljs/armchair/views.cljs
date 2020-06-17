@@ -74,8 +74,7 @@
        :reagent-render
        (fn []
          (let [{:keys [page-name page-params]} (page-data (<sub [:current-page]))
-               creation-buttons (<sub [:creation-buttons])
-               inspector? (<sub [:ui/inspector?])]
+               creation-buttons (<sub [:creation-buttons])]
            [:<>
             [modal]
             [:div#page
@@ -91,6 +90,5 @@
                   [toolbar creation-buttons]])
                [:div#page__content
                 [content-component page-name page-params]]]
-              (when inspector?
-                [:div#page__workspace__inspector
-                 [inspector]])]]]))})))
+              [:div#page__workspace__inspector
+               [inspector page-name page-params]]]]]))})))

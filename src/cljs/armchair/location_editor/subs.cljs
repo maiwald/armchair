@@ -111,11 +111,11 @@
 
 (reg-sub
   :location-editor/dimensions
-  :<- [:db-locations]
-  (fn [locations [_ location-id]]
-    (let [bounds (get-in locations [location-id :bounds])]
-      {:width (:w bounds)
-       :height (:h bounds)})))
+  (fn [[_ location-id]]
+    (subscribe [:db/location location-id]))
+  (fn [{{:keys [w h]} :bounds}]
+    {:width w
+     :height h}))
 
 (reg-sub
   :location-editor/trigger-inspector

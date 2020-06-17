@@ -1,7 +1,5 @@
 (ns armchair.location-editor.views
   (:require [reagent.core :as r]
-            [armchair.slds :as slds]
-            [armchair.input :as input]
             [armchair.components :as c]
             [armchair.components.tile-map :refer [tile-dropzone]]
             [armchair.config :as config]
@@ -11,7 +9,7 @@
                                    global-point
                                    rect->point-seq
                                    rect-contains?]]
-            [armchair.util :as u :refer [px <sub >evt e-> e->val]]
+            [armchair.util :as u :refer [<sub >evt]]
             [armchair.textures :refer [image-path]]))
 
 (defn tile-paint-canvas []
@@ -34,10 +32,12 @@
                  :on-mouse-enter set-current-tile
                  :on-mouse-leave clear-current-tile
                  :on-mouse-down (fn [e]
+                                  (u/stop-e! e)
                                   (when (u/e->left? e)
                                     (start-painting)
                                     (paint e)))
                  :on-mouse-move (fn [e]
+                                  (u/stop-e! e)
                                   (set-current-tile e)
                                   (paint e))
                  :on-mouse-up stop-painting}
@@ -49,177 +49,6 @@
                 [c/sprite-texture texture]]
                [:div {:class "interactor interactor_paint"
                       :style (u/tile-style tile)}]))])))))
-
-(defn sidebar-widget [{title :title}]
-  (into [:div {:class "location-editor__sidebar-widget"}
-         [:div {:class "location-editor__sidebar-widget__title"} title]]
-        (r/children (r/current-component))))
-
-(defn sidebar-layers []
-  (let [{:keys [active-layer visible-layers]} (<sub [:location-editor/ui])]
-    [sidebar-widget {:title "Layers"}
-     [:ol.level-layers
-      (for [[layer-id layer-name] config/location-editor-layers
-            :let [visible? (contains? visible-layers layer-id)]]
-        [:li {:key (str "layer" layer-id)
-              :class ["level-layers__item"
-                      (when (= active-layer layer-id) "level-layers__item_active")]}
-         [:span.level-layers__item__name
-          {:on-click #(>evt [:location-editor/set-active-layer layer-id])}
-          layer-name]
-         [:span
-          {:class ["level-layers__item__visibility"
-                   (str "level-layers__item__visibility_"
-                        (if visible? "visible" "not-visible"))]
-           :on-click #(>evt [:location-editor/toggle-layer-visibility layer-id])}
-          (if visible?
-            [c/icon "eye" "Hide layer"]
-            [c/icon "eye-slash" "Show layer"])]])]]))
-
-(defn sidebar-tool []
-  (let [{:keys [active-tool]} (<sub [:location-editor/ui])]
-    [sidebar-widget {:title "Tool"}
-     [slds/radio-button-group
-      {:options [[:brush [c/icon "paint-brush" "Paint"]]
-                 [:eraser [c/icon "eraser" "Erase"]]]
-       :on-change #(>evt [:location-editor/set-active-tool %])
-       :active active-tool}]]))
-
-(defn sidebar-info [location-id]
-  (let [display-name (:display-name (<sub [:location-editor/location-inspector location-id]))]
-    [sidebar-widget {:title "Location Name"}
-     [input/text
-      {:on-change #(>evt [:location-editor/update-name location-id (e->val %)])
-       :value display-name}]]))
-
-(defn sidebar-resize [location-id]
-  (let [{:keys [width height]} (<sub [:location-editor/dimensions location-id])]
-    [sidebar-widget {:title (str "Size: " width " x " height)}
-     [:div {:class "resize-container"}
-      [:div {:class "resize-container__reference"}
-       [:div {:class "resizer resizer_horizontal resizer_top"}
-        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :up])} [c/icon "arrow-up" "extend"]]
-        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :up])} [c/icon "arrow-down" "shrink"]]]
-       [:div {:class "resizer resizer_horizontal resizer_bottom"}
-        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :down])} [c/icon "arrow-up" "shrink"]]
-        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :down])} [c/icon "arrow-down" "extend"]]]
-       [:div {:class "resizer resizer_vertical resizer_left"}
-        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :left])} [c/icon "arrow-left" "extend"]]
-        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :left])} [c/icon "arrow-right" "shrink"]]]
-       [:div {:class "resizer resizer_vertical resizer_right"}
-        [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [c/icon "arrow-left" "shrink"]]
-        [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [c/icon "arrow-right" "extend"]]]]]]))
-
-(defn sidebar-texture-select []
-  (let [{:keys [active-texture]} (<sub [:location-editor/ui])]
-    [sidebar-widget {:title "Active Texture"}
-     [:a {:class "active-texture"
-          :on-click (e-> #(>evt [:armchair.modals.texture-selection/open active-texture]))}
-      [c/sprite-texture active-texture]]]))
-
-(defn sidebar-collision []
-  (let [{:keys [active-walk-state]} (<sub [:location-editor/ui])]
-    [sidebar-widget {:title "Collision State"}
-     [:ul {:class "tile-grid"}
-      (for [walk-state (list true false)]
-        [:li {:key (str "walk-state-select:" walk-state)
-              :title (if walk-state "walkable" "not walkable")
-              :class ["tile-grid__item"
-                      (when (= walk-state active-walk-state) "tile-grid__item_active")]
-              :style {:width (u/px config/tile-size)
-                      :height (u/px config/tile-size)
-                      :background-color "#fff"}}
-         [:a {:on-click #(>evt [:location-editor/set-active-walk-state walk-state])
-              :style {:height (px config/tile-size)
-                      :width (px config/tile-size)
-                      :background-color (if walk-state
-                                          "rgba(0, 255, 0, .4)"
-                                          "rgba(255, 0, 0, .4)")}}]])]]))
-
-(defn sidebar-player []
-  [sidebar-widget
-   [:ul {:class "tile-list"}
-    [:li {:class "tile-list__item"
-          :draggable true
-          :on-drag-end #(>evt [:stop-entity-drag])
-          :on-drag-start (fn [e]
-                           (.setData (.-dataTransfer e) "text/plain" ":player")
-                           (>evt [:start-entity-drag [:player]]))}
-     [:span {:class "tile-list__item__image"
-             :style {:width (str config/tile-size "px")
-                     :height (str config/tile-size "px")}}
-      [c/sprite-texture ["hare.png" (Point. 6 0)] "Player"]]
-     [:span {:class "tile-list__item__label"} "Place Player"]]]])
-
-(defn sidebar-triggers []
-  [sidebar-widget
-   [:ul {:class "tile-list"}
-    [:li {:class "tile-list__item"
-          :draggable true
-          :on-drag-end #(>evt [:stop-entity-drag])
-          :on-drag-start (fn [e]
-                           (.setData (.-dataTransfer e) "text/plain" ":exit")
-                           (>evt [:start-entity-drag [:new-connection-trigger]]))}
-     [:span {:class "tile-list__item__image"
-             :style {:width (str config/tile-size "px")
-                     :height (str config/tile-size "px")}}
-      [:img {:src (image-path "exit.png")
-             :title "Exit"}]]
-     [:span {:class "tile-list__item__label"} "Place new Exit"]]]])
-
-
-(defn sidebar-npcs []
-  (let [available-characters (<sub [:location-editor/available-characters])]
-    [sidebar-widget {:title "Available Characters"}
-     [:ul {:class "tile-list"}
-      (for [{:keys [character-id display-name texture]} available-characters]
-        [:li {:key (str "character-select" display-name)
-              :class "tile-list__item"
-              :draggable true
-              :on-drag-end #(>evt [:stop-entity-drag])
-              :on-drag-start (fn [e]
-                               (.setData (.-dataTransfer e) "text/plain" display-name)
-                               (>evt [:start-entity-drag [:character character-id]]))}
-         [:span {:class "tile-list__item__image"
-                 :style {:width (str config/tile-size "px")
-                         :height (str config/tile-size "px")}}
-          [c/sprite-texture texture display-name]]
-         [:span {:class "tile-list__item__label"} display-name]])]
-     (when (empty? available-characters) "There are no characters.")
-     [c/button {:title "Create Character"
-                :icon "plus"
-                :fill true
-                :on-click #(>evt [:armchair.modals.character-form/open])}]]))
-
-(defn sidebar [location-id]
-  (let [{:keys [active-pane active-layer]} (<sub [:location-editor/ui])]
-    [:<>
-     [c/tabs {:items [[:info "Info"]
-                      [:level "Level"]]
-              :active active-pane
-              :on-change #(>evt [:location-editor/set-active-pane %])}]
-     (case active-pane
-       :info [:<>
-              [sidebar-info location-id]
-              [sidebar-resize location-id]]
-       :level [:<>
-               [sidebar-layers]
-               (case active-layer
-                 (:background1 :background2 :foreground1 :foreground2)
-                 [:<>
-                  [sidebar-texture-select]
-                  [sidebar-tool]]
-
-                 :collision
-                 [sidebar-collision]
-
-                 :triggers
-                 [sidebar-triggers]
-
-                 :entities
-                 [:<>
-                  [sidebar-player]
-                  [sidebar-npcs]])])]))
 
 (defn do-all-tiles [rect layer-title f]
   [:<>
@@ -361,113 +190,59 @@
                     :selected selected
                     :selectable? (fn [tile] (not (contains? occupied tile)))}]]]))
 
-
-(defn edit-entity-layer [location-id]
-  (let [{:keys [player-position
-                characters
-                bounds]} (<sub [:location-editor/entity-layer location-id])]
-    [:<>
-     (when player-position
-       [do-some-tiles bounds {player-position :player} "player-select"
-        (fn [_ _]
-          [:div {:class "interactor interactor_draggable"
-                 :title "Player"
-                 :draggable true
-                 :on-drag-start (fn [e]
-                                  (.setData (.-dataTransfer e) "text/plain" ":player")
-                                  (>evt [:start-entity-drag [:player]]))
-                 :on-drag-end #(>evt [:stop-entity-drag])}])])
-
-     [do-some-tiles bounds characters "character-select"
-      (fn [tile {:keys [display-name inspecting?]}]
-        [:div {:class ["interactor" "interactor_draggable" (when inspecting? "interactor_focus")]
-               :title display-name
-               :draggable true
-               :on-click #(>evt [:inspect :tile location-id tile])
-               :on-drag-start (fn [e]
-                                (.setData (.-dataTransfer e) "text/plain" display-name)
-                                (>evt [:start-entity-drag [:placement location-id tile]]))
-               :on-drag-end #(>evt [:stop-entity-drag])}])]]))
-
-(defn edit-trigger-layer [location-id]
-  (let [{:keys [bounds
-                connection-triggers]} (<sub [:location-editor/connection-trigger-layer location-id])]
-    [do-some-tiles bounds connection-triggers "connection-select"
-     (fn [tile {:keys [display-name inspecting?]}]
-       [:div {:class ["interactor" "interactor_draggable" (when inspecting? "interactor_focus")]
-              :title (str "to " display-name)
-              :draggable true
-              :on-click #(>evt [:inspect :tile location-id tile])
-              :on-drag-start (fn [e]
-                               (.setData (.-dataTransfer e) "text/plain" display-name)
-                               (>evt [:start-entity-drag [:connection-trigger location-id tile]]))
-              :on-drag-end #(>evt [:stop-entity-drag])}])]))
-
 (defn canvas [location-id]
   (let [{:keys [bounds blocked]} (<sub [:location-editor/location location-id])
-        {:keys [active-pane
-                active-layer
+        {:keys [active-layer
                 visible-layers
                 active-tool
-                active-texture]} (<sub [:location-editor/ui])]
-    [:div {:class "level-wrap"}
-     [:div {:class "level"
-            :style {:width (u/px (* config/tile-size (:w bounds)))
-                    :height (u/px (* config/tile-size (:h bounds)))}}
+                active-texture]} (<sub [:location-editor/ui])
+        width (* config/tile-size (:w bounds))
+        height (* config/tile-size (:h bounds))]
+    [c/scroll-container {:width (* 3 width) :height (* 3 height)}
+     [:div {:class "level-wrap"}
+      [:div {:class "level"
+             :style {:width (u/px width)
+                     :height (u/px height)}}
 
-      (for [[layer-id] (reverse config/location-editor-layers)
-            :when (contains? visible-layers layer-id)]
-        (case layer-id
-          :entities
-          ^{:key "layer::entities"}
-          [entity-layer location-id]
+       (for [[layer-id] (reverse config/location-editor-layers)
+             :when (contains? visible-layers layer-id)]
+         (case layer-id
+           :entities
+           ^{:key "layer::entities"}
+           [entity-layer location-id]
 
-          :collision
-          ^{:key "layer::collision"}
-          [collision-layer bounds blocked]
+           :collision
+           ^{:key "layer::collision"}
+           [collision-layer bounds blocked]
 
-          :triggers
-          ^{:key "layer::triggers"}
-          [conntection-trigger-layer location-id]
+           :triggers
+           ^{:key "layer::triggers"}
+           [conntection-trigger-layer location-id]
 
-          (:background1 :background2 :foreground1 :foreground2)
-          ^{:key (str "layer:" layer-id)}
-          [texture-layer {:location-id location-id
-                          :layer-id layer-id}]))
+           (:background1 :background2 :foreground1 :foreground2)
+           ^{:key (str "layer:" layer-id)}
+           [texture-layer {:location-id location-id
+                           :layer-id layer-id}]))
 
-      (case active-pane
-        :level
-        (case active-layer
-          (:background1 :background2 :foreground1 :foreground2)
-          [tile-paint-canvas
-           {:texture (when (not= active-tool :eraser) active-texture)
-            :on-paint #(>evt [:location-editor/paint location-id active-layer
-                              (relative-point % bounds)])}]
+       (case active-layer
+         (:background1 :background2 :foreground1 :foreground2)
+         [tile-paint-canvas
+          {:texture (when (not= active-tool :eraser) active-texture)
+           :on-paint #(>evt [:location-editor/paint location-id active-layer
+                             (relative-point % bounds)])}]
 
-          :collision
-          [tile-paint-canvas
-           {:on-paint #(>evt [:location-editor/set-walkable location-id
-                              (relative-point % bounds)])}]
+         :collision
+         [tile-paint-canvas
+          {:on-paint #(>evt [:location-editor/set-walkable location-id
+                             (relative-point % bounds)])}]
 
-          :entities
-          [edit-entity-layer location-id]
+         nil)
 
-          :triggers
-          [edit-trigger-layer location-id])
-
-        [:<>
-         [edit-entity-layer location-id]
-         [edit-trigger-layer location-id]])
-
-      (when (<sub [:ui/dnd])
-        [tile-dropzone {:occupied (<sub [:location/occupied-tiles location-id])
-                        :on-drop #(>evt [:drop-entity location-id (relative-point % bounds)])}])]]))
+       (when (<sub [:ui/dnd])
+         [tile-dropzone {:occupied (<sub [:location/occupied-tiles location-id])
+                         :on-drop #(>evt [:drop-entity location-id (relative-point % bounds)])}])]]]))
 
 (defn location-editor [location-id]
   (if (<sub [:location-editor/location-exists? location-id])
-    [:div {:class "location-editor"}
-     [:div {:class "location-editor__sidebar"}
-      [sidebar location-id]]
-     [:div {:class "location-editor__canvas"}
-      [canvas location-id]]]
+    [canvas location-id]
     "Location not found."))

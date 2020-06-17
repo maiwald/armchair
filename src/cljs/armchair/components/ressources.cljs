@@ -29,9 +29,8 @@
    [:span.ressource__label display-name]
    (when (zero? line-count)
      [:span.ressource__action
-      [c/button {:icon "trash-alt"
-                 :border false
-                 :on-click (e-> #(>evt [:delete-character id]))}]])])
+      [c/icon-button {:icon "trash-alt"
+                      :on-click (e-> #(>evt [:delete-character id]))}]])])
 
 (defn dialogue [{:keys [id synopsis]}]
   [:li.ressource {:on-click #(>navigate :dialogue-edit :id id)}
@@ -39,9 +38,8 @@
     [c/icon "grip-vertical"]]
    [:span.ressource__label synopsis]
    [:span.ressource__action
-    [c/button {:icon "trash-alt"
-               :border false
-               :on-click (e-> #(>evt [:delete-dialogue id]))}]]])
+    [c/icon-button {:icon "trash-alt"
+                    :on-click (e-> #(>evt [:delete-dialogue id]))}]]])
 
 (defn location [{:keys [id display-name]}]
   [:li.ressource {:on-click #(>navigate :location-edit :id id)}
@@ -49,9 +47,8 @@
     [c/icon "grip-vertical"]]
    [:span.ressource__label display-name]
    [:span.ressource__action
-    [c/button {:icon "trash-alt"
-               :border false
-               :on-click (e-> #(>evt [:delete-location id]))}]]])
+    [c/icon-button {:icon "trash-alt"
+                    :on-click (e-> #(>evt [:delete-location id]))}]]])
 
 (defn switch [{:keys [id display-name]}]
   [:li.ressource {:on-click #(>evt [:armchair.modals.switch-form/open id])}
@@ -59,9 +56,8 @@
     [c/icon "grip-vertical"]]
    [:span.ressource__label display-name]
    [:span.ressource__action
-    [c/button {:icon "trash-alt"
-               :border false
-               :on-click (e-> #(>evt [:delete-switch id]))}]]])
+    [c/icon-button {:icon "trash-alt"
+                    :on-click (e-> #(>evt [:delete-switch id]))}]]])
 
 (defn ressources []
   [sidebar
