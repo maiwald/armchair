@@ -231,18 +231,19 @@
                      (dissoc :ui/dnd)
                      (assoc-in [:locations target-location-id :placements target-position]
                                {:character-id (first dnd-payload)}))
+      :location (-> db
+                  (dissoc :ui/dnd)
+                  (assoc-in
+                    [:modal :connection-trigger-creation]
+                    {:location-id target-location-id
+                     :location-position target-position
+                     :target-id (first dnd-payload)}))
       :placement (let [[location-id location-position] dnd-payload
                        placement (get-in db [:locations location-id :placements location-position])]
                    (-> db
                        (dissoc :ui/dnd)
                        (update-in [:locations location-id :placements] dissoc location-position)
                        (assoc-in [:locations target-location-id :placements target-position] placement)))
-      :new-connection-trigger (-> db
-                                  (dissoc :ui/dnd)
-                                  (assoc-in
-                                    [:modal :connection-trigger-creation]
-                                    {:location-id target-location-id
-                                     :location-position target-position}))
       :connection-trigger (let [[location-id location-position] dnd-payload]
                             (-> db
                                 (dissoc :ui/dnd)

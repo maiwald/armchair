@@ -1,7 +1,7 @@
 (ns armchair.location-editor.views
   (:require [reagent.core :as r]
             [armchair.components :as c]
-            [armchair.components.tile-map :refer [tile-dropzone]]
+            [armchair.components.tile-map :refer [tile-select tile-dropzone]]
             [armchair.config :as config]
             [armchair.math :refer [Point
                                    Rect
@@ -56,7 +56,7 @@
          :let [tile-data (f tile)]
          :when (some? tile-data)]
      [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
-            :class "level__tile"
+            :class (str "level__tile level__tile-" layer-title)
             :style (u/tile-style (global-point tile rect))}
       tile-data])])
 
@@ -65,7 +65,7 @@
    (for [[tile item] coll
          :when (rect-contains? rect tile)]
      [:div {:key (str "location-cell:" layer-title ":" (pr-str tile))
-            :class "level__tile"
+            :class (str "level__tile level__tile-" layer-title)
             :style (u/tile-style (global-point tile rect))}
       (f tile item)])])
 
@@ -141,7 +141,7 @@
             :class "level__tile level__tile_highlight"
             :style (u/tile-style (global-point preview-tile bounds))}]]))
 
-(defn tile-select [{:keys [bounds on-select selected selectable?]}]
+(defn tile-select-old [{:keys [bounds on-select selected selectable?]}]
   (letfn [(on-click [e]
             (let [tile (relative-point (u/e->tile e) bounds)]
               (when (or (not (fn? selectable?))
@@ -185,10 +185,10 @@
                       :layer-id :foreground2}]
       [entity-layer location-id]
       [conntection-trigger-layer location-id]
-      [tile-select {:bounds bounds
-                    :on-select on-select
-                    :selected selected
-                    :selectable? (fn [tile] (not (contains? occupied tile)))}]]]))
+      [tile-select-old {:bounds bounds
+                        :on-select on-select
+                        :selected selected
+                        :selectable? (fn [tile] (not (contains? occupied tile)))}]]]))
 
 (defn canvas [location-id]
   (let [{:keys [bounds blocked]} (<sub [:location-editor/location location-id])
@@ -200,8 +200,9 @@
         height (* config/tile-size (:h bounds))]
     [c/scroll-container {:width (* 3 width) :height (* 3 height)}
      [:div {:class "level-wrap"}
-      [:div {:class "level"
-             :style {:width (u/px width)
+      [:div {:class "location__tilemap"
+             :style {:background-color "black"
+                     :width (u/px width)
                      :height (u/px height)}}
 
        (for [[layer-id] (reverse config/location-editor-layers)
@@ -235,6 +236,11 @@
          [tile-paint-canvas
           {:on-paint #(>evt [:location-editor/set-walkable location-id
                              (relative-point % bounds)])}]
+         (:entities :triggers)
+         [tile-select {:occupied (<sub [:location/occupied-tiles location-id])
+                       :on-drag-start #(>evt [:start-entity-drag %])
+                       :on-drag-end #(>evt [:stop-entity-drag])
+                       :on-click #(>evt [:inspect :tile location-id (relative-point % bounds)])}]
 
          nil)
 
