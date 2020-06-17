@@ -15,6 +15,7 @@
 - sounds & music
 
 # nice things
+- reliable drag and drop ghosts
 - search
 - locate ressources
 - pinch to zoom
