@@ -7,8 +7,7 @@
   :location-editor/ui
   (fn [db]
     (select-keys (:location-editor db)
-                 [:active-pane
-                  :active-tool
+                 [:active-tool
                   :visible-layers
                   :active-layer
                   :active-walk-state
