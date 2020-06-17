@@ -6,7 +6,7 @@
 
 # TODO
 - restructure navigation
-  - placing exits, player
+  - placing exits
   - editing connections
 - improved dialogue editor and state management
 - select and paint multiple texture sprites

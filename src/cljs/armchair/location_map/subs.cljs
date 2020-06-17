@@ -17,17 +17,22 @@
   (fn [[_ location-id]]
     [(subscribe [:db/location location-id])
      (subscribe [:db-characters])
+     (subscribe [:db-player])
      (subscribe [:ui/inspector])])
-  (fn [[{:keys [placements bounds]} characters inspector] [_ location-id]]
-    (->> placements
-         (u/map-values
-           (fn [{:keys [character-id]} tile]
-             (let [character (characters character-id)]
-               (merge (select-keys character [:texture :display-name])
-                      {:inspecting? (= inspector
-                                       [:tile {:location-id location-id
-                                               :location-position tile}])}))))
-         (u/map-keys (fn [tile] (m/global-point tile bounds))))))
+  (fn [[{:keys [placements bounds]} characters player inspector] [_ location-id]]
+    (u/map-keys
+      (fn [tile] (m/global-point tile bounds))
+      (cond-> (u/map-values
+                (fn [{:keys [character-id]} tile]
+                  (let [character (characters character-id)]
+                    (merge (select-keys character [:texture :display-name])
+                           {:inspecting? (= inspector
+                                            [:tile {:location-id location-id
+                                                    :location-position tile}])})))
+                placements)
+        (= location-id (:location-id player))
+        (assoc (:location-position player) {:texture ["hare.png" (m/Point. 6 0)]
+                                            :display-name "Player"})))))
 
 (reg-sub
   :location-map/location
