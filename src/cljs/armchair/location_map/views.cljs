@@ -124,15 +124,15 @@
              [:img {:src preview-image-foreground-src
                     :style {:width (u/px preview-image-w)
                             :height (u/px preview-image-h)}}]
-             (if-let [[dnd-type dnd-payload] (<sub [:ui/dnd])]
-               (case dnd-type
-                 :character
-                 [tile-dropzone {:zoom-scale zoom-scale
-                                 :occupied (<sub [:location/occupied-tiles location-id])
-                                 :on-drop #(>evt [:location-editor/place-character location-id dnd-payload (m/relative-point % bounds)])}]
-                 nil)
-               [tile-select {:zoom-scale zoom-scale
-                             :on-select #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}])]]
+             [tile-select {:zoom-scale zoom-scale
+                           :occupied (<sub [:location/occupied-tiles location-id])
+                           :on-drag-start #(>evt [:start-entity-drag %])
+                           :on-drag-end #(>evt [:stop-entity-drag])
+                           :on-click #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}]
+             (when (<sub [:ui/dnd])
+               [tile-dropzone {:zoom-scale zoom-scale
+                               :occupied (<sub [:location/occupied-tiles location-id])
+                               :on-drop #(>evt [:drop-entity location-id (m/relative-point % bounds)])}])]]
            [:div {:class "location__loading"
                   :style {:width (u/px preview-image-w)
                           :height (u/px preview-image-h)}}

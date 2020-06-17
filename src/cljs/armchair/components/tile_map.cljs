@@ -24,14 +24,22 @@
 
 (defn tile-select []
   (let [highlight-tile (r/atom nil)]
-    (fn [{:keys [on-select zoom-scale]
+    (fn [{:keys [on-click on-drag-start on-drag-end zoom-scale occupied]
           :or {zoom-scale 1}}]
       (let [set-highlight (fn [e] (reset! highlight-tile (u/e->tile e zoom-scale)))
             clear-highlight (fn [] (reset! highlight-tile nil))]
         [:div {:class "tile-select"
+               :draggable true
+               :on-drag-start (fn [e]
+                                (if (contains? occupied @highlight-tile)
+                                  (do
+                                    (.setDragImage (.-dataTransfer e) (js/Image.) 0 0)
+                                    (on-drag-start (get occupied @highlight-tile)))
+                                  (u/prevent-e! e)))
+               :on-drag-end on-drag-end
                :on-mouse-move set-highlight
                :on-mouse-leave clear-highlight
-               :on-click #(on-select @highlight-tile)}
+               :on-click #(on-click @highlight-tile)}
          (when (some? @highlight-tile)
            [:div {:class "tile-select__highlight"
                   :style (u/tile-style @highlight-tile zoom-scale)}])]))))
