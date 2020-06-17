@@ -1,6 +1,6 @@
 (defproject armchair "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [org.clojure/clojurescript "1.10.758"]
+                 [org.clojure/clojurescript "1.10.773"]
                  [reagent "0.10.0"]
                  [re-frame "0.12.0"]
                  [tailrecursion/cljs-priority-map "1.2.1"]
