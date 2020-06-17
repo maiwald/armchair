@@ -42,7 +42,12 @@
                     :on-click (e-> #(>evt [:delete-dialogue id]))}]]])
 
 (defn location [{:keys [id display-name]}]
-  [:li.ressource {:on-click #(>navigate :location-edit :id id)}
+  [:li.ressource {:draggable true
+                  :on-click #(>navigate :location-edit :id id)
+                  :on-drag-end #(>evt [:stop-entity-drag])
+                  :on-drag-start (fn [e]
+                                   (.setDragImage (.-dataTransfer e) (js/Image.) 0 0)
+                                   (>evt [:start-entity-drag [:location id]]))}
    [:span.ressource__drag_handle
     [c/icon "grip-vertical"]]
    [:span.ressource__label display-name]

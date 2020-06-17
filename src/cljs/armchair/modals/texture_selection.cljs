@@ -9,7 +9,7 @@
             [armchair.events :refer [reg-event-data reg-event-meta]]
             [armchair.modals.events :refer [assert-no-open-modal
                                             build-modal-assertion]]
-            [armchair.location-editor.views :refer [tile-select]]))
+            [armchair.location-editor.views :refer [tile-select-old]]))
 
 ;; Events
 
@@ -85,6 +85,6 @@
                   :style {:max-width "none"
                           :display "block"}}]
            [:div.level-layer
-            [tile-select {:bounds (m/rect-scale image-size (/ 1 config/tile-size))
-                          :on-select update-tile
-                          :selected tile}]]]]]))))
+            [tile-select-old {:bounds (m/rect-scale image-size (/ 1 config/tile-size))
+                              :on-select update-tile
+                              :selected tile}]]]]]))))

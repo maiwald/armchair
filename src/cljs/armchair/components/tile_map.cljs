@@ -39,6 +39,7 @@
                                       (on-drag-start (get occupied tile)))
                                     (u/prevent-e! e))))
                :on-drag-end on-drag-end
+               :on-mouse-down u/stop-e!
                :on-mouse-move set-highlight
                :on-mouse-leave clear-highlight
                :on-click (fn [e] (on-click (u/e->tile e zoom-scale)))}

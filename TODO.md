@@ -6,7 +6,6 @@
 
 # TODO
 - restructure navigation
-  - placing exits
   - editing connections
 - improved dialogue editor and state management
 - select and paint multiple texture sprites
@@ -15,6 +14,7 @@
 - sounds & music
 
 # nice things
+- placing exits by dragging from location to location in world
 - reliable drag and drop ghosts
 - search
 - locate ressources
