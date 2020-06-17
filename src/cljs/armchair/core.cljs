@@ -45,7 +45,7 @@
         (when (= "Escape" (.-code e))
           (>evt [:close-modal])
           (>evt [:cancel-dragging]))
-        (when (.-ctrlKey e)
+        (when ^boolean (.-ctrlKey e)
           (condp = (.-code e)
             "KeyZ" (>evt [:undo])
             "KeyY" (>evt [:redo])

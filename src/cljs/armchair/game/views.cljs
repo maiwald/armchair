@@ -20,12 +20,12 @@
 (defn game-canvas []
   (let [game-handle (atom nil)]
     (letfn [(on-key-down [e]
-              (when-not (or (.-altKey e)
-                            (.-ctrlKey e)
-                            (.-metaKey e))
+              (when-not (or ^boolean (.-altKey e)
+                            ^boolean (.-ctrlKey e)
+                            ^boolean (.-metaKey e))
                 (when-let [keycode (allowed-keys (.-code e))]
                   (prevent-e! e)
-                  (when-not (.-repeat e)
+                  (when-not ^boolean (.-repeat e)
                     (put! (:input @game-handle) [:key-state [keycode :down]])))))
             (on-key-up [e]
               (when-let [keycode (allowed-keys (.-code e))]
