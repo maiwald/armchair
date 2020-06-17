@@ -107,17 +107,25 @@ $graph-node-border-radius: 5px
   border-radius: .25rem
   padding: 0 12px
 
+  background: #fff
+  color: $text-link
   font-family: Verdana
   font-size: .75rem
   line-height: 1.75rem
 
+
   &_fill
     width: 100%
 
+  &_no-border
+    border: 0
+    background: transparent
+    color: inherit
+    line-height: inherit
+    padding: 0 5px
+
   // Button colors
 
-  color: $text-link
-  background: #fff
   &:hover, &:focus
     background: #f4f6f9
 
@@ -126,7 +134,6 @@ $graph-node-border-radius: 5px
     background: $color-danger
     &:hover, &:focus
       background: darken($color-danger, 10%)
-
 
   &:focus
     outline: 0

@@ -3,11 +3,11 @@
             [armchair.components :as c]
             [armchair.components.sidebar :refer [sidebar]]
             [armchair.routes :refer [>navigate]]
-            [armchair.util :as u :refer [<sub >evt]]))
+            [armchair.util :as u :refer [<sub >evt e->]]))
 
 (def icon-size 20)
 
-(defn character [{:keys [id display-name texture]}]
+(defn character [{:keys [id display-name texture line-count]}]
   [:li.ressource {:draggable true
                   :on-click #(>evt [:armchair.modals.character-form/open id])
                   :on-drag-end #(>evt [:stop-entity-drag])
@@ -26,25 +26,42 @@
    [:span.ressource__icon {:style {:width (u/px icon-size)
                                    :height (u/px icon-size)}}
     [c/sprite-texture texture display-name (/ icon-size config/tile-size)]]
-   [:span.ressource__label display-name]])
+   [:span.ressource__label display-name]
+   (when (zero? line-count)
+     [:span.ressource__action
+      [c/button {:icon "trash-alt"
+                 :border false
+                 :on-click (e-> #(>evt [:delete-character id]))}]])])
 
 (defn dialogue [{:keys [id synopsis]}]
   [:li.ressource {:on-click #(>navigate :dialogue-edit :id id)}
    [:span.ressource__drag_handle
     [c/icon "grip-vertical"]]
-   [:span.ressource__label synopsis]])
+   [:span.ressource__label synopsis]
+   [:span.ressource__action
+    [c/button {:icon "trash-alt"
+               :border false
+               :on-click (e-> #(>evt [:delete-dialogue id]))}]]])
 
 (defn location [{:keys [id display-name]}]
   [:li.ressource {:on-click #(>navigate :location-edit :id id)}
    [:span.ressource__drag_handle
     [c/icon "grip-vertical"]]
-   [:span.ressource__label display-name]])
+   [:span.ressource__label display-name]
+   [:span.ressource__action
+    [c/button {:icon "trash-alt"
+               :border false
+               :on-click (e-> #(>evt [:delete-location id]))}]]])
 
 (defn switch [{:keys [id display-name]}]
   [:li.ressource {:on-click #(>evt [:armchair.modals.switch-form/open id])}
    [:span.ressource__drag_handle
     [c/icon "grip-vertical"]]
-   [:span.ressource__label display-name]])
+   [:span.ressource__label display-name]
+   [:span.ressource__action
+    [c/button {:icon "trash-alt"
+               :border false
+               :on-click (e-> #(>evt [:delete-switch id]))}]]])
 
 (defn ressources []
   [sidebar
@@ -53,37 +70,57 @@
               {:label "Characters"
                :icon "user-friends"
                :component (let [characters (<sub [:character-list])]
-                            [:ol.ressource_list
-                             (for [{:keys [display-name] :as c} characters]
-                               ^{:key (str "character-select" display-name)}
-                               [character c])])}
+                            [:div
+                             [c/button {:title "New Character"
+                                        :icon "plus"
+                                        :fill true
+                                        :on-click #(>evt [:armchair.modals.character-form/open])}]
+                             [:ol.ressource_list
+                              (for [{:keys [display-name] :as c} characters]
+                                ^{:key (str "character-select" display-name)}
+                                [character c])]])}
 
               :dialogues
               {:label "Dialogues"
                :icon "comments"
                :component (let [dialogues (<sub [:dialogue-list])]
-                            [:ol.ressource_list
-                             (for [{:keys [id] :as d} dialogues]
-                               ^{:key (str "dialogue-select" id)}
-                               [dialogue d])])}
+                            [:div
+                             [c/button {:title "New Dialogue"
+                                        :icon "plus"
+                                        :fill true
+                                        :on-click #(>evt [:armchair.modals.dialogue-creation/open])}]
+                             [:ol.ressource_list
+                              (for [{:keys [id] :as d} dialogues]
+                                ^{:key (str "dialogue-select" id)}
+                                [dialogue d])]])}
 
               :locations
               {:label "Locations"
                :icon "map"
                :component (let [locations (<sub [:location-list])]
-                            [:ol.ressource_list
-                             (for [{:keys [id] :as l} locations]
-                               ^{:key (str "location-select" id)}
-                               [location l])])}
+                            [:div
+                             [c/button {:title "New Location"
+                                        :icon "plus"
+                                        :fill true
+                                        :on-click #(>evt [:open-location-creation])}]
+                             [:ol.ressource_list
+                              (for [{:keys [id] :as l} locations]
+                                ^{:key (str "location-select" id)}
+                                [location l])]])}
 
               :switches
               {:label "Switches"
                :icon "database"
                :component (let [switches (<sub [:switch-list])]
-                            [:ol.ressource_list
-                             (for [{:keys [id] :as s} switches]
-                               ^{:key (str "switch-select" id)}
-                               [switch s])])}
+                            [:div
+                             [c/button {:title "New Switch"
+                                        :icon "plus"
+                                        :fill true
+                                        :on-click #(>evt [:armchair.modals.switch-form/open])}]
+                             [:ol.ressource_list
+                              (for [{:keys [id] :as s} switches]
+                                ^{:key (str "switch-select" id)}
+                                [switch s])]])}
 
               :settings
               {:label "Settings"
