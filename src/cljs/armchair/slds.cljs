@@ -23,31 +23,6 @@
            [:span {:class "slds-radio_faux"}
             option-label]]])]]]))
 
-(defn badge [value color]
-  [:span {:class "slds-badge"
-          :style {:color "#fff"
-                  :background-color color}}
-   value])
-
-(defn data-table [{:keys [table-id id columns cell-views collection]
-                   :or {id :id}}]
-  [:table {:class "slds-table slds-table_bordered slds-table_cell-buffer"}
-   [:thead {:class "slds-text-title_caps"}
-    [:tr
-     (for [column columns]
-       [:th {:key (str table-id column)
-             :scope "col"
-             :title column}
-        column])]]
-   [:tbody
-    (for [item collection]
-      [:tr {:key (str table-id (get item id))}
-       (for [column columns]
-         [:td {:key (str table-id (get item id) column)}
-          (if-let [cell-view (get cell-views column)]
-            [cell-view (get item column) item]
-            (get item column))])])]])
-
 (defn modal [{:keys [title close-handler confirm-handler]}]
   [:div
    [:section {:class ["slds-modal"

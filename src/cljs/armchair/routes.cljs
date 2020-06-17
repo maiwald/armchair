@@ -9,10 +9,7 @@
   ["/" [["game" :game]
         ["locations" :locations]
         [["locations/" :id "/edit"] :location-edit]
-        ["dialogues" :dialogues]
-        [["dialogues/" :id "/edit"] :dialogue-edit]
-        ["characters" :characters]
-        ["switches" :switches]]])
+        [["dialogues/" :id "/edit"] :dialogue-edit]]])
 
 (def root (str "#" (path-for routes :locations)))
 

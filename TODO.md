@@ -1,13 +1,13 @@
 # BUGS
 - flickering inputs in character modal
 - deleting initial line in dialogue editor does not delete reference
+- deleting location does not close open inspector
 
 # TODO
 - restructure navigation
-  - remove management pages
   - placing exits, player
-  - editing connections
   - consolidate location editor sidebar
+  - editing connections
 - improved dialogue editor and state management
 - select and paint multiple texture sprites
 - Dialogue Structure (Quests?)

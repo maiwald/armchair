@@ -1,6 +1,5 @@
 (ns armchair.views
   (:require [reagent.core :as r]
-            [armchair.slds :as slds]
             [armchair.components :as c :refer [icon]]
             [armchair.location-editor.views :refer [location-editor]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
@@ -8,65 +7,9 @@
             [armchair.components.ressources :refer [ressources]]
             [armchair.components.inspector :refer [inspector]]
             [armchair.modals.views :refer [modal]]
-            [armchair.modals.switch-form :as switch-form]
             [armchair.util :as u :refer [<sub >evt]]
             [armchair.routes :refer [page-data >navigate]]
             [armchair.game.views :refer [game-view]]))
-
-;; Components
-
-(defn dialogue-management []
-  (let [dialogues (<sub [:dialogue-list])]
-    [slds/data-table
-     {:title "dialogues"
-      :columns [:texture :character :synopsis :actions]
-      :collection dialogues
-      :cell-views {:character (fn [{:keys [id display-name]}]
-                                [:a {:on-click #(>evt [:armchair.modals.character-form/open id])}
-                                 display-name])
-                   :texture (fn [texture]
-                              [c/sprite-texture texture])
-                   :synopsis (fn [synopsis {id :id}]
-                               [:a {:on-click #(>navigate :dialogue-edit :id id)}
-                                synopsis])
-                   :actions (fn [_ {id :id}]
-                              [:div {:class "slds-text-align_right"}
-                               [c/button {:icon "trash-alt"
-                                          :on-click #(when (js/confirm "Are you sure you want to delete this dialogue?")
-                                                       (>evt [:delete-dialogue id]))}]])}}]))
-
-(defn character-management []
-  (let [characters (<sub [:character-list])]
-    [slds/data-table
-     {:title "characters"
-      :columns [:texture :display-name :color :line-count :actions]
-      :collection characters
-      :cell-views {:color (fn [color] [slds/badge color color])
-                   :texture (fn [texture]
-                              [c/sprite-texture texture])
-                   :actions (fn [_ {:keys [id line-count]}]
-                              [:div {:class "slds-text-align_right"}
-                               (when (zero? line-count)
-                                 [c/button {:icon "trash-alt"
-                                            :on-click #(when (js/confirm "Are you sure you want to delete this character?")
-                                                         (>evt [:delete-character id]))}])
-                               [c/button {:icon "edit"
-                                          :on-click #(>evt [:armchair.modals.character-form/open id])}]])}}]))
-
-(defn switch-management []
-  (let [switches (<sub [:switch-list])]
-    [slds/data-table
-     {:title "Switches"
-      :columns [:display-name :values :actions]
-      :collection switches
-      :cell-views {:color (fn [color] [slds/badge color color])
-                   :actions (fn [_ {:keys [id]}]
-                              [:div {:class "slds-text-align_right"}
-                               [c/button {:icon "trash-alt"
-                                          :on-click #(when (js/confirm "Are you sure you want to delete this switch?")
-                                                       (>evt [:delete-switch id]))}]
-                               [c/button {:icon "edit"
-                                          :on-click #(>evt [::switch-form/open id])}]])}}]))
 
 ;; Navigation
 
@@ -77,18 +20,12 @@
     (if (= page-name :game)
       [:ul.navigation
        [:li {:class ["navigation__item"]}
-        [:a {:on-click #(>navigate :locations)} "Edit Game"]]]
+        [:a {:on-click #(>navigate :locations)} "Edit"]]]
       [:ul.navigation
        [:li {:class ["navigation__item"]}
         [:a {:on-click #(>navigate :game)} "Play"]]
-       (for [[route title] [[:locations "Location Map"]
-                            [:dialogues "Dialogues"]
-                            [:characters "Characters"]
-                            [:switches "Switches"]]]
-         [:li {:key (str "navigation-item:" title)
-               :class ["navigation__item"
-                       (when (= page-name route) "is-active")]}
-          [:a {:on-click #(>navigate route)} title]])])
+       [:li {:class ["navigation__item"]}
+        [:a {:on-click #(>navigate :locations)} "World"]]])
     [:ul.functions
      [:li
       (if (<sub [:can-undo?])
@@ -122,10 +59,7 @@
     :game          [game-view]
     :locations     [location-map]
     :location-edit [location-editor (uuid (:id page-params))]
-    :dialogues     [dialogue-management]
     :dialogue-edit [dialogue-editor (uuid (:id page-params))]
-    :characters    [character-management]
-    :switches      [switch-management]
     [:div "Page not found"]))
 
 (defn root []

@@ -160,9 +160,11 @@
 ;; Button
 
 (defn button [{glyph :icon btn-type :type
-               :keys [title on-click fill]}]
+               :keys [title on-click fill border]
+               :or {fill false border true}}]
   [:button {:class ["button"
                     (when fill "button_fill")
+                    (when-not border "button_no-border")
                     (when (= btn-type :danger) "button_danger")]
             :on-click on-click
             :type "button"}
