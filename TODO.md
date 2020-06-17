@@ -2,11 +2,12 @@
 - flickering inputs in character modal
 - deleting initial line in dialogue editor does not delete reference
 - deleting location does not close open inspector
+- inspector does not follow when moving placements/triggers
 
 # TODO
 - restructure navigation
-  - placing exits, player
   - consolidate location editor sidebar
+  - placing exits, player
   - editing connections
 - improved dialogue editor and state management
 - select and paint multiple texture sprites

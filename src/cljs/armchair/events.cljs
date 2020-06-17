@@ -216,6 +216,40 @@
   (fn [db [_ payload]]
     (assoc db :ui/dnd payload)))
 
+
+(reg-event-meta
+  :drop-entity
+  (fn [{[dnd-type & dnd-payload] :ui/dnd :as db} [_ target-location-id target-position]]
+    (assert (some? dnd-type)
+            "Attempting to drop while no drag in progress!")
+    (case dnd-type
+      :player (-> db
+                  (dissoc :ui/dnd)
+                  (assoc :player {:location-id target-location-id
+                                  :location-position target-position}))
+      :character (-> db
+                     (dissoc :ui/dnd)
+                     (assoc-in [:locations target-location-id :placements target-position]
+                               {:character-id (first dnd-payload)}))
+      :placement (let [[location-id location-position] dnd-payload
+                       placement (get-in db [:locations location-id :placements location-position])]
+                   (-> db
+                       (dissoc :ui/dnd)
+                       (update-in [:locations location-id :placements] dissoc location-position)
+                       (assoc-in [:locations target-location-id :placements target-position] placement)))
+      :new-connection-trigger (-> db
+                                  (dissoc :ui/dnd)
+                                  (assoc-in
+                                    [:modal :connection-trigger-creation]
+                                    {:location-id target-location-id
+                                     :location-position target-position}))
+      :connection-trigger (let [[location-id location-position] dnd-payload]
+                            (-> db
+                                (dissoc :ui/dnd)
+                                (update-in [:locations location-id :connection-triggers] dissoc location-position)
+                                (assoc-in [:locations target-location-id :connection-triggers target-position]
+                                          (get-in db [:locations location-id :connection-triggers location-position])))))))
+
 (reg-event-meta
   :stop-entity-drag
   (fn [db]

@@ -1,7 +1,6 @@
 (ns armchair.location-editor.events
   (:require [armchair.events :refer [reg-event-data reg-event-meta]]
             [armchair.location-previews :refer [build-location-preview]]
-            [clojure.set :refer [rename-keys]]
             [com.rpl.specter
              :refer [multi-path ALL NONE MAP-KEYS MAP-VALS]
              :refer-macros [setval]]
@@ -49,35 +48,6 @@
                    (conj visible-layers layer-id))))))
 
 (reg-event-data
-  :location-editor/move-player
-  (fn [db [_ location-id position]]
-    (-> db
-       (dissoc :ui/dnd)
-       (assoc :player {:location-id location-id
-                       :location-position position}))))
-
-(reg-event-data
-  :location-editor/move-placement
-  (fn [db [_ location-id from to]]
-    (-> db
-        (cond-> (let [[inspector-type {inspector-id :location-id
-                                       inspector-position :location-position}] (:ui/inspector db)]
-                  (and (= inspector-type :placement)
-                       (= inspector-id location-id)
-                       (= inspector-position from)))
-          (assoc-in [:ui/inspector 1 :location-position] to))
-        (dissoc :ui/dnd)
-        (update-in [:locations location-id :placements] rename-keys {from to}))))
-
-(reg-event-data
-  :location-editor/place-character
-  (fn [db [_ location-id character-id to]]
-    (-> db
-        (dissoc :ui/dnd)
-        (assoc-in [:locations location-id :placements to]
-                  {:character-id character-id}))))
-
-(reg-event-data
   :location-editor/remove-placement
   (fn [db [_ location-id tile]]
     (-> db
@@ -101,25 +71,6 @@
     (if (some? dialogue-id)
       (assoc-in db [:locations location-id :placements tile :dialogue-id] dialogue-id)
       (update-in db [:locations location-id :placements tile] dissoc :dialogue-id))))
-
-(reg-event-data
-  :location-editor/move-trigger
-  (fn [db [_ location-id from to]]
-    (let [new-db (dissoc db :ui/dnd)]
-      (if (some? from)
-        (-> new-db
-            (cond-> (let [[inspector-type {inspector-location-id :location-id
-                                           inspector-location-position :location-position}] (:ui/inspector db)]
-                      (and (= inspector-type :exit)
-                           (= inspector-location-id location-id)
-                           (= inspector-location-position from)))
-              (assoc-in [:ui/inspector 1 :location-position] to))
-          (update-in [:locations location-id :connection-triggers]
-                     rename-keys {from to}))
-        (assoc-in new-db
-                  [:modal :connection-trigger-creation]
-                  {:location-id location-id
-                   :location-position to})))))
 
 (reg-event-data
   :location-editor/remove-trigger

@@ -159,7 +159,7 @@
           :on-drag-end #(>evt [:stop-entity-drag])
           :on-drag-start (fn [e]
                            (.setData (.-dataTransfer e) "text/plain" ":exit")
-                           (>evt [:start-entity-drag [:connection-trigger]]))}
+                           (>evt [:start-entity-drag [:new-connection-trigger]]))}
      [:span {:class "tile-list__item__image"
              :style {:width (str config/tile-size "px")
                      :height (str config/tile-size "px")}}
@@ -386,7 +386,7 @@
                :on-click #(>evt [:inspect :tile location-id tile])
                :on-drag-start (fn [e]
                                 (.setData (.-dataTransfer e) "text/plain" display-name)
-                                (>evt [:start-entity-drag [:placement tile]]))
+                                (>evt [:start-entity-drag [:placement location-id tile]]))
                :on-drag-end #(>evt [:stop-entity-drag])}])]]))
 
 (defn edit-trigger-layer [location-id]
@@ -400,7 +400,7 @@
               :on-click #(>evt [:inspect :tile location-id tile])
               :on-drag-start (fn [e]
                                (.setData (.-dataTransfer e) "text/plain" display-name)
-                               (>evt [:start-entity-drag [:connection-trigger tile]]))
+                               (>evt [:start-entity-drag [:connection-trigger location-id tile]]))
               :on-drag-end #(>evt [:stop-entity-drag])}])]))
 
 (defn canvas [location-id]
@@ -409,13 +409,7 @@
                 active-layer
                 visible-layers
                 active-tool
-                active-texture]} (<sub [:location-editor/ui])
-        dropzone-fn (if-let [[dnd-type dnd-payload] (<sub [:ui/dnd])]
-                      (case dnd-type
-                        :character          #(>evt [:location-editor/place-character location-id dnd-payload (relative-point % bounds)])
-                        :player             #(>evt [:location-editor/move-player location-id (relative-point % bounds)])
-                        :placement          #(>evt [:location-editor/move-placement location-id dnd-payload (relative-point % bounds)])
-                        :connection-trigger #(>evt [:location-editor/move-trigger location-id dnd-payload (relative-point % bounds)])))]
+                active-texture]} (<sub [:location-editor/ui])]
     [:div {:class "level-wrap"}
      [:div {:class "level"
             :style {:width (u/px (* config/tile-size (:w bounds)))
@@ -465,9 +459,9 @@
          [edit-entity-layer location-id]
          [edit-trigger-layer location-id]])
 
-      (when (fn? dropzone-fn)
+      (when (<sub [:ui/dnd])
         [tile-dropzone {:occupied (<sub [:location/occupied-tiles location-id])
-                        :on-drop dropzone-fn}])]]))
+                        :on-drop #(>evt [:drop-entity location-id (relative-point % bounds)])}])]]))
 
 (defn location-editor [location-id]
   (if (<sub [:location-editor/location-exists? location-id])

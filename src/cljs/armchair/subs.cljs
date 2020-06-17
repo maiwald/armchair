@@ -83,14 +83,15 @@
   (fn [[_ location-id]]
     [(subscribe [:db/location location-id])
      (subscribe [:db-player])])
-  (fn [[location player] [_ location-id]]
+  (fn [[{:keys [connection-triggers placements bounds]} player] [_ location-id]]
     (let [player (when (= location-id (:location-id player))
-                   [(:location-position player)])]
-      (set (map
-             #(global-point % (:bounds location))
-             (concat (keys (:connection-triggers location))
-                    (keys (:placements location))
-                    player))))))
+                   {(:location-position player) [:player]})]
+      (u/map-keys
+        (fn [tile] (global-point tile bounds))
+        (merge
+          (u/map-values (fn [_ k] [:connection-trigger location-id k]) connection-triggers)
+          (u/map-values (fn [_ k] [:placement location-id k]) placements)
+          player)))))
 
 (reg-sub
   :dialogue/player-line-option
