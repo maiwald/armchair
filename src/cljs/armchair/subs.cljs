@@ -174,7 +174,7 @@
       (case page-name
         :locations [{:title "New Location"
                      :icon "plus"
-                     :event [:open-location-creation]}
+                     :event [:armchair.modals.location-creation/open]}
                     {:title "Zoom Out"
                      :icon "minus"
                      :event [:location-map/zoom-out]}

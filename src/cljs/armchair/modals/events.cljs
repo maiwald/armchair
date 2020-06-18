@@ -22,44 +22,6 @@
     (dissoc db :modal)))
 
 (reg-event-meta
-  :open-location-creation
-  (fn [db]
-    (assert-no-open-modal db)
-    (assoc-in db [:modal :location-creation] "")))
-
-(defn assert-location-creation-modal [db]
-  (assert (contains? (:modal db) :location-creation)
-          "No Location creation modal present. Cannot create!"))
-
-(reg-event-meta
-  :update-location-creation-name
-  (fn [db [_ display-name]]
-    (assert-location-creation-modal db)
-    (assoc-in db [:modal :location-creation] display-name)))
-
-(reg-event-data
-  :create-location
-  (fn [db]
-    (assert-location-creation-modal db)
-    (let [id (random-uuid)
-          display-name (get-in db [:modal :location-creation])]
-      (dispatch [:armchair.location-previews/generate-preview id])
-      (-> db
-          (dissoc :modal)
-          (assoc-in [:ui/positions id] config/default-ui-position)
-          (assoc-in [:locations id] {:entity/id id
-                                     :entity/type :location
-                                     :bounds (Rect. 0 0 3 3)
-                                     :background1 {}
-                                     :background2 {}
-                                     :foreground1 {}
-                                     :foreground2 {}
-                                     :blocked #{}
-                                     :connection-triggers {}
-                                     :placements {}
-                                     :display-name display-name})))))
-
-(reg-event-meta
   :open-npc-line-modal
   (fn [db [_ payload]]
     (assert-no-open-modal db)

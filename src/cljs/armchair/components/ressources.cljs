@@ -127,7 +127,7 @@
                              [c/button {:title "New Location"
                                         :icon "plus"
                                         :fill true
-                                        :on-click #(>evt [:open-location-creation])}]
+                                        :on-click #(>evt [:armchair.modals.location-creation/open])}]
                              [:ol.ressource_list
                               (for [{:keys [id] :as l} locations]
                                 ^{:key (str "location-select" id)}
