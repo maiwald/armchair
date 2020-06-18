@@ -1,10 +1,30 @@
 (ns armchair.components.ressources
-  (:require [armchair.config :as config]
+  (:require [re-frame.core :refer [reg-sub]]
+            [armchair.events :refer [reg-event-meta]]
+            [armchair.config :as config]
             [armchair.math :refer [Point]]
             [armchair.components :as c]
             [armchair.components.sidebar :refer [sidebar]]
             [armchair.routes :refer [>navigate]]
             [armchair.util :as u :refer [<sub >evt e->]]))
+
+;; Events
+
+(reg-event-meta
+  ::set-active-ressource
+  (fn [db [_ ressource]]
+    (assoc db :ui/active-ressource ressource)))
+
+(reg-event-meta
+  ::unset-active-ressource
+  (fn [db]
+    (dissoc db :ui/active-ressource)))
+
+;; Subscriptions
+
+(reg-sub :ui/active-ressource #(:ui/active-ressource %))
+
+;; Views
 
 (def icon-size 20)
 
@@ -90,7 +110,10 @@
 
 (defn ressources []
   [sidebar
-   {:panels (array-map
+   {:active-panel (<sub [:ui/active-ressource])
+    :on-panel-change #(>evt [::set-active-ressource %])
+    :on-panel-close #(>evt [::unset-active-ressource %])
+    :panels (array-map
               :characters
               {:label "Characters"
                :icon "user-friends"
