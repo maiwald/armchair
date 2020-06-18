@@ -6,6 +6,7 @@
             [armchair.modals.dialogue-creation]
             [armchair.modals.trigger-creation]
             [armchair.modals.case-node-creation]
+            [armchair.modals.location-creation]
             [armchair.modals.connection-trigger-creation]
             [armchair.modals.switch-form]
             [armchair.modals.unlock-conditions-form]
@@ -33,15 +34,6 @@
                        :on-change #(>evt [:update-line line-id :text (e->val %)])
                        :value (:text line)}]]]))
 
-(defn location-creation-modal [display-name]
-  (let [update-name #(>evt [:update-location-creation-name (e->val %)])]
-    [slds/modal {:title "Create Location"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [:create-location])}
-     [input/text {:label "Name"
-                  :on-change update-name
-                  :value display-name}]]))
-
 
 (defn modal []
   (if-let [modal (<sub [:modal])]
@@ -50,7 +42,7 @@
       :dialogue-state              [dialogue-state-modal (:dialogue-state modal)]
       :npc-line-id                 [npc-line-form-modal (:npc-line-id modal)]
       :character-form              [armchair.modals.character-form/modal (:character-form modal)]
-      :location-creation           [location-creation-modal (:location-creation modal)]
+      :location-creation           [armchair.modals.location-creation/modal (:location-creation modal)]
       :trigger-creation            [armchair.modals.trigger-creation/modal (:trigger-creation modal)]
       :case-node-creation          [armchair.modals.case-node-creation/modal (:case-node-creation modal)]
       :switch-form                 [armchair.modals.switch-form/modal]

@@ -221,7 +221,7 @@
     (assoc db :ui/dnd payload)))
 
 
-(reg-event-meta
+(reg-event-data
   :drop-entity
   (fn [{[dnd-type & dnd-payload] :ui/dnd :as db} [_ target-location-id target-position]]
     (assert (some? dnd-type)
@@ -233,6 +233,8 @@
                                   :location-position target-position}))
       :character (-> db
                      (dissoc :ui/dnd)
+                     (assoc :ui/inspector [:tile {:location-id target-location-id
+                                                  :location-position target-position}])
                      (assoc-in [:locations target-location-id :placements target-position]
                                {:character-id (first dnd-payload)}))
       :location (-> db
@@ -246,11 +248,15 @@
                        placement (get-in db [:locations location-id :placements location-position])]
                    (-> db
                        (dissoc :ui/dnd)
+                       (assoc :ui/inspector [:tile {:location-id target-location-id
+                                                    :location-position target-position}])
                        (update-in [:locations location-id :placements] dissoc location-position)
                        (assoc-in [:locations target-location-id :placements target-position] placement)))
       :connection-trigger (let [[location-id location-position] dnd-payload]
                             (-> db
                                 (dissoc :ui/dnd)
+                                (assoc :ui/inspector [:tile {:location-id target-location-id
+                                                             :location-position target-position}])
                                 (update-in [:locations location-id :connection-triggers] dissoc location-position)
                                 (assoc-in [:locations target-location-id :connection-triggers target-position]
                                           (get-in db [:locations location-id :connection-triggers location-position])))))))

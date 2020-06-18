@@ -1,7 +1,6 @@
 # BUGS
 - flickering inputs in character modal
 - deleting initial line in dialogue editor does not delete reference
-- inspector does not follow when moving placements/triggers
 
 # TODO
 - restructure navigation
