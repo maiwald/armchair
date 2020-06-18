@@ -50,14 +50,12 @@
 (reg-event-data
   :location-editor/remove-placement
   (fn [db [_ location-id tile]]
-    (-> db
-        (cond-> (let [[inspector-type {inspector-location-id :location-id
-                                       inspector-location-position :location-position}] (:ui/inspector db)]
-                  (and (= inspector-type :placement)
-                       (= inspector-location-id location-id)
-                       (= inspector-location-position tile)))
-          (dissoc :ui/inspector))
-        (update-in [:locations location-id :placements] dissoc tile))))
+    (cond-> (update-in db [:locations location-id :placements] dissoc tile)
+      (= (:ui/inspector db)
+         [:tile {:location-id location-id
+                 :location-position tile}])
+      (dissoc :ui/inspector))))
+
 
 (reg-event-data
   :location-editor/set-placement-character
@@ -75,14 +73,11 @@
 (reg-event-data
   :location-editor/remove-trigger
   (fn [db [_ location-id tile]]
-    (-> db
-        (cond-> (let [[inspector-type {inspector-location-id :location-id
-                                       inspector-location-position :location-position}] (:ui/inspector db)]
-                  (and (= inspector-type :exit)
-                       (= inspector-location-id location-id)
-                       (= inspector-location-position tile)))
-          (dissoc :ui/inspector))
-      (update-in [:locations location-id :connection-triggers] dissoc tile))))
+    (cond-> (update-in db [:locations location-id :connection-triggers] dissoc tile)
+      (= (:ui/inspector db)
+         [:tile {:location-id location-id
+                 :location-position tile}])
+      (dissoc :ui/inspector))))
 
 (reg-event-data
   :location-editor/paint

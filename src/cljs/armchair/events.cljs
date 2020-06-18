@@ -119,6 +119,10 @@
                                       (u/filter-map #(contains? (->> % :connection-triggers vals (map first) set) id))
                                       keys)]
       (-> db
+          (cond->
+            (= (:ui/inspector db)
+               [:location {:location-id id}])
+            (dissoc :ui/inspector))
           (update :locations dissoc id)
           (update :ui/positions dissoc id)
           (u/update-in-map :locations connected-location-ids
