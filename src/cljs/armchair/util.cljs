@@ -93,7 +93,7 @@
   (vec (concat (take idx v)
                (drop (inc idx) v))))
 
-(defn log [& args]
+(defn spy [& args]
   (apply js/console.log args)
   (first args))
 
