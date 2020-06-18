@@ -335,7 +335,8 @@
 (s/def ::state (s/and ::dialogue-must-start-with-npc-line
                       ::player-options-must-not-point-to-player-line
                       ::location-connection-validation
-                      (s/keys :req [:ui/positions]
+                      (s/keys :req [:ui/positions
+                                    :ui/location-map-zoom-scale]
                               :req-un [::current-page
                                        :state/player
                                        :state/characters
@@ -349,11 +350,12 @@
                                        ::switch-values]
                               :opt-un [:ui/connecting
                                        :ui/dragging
-                                       :ui/dnd
                                        :ui/cursor
-                                       :ui/inspector
-                                       :ui/location-map-scroll-center
-                                       :modal/modal])))
+                                       :modal/modal]
+                              :opt [:ui/location-map-scroll-center
+                                    :ui/inspector
+                                    :ui/dnd])))
+
 
 (s/def :state/player
   (s/keys :req-un [::location-id
