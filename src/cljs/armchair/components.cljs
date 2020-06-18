@@ -4,14 +4,9 @@
             [armchair.config :as config]
             [armchair.textures :refer [image-path image-size]]
             [armchair.math :as m :refer [abs point-delta translate-point]]
-            [armchair.util :as u :refer [stop-e! >evt <sub e->left?]]))
+            [armchair.util :as u]))
 
-;; Drag & Drop
-
-(defn e->graph-cursor [e]
-  (u/relative-cursor e (-> js/document
-                           (.getElementsByClassName "graph")
-                           (aget 0))))
+;; SVG Connections
 
 (defn connection [{:keys [kind start end]}]
   [:line {:class ["graph__connection"
@@ -38,54 +33,6 @@
                                    ["Q" ctrl-x ctrl-y (:x m) (:y m) "T" (:x end) (:y end)]
                                    ["L" (:x end) (:y end)])))}]))
 
-(defn drag-item [item-id bounds component]
-  (let [position (m/global-point (<sub [:ui/position item-id]) bounds)
-        dragging? (<sub [:dragging-item? item-id])]
-    [:div {:on-mouse-down stop-e!
-           :class ["graph__item"
-                   (when dragging? "graph__item_is-dragging")]
-           :style {:left (:x position) :top (:y position)}}
-     [component item-id]]))
-
-(defn drag-canvas []
-  (let [elem (atom nil)
-        drag-offset (atom nil)]
-    (r/create-class
-      {:display-name "drag-canvas"
-       :component-did-mount
-       (fn []
-         (reset! drag-offset nil))
-       :reagent-render
-       (fn [{:keys [kind nodes bounds]}]
-         (let [connecting? (some? (<sub [:connector]))
-               dragging? (<sub [:dragging?])]
-           [:div {:ref #(reset! elem %)
-                  :class (cond-> ["graph"]
-                           dragging? (conj "graph_is-dragging")
-                           connecting? (conj "graph_is-connecting"))
-                  :on-mouse-down (fn [e]
-                                   (reset! drag-offset (e->graph-cursor e)))
-                  :on-mouse-move (fn [e]
-                                   (when (or dragging? connecting?)
-                                     (>evt [:move-cursor (e->graph-cursor e)]))
-                                   (if-some [offset @drag-offset]
-                                     (let [cursor (e->graph-cursor e)
-                                           [dx dy] (m/point-delta cursor offset)]
-                                       (.scrollBy @elem dx dy)
-                                       (reset! drag-offset cursor))))
-                  :on-mouse-up (fn []
-                                 (cond
-                                   connecting? (>evt [:abort-connecting])
-                                   dragging? (>evt [:end-dragging]))
-                                 (reset! drag-offset nil))}
-            [:div.graph__scroll-content
-             {:style {:width (u/px (:w bounds))
-                      :height (u/px (:h bounds))}}
-             (into [:<>] (r/children (r/current-component)))
-             (for [[item-component ids] nodes
-                   id ids]
-               ^{:key (str kind ":" id)}
-               [drag-item id bounds item-component])]]))})))
 
 ;; Icon
 
@@ -115,47 +62,6 @@
      [:a {:class "tag__remove"
           :on-click on-remove}
       [icon "times-circle" "Delete state"]])])
-
-;; Graph Node
-
-(defn graph-node [{id :item-id}]
-  (let [dragging? (<sub [:dragging-item? id])
-        connecting? (some? (<sub [:connector]))
-        start-dragging (fn [e]
-                         (when (e->left? e)
-                           (u/prevent-e! e)
-                           (>evt [:start-dragging #{id} (e->graph-cursor e)])))
-        stop-dragging (when dragging?
-                        (fn [e]
-                          (u/prevent-e! e)
-                          (>evt [:end-dragging])))]
-    (fn [{:keys [title color width actions on-connect-end]
-          :or {color "gray" width (u/px config/line-width)}}]
-      [:div {:class "graph-node"
-             :on-mouse-up (when connecting? on-connect-end)
-             :style {:border-color color
-                     :width width}}
-       [:div {:class "graph-node__header"
-              :on-mouse-down start-dragging
-              :on-mouse-up stop-dragging}
-        [:p {:class "graph-node__header__title"} title]
-        [:ul {:class "graph-node__header__actions actions"
-              :on-mouse-down stop-e!}
-         (for [[action-icon action-title action-handler :as action] actions
-               :when (some? action)]
-           [:li {:key (str id "-" title "-" action-title)
-                 :class "action"
-                 :on-click action-handler}
-            [icon action-icon action-title]])]]
-       (into [:div {:class "graph-node__content"}]
-             (r/children (r/current-component)))])))
-
-(defn action-wrapper [{:keys [actions]}]
-  [:div.action-wrapper
-   (into [:div.action-wrapper__content]
-         (r/children (r/current-component)))
-   (into [:div.action-wrapper__actions.actions_vertical]
-         actions)])
 
 ;; Button
 
