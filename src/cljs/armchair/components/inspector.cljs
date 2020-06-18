@@ -87,7 +87,7 @@
                         :fill true
                         :on-click #(>evt [:armchair.modals.dialogue-creation/open character-id location-id tile])}]])]]
        [:div.inspector__actions
-        [c/button {:title "Clear tile"
+        [c/button {:title "Remove Character"
                    :type :danger
                    :fill true
                    :on-click #(>evt [:location-editor/remove-placement location-id tile])}]]])))
