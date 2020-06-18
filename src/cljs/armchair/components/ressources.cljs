@@ -1,11 +1,35 @@
 (ns armchair.components.ressources
   (:require [armchair.config :as config]
+            [armchair.math :refer [Point]]
             [armchair.components :as c]
             [armchair.components.sidebar :refer [sidebar]]
             [armchair.routes :refer [>navigate]]
             [armchair.util :as u :refer [<sub >evt e->]]))
 
 (def icon-size 20)
+
+(defn player []
+  (let [display-name "Player"
+        texture ["hare.png" (Point. 6 0)]]
+    [:div.ressource {:draggable true
+                     :on-drag-end #(>evt [:stop-entity-drag])
+                     :on-drag-start (fn [e]
+                                      (let [offset (/ config/tile-size 2)
+                                            ghost (-> e
+                                                      (.-currentTarget)
+                                                      (.getElementsByClassName "drag-ghost")
+                                                      (aget 0))]
+                                        (.setDragImage (.-dataTransfer e) ghost offset offset))
+                                      (>evt [:start-entity-drag [:player]]))}
+     [:div.drag-ghost
+      [c/sprite-texture texture display-name]]
+     [:span.ressource__drag_handle
+      [c/icon "grip-vertical"]]
+     [:span.ressource__icon
+      {:style {:width (u/px 20)}
+       :height (u/px 20)}
+      [c/sprite-texture texture display-name (/ 20 config/tile-size)]]
+     [:span.ressource__label display-name]]))
 
 (defn character [{:keys [id display-name texture line-count]}]
   [:li.ressource {:draggable true
@@ -122,6 +146,11 @@
                               (for [{:keys [id] :as s} switches]
                                 ^{:key (str "switch-select" id)}
                                 [switch s])]])}
+
+              :player
+              {:label "Player"
+               :icon "user"
+               :component [player]}
 
               :settings
               {:label "Settings"

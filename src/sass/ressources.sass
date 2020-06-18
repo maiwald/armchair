@@ -15,50 +15,50 @@
     border-radius: 20px
     background-color: darkgrey
 
-  .ressource
-    $padding: 5px
-    $border-radius: 5px
+.ressource
+  $padding: 5px
+  $border-radius: 5px
+  display: flex
+  flex-direction: row
+  align-items: center
+  margin: 5px 3px
+
+  border: 1px solid $gray
+  border-radius: $border-radius
+
+  cursor: pointer
+
+  &__drag_handle
+    cursor: -moz-grab
+    cursor: -webkit-grab
+    cursor: grab
+    padding: $padding
+    background: lighten($gray, 20%)
+    border-top-left-radius: $border-radius - 1
+    border-bottom-left-radius: $border-radius - 1
+    align-self: stretch
     display: flex
-    flex-direction: row
     align-items: center
-    margin: 5px 3px
+    justify-content: center
+    color: rgba($text-regular, .2)
 
-    border: 1px solid $gray
-    border-radius: $border-radius
+  &:hover .ressource__drag_handle
+    color: rgba($text-regular, .9)
 
-    cursor: pointer
+  &__icon
+    box-sizing: content-box
+    padding: $padding
+    padding-right: 0
 
-    &__drag_handle
-      cursor: -moz-grab
-      cursor: -webkit-grab
-      cursor: grab
-      padding: $padding
-      background: lighten($gray, 20%)
-      border-top-left-radius: $border-radius - 1
-      border-bottom-left-radius: $border-radius - 1
-      align-self: stretch
-      display: flex
-      align-items: center
-      justify-content: center
-      color: rgba($text-regular, .2)
+  &__label
+    padding: $padding
+    color: $text-regular
+    flex: 1
 
-    &:hover .ressource__drag_handle
-      color: rgba($text-regular, .9)
-
-    &__icon
-      box-sizing: content-box
-      padding: $padding
-      padding-right: 0
-
-    &__label
-      padding: $padding
-      color: $text-regular
-      flex: 1
-
-    &__action
-      padding: $padding
-      padding-left: 0
-      color: $text-light
+  &__action
+    padding: $padding
+    padding-left: 0
+    color: $text-light
 
 .drag-ghost
   position: absolute
