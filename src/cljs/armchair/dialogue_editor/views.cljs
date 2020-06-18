@@ -33,7 +33,7 @@
                           :value @text-state}])})))
 
 (defn get-option-start-position [elem]
-  (let [graph (aget (js/document.getElementsByClassName "graph__scroll") 0)]
+  (let [graph (aget (js/document.getElementsByClassName "graph__scroll-content") 0)]
     (when (and (some? elem) (some? graph))
       (let [rect (u/get-rect elem)
             graph-rect (u/get-rect graph)]
