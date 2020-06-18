@@ -1,8 +1,5 @@
 (ns armchair.modals.events
-  (:require [re-frame.core :refer [dispatch]]
-            [armchair.config :as config]
-            [armchair.events :refer [reg-event-data reg-event-meta]]
-            [armchair.math :refer [Rect]]))
+  (:require [armchair.events :refer [reg-event-data reg-event-meta]]))
 
 (defn assert-no-open-modal [db]
   (assert (not (contains? db :modal))
