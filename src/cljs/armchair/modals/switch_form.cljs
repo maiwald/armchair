@@ -6,7 +6,6 @@
             [re-frame.core :as re-frame :refer [reg-sub]]
             [armchair.modals.events :refer [assert-no-open-modal
                                             build-modal-assertion]]
-            [armchair.slds :as slds]
             [armchair.input :as input]
             [armchair.components :as c]
             [armchair.util :as u :refer [<sub >evt e->val]]
@@ -132,9 +131,9 @@
           (save [] (>evt [::save]))]
     (fn []
       (let [{:keys [display-name values default]} (<sub [::switch-data])]
-        [slds/modal {:title "Switch"
-                     :close-handler close-modal
-                     :confirm-handler save}
+        [c/modal {:title "Switch"
+                  :close-handler close-modal
+                  :confirm-handler save}
          [:div.switch-form
           [input/text {:label "Name"
                        :on-change update-name

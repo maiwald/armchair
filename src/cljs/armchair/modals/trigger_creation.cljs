@@ -1,7 +1,7 @@
 (ns armchair.modals.trigger-creation
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [clojure.spec.alpha :as s]
-            [armchair.slds :as slds]
+            [armchair.components :as c]
             [armchair.input :as input]
             [armchair.modals.events :refer [assert-no-open-modal
                                             build-modal-assertion]]
@@ -98,9 +98,9 @@
 
 (defn modal [{:keys [switch-id switch-value]}]
   (let [{:keys [switch-options value-options]} (<sub [::switch-options])]
-    [slds/modal {:title "Add Trigger Node"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [::save])}
+    [c/modal {:title "Add Trigger Node"
+              :close-handler #(>evt [:close-modal])
+              :confirm-handler #(>evt [::save])}
      [input/select {:label "Switch"
                     :options switch-options
                     :value switch-id

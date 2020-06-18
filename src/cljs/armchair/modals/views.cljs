@@ -1,5 +1,5 @@
 (ns armchair.modals.views
-  (:require [armchair.slds :as slds]
+  (:require [armchair.components :as c]
             [armchair.input :as input]
             [armchair.util :as u :refer [<sub >evt e->val]]
             [armchair.modals.character-form]
@@ -13,17 +13,17 @@
             [armchair.modals.texture-selection]))
 
 (defn dialogue-state-modal [{:keys [description]}]
-  [slds/modal {:title "Dialogue State"
-               :confirm-handler #(>evt [:create-dialogue-state])
-               :close-handler #(>evt [:close-modal])}
+  [c/modal {:title "Dialogue State"
+            :confirm-handler #(>evt [:create-dialogue-state])
+            :close-handler #(>evt [:close-modal])}
    [input/text {:label "State description"
                 :on-change #(>evt [:dialogue-state-update (e->val %)])
                 :value description}]])
 
 (defn npc-line-form-modal [line-id]
   (let [line (<sub [:dialogue/modal-line line-id])]
-    [slds/modal {:title "Character Line"
-                 :close-handler #(>evt [:close-modal])}
+    [c/modal {:title "Character Line"
+              :close-handler #(>evt [:close-modal])}
      [:<>
       [input/select {:label "Character"
                      :disabled (:initial-line? line)

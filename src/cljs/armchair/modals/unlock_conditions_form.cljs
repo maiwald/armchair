@@ -4,7 +4,6 @@
             [armchair.config :as config]
             [armchair.modals.events :refer [assert-no-open-modal
                                             build-modal-assertion]]
-            [armchair.slds :as slds]
             [armchair.input :as input]
             [armchair.components :as c]
             [armchair.util :as u :refer [<sub >evt e->val]]
@@ -150,9 +149,9 @@
           (update-conjunction [e] (>evt [::update-conjunction (keyword (e->val e))]))]
     (fn []
       (let [{:keys [terms conjunction]} (<sub [::modal-data])]
-        [slds/modal {:title "Unlock Conditions"
-                     :close-handler close-modal
-                     :confirm-handler save-conditions}
+        [c/modal {:title "Unlock Conditions"
+                  :close-handler close-modal
+                  :confirm-handler save-conditions}
          [input/select {:label "Conjunction"
                         :on-change update-conjunction
                         :options conjunction-options

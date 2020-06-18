@@ -1,6 +1,6 @@
 (ns armchair.modals.connection-trigger-creation
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
-            [armchair.slds :as slds]
+            [armchair.components :as c]
             [armchair.input :as input]
             [armchair.util :as u :refer [<sub >evt e->val]]
             [armchair.events :refer [reg-event-data reg-event-meta]]
@@ -73,9 +73,9 @@
           (save [] (>evt [::save]))]
     (fn [{:keys [target-id target-position symmetric?]}]
       (let [location-options (<sub [::location-options])]
-        [slds/modal {:title "New Exit"
-                     :close-handler close-modal
-                     :confirm-handler save}
+        [c/modal {:title "New Exit"
+                  :close-handler close-modal
+                  :confirm-handler save}
          [input/select {:label "Location"
                         :on-change update-target
                         :options location-options

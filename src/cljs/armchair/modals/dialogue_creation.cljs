@@ -2,7 +2,7 @@
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [clojure.string :refer [blank?]]
             [armchair.config :as config]
-            [armchair.slds :as slds]
+            [armchair.components :as c]
             [armchair.input :as input]
             [armchair.modals.events :refer [assert-no-open-modal
                                             build-modal-assertion]]
@@ -80,9 +80,9 @@
 
 (defn modal []
   (let [{:keys [character-id synopsis character-changeable?]} (<sub [::modal-data])]
-    [slds/modal {:title "Create Dialogue"
-                 :confirm-handler #(>evt [::save])
-                 :close-handler #(>evt [:close-modal])}
+    [c/modal {:title "Create Dialogue"
+              :confirm-handler #(>evt [::save])
+              :close-handler #(>evt [:close-modal])}
      [:<>
       [input/select {:label "Character *"
                      :on-change #(>evt [::update :character-id (uuid (e->val %))])

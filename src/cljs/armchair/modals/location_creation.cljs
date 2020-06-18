@@ -1,7 +1,7 @@
 (ns armchair.modals.location-creation
   (:require [re-frame.core :as re-frame :refer [dispatch]]
             [armchair.config :as config]
-            [armchair.slds :as slds]
+            [armchair.components :as c]
             [armchair.input :as input]
             [armchair.util :as u :refer [>evt e->val]]
             [armchair.math :refer [Rect]]
@@ -53,9 +53,9 @@
 
 (defn modal [display-name]
   (let [update-name #(>evt [::update-name (e->val %)])]
-    [slds/modal {:title "Create Location"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [::create-location])}
+    [c/modal {:title "Create Location"
+              :close-handler #(>evt [:close-modal])
+              :confirm-handler #(>evt [::create-location])}
      [input/text {:label "Name"
                   :on-change update-name
                   :value display-name}]]))
