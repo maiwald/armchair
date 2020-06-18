@@ -3,7 +3,6 @@
 - deleting initial line in dialogue editor does not delete reference
 
 # TODO
-- restructure navigation
 - editing connections
 - improved dialogue editor and state management
 - select and paint multiple texture sprites
