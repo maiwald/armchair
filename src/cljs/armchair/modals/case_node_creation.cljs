@@ -1,7 +1,7 @@
 (ns armchair.modals.case-node-creation
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [armchair.config :as config]
-            [armchair.slds :as slds]
+            [armchair.components :as c]
             [armchair.input :as input]
             [armchair.modals.events :refer [assert-no-open-modal
                                             build-modal-assertion]]
@@ -57,9 +57,9 @@
 
 (defn modal [{:keys [switch-id]}]
   (let [switch-options (<sub [::switch-options])]
-    [slds/modal {:title "Add Switch Node"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [::save])}
+    [c/modal {:title "Add Switch Node"
+              :close-handler #(>evt [:close-modal])
+              :confirm-handler #(>evt [::save])}
      [input/select {:label "Switch"
                     :options switch-options
                     :value switch-id

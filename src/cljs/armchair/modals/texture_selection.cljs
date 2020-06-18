@@ -2,7 +2,7 @@
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
             [armchair.config :as config]
             [armchair.textures :refer [image-path tile-sprite-sheets]]
-            [armchair.slds :as slds]
+            [armchair.components :as c]
             [armchair.input :as input]
             [armchair.util :as u :refer [<sub >evt e->val]]
             [armchair.math :as m]
@@ -67,9 +67,9 @@
     (fn []
       (let [{:keys [file tile]} (<sub [::modal-data])
             image-size (get tile-sprite-sheets file)]
-        [slds/modal {:title "Select Texture"
-                     :close-handler close-modal
-                     :confirm-handler save}
+        [c/modal {:title "Select Texture"
+                  :close-handler close-modal
+                  :confirm-handler save}
          [input/select {:label "File"
                         :on-change update-file
                         :options (->> (keys tile-sprite-sheets)

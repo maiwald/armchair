@@ -1,7 +1,6 @@
 (ns armchair.modals.character-form
   (:require [clojure.spec.alpha :as s]
             [armchair.config :as config]
-            [armchair.slds :as slds]
             [armchair.input :as input]
             [armchair.util :as u :refer [>evt e->val]]
             [armchair.math :as m]
@@ -55,9 +54,9 @@
 
 (defn modal [{:keys [display-name color texture]}]
   (let [update-handler (fn [field] #(>evt [::update field (e->val %)]))]
-    [slds/modal {:title "Character"
-                 :close-handler #(>evt [:close-modal])
-                 :confirm-handler #(>evt [::save])}
+    [c/modal {:title "Character"
+              :close-handler #(>evt [:close-modal])
+              :confirm-handler #(>evt [::save])}
      [input/text {:label "Name"
                   :on-change (update-handler :display-name)
                   :value display-name}]

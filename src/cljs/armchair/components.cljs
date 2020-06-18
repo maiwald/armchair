@@ -163,3 +163,21 @@
                           :height (u/px height)}}]
                 (r/children (r/current-component)))])})))
 
+;; Modal
+
+(defn modal [{:keys [title close-handler confirm-handler]}]
+  [:div.modal
+   [:div.modal__backdrop]
+   [:section.modal__container
+    [:header {:class "modal__header"}
+     [:button {:class "modal__close"
+               :on-click close-handler
+               :type "button"
+               :title "Close"}
+      [icon "times" "Close"]]
+     [:h2 title]]
+    (into [:form {:on-submit (u/e-> confirm-handler)}]
+          (r/children (r/current-component)))
+    [:footer
+     [:button {:class "button"
+               :type "submit"} "Ok"]]]])

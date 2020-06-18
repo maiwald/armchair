@@ -22,7 +22,6 @@
 - distinguish between data stored in local storage and in files (e.g. location map scroll position)
 - validation error notifications and form states
 - state invariants
-- remove slds dependency
 - save file for game state
 - desktop version for easier file access
 - release to itch.io as free game ;)
