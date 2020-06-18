@@ -6,11 +6,35 @@
 @import "components/sidebar"
 @import "components/inspector"
 
+@import "reset"
 @import "page"
 @import "ressources"
 @import "location_map"
 @import "location_editor"
 @import "dialogue_editor"
+
+// default
+
+html
+  background: #fafaf9
+  font-size: 100%
+  color: $text-regular
+
+  *
+    box-sizing: border-box
+    font-family: verdana
+
+body
+  font-size: .8125rem
+
+a
+  color: $text-link
+  cursor: pointer
+
+  &:hover
+    text-decoration: underline
+
+//
 
 .graph
   position: relative
