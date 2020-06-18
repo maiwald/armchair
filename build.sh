@@ -10,7 +10,6 @@ mkdir -p $RELEASE_FOLDER/compiled/css
 mkdir -p $RELEASE_FOLDER/compiled/js
 
 ln -s ../resources/public/css/ $RELEASE_FOLDER/css
-ln -s ../resources/public/assets/ $RELEASE_FOLDER/assets
 ln -s ../resources/public/images/ $RELEASE_FOLDER/images
 ln -s ../resources/public/fonts/ $RELEASE_FOLDER/fonts
 ln -s ../resources/public/webfonts/ $RELEASE_FOLDER/webfonts
