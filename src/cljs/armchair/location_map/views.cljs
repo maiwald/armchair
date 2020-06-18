@@ -8,11 +8,13 @@
 
 (defn drag-container []
   (let [dragging? (<sub [:dragging?])
+        move-cursor (when dragging? #(>evt [:move-cursor (u/e->point %)]))
         stop-dragging (when dragging? #(>evt [:end-dragging]))]
     (into [:div
            {:class ["drag-container" (when dragging? "drag-container_is-dragging")]
             :on-mouse-leave stop-dragging
-            :on-mouse-move (when dragging? #(>evt [:move-cursor (u/e->point %)]))}]
+            :on-mouse-up stop-dragging
+            :on-mouse-move move-cursor}]
           (r/children (r/current-component)))))
 
 (defn location []
@@ -31,11 +33,12 @@
             position (<sub [:location-map/location-position location-id])
             start-dragging (fn [e]
                              (when (e->left? e)
+                               (u/stop-e! e)
                                (u/prevent-e! e)
                                (>evt [:start-dragging #{location-id} (u/e->point e) zoom-scale])))
             stop-dragging (fn [e]
                             (when dragging?
-                              (u/prevent-e! e)
+                              (u/stop-e! e)
                               (>evt [:end-dragging])))
             inspect-location #(>evt [:inspect :location location-id])]
         [:div {:class ["location"
