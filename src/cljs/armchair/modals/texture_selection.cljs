@@ -9,7 +9,7 @@
             [armchair.events :refer [reg-event-data reg-event-meta]]
             [armchair.modals.events :refer [assert-no-open-modal
                                             build-modal-assertion]]
-            [armchair.location-editor.views :refer [tile-select]]))
+            [armchair.location-editor.views :refer [tile-select-old]]))
 
 ;; Events
 
@@ -18,7 +18,7 @@
 
 (reg-event-meta
   ::open
-  (fn [db [_ dialogue-id]]
+  (fn [db]
     (assert-no-open-modal db)
     (assoc-in db [:modal :texture-selection]
               (zipmap (list :file :tile)
@@ -60,7 +60,7 @@
 ;; Views
 
 (defn modal []
-  (letfn [(close-modal [e] (>evt [:close-modal]))
+  (letfn [(close-modal [] (>evt [:close-modal]))
           (update-file [e] (>evt [::update-file (e->val e)]))
           (update-tile [tile] (>evt [::update-tile tile]))
           (save [] (>evt [::save]))]
@@ -85,6 +85,6 @@
                   :style {:max-width "none"
                           :display "block"}}]
            [:div.level-layer
-            [tile-select {:dimension (m/rect-scale image-size (/ 1 config/tile-size))
-                          :on-select update-tile
-                          :selected tile}]]]]]))))
+            [tile-select-old {:bounds (m/rect-scale image-size (/ 1 config/tile-size))
+                              :on-select update-tile
+                              :selected tile}]]]]]))))

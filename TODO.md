@@ -1,17 +1,23 @@
 # BUGS
 - flickering inputs in character modal
-- drag and drop preview images are broken
 - deleting initial line in dialogue editor does not delete reference
 
 # TODO
-- restructure navigation
+- editing connections
+- improved dialogue editor and state management
 - select and paint multiple texture sprites
+- Dialogue Structure (Quests?)
 - zoom in dialogue editor
 - sounds & music
 
 # nice things
-- location preview in map
-- separate moving viewport from moving node positions
+- placing exits by dragging from location to location in world
+- reliable drag and drop ghosts
+- search
+- locate ressources
+- pinch to zoom
+- remove urls + custom history back/forward?
+- distinguish between data stored in local storage and in files (e.g. location map scroll position)
 - validation error notifications and form states
 - state invariants
 - remove slds dependency
@@ -25,6 +31,7 @@
 - prevent connecting multiple trigger and player nodes
 
 ## location editor
+- allow connections to be bi-directional again
 - show incoming connections in location editor
 - brush sizes & fill tool for location editor
 - custom layers and layer order

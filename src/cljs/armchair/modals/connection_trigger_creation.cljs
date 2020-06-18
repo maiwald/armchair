@@ -65,8 +65,8 @@
 
 ;; Views
 
-(defn modal [{:keys [target-id target-position symmetric?]}]
-  (letfn [(close-modal [e] (>evt [:close-modal]))
+(defn modal []
+  (letfn [(close-modal [] (>evt [:close-modal]))
           (update-target [e] (>evt [::update-target-id (uuid (e->val e))]))
           (update-symmetric [e] (>evt [::update-symmetric (e->val e)]))
           (update-position [position] (>evt [::update-target-position position]))
@@ -80,7 +80,7 @@
                         :on-change update-target
                         :options location-options
                         :value target-id}]
-         (if (some? target-id)
+         (when (some? target-id)
            [:<>
             [input/label "Position"]
             [position-select target-id update-position target-position]])

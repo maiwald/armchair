@@ -2,11 +2,10 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.set :refer [subset?]]
             [com.rpl.specter
-             :refer [must ALL NONE MAP-VALS]
+             :refer [must NONE MAP-VALS]
              :refer-macros [setval]]
             [cognitect.transit :as t]
             [armchair.migrations :refer [db-version migrate]]
-            [armchair.textures :refer [tile-sprite-sheets]]
             [armchair.config :as config]
             [armchair.math :refer [Point Rect]]
             [armchair.util :as u])
@@ -44,18 +43,24 @@
 
 ;; UI State
 
-(s/def ::cursor-start :type/point)
-(s/def ::connecting-lines (s/keys :req-un [::cursor-start]
-                                  :opt-un [::line-id ::dialogue-id ::index]))
-(s/def ::connecting-locations (s/keys :req-un [::cursor-start ::location-id]))
 (s/def :ui/connecting (s/or :lines ::connecting-lines
                             :locations ::connecting-locations))
+(s/def ::cursor-start :type/point)
 
-(s/def :ui/dragging (s/keys :req-un [::cursor-start ::ids]))
+(s/def ::connecting-lines (s/keys :req-un [::cursor-start]
+                                  :opt-un [::line-id ::dialogue-id ::index]))
+
+(s/def ::connecting-locations (s/keys :req-un [::cursor-start ::location-id]))
 
 (s/def :ui/cursor :type/point)
-
+(s/def :ui/dragging (s/keys :req-un [::cursor-start ::ids]))
 (s/def :ui/positions (s/map-of uuid? :type/point))
+(s/def :ui/location-map-scroll-center :type/point)
+(s/def :ui/location-map-zoom-scale float?)
+
+(s/def :ui/inspector (s/tuple :inspector/type :inspector/data))
+(s/def :inspector/type #{:location :tile})
+(s/def :inspector/data map?)
 
 (s/def ::current-page (s/nilable string?))
 
@@ -65,19 +70,14 @@
 (s/def :location-editor/location-editor
   (s/keys :req-un [:location-editor/visible-layers
                    :location-editor/active-layer
-                   :location-editor/active-pane
                    :location-editor/active-tool
                    :location-editor/active-walk-state
-                   :location-editor/active-texture]
-          :opt-un [:location-editor/highlight
-                   :location-editor/dnd-payload]))
+                   :location-editor/active-texture]))
 
-(s/def :location-editor/active-pane #{:info :level})
 (s/def :location-editor/active-tool #{:brush :eraser})
 (s/def :location-editor/layers (set (map first config/location-editor-layers)))
 (s/def :location-editor/visible-layers (s/coll-of :location-editor/layers :kind set?))
 (s/def :location-editor/active-layer :location-editor/layers)
-(s/def :location-editor/highlight :type/point)
 (s/def :location-editor/active-texture ::texture)
 (s/def :location-editor/active-walk-state boolean?)
 
@@ -99,7 +99,7 @@
 (s/def :location/location
   (s/keys :req [:entity/id
                 :entity/type]
-          :req-un [:location/dimension
+          :req-un [:location/bounds
                    ::display-name
                    :location/background1
                    :location/background2
@@ -112,7 +112,7 @@
 (s/def :location/position :type/point)
 (s/def :location/texture-layer (s/map-of :location/position ::texture))
 
-(s/def :location/dimension :type/rect)
+(s/def :location/bounds :type/rect)
 (s/def :location/background1 :location/texture-layer)
 (s/def :location/background2 :location/texture-layer)
 (s/def :location/foreground1 :location/texture-layer)
@@ -349,7 +349,10 @@
                                        ::switch-values]
                               :opt-un [:ui/connecting
                                        :ui/dragging
+                                       :ui/dnd
                                        :ui/cursor
+                                       :ui/inspector
+                                       :ui/location-map-scroll-center
                                        :modal/modal])))
 
 (s/def :state/player
@@ -400,18 +403,26 @@
 
 ;; Serialization
 
-(defn content-data [db]
-  (let [content-keys [:ui/positions
-                      :player
-                      :locations
-                      :characters
-                      :dialogues
-                      :player-options
-                      :lines
-                      :triggers
-                      :switches
-                      :switch-values]]
-    (select-keys db content-keys)))
+(def content-keys
+  [:ui/positions
+   :player
+   :locations
+   :characters
+   :dialogues
+   :player-options
+   :lines
+   :triggers
+   :switches
+   :switch-values])
+
+(def undo-keys
+  (conj content-keys
+        :ui/location-preview-cache-background
+        :ui/location-preview-cache-foreground))
+
+
+(defn content-data [db] (select-keys db content-keys))
+(defn undo-data [db] (select-keys db undo-keys))
 
 (defn serialize-db [db]
   (let [w (t/writer :json
@@ -435,8 +446,7 @@
 ;; Default DB
 
 (def default-db
-  (merge {:location-editor {:active-pane :info
-                            :active-tool :brush
+  (merge {:location-editor {:active-tool :brush
                             :active-layer :background1
                             :visible-layers #{:background1
                                               :background2
@@ -447,6 +457,9 @@
                             :active-walk-state true
                             :active-texture ["PathAndObjects_0.png" (Point. 4 1)]}
           :ui/positions {}
+          :ui/location-preview-cache-foreground {}
+          :ui/location-preview-cache-background {}
+          :ui/location-map-zoom-scale 0.6
           :characters {}
           :locations {}
           :dialogues {}

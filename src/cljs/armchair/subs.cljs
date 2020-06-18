@@ -1,17 +1,18 @@
 (ns armchair.subs
-  (:require [re-frame.core :as re-frame :refer [reg-sub subscribe]]
+  (:require [re-frame.core :refer [reg-sub subscribe]]
             [clojure.string :refer [join]]
-            [com.rpl.specter
-             :refer [collect-one ALL FIRST LAST MAP-VALS]
-             :refer-macros [select]]
-            [armchair.routes :refer [routes]]
-            [bidi.bidi :refer [match-route]]
-            [armchair.math :refer [translate-point point-delta]]
+            [armchair.routes :refer [page-data]]
+            [armchair.math :as m :refer [translate-point point-delta global-point]]
             [armchair.util :as u]))
+
+(defn by-id [ressources [_ ressource-id]]
+  (get ressources ressource-id))
 
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
 (reg-sub :db-locations #(:locations %))
+(reg-sub :db/location :<- [:db-locations] by-id)
+
 (reg-sub :db-dialogues #(:dialogues %))
 (reg-sub :db-player #(:player %))
 (reg-sub :db-player-options #(:player-options %))
@@ -25,7 +26,16 @@
 
 (reg-sub :current-page #(:current-page %))
 (reg-sub :modal #(:modal %))
-(reg-sub :popover #(:popover %))
+
+(reg-sub :ui/positions #(:ui/positions %))
+(reg-sub :ui/inspector #(:ui/inspector %))
+
+(reg-sub :ui/location-preview-cache-background #(:ui/location-preview-cache-background %))
+(reg-sub :ui/location-preview-cache-foreground #(:ui/location-preview-cache-foreground %))
+(reg-sub :ui/location-map-scroll-center #(:ui/location-map-scroll-center %))
+(reg-sub :ui/location-map-zoom-scale #(:ui/location-map-zoom-scale %))
+
+(reg-sub :ui/dnd #(:ui/dnd %))
 
 (reg-sub
   :character-list
@@ -52,12 +62,36 @@
            (fn [[id {:keys [display-name value-ids default]}]]
              (letfn [(value-name [value-id]
                        (str (get-in switch-values [value-id :display-name])
-                            (if (= default value-id) "*")))]
+                            (when (= default value-id) "*")))]
                {:id id
                 :display-name display-name
                 :values (->> value-ids (map value-name) (join ", "))})))
          (sort-by :display-name))))
 
+(reg-sub
+  :location-list
+  :<- [:db-locations]
+  (fn [locations _]
+    (->> locations
+         (map (fn [[id {:keys [display-name]}]]
+                {:id id
+                 :display-name display-name}))
+         (sort-by :display-name))))
+
+(reg-sub
+  :location/occupied-tiles
+  (fn [[_ location-id]]
+    [(subscribe [:db/location location-id])
+     (subscribe [:db-player])])
+  (fn [[{:keys [connection-triggers placements bounds]} player] [_ location-id]]
+    (let [player (when (= location-id (:location-id player))
+                   {(:location-position player) [:player]})]
+      (u/map-keys
+        (fn [tile] (global-point tile bounds))
+        (merge
+          (u/map-values (fn [_ k] [:connection-trigger location-id k]) connection-triggers)
+          (u/map-values (fn [_ k] [:placement location-id k]) placements)
+          player)))))
 
 (reg-sub
   :dialogue/player-line-option
@@ -69,20 +103,15 @@
 
 
 (reg-sub
-  :ui/positions
-  (fn [db]
-    (:ui/positions db)))
-
-(reg-sub
   :ui/position
   :<- [:ui/positions]
-  :<- [:db-dragging]
   :<- [:db-cursor]
-  (fn [[positions {:keys [ids cursor-start]} cursor] [_ id]]
+  :<- [:db-dragging]
+  (fn [[positions cursor {:keys [ids cursor-start scale]}] [_ id]]
     (let [position (get positions id)]
       (if (contains? ids id)
         (let [[dx dy] (point-delta cursor-start cursor)]
-          (translate-point position dx dy))
+          (translate-point position (/ dx scale) (/ dy scale)))
         position))))
 
 (reg-sub
@@ -138,36 +167,36 @@
                     [n s])))))
 
 (reg-sub
-  :location-options
-  :<- [:db-locations]
-  (fn [locations _]
-    (->> locations
-         (u/map-values :display-name)
-         (sort-by second))))
+  :creation-buttons
+  :<- [:current-page]
+  (fn [current-page]
+    (let [{:keys [page-name page-params]} (page-data current-page)]
+      (case page-name
+        :locations [{:title "New Location"
+                     :icon "plus"
+                     :event [:armchair.modals.location-creation/open]}
+                    {:title "Zoom Out"
+                     :icon "minus"
+                     :event [:location-map/zoom-out]}
+                    {:title "Zoom In"
+                     :icon "plus"
+                     :event [:location-map/zoom-in]}]
+        :dialogue-edit (let [id (uuid (:id page-params))]
+                         [{:title "New Character Line"
+                           :icon "plus"
+                           :event [:create-npc-line id]}
+                          {:title "New Player Line"
+                           :icon "plus"
+                           :event [:create-player-line id]}
+                          {:title "New Trigger Node"
+                           :icon "plus"
+                           :event [:create-trigger-node id]}
+                          {:title "New Switch Node"
+                           :icon "plus"
+                           :event [:armchair.modals.case-node-creation/open id]}])
+        nil))))
 
 (reg-sub
-  :location-map
-  :<- [:db-locations]
-  (fn [locations _]
-    (let [connections (->> locations
-                           (select [ALL (collect-one FIRST) LAST :connection-triggers MAP-VALS FIRST])
-                           (map set)
-                           distinct
-                           (map sort))]
-      {:location-ids (keys locations)
-       :connections connections})))
-
-(reg-sub
-  :location-map/location
-  :<- [:db-locations]
-  :<- [:db-characters]
-  (fn [[locations characters] [_ location-id]]
-    (let [location (get locations location-id)]
-      {:display-name (:display-name location)
-       :characters (->> location :placements
-                        (map (fn [[_ {:keys [character-id dialogue-id]}]]
-                               (let [character (get characters character-id)]
-                                 {:dialogue-id dialogue-id
-                                  :character-id character-id
-                                  :character-name (:display-name character)
-                                  :character-color (:color character)}))))})))
+  :ui/inspector?
+  :<- [:ui/inspector]
+  some?)

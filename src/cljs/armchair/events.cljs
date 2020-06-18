@@ -1,5 +1,5 @@
 (ns armchair.events
-  (:require [re-frame.core :refer [reg-event-db reg-event-fx after]]
+  (:require [re-frame.core :refer [dispatch reg-event-db reg-event-fx after]]
             [com.rpl.specter
              :refer [must ALL NONE MAP-VALS]
              :refer-macros [select setval]]
@@ -28,12 +28,20 @@
                           (:cljs.spec.alpha/problems explain)))))
              200))))
 
-(defn reg-event-data [id handler]
-  (reg-event-db id
-                [(when debug? validate)
-                 record-undo
-                 ls/store]
-                handler))
+(defn reg-event-data
+  ([id handler]
+   (reg-event-db id
+                 [(when debug? validate)
+                  record-undo
+                  ls/store]
+                 handler))
+  ([id interceptors handler]
+   (reg-event-db id
+                 [(when debug? validate)
+                  record-undo
+                  interceptors
+                  ls/store]
+                 handler)))
 
 (defn reg-event-meta [id handler]
   (reg-event-db id [(when debug? validate)] handler))
@@ -47,14 +55,25 @@
 (reg-event-data
   :reset-db
   (fn [db]
-    (merge db (content-data default-db))))
+    (let [new-db (merge db (content-data default-db))]
+      (dispatch [:armchair.location-previews/regenerate-all])
+      new-db)))
 
 (reg-event-meta
   :load-storage-state
   (fn [db]
-    (if-let [serialized (ls/get-data)]
-      (merge db (migrate (deserialize-db serialized)))
-      db)))
+    (let [new-db (if-let [serialized (ls/get-data)]
+                   (merge db (migrate (deserialize-db serialized)))
+                   db)]
+      (dispatch [:armchair.location-previews/regenerate-all])
+      new-db)))
+
+(reg-event-data
+  :upload-state
+  (fn [db [_ json]]
+    (let [new-db (merge db (migrate (deserialize-db json)))]
+      (dispatch [:armchair.location-previews/regenerate-all])
+      new-db)))
 
 (reg-event-fx
   :download-state
@@ -70,11 +89,6 @@
       (js/saveAs blob filename))
     {}))
 
-(reg-event-data
-  :upload-state
-  (fn [db [_ json]]
-    (merge db (migrate (deserialize-db json)))))
-
 ;; Character CRUD
 
 (reg-event-data
@@ -82,11 +96,13 @@
   (fn [db [_ character-id]]
     (let [line-count (->> (:lines db)
                           (u/filter-map #(= (:character-id %) character-id))
-                          count)]
+                          count)
+          character-placement? (fn [p] (= (-> p second :character-id)
+                                          character-id))]
       (if (zero? line-count)
         (-> (setval [:locations MAP-VALS
                      :placements ALL
-                     (fn [[_ {c-id :character-id}]] (= c-id character-id))]
+                     character-placement?]
                     NONE db)
             (update :characters dissoc character-id))
         db))))
@@ -103,6 +119,10 @@
                                       (u/filter-map #(contains? (->> % :connection-triggers vals (map first) set) id))
                                       keys)]
       (-> db
+          (cond->
+            (= (:ui/inspector db)
+               [:location {:location-id id}])
+            (dissoc :ui/inspector))
           (update :locations dissoc id)
           (update :ui/positions dissoc id)
           (u/update-in-map :locations connected-location-ids
@@ -155,7 +175,7 @@
   (fn [db [_ path]]
     (assoc db :current-page path)))
 
-;; Mouse, Drag & Drop
+;; Mouse, Dragging UI
 
 (reg-event-meta
   :move-cursor
@@ -168,33 +188,98 @@
 
 (reg-event-meta
   :start-dragging
-  (fn [db [_ ids cursor]]
+  (fn [db [_ ids cursor scale]]
     (cond-> db
-      (not (contains? db :dragging)) (assoc :dragging {:ids ids
-                                                       :cursor-start cursor}
-                                            :cursor cursor))))
+      (not (contains? db :dragging))
+      (assoc :dragging {:ids ids
+                        :cursor-start cursor
+                        :scale (or scale 1)}
+             :cursor cursor))))
 
 (reg-event-data
   :end-dragging
   (fn [{:keys [dragging cursor] :as db}]
     (assert (some? dragging)
             "Attempting to end drag while not in progress!")
-    (let [{:keys [cursor-start ids]} dragging
-          [dx dy] (m/point-delta cursor-start cursor)]
+    (let [{:keys [cursor-start ids scale]} dragging
+          [dx dy] (m/point-delta cursor-start cursor)
+          scaled-dx (m/round (/ dx scale))
+          scaled-dy (m/round (/ dy scale))]
       (-> db
-          (u/update-in-map :ui/positions ids m/translate-point dx dy)
+          (u/update-in-map :ui/positions ids m/translate-point scaled-dx scaled-dy)
           (dissoc :dragging :cursor)))))
 
 (reg-event-meta
   :cancel-dragging
   (fn [db] (dissoc db :dragging :cursor)))
 
-(reg-event-meta
-  :open-popover
-  (fn [db [_ reference content]]
-    (assoc db :popover {:reference reference
-                        :content content})))
+;; Drag & Drop
 
 (reg-event-meta
-  :close-popover
-  (fn [db] (dissoc db :popover)))
+  :start-entity-drag
+  (fn [db [_ payload]]
+    (assoc db :ui/dnd payload)))
+
+
+(reg-event-data
+  :drop-entity
+  (fn [{[dnd-type & dnd-payload] :ui/dnd :as db} [_ target-location-id target-position]]
+    (assert (some? dnd-type)
+            "Attempting to drop while no drag in progress!")
+    (case dnd-type
+      :player (-> db
+                  (dissoc :ui/dnd)
+                  (assoc :player {:location-id target-location-id
+                                  :location-position target-position}))
+      :character (-> db
+                     (dissoc :ui/dnd)
+                     (assoc :ui/inspector [:tile {:location-id target-location-id
+                                                  :location-position target-position}])
+                     (assoc-in [:locations target-location-id :placements target-position]
+                               {:character-id (first dnd-payload)}))
+      :location (-> db
+                  (dissoc :ui/dnd)
+                  (assoc-in
+                    [:modal :connection-trigger-creation]
+                    {:location-id target-location-id
+                     :location-position target-position
+                     :target-id (first dnd-payload)}))
+      :placement (let [[location-id location-position] dnd-payload
+                       placement (get-in db [:locations location-id :placements location-position])]
+                   (-> db
+                       (dissoc :ui/dnd)
+                       (assoc :ui/inspector [:tile {:location-id target-location-id
+                                                    :location-position target-position}])
+                       (update-in [:locations location-id :placements] dissoc location-position)
+                       (assoc-in [:locations target-location-id :placements target-position] placement)))
+      :connection-trigger (let [[location-id location-position] dnd-payload]
+                            (-> db
+                                (dissoc :ui/dnd)
+                                (assoc :ui/inspector [:tile {:location-id target-location-id
+                                                             :location-position target-position}])
+                                (update-in [:locations location-id :connection-triggers] dissoc location-position)
+                                (assoc-in [:locations target-location-id :connection-triggers target-position]
+                                          (get-in db [:locations location-id :connection-triggers location-position])))))))
+
+(reg-event-meta
+  :stop-entity-drag
+  (fn [db]
+    (dissoc db :ui/dnd)))
+
+;; Inspector
+
+(reg-event-meta
+  :inspect
+  (fn [db [_ inspector-type & inspector-data]]
+    (assoc db :ui/inspector
+           [inspector-type
+            (case inspector-type
+              :location
+              {:location-id (first inspector-data)}
+              :tile
+              {:location-id (first inspector-data)
+               :location-position (second inspector-data)})])))
+
+(reg-event-meta
+  :close-inspector
+  (fn [db] (dissoc db :ui/inspector)))

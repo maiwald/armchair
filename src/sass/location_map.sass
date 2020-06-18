@@ -1,0 +1,98 @@
+@import "colors"
+
+.drag-container
+  overflow: auto
+  position: relative
+  height: 100%
+  width: 100%
+
+  &_is-dragging, &_is-dragging *
+    cursor: -moz-grabbing !important
+    cursor: -webkit-grabbing !important
+    cursor: grabbing !important
+
+.location
+  $border: 5px
+  margin-left: -$border
+  margin-top: -$border
+  position: absolute
+  z-index: 2
+  flex-direction: column
+  box-sizing: border-box
+  user-select: none
+  background: white
+
+  &:hover
+    z-index: 3
+
+  &_is-dragging
+    z-index: 4
+
+    & > *
+      box-shadow: 2px 2px 10px 0px rgba(0, 0, 0, .2)
+
+  &:hover &__header
+    background-color: #f3f3f3
+
+  &__header
+    color: $gray
+    text-align: center
+    vertical-align: center
+    padding: 5px
+    cursor: grab
+    position: absolute
+    left: 50%
+    bottom: 100%
+    min-width: 100%
+    transform: translateX(-50%)
+
+    &__title
+      font-family: "Helvetica"
+      font-size: .8rem
+      padding: 0 2px
+
+  &__loading
+    display: flex
+    align-items: center
+    justify-content: center
+    border: 3px solid $gray
+    background: white
+
+  &__tilemap-wrapper
+    $padding: 2px
+    border: ($border - $padding) solid $gray
+    padding: $padding
+    user-select: none
+    box-sizing: content-box
+
+  &__tilemap
+    position: relative
+
+    & > *
+      position: absolute !important
+
+    &__character
+      position: absolute
+
+      &_is-inspecting
+        box-sizing: content-box
+        margin: -2px 0 0 -2px
+        border: 2px dashed white
+
+  &_is-inspecting > &__tilemap-wrapper
+    border-color: rgba($primary, .8)
+
+.location-connections
+  pointer-events: none
+  position: absolute
+  top: 0
+  left: 0
+  height: 100%
+  width: 100%
+  z-index: 4
+
+.location-connection
+  stroke: rgba($primary, 0.5)
+  fill: transparent
+  stroke-width: 2
+  stroke-dasharray: 3, 3

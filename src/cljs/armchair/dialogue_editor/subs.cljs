@@ -1,6 +1,7 @@
 (ns armchair.dialogue-editor.subs
   (:require [re-frame.core :refer [reg-sub]]
             [armchair.config :as config]
+            [armchair.math :as m]
             [armchair.util :as u]))
 
 (reg-sub
@@ -27,7 +28,7 @@
   :<- [:db-switches]
   :<- [:db-switch-values]
   (fn [[lines player-options switches switch-values] [_ line-id]]
-    (let [{:keys [options dialogue-id]} (lines line-id)]
+    (let [{:keys [options]} (lines line-id)]
       (mapv
         (fn [option-id]
           (let [{:keys [text condition next-line-id]} (player-options option-id)]
@@ -47,10 +48,9 @@
 (reg-sub
   :dialogue-editor/trigger
   :<- [:db-triggers]
-  :<- [:db-dialogues]
   :<- [:db-switches]
   :<- [:db-switch-values]
-  (fn [[triggers dialogues switches switch-values] [_ trigger-id]]
+  (fn [[triggers switches switch-values] [_ trigger-id]]
     (let [{:keys [switch-id switch-value]} (triggers trigger-id)]
       {:switch-id switch-id
        :switch-name (get-in switches [switch-id :display-name])
@@ -93,14 +93,21 @@
   :<- [:db-lines]
   :<- [:db-player-options]
   :<- [:db-dialogues]
-  :<- [:db-characters]
   :<- [:db-switches]
   :<- [:db-switch-values]
-  (fn [[lines player-options dialogues characters switches switch-values] [_ dialogue-id]]
+  :<- [:ui/positions]
+  (fn [[lines player-options dialogues switches switch-values positions] [_ dialogue-id]]
     (if-let [dialogue (get dialogues dialogue-id)]
       (let [dialogue-lines (u/where-map :dialogue-id dialogue-id lines)
             lines-by-kind (group-by :kind (vals dialogue-lines))]
-        {:npc-line-ids (map :entity/id (lines-by-kind :npc))
+        {:bounds (m/rect-resize
+                   (m/containing-rect
+                     (map positions (conj (keys dialogue-lines) dialogue-id)))
+                   {:left 100
+                    :right (+ config/line-width 100)
+                    :top 100
+                    :bottom 400})
+         :npc-line-ids (map :entity/id (lines-by-kind :npc))
          :player-line-ids (map :entity/id (lines-by-kind :player))
          :trigger-node-ids (map :entity/id (lines-by-kind :trigger))
          :case-node-ids (map :entity/id (lines-by-kind :case))

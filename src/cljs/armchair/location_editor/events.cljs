@@ -1,12 +1,10 @@
 (ns armchair.location-editor.events
   (:require [armchair.events :refer [reg-event-data reg-event-meta]]
-            [clojure.set :refer [rename-keys]]
+            [armchair.location-previews :refer [build-location-preview]]
             [com.rpl.specter
              :refer [multi-path ALL NONE MAP-KEYS MAP-VALS]
-             :refer-macros [setval transform]]
-            [armchair.undo :refer [record-undo]]
-            [armchair.math :refer [rect-resize rect-contains?]]
-            [armchair.util :as u]))
+             :refer-macros [setval]]
+            [armchair.math :refer [rect-resize rect-contains?]]))
 
 (reg-event-data
   :location-editor/update-name
@@ -31,16 +29,6 @@
     (assoc-in db [:location-editor :active-walk-state] value)))
 
 (reg-event-meta
-  :location-editor/set-highlight
-  (fn [db [_ tile]]
-    (assoc-in db [:location-editor :highlight] tile)))
-
-(reg-event-meta
-  :location-editor/unset-highlight
-  (fn [db [_ tile]]
-    (update db :location-editor dissoc :highlight)))
-
-(reg-event-meta
   :location-editor/set-active-pane
   (fn [db [_ pane]]
     (assoc-in db [:location-editor :active-pane] pane)))
@@ -59,43 +47,21 @@
                    (disj visible-layers layer-id)
                    (conj visible-layers layer-id))))))
 
-(reg-event-meta
-  :location-editor/start-entity-drag
-  (fn [db [_ payload]]
-    (assoc-in db [:location-editor :dnd-payload] payload)))
-
-(reg-event-meta
-  :location-editor/stop-entity-drag
-  (fn [db]
-    (update db :location-editor dissoc :highlight :dnd-payload)))
-
 (reg-event-data
-  :location-editor/move-player
-  (fn [db [_ location-id position]]
-    (-> db
-       (update :location-editor dissoc :highlight :dnd-payload)
-       (assoc :player {:location-id location-id
-                       :location-position position}))))
-
-(reg-event-data
-  :location-editor/move-placement
-  (fn [db [_ location-id from to]]
-    (-> db
-        (update :location-editor dissoc :highlight :dnd-payload)
-        (update-in [:locations location-id :placements] rename-keys {from to}))))
-
-(reg-event-data
-  :location-editor/place-character
-  (fn [db [_ location-id character-id to]]
-    (-> db
-        (update :location-editor dissoc :highlight :dnd-payload)
-        (assoc-in [:locations location-id :placements to]
-                  {:character-id character-id}))))
-
-(reg-event-data
-  :location-editor/remove-character
+  :location-editor/remove-placement
   (fn [db [_ location-id tile]]
-    (update-in db [:locations location-id :placements] dissoc tile)))
+    (cond-> (update-in db [:locations location-id :placements] dissoc tile)
+      (= (:ui/inspector db)
+         [:tile {:location-id location-id
+                 :location-position tile}])
+      (dissoc :ui/inspector))))
+
+
+(reg-event-data
+  :location-editor/set-placement-character
+  (fn [db [_ location-id tile character-id]]
+    (assoc-in db [:locations location-id :placements tile]
+              {:character-id character-id})))
 
 (reg-event-data
   :location-editor/set-placement-dialogue
@@ -105,25 +71,17 @@
       (update-in db [:locations location-id :placements tile] dissoc :dialogue-id))))
 
 (reg-event-data
-  :location-editor/move-trigger
-  (fn [db [_ location from to]]
-    (let [new-db (update db :location-editor dissoc :highlight :dnd-payload)]
-      (if (some? from)
-        (update-in new-db
-                   [:locations location :connection-triggers]
-                   rename-keys {from to})
-        (assoc-in new-db
-                  [:modal :connection-trigger-creation]
-                  {:location-id location
-                   :location-position to})))))
-
-(reg-event-data
   :location-editor/remove-trigger
-  (fn [db [_ location from]]
-    (update-in db [:locations location :connection-triggers] dissoc from)))
+  (fn [db [_ location-id tile]]
+    (cond-> (update-in db [:locations location-id :connection-triggers] dissoc tile)
+      (= (:ui/inspector db)
+         [:tile {:location-id location-id
+                 :location-position tile}])
+      (dissoc :ui/inspector))))
 
 (reg-event-data
   :location-editor/paint
+  [build-location-preview]
   (fn [db [_ location-id layer-id tile]]
     (let [{:keys [active-tool active-texture]} (:location-editor db)]
       (case active-tool
@@ -138,20 +96,21 @@
 
 (reg-event-data
   :location-editor/resize-smaller
+  [build-location-preview]
   (fn [db [_ location-id direction]]
-    (let [dimension (get-in db [:locations location-id :dimension])
+    (let [bounds (get-in db [:locations location-id :bounds])
           side (case direction
                  :up :top
                  :down :bottom
                  :left :left
                  :right :right)
-          new-dimension (rect-resize dimension {side -1})
-          out-of-bounds? (fn [point] (not (rect-contains? new-dimension point)))
+          new-bounds (rect-resize bounds {side -1})
+          out-of-bounds? (fn [point] (not (rect-contains? new-bounds point)))
           loc-and-out-of-bounds? (fn [id point] (and (= location-id id)
                                                      (out-of-bounds? point)))]
       (->> (update-in db [:locations location-id]
                       (fn [location]
-                        (->> (assoc location :dimension new-dimension)
+                        (->> (assoc location :bounds new-bounds)
                              (setval [(multi-path :background1
                                                   :background2
                                                   :foreground1
@@ -169,12 +128,13 @@
 
 (reg-event-data
   :location-editor/resize-larger
+  [build-location-preview]
   (fn [db [_ location-id direction]]
     (let [side (case direction
                  :up :top
                  :down :bottom
                  :left :left
                  :right :right)]
-      (update-in db [:locations location-id :dimension]
-                 (fn [dimension]
-                   (rect-resize dimension {side 1}))))))
+      (update-in db [:locations location-id :bounds]
+                 (fn [bounds]
+                   (rect-resize bounds {side 1}))))))

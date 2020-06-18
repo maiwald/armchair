@@ -6,8 +6,7 @@
             [armchair.modals.events :refer [assert-no-open-modal
                                             build-modal-assertion]]
             [armchair.util :as u :refer [<sub >evt e->val]]
-            [armchair.events :refer [reg-event-data reg-event-meta]]
-            [armchair.location-editor.views :refer [position-select]]))
+            [armchair.events :refer [reg-event-data reg-event-meta]]))
 
 ;; Events
 

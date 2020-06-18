@@ -3,13 +3,14 @@
 (defn label [text]
   [:label {:class "input__label"} text])
 
-(defn text [{:keys [label on-change value]}]
+(defn text [{:keys [label on-change value placeholder]}]
   (let [id (gensym "input-text")]
     [:div {:class "input input-text"}
      (when label
        [:label {:class "input-text__label input__label" :for id} label])
      [:input {:class "input-text__input"
               :id id
+              :placeholder placeholder
               :on-change on-change
               :value value}]]))
 
