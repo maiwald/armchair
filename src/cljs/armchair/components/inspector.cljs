@@ -246,7 +246,7 @@
     [:div.inspector__content
      [property {:title "Locations" :inline true} locations]
      [property {:title "Characters" :inline true} characters]
-     [property {:title "dialogues" :inline true} dialogues]]))
+     [property {:title "Dialogues" :inline true} dialogues]]))
 
 (defn inspector [page-name page-params]
   (let [[inspector-type {:keys [location-id location-position]}] (<sub [:ui/inspector])
