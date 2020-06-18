@@ -107,6 +107,8 @@ $graph-node-border-radius: 5px
   border-radius: .25rem
   padding: 0 12px
 
+  background: #fff
+  color: $text-link
   font-family: Verdana
   font-size: .75rem
   line-height: 1.75rem
@@ -116,8 +118,6 @@ $graph-node-border-radius: 5px
 
   // Button colors
 
-  color: $text-link
-  background: #fff
   &:hover, &:focus
     background: #f4f6f9
 
@@ -126,7 +126,6 @@ $graph-node-border-radius: 5px
     background: $color-danger
     &:hover, &:focus
       background: darken($color-danger, 10%)
-
 
   &:focus
     outline: 0
@@ -143,6 +142,32 @@ $graph-node-border-radius: 5px
 
   &__title
     white-space: nowrap
+
+
+.icon-button
+  display: flex
+  justify-content: center
+  align-items: center
+
+  height: 1.3rem
+  width: 1.3rem
+  padding: 0
+  border-radius: .2rem
+  border: 1px solid transparent
+
+  color: $text-light
+  background: none
+
+  &:hover
+    color: $text-regular
+    border: 1px solid $text-light
+    background: $primary-light
+
+  &:active
+    color: $text-regular
+    border: 1px solid $primary
+    background: $primary-light
+
 
 .sprite-texture
   background-repeat: no-repeat
@@ -163,33 +188,37 @@ $graph-node-border-radius: 5px
       background-color: $primary-light
       border-bottom: 2px solid $primary
 
-.popover
-  position: absolute
-  display: block
-  background: #fff
-  min-width: 180px
-  padding: 4px
-  border-radius: 5px
-  border: 1px solid #eee
-  box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, .4)
-  box-sizing: border-box
-  z-index: 4
+.tile-grid
+  $gutter: 2px
+  $border: 1px
 
-  &::after
-    $arrow-size: 4px
-    content: ""
-    position: absolute
-    left: 50%
-    width: 0
-    height: 0
-    margin-left: - $arrow-size
-    bottom: - 2 * $arrow-size
-    box-sizing: border-box
+  display: flex
+  flex-wrap: wrap
+  justify-content: flex-start
+  align-content: flex-start
+  flex-grow: 1
 
-    border: $arrow-size solid black
-    border-color: transparent transparent #fff #fff
+  height: $tile-size + $gutter + $border
 
-    transform-origin: 0 0
-    transform: rotate(-45deg)
+  padding: $gutter / 2
 
-    box-shadow: -3px 3px 3px 1px rgba(0, 0, 0, 0.4)
+  &__item
+    box-sizing: content-box
+    border: $border solid grey
+    margin: 0 $gutter $gutter 0
+
+    &_active
+      border: 2px solid red
+      margin: (-$border) ($gutter - $border) ($gutter - $border) (-$border)
+
+    > *
+      display: block
+
+.scroll-container
+  width: 100%
+  height: 100%
+  overflow: auto
+
+  .scroll-content
+    min-width: 100%
+    min-height: 100%

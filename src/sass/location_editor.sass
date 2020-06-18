@@ -1,120 +1,10 @@
 @import "colors"
 
-.location-editor
-  display: flex
-  position: relative
-  max-height: 100%
-  flex-grow: 1
-
-  &__sidebar
-    width: 280px
-    min-width: 280px
-    margin: 10px
-    background: #f0f0f0
-    display: flex
-    flex-direction: column
-    max-height: 100%
-
-  &__sidebar-widget
-    display: flex
-    flex-direction: column
-    padding: 10px
-    border-bottom: 2px solid white
-
-    &:last-child
-      border-bottom: 0
-      flex-grow: 1
-      overflow-y: hidden
-
-    &__title
-      font-size: .9rem
-      line-height: 1rem
-      color: $text-light
-      margin-bottom: 6px
-
-  .active-texture
-    display: flex
-    border: 1px solid black
-    border-radius: 10px
-    padding: 20px
-    background: black
-    min-height: 120px
-    justify-content: center
-    align-items: center
-
-    &:hover
-      background-color: #000c17
-      box-shadow: inset 0 0 20px $primary
-
-  $resizer-offset: 18px
-  .resize-container
-    display: flex
-    justify-content: center
-    align-items: center
-    padding: $resizer-offset
-
-    &__reference
-      position: relative
-      height: 80px
-      width: 80px
-      border: 1px solid black
-
-  .resizer
-    position: absolute
-    display: flex
-    align-items: center
-    justify-content: center
-
-    a
-      display: flex
-      width: 18px
-      height: 18px
-      align-items: center
-      justify-content: center
-
-      &:hover
-        background-color: rgba(255, 255, 0, .2)
-        text-decoration: none
-
-    &_horizontal
-      width: 100%
-      flex-direction: column
-
-      a
-        width: 100%
-
-    &_vertical
-      height: 100%
-      flex-direction: row
-
-      a
-        height: 100%
-
-    &_left
-      left: -$resizer-offset
-
-    &_right
-      right: -$resizer-offset
-
-    &_top
-      top: -$resizer-offset
-
-    &_bottom
-      bottom: -$resizer-offset
-
-  &__canvas
-    position: relative
-    flex-grow: 1
-
 .level-wrap
-  display: grid
-  overflow: scroll
-  position: absolute
-  top: 40px
-  right: 40px
-  bottom: 40px
-  left: 40px
-  overflow: auto
+  display: flex
+  height: 100%
+  justify-content: center
+  align-items: center
 
 .level
   margin: auto
@@ -139,82 +29,32 @@
       border: 2px solid red
       border-radius: 5px
 
-  .interactor
-    position: relative
-    overflow: visible
-    width: 100%
-    height: 100%
+.interactor
+  position: relative
+  overflow: visible
+  width: 100%
+  height: 100%
 
-    &_paint
-      border-radius: 5px
-      border: 2px solid yellow
+  &_paint
+    border-radius: 5px
+    border: 2px solid yellow
 
-    &_walkable
-      background-color: rgba(0, 255, 0, .4)
+  &_walkable
+    background-color: rgba(0, 255, 0, .4)
 
-    &_not-walkable
-      background-color: rgba(255, 0, 0, .4)
+  &_not-walkable
+    background-color: rgba(255, 0, 0, .4)
 
-    &_draggable
-      cursor: grab
-      border-radius: 5px
-      border: 2px solid yellow
+  &_draggable
+    cursor: grab
+    border-radius: 5px
+    border: 2px solid $primary-light
 
-    &_dropzone
-      background-color: rgba(255, 255, 0, .4)
+  &_disabled
+    background-color: rgba(255, 0, 0, .2)
 
-    &_disabled
-      background-color: rgba(255, 0, 0, .2)
-
-.level-popover
-  max-width: 230px
-
-  header
-    font-family: Verdana
-    font-size: .9rem
-    border-bottom: 1px solid #ddd
-    padding: 0 2px 5px
-
-  &__quick-links
-    display: flex
-    flex-direction: row
-
-    li
-      text-align: center
-      flex-grow: 1
-      font-size: .7rem
-
-      margin: 4px 4px 0 0
-      &:last-child
-        margin-right: 0
-
-      a
-        display: block
-        padding: 5px
-        background-color: $primary-light
-
-        i
-          float: left
-          margin: 2px 4px 0 2px
-
-  &__reference
-    display: flex
-    flex-direction: column
-    padding: 0 2px
-    margin: 8px 0
-
-    &__title
-      font-size: .7rem
-      color: $text-light
-
-    &__payload
-      select
-        font-size: .8rem
-
-      .new-dialogue
-        font-size: .8rem
-        display: block
-        margin-top: -8px
+  &_focus
+    border: 2px solid yellow
 
 .level-layers
   &__item
@@ -243,4 +83,3 @@
     &__visibility
       &_visible
         color: lighten($text-regular, 50%)
-

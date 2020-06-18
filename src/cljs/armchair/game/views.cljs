@@ -17,23 +17,23 @@
     "ArrowLeft" "KeyA" "KeyH"
     "Space" "Enter"})
 
-(defn game-canvas [game-data]
+(defn game-canvas []
   (let [game-handle (atom nil)]
     (letfn [(on-key-down [e]
-              (when-not (or (.-altKey e)
-                            (.-ctrlKey e)
-                            (.-metaKey e))
+              (when-not (or ^boolean (.-altKey e)
+                            ^boolean (.-ctrlKey e)
+                            ^boolean (.-metaKey e))
                 (when-let [keycode (allowed-keys (.-code e))]
                   (prevent-e! e)
-                  (when-not (.-repeat e)
+                  (when-not ^boolean (.-repeat e)
                     (put! (:input @game-handle) [:key-state [keycode :down]])))))
             (on-key-up [e]
               (when-let [keycode (allowed-keys (.-code e))]
                 (prevent-e! e)
                 (put! (:input @game-handle) [:key-state [keycode :up]])))
-            (on-pointer-down [e]
+            (on-pointer-down []
               (put! (:input @game-handle) [:mouse-state :down]))
-            (on-pointer-up [e]
+            (on-pointer-up []
               (put! (:input @game-handle) [:mouse-state :up]))
             (on-pointer-move [e]
               (let [point (u/relative-cursor e (.-currentTarget e))]
@@ -48,7 +48,7 @@
            (.addEventListener js/document "keyup" on-key-up))
 
          :component-will-unmount
-         (fn [this]
+         (fn []
            (.removeEventListener js/document "keydown" on-key-down)
            (.removeEventListener js/document "keyup" on-key-up)
            (end-game @game-handle))
@@ -63,22 +63,21 @@
          (fn []
            (let [w (* tile-size camera-tile-width camera-scale)
                  h (* tile-size camera-tile-height camera-scale)]
-             [:canvas {:id "game"
-                       :on-mouse-down on-pointer-down
-                       :on-mouse-up on-pointer-up
-                       :on-mouse-move on-pointer-move
-                       :on-touch-start on-pointer-down
-                       :on-touch-end on-pointer-down
-                       :on-touch-move on-pointer-move
-                       :width w
-                       :height h
-                       :style {:width (px w)
-                               :height (px h)}}]))}))))
+             [:canvas#game__view {:on-mouse-down on-pointer-down
+                                  :on-mouse-up on-pointer-up
+                                  :on-mouse-move on-pointer-move
+                                  :on-touch-start on-pointer-down
+                                  :on-touch-end on-pointer-down
+                                  :on-touch-move on-pointer-move
+                                  :width w
+                                  :height h
+                                  :style {:width (px w)
+                                          :height (px h)}}]))}))))
 
 (defn game-view []
-  [:div {:class "content-wrapper"}
+  [:div#game
    [game-canvas (<sub [:game/data])]
-   [:div {:id "game-help"}
+   [:div#game__help
     [:p "Use mouse for movement, selection and interaction."]
     [:p
      "On keyboard use "

@@ -1,8 +1,8 @@
 (ns armchair.modals.events
-  (:require [armchair.config :as config]
+  (:require [re-frame.core :refer [dispatch]]
+            [armchair.config :as config]
             [armchair.events :refer [reg-event-data reg-event-meta]]
-            [armchair.math :refer [Rect]]
-            [armchair.util :as u]))
+            [armchair.math :refer [Rect]]))
 
 (defn assert-no-open-modal [db]
   (assert (not (contains? db :modal))
@@ -18,44 +18,8 @@
 
 (reg-event-meta
   :close-modal
-  (fn [db [_ modal-fn | args]]
+  (fn [db]
     (dissoc db :modal)))
-
-(reg-event-meta
-  :open-location-creation
-  (fn [db]
-    (assert-no-open-modal db)
-    (assoc-in db [:modal :location-creation] "")))
-
-(defn assert-location-creation-modal [db]
-  (assert (contains? (:modal db) :location-creation)
-          "No Location creation modal present. Cannot create!"))
-
-(reg-event-meta
-  :update-location-creation-name
-  (fn [db [_ display-name]]
-    (assert-location-creation-modal db)
-    (assoc-in db [:modal :location-creation] display-name)))
-
-(reg-event-data
-  :create-location
-  (fn [db]
-    (assert-location-creation-modal db)
-    (let [id (random-uuid)
-          display-name (get-in db [:modal :location-creation])]
-      (-> db
-          (dissoc :modal)
-          (assoc-in [:ui/positions id] config/default-ui-position)
-          (assoc-in [:locations id] {:entity/id id
-                                     :entity/type :location
-                                     :dimension (Rect. 0 0 3 3)
-                                     :background1 {}
-                                     :background2 {}
-                                     :foreground1 {}
-                                     :foreground2 {}
-                                     :blocked #{}
-                                     :connection-triggers {}
-                                     :display-name display-name})))))
 
 (reg-event-meta
   :open-npc-line-modal

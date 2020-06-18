@@ -1,13 +1,14 @@
 (ns armchair.util
-  (:require [clojure.set :refer [intersection subset?]]
+  (:require [clojure.set :refer [subset?]]
             [re-frame.core :as re-frame]
-            [armchair.math :as math :refer [Point Rect]]
+            [armchair.math :refer [clamp round Point Rect]]
             [armchair.config :refer [tile-size]]
             [com.rpl.specter
-             :refer [must ALL NONE MAP-VALS MAP-KEYS]
+             :refer [collect-one ALL FIRST LAST MAP-VALS MAP-KEYS]
              :refer-macros [transform]]))
 
-(defn px [v] (str v "px"))
+(defn px [v]
+  (if (zero? v) v (str (round v) "px")))
 
 (defn truncate [s n]
   (if (< (count s) n)
@@ -31,9 +32,13 @@
 (defn tile->coord [{:keys [x y]}]
   (Point. (* tile-size x) (* tile-size y)))
 
-(defn coord->tile [{:keys [x y]}]
-  (Point. (cond-> (quot x tile-size) (neg? x) dec)
-          (cond-> (quot y tile-size) (neg? y) dec)))
+(defn coord->tile
+  ([{:keys [x y]}]
+   (Point. (cond-> (quot x tile-size) (neg? x) dec)
+           (cond-> (quot y tile-size) (neg? y) dec)))
+  ([{:keys [x y]} zoom-scale]
+   (Point. (cond-> (quot (/ x zoom-scale) tile-size) (neg? x) dec)
+           (cond-> (quot (/ y zoom-scale) tile-size) (neg? y) dec))))
 
 (defn normalize-to-tile [coord]
   (-> coord coord->tile tile->coord))
@@ -54,7 +59,7 @@
   (reduce-kv (fn [acc k v] (assoc acc v k)) {} m))
 
 (defn map-values [f m]
-  (transform [MAP-VALS] f m))
+  (transform [ALL (collect-one FIRST) LAST] #(f %2 %1) m))
 
 (defn map-keys [f m]
   (transform [MAP-KEYS] f m))
@@ -125,8 +130,31 @@
 
 (defn relative-cursor [e elem]
   (let [rect (.getBoundingClientRect elem)]
-    (Point. (- (.-clientX e) (.-left rect) -1)
-            (- (.-clientY e) (.-top rect) -1))))
+    (Point. (- (.-clientX e) (.-left rect))
+            (- (.-clientY e) (.-top rect)))))
 
 (defn e->left? [e]
   (zero? (.-button e)))
+
+(defn e->point [e]
+  (Point. (.-clientX e) (.-clientY e)))
+
+(defn e->tile
+  ([e]
+   (e->tile e 1))
+  ([e zoom-scale]
+   (let [target (.-currentTarget e)
+         {:keys [x y]} (relative-cursor e target)
+         max-x (.-offsetWidth target)
+         max-y (.-offsetHeight target)]
+     (-> (Point. (clamp 0 max-x x) (clamp 0 max-y y))
+         (coord->tile zoom-scale)))))
+
+(defn tile-style
+  ([tile] (tile-style tile 1))
+  ([{:keys [x y]} zoom-scale]
+   {:width (px (* tile-size zoom-scale))
+    :height (px (* tile-size zoom-scale))
+    :top (px (* y tile-size zoom-scale))
+    :left (px (* x tile-size zoom-scale))}))
+

@@ -1,6 +1,5 @@
 (ns armchair.modals.character-form
   (:require [clojure.spec.alpha :as s]
-            [re-frame.core :as re-frame :refer [reg-sub]]
             [armchair.config :as config]
             [armchair.slds :as slds]
             [armchair.input :as input]

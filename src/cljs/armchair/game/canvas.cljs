@@ -1,7 +1,7 @@
 (ns armchair.game.canvas
-  (:require [armchair.config :refer [tile-size]]
-            [armchair.math :refer [Point]]
-            [armchair.util :as u]))
+  (:require [clojure.string :refer [split]]
+            [armchair.config :refer [tile-size]]
+            [armchair.math :refer [Point]]))
 
 (defn save! [ctx] (.save ctx))
 (defn restore! [ctx] (.restore ctx))
@@ -68,7 +68,7 @@
 
 (defn draw-textbox! [ctx text {:keys [x y]} w]
   (let [line-height (* 1.2 (js/parseInt (.-font ctx)))
-        words (clojure.string/split text " ")]
+        words (split text " ")]
     (loop [index 0
            line (first words)
            remaining (rest words)]

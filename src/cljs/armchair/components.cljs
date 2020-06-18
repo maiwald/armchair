@@ -1,10 +1,9 @@
 (ns armchair.components
   (:require [clojure.string :refer [join]]
             [reagent.core :as r]
-            [reagent.dom :as rd]
             [armchair.config :as config]
-            [armchair.textures :refer [image-path]]
-            [armchair.math :refer [abs clip point-delta translate-point]]
+            [armchair.textures :refer [image-path image-size]]
+            [armchair.math :as m :refer [abs point-delta translate-point]]
             [armchair.util :as u :refer [stop-e! >evt <sub e->left?]]))
 
 ;; Drag & Drop
@@ -13,12 +12,6 @@
   (u/relative-cursor e (-> js/document
                            (.getElementsByClassName "graph")
                            (aget 0))))
-
-(defn start-dragging-handler [ids]
-  (fn [e]
-    (when (e->left? e)
-      (u/prevent-e! e)
-      (>evt [:start-dragging ids (e->graph-cursor e)]))))
 
 (defn connection [{:keys [kind start end]}]
   [:line {:class ["graph__connection"
@@ -45,8 +38,8 @@
                                    ["Q" ctrl-x ctrl-y (:x m) (:y m) "T" (:x end) (:y end)]
                                    ["L" (:x end) (:y end)])))}]))
 
-(defn drag-item [item-id component]
-  (let [position (<sub [:ui/position item-id])
+(defn drag-item [item-id bounds component]
+  (let [position (m/global-point (<sub [:ui/position item-id]) bounds)
         dragging? (<sub [:dragging-item? item-id])]
     [:div {:on-mouse-down stop-e!
            :class ["graph__item"
@@ -54,25 +47,45 @@
            :style {:left (:x position) :top (:y position)}}
      [component item-id]]))
 
-(defn drag-canvas [{:keys [kind nodes]}]
-  (let [connecting? (some? (<sub [:connector]))
-        dragging? (<sub [:dragging?])
-        mouse-down (start-dragging-handler (-> nodes vals flatten set))
-        mouse-move (when (or dragging? connecting?)
-                     #(>evt [:move-cursor (e->graph-cursor %)]))
-        mouse-up (cond
-                   connecting? #(>evt [:abort-connecting])
-                   dragging? #(>evt [:end-dragging]))]
-    [:div {:class (cond-> ["graph"]
-                    dragging? (conj "graph_is-dragging")
-                    connecting? (conj "graph_is-connecting"))
-           :on-mouse-down mouse-down
-           :on-mouse-move mouse-move
-           :on-mouse-up mouse-up}
-     (into [:div] (r/children (r/current-component)))
-     (for [[item-component ids] nodes
-           id ids]
-       ^{:key (str kind id)} [drag-item id item-component])]))
+(defn drag-canvas []
+  (let [elem (atom nil)
+        drag-offset (atom nil)]
+    (r/create-class
+      {:display-name "drag-canvas"
+       :component-did-mount
+       (fn []
+         (reset! drag-offset nil))
+       :reagent-render
+       (fn [{:keys [kind nodes bounds]}]
+         (let [connecting? (some? (<sub [:connector]))
+               dragging? (<sub [:dragging?])]
+           [:div {:ref #(reset! elem %)
+                  :class (cond-> ["graph"]
+                           dragging? (conj "graph_is-dragging")
+                           connecting? (conj "graph_is-connecting"))
+                  :on-mouse-down (fn [e]
+                                   (reset! drag-offset (e->graph-cursor e)))
+                  :on-mouse-move (fn [e]
+                                   (when (or dragging? connecting?)
+                                     (>evt [:move-cursor (e->graph-cursor e)]))
+                                   (if-some [offset @drag-offset]
+                                     (let [cursor (e->graph-cursor e)
+                                           [dx dy] (m/point-delta cursor offset)]
+                                       (.scrollBy @elem dx dy)
+                                       (reset! drag-offset cursor))))
+                  :on-mouse-up (fn []
+                                 (cond
+                                   connecting? (>evt [:abort-connecting])
+                                   dragging? (>evt [:end-dragging]))
+                                 (reset! drag-offset nil))}
+            [:div.graph__scroll-content
+             {:style {:width (u/px (:w bounds))
+                      :height (u/px (:h bounds))}}
+             (into [:<>] (r/children (r/current-component)))
+             (for [[item-component ids] nodes
+                   id ids]
+               ^{:key (str kind ":" id)}
+               [drag-item id bounds item-component])]]))})))
 
 ;; Icon
 
@@ -83,6 +96,9 @@
     [:i {:class [(str "fas fa-" glyph)
                  (when (:fixed? options) "fa-fw")]
          :title title}]))
+
+(defn spinner []
+  [:i {:class ["fas fa-spinner fa-spin"]}])
 
 ;; Tag
 
@@ -104,16 +120,21 @@
 
 (defn graph-node [{id :item-id}]
   (let [dragging? (<sub [:dragging-item? id])
-        start-dragging (start-dragging-handler #{id})
+        connecting? (some? (<sub [:connector]))
+        start-dragging (fn [e]
+                         (when (e->left? e)
+                           (u/prevent-e! e)
+                           (>evt [:start-dragging #{id} (e->graph-cursor e)])))
         stop-dragging (when dragging?
                         (fn [e]
                           (u/prevent-e! e)
                           (>evt [:end-dragging])))]
-    (fn [{:keys [title color actions on-connect-end]}]
+    (fn [{:keys [title color width actions on-connect-end]
+          :or {color "gray" width (u/px config/line-width)}}]
       [:div {:class "graph-node"
-             :on-mouse-up (when (some? (<sub [:connector])) on-connect-end)
+             :on-mouse-up (when connecting? on-connect-end)
              :style {:border-color color
-                     :width (u/px config/line-width)}}
+                     :width width}}
        [:div {:class "graph-node__header"
               :on-mouse-down start-dragging
               :on-mouse-up stop-dragging}
@@ -138,8 +159,10 @@
 
 ;; Button
 
-(defn button [{glyph :icon btn-type :type
-               :keys [title on-click danger fill]}]
+(defn button [{glyph :icon
+               btn-type :type
+               :keys [title on-click fill]
+               :or {fill false}}]
   [:button {:class ["button"
                     (when fill "button_fill")
                     (when (= btn-type :danger) "button_danger")]
@@ -148,17 +171,29 @@
    (when (some? glyph) [:div {:class "button__icon"} [icon glyph title]])
    (when (some? title) [:div {:class "button__title"} title])])
 
+(defn icon-button [{glyph :icon
+                    :keys [title on-click]}]
+  [:button {:class ["icon-button"]
+            :on-click on-click
+            :type "button"}
+   [icon glyph title {:fixed? true}]])
+
 ;; Sprite Texture
 
-(defn sprite-texture [[file {:keys [x y]}] title]
-  [:div.sprite-texture
-   {:title title
-    :style {:width (u/px config/tile-size)
-            :height (u/px config/tile-size)
-            :background-image (str "url(" (image-path file) ")")
-            :background-position (str (u/px (- (* config/tile-size x)))
-                                      " "
-                                      (u/px (- (* config/tile-size y))))}}])
+(defn sprite-texture [[file {:keys [x y]}] title zoom-scale]
+  (let [{:keys [w h]} (image-size file)
+        zoom-scale (or zoom-scale 1)]
+    [:div.sprite-texture
+     {:title title
+      :style {:width (u/px (* zoom-scale config/tile-size))
+              :height (u/px (* zoom-scale config/tile-size))
+              :background-image (str "url(" (image-path file) ")")
+              :background-size (str (u/px (* w zoom-scale))
+                                    " "
+                                    (u/px (* h zoom-scale)))
+              :background-position (str (u/px (- (* zoom-scale config/tile-size x)))
+                                        " "
+                                        (u/px (- (* zoom-scale config/tile-size y))))}}]))
 
 ;; Tabs
 
@@ -171,48 +206,53 @@
            :on-click #(on-change id)}
       title])])
 
-;; Popover
+;; Scroll Container
 
-(defn popover-trigger [{content :popover}]
-  (into [:div {:style {:width "100%"
-                       :height "100%"}
-               :on-mouse-up u/stop-e!
-               :on-click #(>evt [:open-popover (.-currentTarget %) content])}]
-        (r/children (r/current-component))))
+(defn scroll-center-to-point [elem {:keys [x y]}]
+  (let [max-x (- (.-scrollWidth elem) (.-clientWidth elem))
+        max-y (- (.-scrollHeight elem) (.-clientHeight elem))]
+    (.scrollTo elem
+               (m/clamp 0 max-x (- x (/ (.-clientWidth elem) 2)))
+               (m/clamp 0 max-y (- y (/ (.-clientHeight elem) 2))))))
 
-(defn popover-positioned []
-  (let [position (r/atom [-9999 -9999])
-        get-position (fn [this]
-                       (let [offset 8
-                             rect (u/get-rect (rd/dom-node this))
-                             ref-rect (u/get-rect (:reference (r/props this)))]
-                         [(clip
-                            (- (.-innerWidth js/window) (:w rect))
-                            (+ (- (:x ref-rect) (/ (:w rect) 2))
-                               (/ (:w ref-rect) 2)))
-                          (clip
-                            (- (.-innerHeight js/window) (:h rect))
-                            (- (:y ref-rect) (:h rect) offset))]))]
+(defn scroll-container []
+  ; these don't need to be r/atoms because we dont need reactivity here
+  (let [scroll-elem (atom nil)
+        prev-cursor (atom nil)
+        end-scrolling (fn [] (reset! prev-cursor nil))]
     (r/create-class
-      {:display-name "popover-positioned"
+      {:display-name "scroll-container"
        :component-did-mount
        (fn [this]
-         (reset! position (get-position this)))
-
+         (scroll-center-to-point
+           @scroll-elem
+           (or (:scroll-center (r/props this))
+               (m/Point. (/ (.-scrollWidth @scroll-elem) 2)
+                         (/ (.-scrollHeight @scroll-elem) 2)))))
        :component-did-update
-       (fn [this]
-         (let [new-position (get-position this)]
-           (if (not= @position new-position)
-             (reset! position new-position))))
-
+       (fn [this [_ {old-zoom-scale :zoom-scale}]]
+         (let [{new-zoom-scale :zoom-scale
+                center :scroll-center} (r/props this)]
+           (when (not= old-zoom-scale new-zoom-scale)
+             (scroll-center-to-point @scroll-elem center))))
        :reagent-render
-       (fn [{:keys [content reference]}]
-         [:div {:on-mouse-up u/stop-e!
-                :class "popover"
-                :style {:left (u/px (first @position))
-                        :top (u/px (second @position))}}
-          content])})))
+       (fn [{:keys [on-scroll width height]}]
+         [:div
+          {:ref #(reset! scroll-elem %)
+           :class "scroll-container"
+           :on-scroll on-scroll
+           :on-mouse-down (fn [e] (reset! prev-cursor (u/e->point e)))
+           :on-mouse-move (fn [e]
+                            (when (some? @prev-cursor)
+                              (let [cursor (u/e->point e)
+                                    [dx dy] (m/point-delta cursor @prev-cursor)]
+                                (.scrollBy @scroll-elem dx dy)
+                                (reset! prev-cursor cursor))))
+           :on-mouse-leave end-scrolling
+           :on-mouse-up end-scrolling}
+          (into [:div
+                 {:class "scroll-content"
+                  :style {:width (u/px width)
+                          :height (u/px height)}}]
+                (r/children (r/current-component)))])})))
 
-(defn popover []
-  (if-let [data (<sub [:popover])]
-    [popover-positioned data]))

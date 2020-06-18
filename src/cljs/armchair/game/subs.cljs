@@ -1,10 +1,9 @@
 (ns armchair.game.subs
   (:require [clojure.spec.alpha :as s]
-            [clojure.set :refer [rename-keys]]
             [re-frame.core :refer [reg-sub]]
             [com.rpl.specter
-             :refer [must ALL NONE MAP-VALS]
-             :refer-macros [select setval transform]]
+             :refer [must ALL]
+             :refer-macros [transform]]
             [armchair.config :as config]
             [armchair.util :as u]))
 
@@ -45,7 +44,7 @@
   (s/map-of :entity/id
             (s/multi-spec node-type :kind)))
 
-(s/def :game/locations (s/map-of :entity/id (s/keys :req-un [:game/dimension
+(s/def :game/locations (s/map-of :entity/id (s/keys :req-un [:game/bounds
                                                              :game/background1
                                                              :game/background2
                                                              :game/foreground1
@@ -53,7 +52,7 @@
                                                              :game/blocked
                                                              :game/outbound-connections
                                                              :game/characters])))
-(s/def :game/dimension :type/rect)
+(s/def :game/bounds :type/rect)
 (s/def :game/blocked (s/coll-of :type/point :kind set?))
 (s/def :game/outbound-connections
   (s/map-of :type/point (s/tuple :game/location-id :type/point)))
@@ -119,12 +118,11 @@
   :game/locations
   :<- [:db-locations]
   :<- [:db-characters]
-  :<- [:db-dialogues]
-  (fn [[locations characters dialogues]]
+  (fn [[locations characters]]
     (u/map-values
       (fn [location]
         (-> location
-            (select-keys [:dimension
+            (select-keys [:bounds
                           :background1
                           :background2
                           :foreground1

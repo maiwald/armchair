@@ -10,8 +10,11 @@
             [armchair.dialogue-editor.subs]
             [armchair.location-editor.events]
             [armchair.location-editor.subs]
+            [armchair.location-map.events]
+            [armchair.location-map.subs]
+            [armchair.location-previews]
             [armchair.game.subs]
-            [armchair.util :refer [>evt <sub]]
+            [armchair.util :refer [>evt]]
             [armchair.routes :as routes]
             [armchair.views :as views]
             [armchair.config :as config]))
@@ -42,17 +45,8 @@
         (when (= "Escape" (.-code e))
           (>evt [:close-modal])
           (>evt [:cancel-dragging]))
-        (when (.-ctrlKey e)
+        (when ^boolean (.-ctrlKey e)
           (condp = (.-code e)
             "KeyZ" (>evt [:undo])
             "KeyY" (>evt [:redo])
             nil))))
-
-;; Popover
-
-(defn close-popover []
-  (when (some? (<sub [:popover]))
-    (re-frame/dispatch [:close-popover])))
-
-(set! (.-onmouseup js/window) close-popover)
-(set! (.-ondragstart js/window) close-popover)
