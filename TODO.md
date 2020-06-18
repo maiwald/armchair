@@ -1,6 +1,8 @@
 # BUGS
 - flickering inputs in character modal
 - deleting initial line in dialogue editor does not delete reference
+- consistently highlight selected/inspected items
+- visual connection idicator is broken in dialogue editor
 
 # TODO
 - editing connections
