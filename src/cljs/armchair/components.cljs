@@ -67,10 +67,11 @@
 
 (defn button [{glyph :icon
                btn-type :type
-               :keys [title on-click fill]
-               :or {fill false}}]
+               :keys [title on-click fill active]
+               :or {fill false active false}}]
   [:button {:class ["button"
                     (when fill "button_fill")
+                    (when active "button_active")
                     (when (= btn-type :danger) "button_danger")]
             :on-click on-click
             :type "button"}

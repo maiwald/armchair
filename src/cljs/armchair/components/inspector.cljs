@@ -2,7 +2,6 @@
   (:require [reagent.core :as r]
             [re-frame.core :refer [reg-sub subscribe]]
             [armchair.config :as config]
-            [armchair.slds :as slds]
             [armchair.util :as u :refer [<sub >evt e->val e->]]
             [armchair.components :as c]
             [armchair.routes :refer [>navigate]]
@@ -209,11 +208,14 @@
               :on-click (e-> #(>evt [:armchair.modals.texture-selection/open active-texture]))}
           [c/sprite-texture active-texture]]]
         [property {:title "Tool"}
-         [slds/radio-button-group
-          {:options [[:brush [c/icon "paint-brush" "Paint"]]
-                     [:eraser [c/icon "eraser" "Erase"]]]
-           :on-change #(>evt [:location-editor/set-active-tool %])
-           :active active-tool}]]]
+         [c/button {:icon "paint-brush"
+                    :title "Paint"
+                    :active (= :brush active-tool)
+                    :on-click #(>evt [:location-editor/set-active-tool :brush])}]
+         [c/button {:icon "eraser"
+                    :title "Erase"
+                    :active (= :eraser active-tool)
+                    :on-click #(>evt [:location-editor/set-active-tool :eraser])}]]]
        :collision
        [property {:title "Collision State"}
         [:ul {:class "tile-grid"}
