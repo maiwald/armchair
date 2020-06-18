@@ -6,7 +6,7 @@
             [armchair.util :as u :refer [<sub >evt e->val e->]]
             [armchair.components :as c]
             [armchair.routes :refer [>navigate]]
-            [armchair.math :refer [Point global-point]]
+            [armchair.math :refer [global-point]]
             [armchair.input :as input]
             [armchair.location-editor.views :refer [location-preview]]))
 
@@ -234,31 +234,19 @@
 
        nil)]))
 
+(reg-sub
+  ::world-inspector
+  (fn [{:keys [locations characters dialogues]}]
+    {:locations (count locations)
+     :characters (count characters)
+     :dialogues (count dialogues)}))
+
 (defn world-inspector []
-  (let [display-name "Player"
-        texture ["hare.png" (Point. 6 0)]]
+  (let [{:keys [locations characters dialogues]} (<sub [::world-inspector])]
     [:div.inspector__content
-     [property {:title "Player"}
-      [:div.insprop_character
-       {:draggable true
-        :on-drag-end #(>evt [:stop-entity-drag])
-        :on-drag-start (fn [e]
-                         (let [offset (/ config/tile-size 2)
-                               ghost (-> e
-                                         (.-currentTarget)
-                                         (.getElementsByClassName "drag-ghost")
-                                         (aget 0))]
-                           (.setDragImage (.-dataTransfer e) ghost offset offset))
-                         (>evt [:start-entity-drag [:player]]))}
-       [:div.drag-ghost
-        [c/sprite-texture texture display-name]]
-       [:span.insprop_character__drag_handle
-        [c/icon "grip-vertical"]]
-       [:span.insprop_character__icon
-        {:style {:width (u/px 20)}
-         :height (u/px 20)}
-        [c/sprite-texture texture display-name (/ 20 config/tile-size)]]
-       [:span.insprop_character__label display-name]]]]))
+     [property {:title "Locations" :inline true} locations]
+     [property {:title "Characters" :inline true} characters]
+     [property {:title "dialogues" :inline true} dialogues]]))
 
 (defn inspector [page-name page-params]
   (let [[inspector-type {:keys [location-id location-position]}] (<sub [:ui/inspector])
