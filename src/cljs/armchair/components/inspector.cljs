@@ -1,6 +1,7 @@
 (ns armchair.components.inspector
   (:require [reagent.core :as r]
             [re-frame.core :refer [reg-sub subscribe]]
+            [armchair.events :refer [reg-event-meta]]
             [armchair.config :as config]
             [armchair.util :as u :refer [<sub >evt e->val e->]]
             [armchair.components :as c]
@@ -9,11 +10,27 @@
             [armchair.input :as input]
             [armchair.location-editor.views :refer [location-preview]]))
 
-(defn property [{title :title inline? :inline}]
-  [:div.inspector__property {:class (when inline? "inspector__property_inline")}
-   [:span.inspector__property__title title]
-   (into [:div.inspector__property__payload]
-         (r/children (r/current-component)))])
+
+
+;; Events
+
+(reg-event-meta
+  :inspect
+  (fn [db [_ inspector-type & inspector-data]]
+    (assoc db :ui/inspector
+           (apply vector inspector-type inspector-data))))
+
+(reg-event-meta
+  :close-inspector
+  (fn [db] (dissoc db :ui/inspector)))
+
+;; Subscriptions
+
+(reg-sub
+  :inspecting?
+  :<- :ui/inspector
+  (fn [inspector [_ inspector-type & inspector-data]]
+    (= inspector (apply vector inspector-type inspector-data))))
 
 (reg-sub
   ::placement-inspector
@@ -33,6 +50,37 @@
        :dialogue-id dialogue-id
        :dialogue-display-name (get-in dialogues [dialogue-id :synopsis])
        :dialogue-options dialogue-options})))
+
+(reg-sub
+  ::location-inspector
+  :<- [:db-locations]
+  :<- [:db-characters]
+  (fn [[locations characters] [_ location-id]]
+    (let [location (locations location-id)]
+      {:display-name (:display-name location)
+       :characters (->> location :placements
+                        (map (fn [[_ {:keys [character-id]}]]
+                               (let [character (get characters character-id)]
+                                 {:character-id character-id
+                                  :character-name (:display-name character)
+                                  :character-color (:color character)})))
+                        distinct
+                        (sort-by :character-name))})))
+
+(reg-sub
+  ::world-inspector
+  (fn [{:keys [locations characters dialogues]}]
+    {:locations (count locations)
+     :characters (count characters)
+     :dialogues (count dialogues)}))
+
+;; Views
+
+(defn property [{title :title inline? :inline}]
+  [:div.inspector__property {:class (when inline? "inspector__property_inline")}
+   [:span.inspector__property__title title]
+   (into [:div.inspector__property__payload]
+         (r/children (r/current-component)))])
 
 (defn placement-inspector [location-id tile]
   (let [{:keys [location-display-name
@@ -125,22 +173,6 @@
                  :fill true
                  :on-click #(>evt [:location-editor/remove-trigger location-id tile])}]]]))
 
-
-(reg-sub
-  ::location-inspector
-  :<- [:db-locations]
-  :<- [:db-characters]
-  (fn [[locations characters] [_ location-id]]
-    (let [location (locations location-id)]
-      {:display-name (:display-name location)
-       :characters (->> location :placements
-                        (map (fn [[_ {:keys [character-id]}]]
-                               (let [character (get characters character-id)]
-                                 {:character-id character-id
-                                  :character-name (:display-name character)
-                                  :character-color (:color character)})))
-                        distinct
-                        (sort-by :character-name))})))
 
 (defn location-inspector [location-id]
   (let [{:keys [display-name characters]} (<sub [::location-inspector location-id])]
@@ -255,13 +287,6 @@
     [:div.inspector__content
       [property {:title "Synopsis"} synopsis]]))
 
-(reg-sub
-  ::world-inspector
-  (fn [{:keys [locations characters dialogues]}]
-    {:locations (count locations)
-     :characters (count characters)
-     :dialogues (count dialogues)}))
-
 (defn world-inspector []
   (let [{:keys [locations characters dialogues]} (<sub [::world-inspector])]
     [:div.inspector__content
@@ -270,7 +295,7 @@
      [property {:title "Dialogues" :inline true} dialogues]]))
 
 (defn inspector [page-name page-params]
-  (let [[inspector-type {:keys [location-id location-position]}] (<sub [:ui/inspector])
+  (let [[inspector-type & inspector-data] (<sub [:ui/inspector])
         page-inspector (case page-name
                          :locations {:title "World"
                                      :component [world-inspector]}
@@ -282,6 +307,6 @@
      [:header
       [:span.title (:title page-inspector)]]
      (case inspector-type
-       :location [location-inspector location-id]
-       :tile [tile-inspector location-id location-position]
+       :location [location-inspector (first inspector-data)]
+       :tile [tile-inspector (first inspector-data) (second inspector-data)]
        (:component page-inspector))]))

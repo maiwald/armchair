@@ -59,9 +59,8 @@
 (s/def :ui/location-map-zoom-scale float?)
 
 (s/def :ui/active-resource keyword?)
-(s/def :ui/inspector (s/tuple :inspector/type :inspector/data))
-(s/def :inspector/type #{:location :tile})
-(s/def :inspector/data map?)
+(s/def :ui/inspector (s/cat :inspector/type #{:location :tile}
+                            :inspector/data (s/* some?)))
 
 (s/def ::current-page (s/nilable string?))
 
@@ -357,7 +356,6 @@
                                     :ui/inspector
                                     :ui/active-resource
                                     :ui/dnd])))
-
 
 (s/def :state/player
   (s/keys :req-un [::location-id

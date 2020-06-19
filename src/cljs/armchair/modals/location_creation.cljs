@@ -23,7 +23,7 @@
       (dispatch [:armchair.location-previews/generate-preview id])
       (-> db
           (dissoc :modal)
-          (assoc :ui/inspector [:location {:location-id id}])
+          (assoc :ui/inspector [:location id])
           (assoc-in [:ui/positions id] config/default-ui-position)
           (assoc-in [:locations id] {:entity/id id
                                      :entity/type :location

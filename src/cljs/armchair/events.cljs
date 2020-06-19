@@ -120,8 +120,7 @@
                                       keys)]
       (-> db
           (cond->
-            (= (:ui/inspector db)
-               [:location {:location-id id}])
+            (= (:ui/inspector db) [:location id])
             (dissoc :ui/inspector))
           (update :locations dissoc id)
           (update :ui/positions dissoc id)
@@ -233,8 +232,7 @@
                                   :location-position target-position}))
       :character (-> db
                      (dissoc :ui/dnd)
-                     (assoc :ui/inspector [:tile {:location-id target-location-id
-                                                  :location-position target-position}])
+                     (assoc :ui/inspector [:tile target-location-id target-position])
                      (assoc-in [:locations target-location-id :placements target-position]
                                {:character-id (first dnd-payload)}))
       :location (-> db
@@ -248,15 +246,13 @@
                        placement (get-in db [:locations location-id :placements location-position])]
                    (-> db
                        (dissoc :ui/dnd)
-                       (assoc :ui/inspector [:tile {:location-id target-location-id
-                                                    :location-position target-position}])
+                       (assoc :ui/inspector [:tile target-location-id target-position])
                        (update-in [:locations location-id :placements] dissoc location-position)
                        (assoc-in [:locations target-location-id :placements target-position] placement)))
       :connection-trigger (let [[location-id location-position] dnd-payload]
                             (-> db
                                 (dissoc :ui/dnd)
-                                (assoc :ui/inspector [:tile {:location-id target-location-id
-                                                             :location-position target-position}])
+                                (assoc :ui/inspector [:tile target-location-id target-position])
                                 (update-in [:locations location-id :connection-triggers] dissoc location-position)
                                 (assoc-in [:locations target-location-id :connection-triggers target-position]
                                           (get-in db [:locations location-id :connection-triggers location-position])))))))
@@ -268,18 +264,3 @@
 
 ;; Inspector
 
-(reg-event-meta
-  :inspect
-  (fn [db [_ inspector-type & inspector-data]]
-    (assoc db :ui/inspector
-           [inspector-type
-            (case inspector-type
-              :location
-              {:location-id (first inspector-data)}
-              :tile
-              {:location-id (first inspector-data)
-               :location-position (second inspector-data)})])))
-
-(reg-event-meta
-  :close-inspector
-  (fn [db] (dissoc db :ui/inspector)))

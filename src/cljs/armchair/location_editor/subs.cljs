@@ -33,9 +33,7 @@
     (contains? locations location-id)))
 
 (defn inspecting-tile? [inspector location-id tile]
-  (= inspector
-     [:tile {:location-id location-id
-             :location-position tile}]))
+  (= inspector [:tile location-id tile]))
 
 (reg-sub
   :location-editor/characters

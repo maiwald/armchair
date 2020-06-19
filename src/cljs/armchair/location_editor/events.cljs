@@ -52,8 +52,7 @@
   (fn [db [_ location-id tile]]
     (cond-> (update-in db [:locations location-id :placements] dissoc tile)
       (= (:ui/inspector db)
-         [:tile {:location-id location-id
-                 :location-position tile}])
+         [:tile location-id tile])
       (dissoc :ui/inspector))))
 
 
@@ -75,8 +74,7 @@
   (fn [db [_ location-id tile]]
     (cond-> (update-in db [:locations location-id :connection-triggers] dissoc tile)
       (= (:ui/inspector db)
-         [:tile {:location-id location-id
-                 :location-position tile}])
+         [:tile location-id tile])
       (dissoc :ui/inspector))))
 
 (reg-event-data
