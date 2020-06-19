@@ -1,5 +1,5 @@
 (ns armchair.dialogue-editor.subs
-  (:require [re-frame.core :refer [reg-sub]]
+  (:require [re-frame.core :refer [reg-sub subscribe]]
             [armchair.config :as config]
             [armchair.math :as m]
             [armchair.util :as u]))
@@ -82,22 +82,24 @@
 
 (reg-sub
   :dialogue-editor/initial-line
-  :<- [:db-dialogues]
-  (fn [dialogues [_ dialogue-id]]
-    (let [{:keys [synopsis initial-line-id]} (dialogues dialogue-id)]
+  (fn [[_ dialogue-id]]
+    (subscribe [:db/dialogue dialogue-id]))
+  (fn [dialogue]
+    (let [{:keys [synopsis initial-line-id]} dialogue]
       {:synopsis synopsis
        :connected? (some? initial-line-id)})))
 
 (reg-sub
   :dialogue-editor/dialogue
-  :<- [:db-lines]
-  :<- [:db-player-options]
-  :<- [:db-dialogues]
-  :<- [:db-switches]
-  :<- [:db-switch-values]
-  :<- [:ui/positions]
-  (fn [[lines player-options dialogues switches switch-values positions] [_ dialogue-id]]
-    (if-let [dialogue (get dialogues dialogue-id)]
+  (fn [[_ dialogue-id]]
+    [(subscribe [:db/dialogue dialogue-id])
+     (subscribe [:db-lines])
+     (subscribe [:db-player-options])
+     (subscribe [:db-switches])
+     (subscribe [:db-switch-values])
+     (subscribe [:ui/positions])])
+  (fn [[dialogue lines player-options switches switch-values positions] [_ dialogue-id]]
+    (when (some? dialogue)
       (let [dialogue-lines (u/where-map :dialogue-id dialogue-id lines)
             lines-by-kind (group-by :kind (vals dialogue-lines))]
         {:bounds (m/rect-resize
