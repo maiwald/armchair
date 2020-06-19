@@ -16,7 +16,7 @@
          (r/children (r/current-component)))])
 
 (reg-sub
-  ::placement-data
+  ::placement-inspector
   (fn [[_ location-id]]
     [(subscribe [:db/location location-id])
      (subscribe [:db-dialogues])
@@ -42,7 +42,7 @@
                 dialogue-id
                 dialogue-display-name
                 dialogue-options]}
-        (<sub [::placement-data location-id tile])]
+        (<sub [::placement-inspector location-id tile])]
     (letfn [(set-character [e]
               (>evt [:location-editor/set-placement-character
                      location-id tile (-> e e->val uuid)]))
@@ -126,8 +126,24 @@
                  :on-click #(>evt [:location-editor/remove-trigger location-id tile])}]]]))
 
 
+(reg-sub
+  ::location-inspector
+  :<- [:db-locations]
+  :<- [:db-characters]
+  (fn [[locations characters] [_ location-id]]
+    (let [location (locations location-id)]
+      {:display-name (:display-name location)
+       :characters (->> location :placements
+                        (map (fn [[_ {:keys [character-id]}]]
+                               (let [character (get characters character-id)]
+                                 {:character-id character-id
+                                  :character-name (:display-name character)
+                                  :character-color (:color character)})))
+                        distinct
+                        (sort-by :character-name))})))
+
 (defn location-inspector [location-id]
-  (let [{:keys [display-name characters]} (<sub [:location-editor/location-inspector location-id])]
+  (let [{:keys [display-name characters]} (<sub [::location-inspector location-id])]
     [:<>
      [:header
       [:span.title "Location"]
