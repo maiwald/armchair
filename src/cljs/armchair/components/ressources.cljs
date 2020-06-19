@@ -78,8 +78,6 @@
 
 (defn dialogue [{:keys [id synopsis]}]
   [:li.ressource {:on-click #(>navigate :dialogue-edit :id id)}
-   [:span.ressource__drag_handle
-    [c/icon "grip-vertical"]]
    [:span.ressource__label synopsis]
    [:span.ressource__action
     [c/icon-button {:icon "trash-alt"
@@ -101,8 +99,6 @@
 
 (defn switch [{:keys [id display-name]}]
   [:li.ressource {:on-click #(>evt [:armchair.modals.switch-form/open id])}
-   [:span.ressource__drag_handle
-    [c/icon "grip-vertical"]]
    [:span.ressource__label display-name]
    [:span.ressource__action
     [c/icon-button {:icon "trash-alt"
