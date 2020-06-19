@@ -70,7 +70,7 @@
                     :style {:width (u/px preview-image-w)
                             :height (u/px preview-image-h)}}]
              (when (seq characters)
-               [:div
+               [:<>
                 (for [[tile {:keys [texture display-name inspecting?]}] characters]
                   [:div {:key (str "location-character:" location-id ",tile:" (pr-str tile))
                          :class ["location__tilemap__character" (when inspecting? "location__tilemap__character_is-inspecting")]
