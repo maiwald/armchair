@@ -16,7 +16,7 @@
 - placing exits by dragging from location to location in world
 - reliable drag and drop ghosts
 - search
-- locate ressources
+- locate resources
 - pinch to zoom
 - remove urls + custom history back/forward?
 - distinguish between data stored in local storage and in files (e.g. location map scroll position)

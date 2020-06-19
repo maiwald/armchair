@@ -4,7 +4,7 @@
             [armchair.location-editor.views :refer [location-editor]]
             [armchair.dialogue-editor.views :refer [dialogue-editor]]
             [armchair.location-map.views :refer [location-map]]
-            [armchair.components.ressources :refer [ressources]]
+            [armchair.components.resources :refer [resources]]
             [armchair.components.inspector :refer [inspector]]
             [armchair.modals.views :refer [modal]]
             [armchair.util :as u :refer [<sub >evt]]
@@ -82,8 +82,8 @@
               [navigation page-name]]
              [:div#page__workspace
               (when-not (= page-name :game)
-                [:div#page__workspace__ressources
-                 [ressources]])
+                [:div#page__workspace__resources
+                 [resources]])
               [:div#page__workspace__main
                (when (some? creation-buttons)
                  [:div#page__toolbar

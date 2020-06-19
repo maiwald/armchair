@@ -5,8 +5,8 @@
             [armchair.math :as m :refer [translate-point point-delta global-point]]
             [armchair.util :as u]))
 
-(defn by-id [ressources [_ ressource-id]]
-  (get ressources ressource-id))
+(defn by-id [resources [_ resource-id]]
+  (get resources resource-id))
 
 (reg-sub :db-characters #(:characters %))
 (reg-sub :db-lines #(:lines %))
