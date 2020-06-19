@@ -165,41 +165,40 @@
 (defn tilemap-inspector [location-id]
   (let [{:keys [active-layer active-texture active-tool active-walk-state visible-layers]} (<sub [:location-editor/ui])
         {:keys [width height]} (<sub [:location-editor/dimensions location-id])]
-    [:<>
-     [:div.inspector__content
-      [property {:title (str "Size: " width " x " height)}
-       [:div {:class "insprop_resize-container"}
-        [:div {:class "insprop_resize-container__reference"}
-         [:div {:class "resizer resizer_horizontal resizer_top"}
-          [:a {:on-click #(>evt [:location-editor/resize-larger location-id :up])} [c/icon "arrow-up" "extend"]]
-          [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :up])} [c/icon "arrow-down" "shrink"]]]
-         [:div {:class "resizer resizer_horizontal resizer_bottom"}
-          [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :down])} [c/icon "arrow-up" "shrink"]]
-          [:a {:on-click #(>evt [:location-editor/resize-larger location-id :down])} [c/icon "arrow-down" "extend"]]]
-         [:div {:class "resizer resizer_vertical resizer_left"}
-          [:a {:on-click #(>evt [:location-editor/resize-larger location-id :left])} [c/icon "arrow-left" "extend"]]
-          [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :left])} [c/icon "arrow-right" "shrink"]]]
-         [:div {:class "resizer resizer_vertical resizer_right"}
-          [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [c/icon "arrow-left" "shrink"]]
-          [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [c/icon "arrow-right" "extend"]]]]]]
-      [property {:title "Layers"}
-       [:ol.level-layers
-        (for [[layer-id layer-name] config/location-editor-layers
-              :let [visible? (contains? visible-layers layer-id)]]
-          [:li {:key (str "layer" layer-id)
-                :class ["level-layers__item"
-                        (when (= active-layer layer-id) "level-layers__item_active")]}
-           [:span.level-layers__item__name
-            {:on-click #(>evt [:location-editor/set-active-layer layer-id])}
-            layer-name]
-           [:span
-            {:class ["level-layers__item__visibility"
-                     (str "level-layers__item__visibility_"
-                          (if visible? "visible" "not-visible"))]
-             :on-click #(>evt [:location-editor/toggle-layer-visibility layer-id])}
-            (if visible?
-              [c/icon "eye" "Hide layer"]
-              [c/icon "eye-slash" "Show layer"])]])]]]
+    [:div.inspector__content
+     [property {:title (str "Size: " width " x " height)}
+      [:div {:class "insprop_resize-container"}
+       [:div {:class "insprop_resize-container__reference"}
+        [:div {:class "resizer resizer_horizontal resizer_top"}
+         [:a {:on-click #(>evt [:location-editor/resize-larger location-id :up])} [c/icon "arrow-up" "extend"]]
+         [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :up])} [c/icon "arrow-down" "shrink"]]]
+        [:div {:class "resizer resizer_horizontal resizer_bottom"}
+         [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :down])} [c/icon "arrow-up" "shrink"]]
+         [:a {:on-click #(>evt [:location-editor/resize-larger location-id :down])} [c/icon "arrow-down" "extend"]]]
+        [:div {:class "resizer resizer_vertical resizer_left"}
+         [:a {:on-click #(>evt [:location-editor/resize-larger location-id :left])} [c/icon "arrow-left" "extend"]]
+         [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :left])} [c/icon "arrow-right" "shrink"]]]
+        [:div {:class "resizer resizer_vertical resizer_right"}
+         [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [c/icon "arrow-left" "shrink"]]
+         [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [c/icon "arrow-right" "extend"]]]]]]
+     [property {:title "Layers"}
+      [:ol.level-layers
+       (for [[layer-id layer-name] config/location-editor-layers
+             :let [visible? (contains? visible-layers layer-id)]]
+         [:li {:key (str "layer" layer-id)
+               :class ["level-layers__item"
+                       (when (= active-layer layer-id) "level-layers__item_active")]}
+          [:span.level-layers__item__name
+           {:on-click #(>evt [:location-editor/set-active-layer layer-id])}
+           layer-name]
+          [:span
+           {:class ["level-layers__item__visibility"
+                    (str "level-layers__item__visibility_"
+                         (if visible? "visible" "not-visible"))]
+            :on-click #(>evt [:location-editor/toggle-layer-visibility layer-id])}
+           (if visible?
+             [c/icon "eye" "Hide layer"]
+             [c/icon "eye-slash" "Show layer"])]])]]
      (case active-layer
        (:background1 :background2 :foreground1 :foreground2)
        [:<>
@@ -233,7 +232,6 @@
                          :background-color (if walk-state
                                              "rgba(0, 255, 0, .4)"
                                              "rgba(255, 0, 0, .4)")}}]])]]
-
        nil)]))
 
 (reg-sub
