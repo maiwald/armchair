@@ -114,7 +114,7 @@
               {:label "Characters"
                :icon "user-friends"
                :component (let [characters (<sub [:character-list])]
-                            [:div
+                            [:<>
                              [c/button {:title "New Character"
                                         :icon "plus"
                                         :fill true
@@ -128,7 +128,7 @@
               {:label "Dialogues"
                :icon "comments"
                :component (let [dialogues (<sub [:dialogue-list])]
-                            [:div
+                            [:<>
                              [c/button {:title "New Dialogue"
                                         :icon "plus"
                                         :fill true
@@ -142,7 +142,7 @@
               {:label "Locations"
                :icon "map"
                :component (let [locations (<sub [:location-list])]
-                            [:div
+                            [:<>
                              [c/button {:title "New Location"
                                         :icon "plus"
                                         :fill true
@@ -156,7 +156,7 @@
               {:label "Switches"
                :icon "database"
                :component (let [switches (<sub [:switch-list])]
-                            [:div
+                            [:<>
                              [c/button {:title "New Switch"
                                         :icon "plus"
                                         :fill true
