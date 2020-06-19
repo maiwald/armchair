@@ -14,6 +14,8 @@
 (reg-sub :db/location :<- [:db-locations] by-id)
 
 (reg-sub :db-dialogues #(:dialogues %))
+(reg-sub :db/dialogue :<- [:db-dialogues] by-id)
+
 (reg-sub :db-player #(:player %))
 (reg-sub :db-player-options #(:player-options %))
 (reg-sub :db-triggers #(:triggers %))

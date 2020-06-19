@@ -250,6 +250,11 @@
                                              "rgba(255, 0, 0, .4)")}}]])]]
        nil)]))
 
+(defn dialogue-inspector [dialogue-id]
+  (let [{:keys [synopsis]} (<sub [:db/dialogue dialogue-id])]
+    [:div.inspector__content
+      [property {:title "Synopsis"} synopsis]]))
+
 (reg-sub
   ::world-inspector
   (fn [{:keys [locations characters dialogues]}]
@@ -272,7 +277,7 @@
                          :location-edit {:title "Location Editor"
                                          :component [tilemap-inspector (uuid (:id page-params))]}
                          :dialogue-edit {:title "Dialogue Edit"
-                                         :component "Hello!"})]
+                                         :component [dialogue-inspector (uuid (:id page-params))]})]
     [:div#inspector
      [:header
       [:span.title (:title page-inspector)]]
