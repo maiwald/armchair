@@ -1,4 +1,4 @@
-(ns armchair.components.ressources
+(ns armchair.components.resources
   (:require [re-frame.core :refer [reg-sub]]
             [armchair.events :refer [reg-event-meta]]
             [armchair.config :as config]
@@ -11,18 +11,18 @@
 ;; Events
 
 (reg-event-meta
-  ::set-active-ressource
-  (fn [db [_ ressource]]
-    (assoc db :ui/active-ressource ressource)))
+  ::set-active-resource
+  (fn [db [_ resource]]
+    (assoc db :ui/active-resource resource)))
 
 (reg-event-meta
-  ::unset-active-ressource
+  ::unset-active-resource
   (fn [db]
-    (dissoc db :ui/active-ressource)))
+    (dissoc db :ui/active-resource)))
 
 ;; Subscriptions
 
-(reg-sub :ui/active-ressource #(:ui/active-ressource %))
+(reg-sub :ui/active-resource #(:ui/active-resource %))
 
 ;; Views
 
@@ -31,84 +31,84 @@
 (defn player []
   (let [display-name "Player"
         texture ["hare.png" (Point. 6 0)]]
-    [:div.ressource {:draggable true
-                     :on-drag-end #(>evt [:stop-entity-drag])
-                     :on-drag-start (fn [e]
-                                      (let [offset (/ config/tile-size 2)
-                                            ghost (-> e
-                                                      (.-currentTarget)
-                                                      (.getElementsByClassName "drag-ghost")
-                                                      (aget 0))]
-                                        (.setDragImage (.-dataTransfer e) ghost offset offset))
-                                      (>evt [:start-entity-drag [:player]]))}
+    [:div.resource {:draggable true
+                    :on-drag-end #(>evt [:stop-entity-drag])
+                    :on-drag-start (fn [e]
+                                     (let [offset (/ config/tile-size 2)
+                                           ghost (-> e
+                                                     (.-currentTarget)
+                                                     (.getElementsByClassName "drag-ghost")
+                                                     (aget 0))]
+                                       (.setDragImage (.-dataTransfer e) ghost offset offset))
+                                     (>evt [:start-entity-drag [:player]]))}
      [:div.drag-ghost
       [c/sprite-texture texture display-name]]
-     [:span.ressource__drag_handle
+     [:span.resource__drag_handle
       [c/icon "grip-vertical"]]
-     [:span.ressource__icon
+     [:span.resource__icon
       {:style {:width (u/px 20)}
        :height (u/px 20)}
       [c/sprite-texture texture display-name (/ 20 config/tile-size)]]
-     [:span.ressource__label display-name]]))
+     [:span.resource__label display-name]]))
 
 (defn character [{:keys [id display-name texture line-count]}]
-  [:li.ressource {:draggable true
-                  :on-click #(>evt [:armchair.modals.character-form/open id])
-                  :on-drag-end #(>evt [:stop-entity-drag])
-                  :on-drag-start (fn [e]
-                                   (let [offset (/ config/tile-size 2)
-                                         ghost (-> e
-                                                   (.-currentTarget)
-                                                   (.getElementsByClassName "drag-ghost")
-                                                   (aget 0))]
-                                     (.setDragImage (.-dataTransfer e) ghost offset offset))
-                                   (>evt [:start-entity-drag [:character id]]))}
+  [:li.resource {:draggable true
+                 :on-click #(>evt [:armchair.modals.character-form/open id])
+                 :on-drag-end #(>evt [:stop-entity-drag])
+                 :on-drag-start (fn [e]
+                                  (let [offset (/ config/tile-size 2)
+                                        ghost (-> e
+                                                  (.-currentTarget)
+                                                  (.getElementsByClassName "drag-ghost")
+                                                  (aget 0))]
+                                    (.setDragImage (.-dataTransfer e) ghost offset offset))
+                                  (>evt [:start-entity-drag [:character id]]))}
    [:div.drag-ghost
     [c/sprite-texture texture display-name]]
-   [:span.ressource__drag_handle
+   [:span.resource__drag_handle
     [c/icon "grip-vertical"]]
-   [:span.ressource__icon {:style {:width (u/px icon-size)
-                                   :height (u/px icon-size)}}
+   [:span.resource__icon {:style {:width (u/px icon-size)}
+                          :height (u/px icon-size)}
     [c/sprite-texture texture display-name (/ icon-size config/tile-size)]]
-   [:span.ressource__label display-name]
+   [:span.resource__label display-name]
    (when (zero? line-count)
-     [:span.ressource__action
+     [:span.resource__action
       [c/icon-button {:icon "trash-alt"
                       :on-click (e-> #(>evt [:delete-character id]))}]])])
 
 (defn dialogue [{:keys [id synopsis]}]
-  [:li.ressource {:on-click #(>navigate :dialogue-edit :id id)}
-   [:span.ressource__label synopsis]
-   [:span.ressource__action
+  [:li.resource {:on-click #(>navigate :dialogue-edit :id id)}
+   [:span.resource__label synopsis]
+   [:span.resource__action
     [c/icon-button {:icon "trash-alt"
                     :on-click (e-> #(>evt [:delete-dialogue id]))}]]])
 
 (defn location [{:keys [id display-name]}]
-  [:li.ressource {:draggable true
-                  :on-click #(>navigate :location-edit :id id)
-                  :on-drag-end #(>evt [:stop-entity-drag])
-                  :on-drag-start (fn [e]
-                                   (.setDragImage (.-dataTransfer e) (js/Image.) 0 0)
-                                   (>evt [:start-entity-drag [:location id]]))}
-   [:span.ressource__drag_handle
+  [:li.resource {:draggable true
+                 :on-click #(>navigate :location-edit :id id)
+                 :on-drag-end #(>evt [:stop-entity-drag])
+                 :on-drag-start (fn [e]
+                                  (.setDragImage (.-dataTransfer e) (js/Image.) 0 0)
+                                  (>evt [:start-entity-drag [:location id]]))}
+   [:span.resource__drag_handle
     [c/icon "grip-vertical"]]
-   [:span.ressource__label display-name]
-   [:span.ressource__action
+   [:span.resource__label display-name]
+   [:span.resource__action
     [c/icon-button {:icon "trash-alt"
                     :on-click (e-> #(>evt [:delete-location id]))}]]])
 
 (defn switch [{:keys [id display-name]}]
-  [:li.ressource {:on-click #(>evt [:armchair.modals.switch-form/open id])}
-   [:span.ressource__label display-name]
-   [:span.ressource__action
+  [:li.resource {:on-click #(>evt [:armchair.modals.switch-form/open id])}
+   [:span.resource__label display-name]
+   [:span.resource__action
     [c/icon-button {:icon "trash-alt"
                     :on-click (e-> #(>evt [:delete-switch id]))}]]])
 
-(defn ressources []
+(defn resources []
   [sidebar
-   {:active-panel (<sub [:ui/active-ressource])
-    :on-panel-change #(>evt [::set-active-ressource %])
-    :on-panel-close #(>evt [::unset-active-ressource %])
+   {:active-panel (<sub [:ui/active-resource])
+    :on-panel-change #(>evt [::set-active-resource %])
+    :on-panel-close #(>evt [::unset-active-resource %])
     :panels (array-map
               :characters
               {:label "Characters"
@@ -119,7 +119,7 @@
                                         :icon "plus"
                                         :fill true
                                         :on-click #(>evt [:armchair.modals.character-form/open])}]
-                             [:ol.ressource_list
+                             [:ol.resource_list
                               (for [{:keys [display-name] :as c} characters]
                                 ^{:key (str "character-select" display-name)}
                                 [character c])]])}
@@ -133,7 +133,7 @@
                                         :icon "plus"
                                         :fill true
                                         :on-click #(>evt [:armchair.modals.dialogue-creation/open])}]
-                             [:ol.ressource_list
+                             [:ol.resource_list
                               (for [{:keys [id] :as d} dialogues]
                                 ^{:key (str "dialogue-select" id)}
                                 [dialogue d])]])}
@@ -147,7 +147,7 @@
                                         :icon "plus"
                                         :fill true
                                         :on-click #(>evt [:armchair.modals.location-creation/open])}]
-                             [:ol.ressource_list
+                             [:ol.resource_list
                               (for [{:keys [id] :as l} locations]
                                 ^{:key (str "location-select" id)}
                                 [location l])]])}
@@ -161,7 +161,7 @@
                                         :icon "plus"
                                         :fill true
                                         :on-click #(>evt [:armchair.modals.switch-form/open])}]
-                             [:ol.ressource_list
+                             [:ol.resource_list
                               (for [{:keys [id] :as s} switches]
                                 ^{:key (str "switch-select" id)}
                                 [switch s])]])}
