@@ -26,9 +26,7 @@
                 (fn [{:keys [character-id]} tile]
                   (let [character (characters character-id)]
                     (merge (select-keys character [:texture :display-name])
-                           {:inspecting? (= inspector
-                                            [:tile {:location-id location-id
-                                                    :location-position tile}])})))
+                           {:inspecting? (= inspector [:tile location-id tile])})))
                 placements)
         (= location-id (:location-id player))
         (assoc (:location-position player) {:texture ["hare.png" (m/Point. 6 0)]
@@ -62,7 +60,7 @@
        :preview-image-foreground-src preview-image-foreground-src
        :preview-image-w (* zoom-scale config/tile-size w)
        :preview-image-h (* zoom-scale config/tile-size h)
-       :inspecting? (= inspector [:location {:location-id location-id}])})))
+       :inspecting? (= inspector [:location location-id])})))
 
 (reg-sub
   :location-map/bounds

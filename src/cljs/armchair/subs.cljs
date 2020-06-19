@@ -197,8 +197,3 @@
                            :icon "plus"
                            :event [:armchair.modals.case-node-creation/open id]}])
         nil))))
-
-(reg-sub
-  :ui/inspector?
-  :<- [:ui/inspector]
-  some?)
