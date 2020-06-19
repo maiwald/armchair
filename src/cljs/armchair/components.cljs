@@ -180,4 +180,6 @@
           (r/children (r/current-component)))
     [:footer
      [:button {:class "button"
-               :type "submit"} "Ok"]]]])
+               :type "submit"
+               :on-click (u/e-> confirm-handler)}
+      "Ok"]]]])
