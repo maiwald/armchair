@@ -183,7 +183,7 @@
                       :title "Close Inspector"
                       :on-click #(>evt [:close-inspector])}]]
      [:div.inspector__content
-      [property {:title "name" :inline true}
+      [property {:title "Name"}
        [input/text
         {:on-change #(>evt [:location-editor/update-name location-id (e->val %)])
          :value display-name}]]]

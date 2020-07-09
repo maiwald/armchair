@@ -102,17 +102,6 @@
                                         " "
                                         (u/px (- (* zoom-scale config/tile-size y))))}}]))
 
-;; Tabs
-
-(defn tabs [{:keys [items active on-change]}]
-  [:ul {:class "tabs"}
-   (for [[id title] items]
-     [:li {:key (str (hash items) id)
-           :class ["tabs__item"
-                   (when (= id active) "is-active")]
-           :on-click #(on-change id)}
-      title])])
-
 ;; Scroll Container
 
 (defn scroll-center-to-point [elem {:keys [x y]}]
@@ -170,12 +159,12 @@
    [:div.modal__backdrop]
    [:section.modal__container
     [:header {:class "modal__header"}
+     [:h2 title]
      [:button {:class "modal__close"
                :on-click close-handler
                :type "button"
                :title "Close"}
-      [icon "times" "Close"]]
-     [:h2 title]]
+      [icon "times" "Close"]]]
     (into [:form {:on-submit (u/e-> confirm-handler)}]
           (r/children (r/current-component)))
     [:footer

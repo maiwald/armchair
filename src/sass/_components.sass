@@ -1,4 +1,4 @@
-@import "colors"
+@import "varibales"
 
 .tag
   border-radius: 9px
@@ -7,8 +7,8 @@
   padding: 0 7px
   height: 18px
   font-size: .6rem
-  color: #fff
-  background: darken($gray, 20%)
+  color: white
+  background: $gray-700
 
   &__description
     margin: 0 5px
@@ -17,11 +17,11 @@
       margin-right: 0
 
   > a
-    text-decoration: none
     color: white
 
     &:hover
-      color: lightgrey
+      color: $gray-400
+      text-decoration: none
 
     &:last-child
       margin-right: -2px
@@ -36,7 +36,7 @@
   padding: 0 12px
 
   background: #fff
-  color: $text-link
+  color: $blue-600
   font-family: Verdana
   font-size: .75rem
   line-height: 1.75rem
@@ -62,7 +62,7 @@
 
   &:focus
     outline: 0
-    box-shadow: 0 0 3px $text-link
+    box-shadow: 0 0 3px $blue-600
 
   margin-right: 6px
   &:last-child
@@ -88,40 +88,27 @@
   border-radius: .2rem
   border: 1px solid transparent
 
-  color: $text-light
+  color: $gray-400
   background: none
 
   cursor: pointer
 
   &:hover
-    color: $text-regular
-    border: 1px solid $text-light
-    background: $primary-light
+    color: $gray-800
+    border: 1px solid $gray-600
+    background: $gray-300
+
+  &:active, &:focus
+    outline: none
+    color: $gray-800
+    border: 1px solid $blue-500
+    background: $gray-300
 
   &:active
-    color: $text-regular
-    border: 1px solid $primary
-    background: $primary-light
-
+    color: $gray-600
 
 .sprite-texture
   background-repeat: no-repeat
-
-.tabs
-  display: flex
-  border-bottom: 2px solid white
-  color: $text-regular
-
-  &__item
-    padding: 6px 8px
-    cursor: pointer
-
-    &:hover
-      background-color: $primary-light
-
-    &.is-active
-      background-color: $primary-light
-      border-bottom: 2px solid $primary
 
 .tile-grid
   $gutter: 2px
@@ -139,7 +126,7 @@
 
   &__item
     box-sizing: content-box
-    border: $border solid grey
+    border: $border solid $gray-600
     margin: 0 $gutter $gutter 0
 
     &_active
@@ -182,14 +169,17 @@
       width: 100%
 
     header
+      display: flex
       padding: 14px 20px
-      position: relative
-      background: lighten(lightgrey, 10%)
+      background: $gray-200
       border-top-left-radius: 5px
       border-top-right-radius: 5px
-      border-bottom: 1px solid darken(lightgrey, 20%)
+      border-bottom: 2px solid $gray-300
+
+      align-items: center
 
       h2
+        flex: 1
         font-size: 1.4rem
 
     form
@@ -200,16 +190,14 @@
     footer
       display: flex
       justify-content: flex-end
-      background: lightgrey
+      background: $gray-400
       padding: 14px 20px
-      border-top: 1px solid darken(lightgrey, 20%)
+      border-top: 2px solid $gray-500
       border-bottom-left-radius: 5px
       border-bottom-right-radius: 5px
 
   &__close
-    position: absolute
-    top: 20px
-    right: 20px
+    cursor: pointer
 
   &__backdrop
     position: absolute
