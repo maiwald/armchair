@@ -1,4 +1,4 @@
-@import "colors"
+@import "varibales"
 
 .level-wrap
   display: flex
@@ -45,11 +45,6 @@
   &_not-walkable
     background-color: rgba(255, 0, 0, .4)
 
-  &_draggable
-    cursor: grab
-    border-radius: 5px
-    border: 2px solid $primary-light
-
   &_disabled
     background-color: rgba(255, 0, 0, .2)
 
@@ -60,14 +55,16 @@
   &__item
     display: flex
     font-size: .7rem
-    color: $text-regular
+    color: $gray-800
+    border-radius: 4px
 
-    background: #fff
+    background: $gray-100
     margin: 4px 0
     align-items: baseline
 
     &_active
-      background-color: #ffc
+      color: $gray-300
+      background-color: $blue-800
 
     > span
       cursor: pointer
@@ -82,4 +79,4 @@
 
     &__visibility
       &_visible
-        color: lighten($text-regular, 50%)
+        color: $gray-400

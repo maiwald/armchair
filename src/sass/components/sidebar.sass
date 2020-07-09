@@ -1,35 +1,35 @@
-@import "../colors"
+@import "../varibales"
 
 .sidebar
   $tab-size: 50px
   display: flex
   flex-direction: row
-  border-right: 1px solid darken(grey, 10%)
+  border-right: 1px solid $gray-600
 
   .panel-selectors
     display: flex
     width: $tab-size
     flex-direction: column
     justify-items: flex-start
-    background: darkgrey
+    background: $gray-400
 
     .panel-selector
       display: flex
       align-items: center
       justify-content: center
       font-size: .8rem
-      color: $text-regular
+      color: $gray-800
       width: $tab-size
       height: $tab-size
+      cursor: pointer
 
       &:hover
-        cursor: pointer
-        background: grey
+        background: $gray-500
+        color: $gray-800
 
       &.is-active
-        background-color: darken(grey, 10%)
-        &:hover
-          background-color: darken(grey, 15%)
+        color: $gray-100
+        background-color: $gray-700
 
       &.is-bottom
         position: absolute
@@ -39,4 +39,4 @@
     display: flex
     flex-direction: column
     width: 280px
-    background: lightgray
+    background: $gray-200

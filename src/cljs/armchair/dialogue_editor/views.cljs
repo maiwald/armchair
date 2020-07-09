@@ -90,7 +90,7 @@
 
 (defn graph-node [{id :item-id
                    :keys [title color width actions on-connect-end]
-                   :or {color "gray" width (u/px config/line-width)}}]
+                   :or {width (u/px config/line-width)}}]
   (let [dragging? (<sub [:dragging-item? id])
         connecting? (some? (<sub [:connector]))
         start-dragging (fn [e]

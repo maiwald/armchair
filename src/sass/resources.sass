@@ -1,4 +1,4 @@
-@import "colors"
+@import "varibales"
 
 .resource_list
   overflow-x: hidden
@@ -8,12 +8,12 @@
     width: 10px
 
   &::-webkit-scrollbar-track
-    background-color: lightgray
+    background-color: $gray-200
 
   &::-webkit-scrollbar-thumb
-    border: 2px solid lightgray
+    border: 2px solid $gray-200
     border-radius: 20px
-    background-color: darkgrey
+    background-color: $gray-500
 
 .resource
   $padding: 5px
@@ -23,7 +23,7 @@
   align-items: center
   margin: 5px 3px
 
-  border: 1px solid $gray
+  border: 1px solid $gray-500
   border-radius: $border-radius
 
   font-size: .8rem
@@ -35,17 +35,17 @@
     cursor: -webkit-grab
     cursor: grab
     padding: $padding
-    background: lighten($gray, 20%)
+    background: $gray-400
     border-top-left-radius: $border-radius - 1
     border-bottom-left-radius: $border-radius - 1
     align-self: stretch
     display: flex
     align-items: center
     justify-content: center
-    color: rgba($text-regular, .2)
+    color: $gray-500
 
   &:hover .resource__drag_handle
-    color: rgba($text-regular, .9)
+    color: $gray-700
 
   &__icon
     box-sizing: content-box
@@ -54,13 +54,12 @@
 
   &__label
     padding: $padding
-    color: $text-regular
+    color: $gray-800
     flex: 1
 
   &__action
     padding: $padding
     padding-left: 0
-    color: $text-light
 
 .drag-ghost
   position: absolute
