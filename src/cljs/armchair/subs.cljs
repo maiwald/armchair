@@ -1,7 +1,6 @@
 (ns armchair.subs
   (:require [re-frame.core :refer [reg-sub subscribe]]
             [clojure.string :refer [join]]
-            [armchair.routes :refer [page-data]]
             [armchair.math :as m :refer [translate-point point-delta global-point]]
             [armchair.util :as u]))
 
@@ -167,33 +166,3 @@
                 :texture (:texture character)})))
          (sort-by (fn [{s :synopsis {n :display-name} :character}]
                     [n s])))))
-
-(reg-sub
-  :creation-buttons
-  :<- [:current-page]
-  (fn [current-page]
-    (let [{:keys [page-name page-params]} (page-data current-page)]
-      (case page-name
-        :locations [{:title "New Location"
-                     :icon "plus"
-                     :event [:armchair.modals.location-creation/open]}
-                    {:title "Zoom Out"
-                     :icon "minus"
-                     :event [:location-map/zoom-out]}
-                    {:title "Zoom In"
-                     :icon "plus"
-                     :event [:location-map/zoom-in]}]
-        :dialogue-edit (let [id (uuid (:id page-params))]
-                         [{:title "New Character Line"
-                           :icon "plus"
-                           :event [:create-npc-line id]}
-                          {:title "New Player Line"
-                           :icon "plus"
-                           :event [:create-player-line id]}
-                          {:title "New Trigger Node"
-                           :icon "plus"
-                           :event [:create-trigger-node id]}
-                          {:title "New Switch Node"
-                           :icon "plus"
-                           :event [:armchair.modals.case-node-creation/open id]}])
-        nil))))

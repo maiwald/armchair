@@ -9,6 +9,7 @@
             [armchair.modals.unlock-conditions-form :as unlock-conditions-form]
             [armchair.modals.switch-form :as switch-form]
             [armchair.modals.trigger-creation :as trigger-creation]
+            [armchair.routes :refer [>navigate]]
             [armchair.util :as u :refer [<sub >evt stop-e! prevent-e! e->val e->left?]]))
 
 (def option-position-lookup (r/atom {}))
@@ -304,6 +305,31 @@
       [curved-connection
        {:start (translate-point start-pos 35 20)
         :end (translate-point end-pos 0 top-offset)}])))
+
+(defn dialogue-editor-header [dialogue-id]
+  (let [{:keys [synopsis]} (<sub [:dialogue-editor/header dialogue-id])]
+    [:div.page-header
+     [:a.page-header__back
+      {:on-click #(>navigate :locations)}
+      [c/icon "angle-double-left"] "World"]
+     [:h1 "Dialogue: " synopsis]
+     [:ul.page-header__actions
+      [:li
+       [c/button {:title "New Character Line"
+                  :icon "plus"
+                  :event [:create-npc-line dialogue-id]}]]
+      [:li
+       [c/button {:title "New Player Line"
+                  :icon "plus"
+                  :event [:create-player-line dialogue-id]}]]
+      [:li
+       [c/button {:title "New Trigger Node"
+                  :icon "plus"
+                  :event [:create-trigger-node dialogue-id]}]]
+      [:li
+       [c/button {:title "New Switch Node"
+                  :icon "plus"
+                  :event [:armchair.modals.case-node-creation/open dialogue-id]}]]]]))
 
 (defn dialogue-editor [dialogue-id]
   (if-let [{:keys [bounds

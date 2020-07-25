@@ -1,9 +1,9 @@
 (ns armchair.views
   (:require [reagent.core :as r]
             [armchair.components :as c :refer [icon]]
-            [armchair.location-editor.views :refer [location-editor]]
-            [armchair.dialogue-editor.views :refer [dialogue-editor]]
-            [armchair.location-map.views :refer [location-map]]
+            [armchair.location-editor.views :refer [location-editor location-editor-header]]
+            [armchair.dialogue-editor.views :refer [dialogue-editor dialogue-editor-header]]
+            [armchair.location-map.views :refer [location-map location-map-header]]
             [armchair.components.resources :refer [resources]]
             [armchair.components.inspector :refer [inspector]]
             [armchair.modals.views :refer [modal]]
@@ -13,46 +13,42 @@
 
 ;; Navigation
 
-(defn navigation [page-name]
-  [:header#global-header
-   [:div.logo "Armchair"]
-   [:nav
-    (if (= page-name :game)
-      [:ul.navigation
-       [:li {:class ["navigation__item"]}
-        [:a {:on-click #(>navigate :locations)} "Edit"]]]
-      [:ul.navigation
-       [:li {:class ["navigation__item"]}
-        [:a {:on-click #(>navigate :game)} "Play"]]
-       [:li {:class ["navigation__item"]}
-        [:a {:on-click #(>navigate :locations)} "World"]]])
-    [:ul.functions
-     [:li
-      (if (<sub [:can-undo?])
-        [:a {:on-click #(>evt [:undo])} [icon "undo"] "undo"]
-        [:span {:class "disabled"} [icon "undo"] "undo"])]
-     [:li
-      (if (<sub [:can-redo?])
-        [:a {:on-click #(>evt [:redo])} [icon "redo"] "redo"]
-        [:span {:class "disabled"} [icon "redo"] "redo"])]
-     [:li
-      [:a {:on-click #(>evt [:download-state])}
-       [icon "download"] "save to file"]]
-     [:li
-      [:a {:on-click (fn [] (u/upload-json! #(>evt [:upload-state %])))}
-       [icon "upload"] "load from file"]]
-     [:li [:a {:on-click #(>evt [:reset-db])} "reset"]]]]])
+(defn menu-bar [page-name]
+  [:ul#menu-bar
+   [:li
+    (if (not= page-name :game)
+      [:a {:on-click #(>navigate :game)}
+       [icon "play"] "Play"]
+      [:a {:on-click #(>navigate :locations)}
+       [icon "edit"] "Edit"])]
+   (when (not= page-name :game)
+     [:<>
+      [:li
+       (if (<sub [:can-undo?])
+         [:a {:on-click #(>evt [:undo])} [icon "undo"] "Undo"]
+         [:span {:class "disabled"} [icon "undo"] "Undo"])]
+      [:li
+       (if (<sub [:can-redo?])
+         [:a {:on-click #(>evt [:redo])} [icon "redo"] "Redo"]
+         [:span {:class "disabled"} [icon "redo"] "Redo"])]
+      [:li
+       [:a {:on-click #(>evt [:download-state])}
+        [icon "download"] "Save To File"]]
+      [:li
+       [:a {:on-click (fn [] (u/upload-json! #(>evt [:upload-state %])))}
+        [icon "upload"] "Load From File"]]
+      [:li
+       [:a {:on-click #(>evt [:reset-db])}
+        [icon "snowplow"] "Reset All Data"]]])])
 
-(defn toolbar [buttons]
-  [:div#toolbar
-   (for [{:keys [title icon event]} buttons]
-     ^{:key (str title event)}
-     [c/button {:title title
-                :icon icon
-                :on-click #(>evt event)}])])
 
 ;; Page
 
+(defn page-header [page-name page-params]
+  (case page-name
+    :locations     [location-map-header]
+    :location-edit [location-editor-header (uuid (:id page-params))]
+    :dialogue-edit [dialogue-editor-header (uuid (:id page-params))]))
 
 (defn content-component [page-name page-params]
   (case page-name
@@ -73,23 +69,20 @@
        :component-did-update scrollToTop
        :reagent-render
        (fn []
-         (let [{:keys [page-name page-params]} (page-data (<sub [:current-page]))
-               creation-buttons (<sub [:creation-buttons])]
+         (let [{:keys [page-name page-params]} (page-data (<sub [:current-page]))]
            [:<>
             [modal]
             [:div#page
-             [:div#page__header
-              [navigation page-name]]
+             [menu-bar page-name]
              [:div#page__workspace
               (when-not (= page-name :game)
                 [:div#page__workspace__resources
                  [resources]])
               [:div#page__workspace__main
-               (when (some? creation-buttons)
-                 [:div#page__toolbar
-                  [toolbar creation-buttons]])
+               (when (not= page-name :game)
+                 [page-header page-name page-params])
                [:div#page__content
                 [content-component page-name page-params]]]
               (when-not (= page-name :game)
-               [:div#page__workspace__inspector
-                [inspector page-name page-params]])]]]))})))
+                [:div#page__workspace__inspector
+                 [inspector page-name page-params]])]]]))})))

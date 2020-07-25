@@ -132,6 +132,26 @@
     (m/Point. (+ (.-scrollLeft target) (/ (.-clientWidth target) 2))
               (+ (.-scrollTop target) (/ (.-clientHeight target) 2)))))
 
+(defn location-map-header []
+  [:header.page-header
+   [:h1 "World"]
+   [:ul.page-header__actions
+    [:li
+     [c/button
+      {:title "Zoom Out"
+       :icon "minus"
+       :on-click #(>evt [:location-map/zoom-out])}]]
+    [:li
+     [c/button
+      {:title "Zoom In"
+       :icon "plus"
+       :on-click #(>evt [:location-map/zoom-in])}]]
+    [:li
+     [c/button
+      {:title "New Location"
+       :icon "plus"
+       :on-click #(>evt [:armchair.modals.location-creation/open])}]]]])
+
 (defn location-map []
   (let [update-scroll-center (debounce #(>evt [:location-map/update-scroll-center %]) 200)
         on-scroll (comp update-scroll-center e->scroll-center)]
