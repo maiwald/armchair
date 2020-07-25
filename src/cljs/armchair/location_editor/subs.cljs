@@ -124,3 +124,10 @@
           player (when (= location-id (:location-id player))
                    [(:location-position player)])]
       (set (concat player blocked (keys placements))))))
+
+(reg-sub
+  :location-editor/header
+  (fn [[_ location-id]]
+    (subscribe [:db/location location-id]))
+  (fn [{:keys [display-name]}]
+    {:display-name display-name}))

@@ -10,6 +10,7 @@
                                    rect->point-seq
                                    rect-contains?]]
             [armchair.util :as u :refer [<sub >evt]]
+            [armchair.routes :refer [>navigate]]
             [armchair.textures :refer [image-path]]))
 
 (defn tile-paint-canvas []
@@ -247,6 +248,14 @@
        (when (<sub [:ui/dnd])
          [tile-dropzone {:occupied (<sub [:location/occupied-tiles location-id])
                          :on-drop #(>evt [:drop-entity location-id (relative-point % bounds)])}])]]]))
+
+(defn location-editor-header [location-id]
+  (let [{:keys [display-name]} (<sub [:location-editor/header location-id])]
+    [:header.page-header
+      [:a.page-header__back
+       {:on-click #(>navigate :locations)}
+       [c/icon "angle-double-left"] "World"]
+      [:h1 "Location: " display-name]]))
 
 (defn location-editor [location-id]
   (if (<sub [:location-editor/location-exists? location-id])

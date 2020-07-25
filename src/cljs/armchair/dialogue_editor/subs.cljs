@@ -84,10 +84,16 @@
   :dialogue-editor/initial-line
   (fn [[_ dialogue-id]]
     (subscribe [:db/dialogue dialogue-id]))
-  (fn [dialogue]
-    (let [{:keys [synopsis initial-line-id]} dialogue]
-      {:synopsis synopsis
-       :connected? (some? initial-line-id)})))
+  (fn [{:keys [synopsis initial-line-id]}]
+    {:synopsis synopsis
+     :connected? (some? initial-line-id)}))
+
+(reg-sub
+  :dialogue-editor/header
+  (fn [[_ dialogue-id]]
+    (subscribe [:db/dialogue dialogue-id]))
+  (fn [{:keys [synopsis]}]
+    {:synopsis synopsis}))
 
 (reg-sub
   :dialogue-editor/dialogue
