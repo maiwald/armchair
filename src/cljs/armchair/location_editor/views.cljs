@@ -198,7 +198,8 @@
                 active-tool
                 active-texture]} (<sub [:location-editor/ui])
         width (* config/tile-size (:w bounds))
-        height (* config/tile-size (:h bounds))]
+        height (* config/tile-size (:h bounds))
+        occupied (<sub [:location/occupied-tiles location-id])]
     [c/scroll-container {:width (* 3 width) :height (* 3 height)}
      [:div {:class "level-wrap"}
       [:div {:class "location__tilemap"
@@ -238,24 +239,30 @@
           {:on-paint #(>evt [:location-editor/set-walkable location-id
                              (relative-point % bounds)])}]
          (:entities :triggers)
-         [tile-select {:occupied (<sub [:location/occupied-tiles location-id])
-                       :on-drag-start #(>evt [:start-entity-drag %])
+         [tile-select {:on-drag-start (fn [e tile]
+                                        (if-let [entity (get occupied tile)]
+                                          (do
+                                            (>evt [:start-entity-drag entity])
+                                            (.setDragImage (.-dataTransfer e)
+                                                           (js/Image.)
+                                                           0 0))
+                                          (u/prevent-e! e)))
                        :on-drag-end #(>evt [:stop-entity-drag])
                        :on-click #(>evt [:inspect :tile location-id (relative-point % bounds)])}]
 
          nil)
 
        (when (<sub [:ui/dnd])
-         [tile-dropzone {:occupied (<sub [:location/occupied-tiles location-id])
+         [tile-dropzone {:occupied? (fn [tile] (contains? occupied tile))
                          :on-drop #(>evt [:drop-entity location-id (relative-point % bounds)])}])]]]))
 
 (defn location-editor-header [location-id]
   (let [{:keys [display-name]} (<sub [:location-editor/header location-id])]
     [:header.page-header
-      [:a.page-header__back
-       {:on-click #(>navigate :locations)}
-       [c/icon "angle-double-left"] "World"]
-      [:h1 "Location: " display-name]]))
+     [:a.page-header__back
+      {:on-click #(>navigate :locations)}
+      [c/icon "angle-double-left"] "World"]
+     [:h1 "Location: " display-name]]))
 
 (defn location-editor [location-id]
   (if (<sub [:location-editor/location-exists? location-id])

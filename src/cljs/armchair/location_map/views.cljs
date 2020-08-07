@@ -31,6 +31,7 @@
                     inspecting?]} (<sub [:location-map/location location-id])
             dragging? (<sub [:dragging-item? location-id])
             position (<sub [:location-map/location-position location-id])
+            occupied (<sub [:location/occupied-tiles location-id])
             start-dragging (fn [e]
                              (when (e->left? e)
                                (u/stop-e! e)
@@ -80,13 +81,19 @@
                     :style {:width (u/px preview-image-w)
                             :height (u/px preview-image-h)}}]
              [tile-select {:zoom-scale zoom-scale
-                           :occupied (<sub [:location/occupied-tiles location-id])
-                           :on-drag-start #(>evt [:start-entity-drag %])
+                           :on-drag-start (fn [e tile]
+                                            (if-let [entity (get occupied tile)]
+                                              (do
+                                                (>evt [:start-entity-drag entity])
+                                                (.setDragImage (.-dataTransfer e)
+                                                               (js/Image.)
+                                                               0 0))
+                                              (u/prevent-e! e)))
                            :on-drag-end #(>evt [:stop-entity-drag])
                            :on-click #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}]
              (when (<sub [:ui/dnd])
                [tile-dropzone {:zoom-scale zoom-scale
-                               :occupied (<sub [:location/occupied-tiles location-id])
+                               :occupied? (fn [tile] (contains? occupied tile))
                                :on-drop #(>evt [:drop-entity location-id (m/relative-point % bounds)])}])]]
            [:div {:class "location__loading"
                   :style {:width (u/px preview-image-w)
