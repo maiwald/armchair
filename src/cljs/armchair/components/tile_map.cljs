@@ -3,32 +3,32 @@
             [armchair.util :as u]))
 
 (defn tile-dropzone []
-  (let [current-tile (r/atom nil)]
-    (letfn [(set-current-tile [tile] (reset! current-tile tile))
-            (clear-current-tile [] (reset! current-tile nil))]
+  (let [hover-tile (r/atom nil)]
+    (letfn [(set-hover-tile [tile] (reset! hover-tile tile))
+            (clear-hover-tile [] (reset! hover-tile nil))]
       (fn [{:keys [occupied on-drop zoom-scale]
             :or {zoom-scale 1}}]
         [:div {:class "dropzone"
                :on-drag-over (fn [e]
                                (u/prevent-e! e)
-                               (set-current-tile (u/e->tile e zoom-scale)))
-               :on-drag-leave clear-current-tile
+                               (set-hover-tile (u/e->tile e zoom-scale)))
+               :on-drag-leave clear-hover-tile
                :on-drop (fn [e]
                           (let [drop-tile (u/e->tile e zoom-scale)]
                             (when-not (contains? occupied drop-tile)
                               (on-drop drop-tile))))}
-         (when @current-tile
-           [:div {:class ["dropzone__interactor"
-                          (when (contains? occupied @current-tile)
-                            "dropzone__interactor_disabled")]
-                  :style (u/tile-style @current-tile zoom-scale)}])]))))
+         (when (some? @hover-tile)
+           [:div {:class ["dropzone__hover-tile"
+                          (when (contains? occupied @hover-tile)
+                            "dropzone__hover-tile_disabled")]
+                  :style (u/tile-style @hover-tile zoom-scale)}])]))))
 
 (defn tile-select []
-  (let [highlight-tile (r/atom nil)]
-    (fn [{:keys [on-click on-drag-start on-drag-end zoom-scale occupied]
-          :or {zoom-scale 1}}]
-      (let [set-highlight (fn [e] (reset! highlight-tile (u/e->tile e zoom-scale)))
-            clear-highlight (fn [] (reset! highlight-tile nil))]
+  (let [hover-tile (r/atom nil)]
+    (letfn [(set-hover-tile [tile] (reset! hover-tile tile))
+            (clear-hover-tile [] (reset! hover-tile nil))]
+      (fn [{:keys [on-click on-drag-start on-drag-end zoom-scale occupied]
+            :or {zoom-scale 1}}]
         [:div {:class "tile-select"
                :draggable true
                :on-drag-start (fn [e]
@@ -40,10 +40,9 @@
                                     (u/prevent-e! e))))
                :on-drag-end on-drag-end
                :on-mouse-down u/stop-e!
-               :on-mouse-move set-highlight
-               :on-mouse-leave clear-highlight
+               :on-mouse-move (fn [e] (set-hover-tile (u/e->tile e zoom-scale)))
+               :on-mouse-leave clear-hover-tile
                :on-click (fn [e] (on-click (u/e->tile e zoom-scale)))}
-         (when (some? @highlight-tile)
-           [:div {:class "tile-select__highlight"
-                  :style (u/tile-style @highlight-tile zoom-scale)}])]))))
-
+         (when (some? @hover-tile)
+           [:div {:class "tile-select__hover-tile"
+                  :style (u/tile-style @hover-tile zoom-scale)}])]))))
