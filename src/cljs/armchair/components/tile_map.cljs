@@ -6,7 +6,7 @@
   (let [hover-tile (r/atom nil)]
     (letfn [(set-hover-tile [tile] (reset! hover-tile tile))
             (clear-hover-tile [] (reset! hover-tile nil))]
-      (fn [{:keys [occupied on-drop zoom-scale]
+      (fn [{:keys [occupied? on-drop zoom-scale]
             :or {zoom-scale 1}}]
         [:div {:class "dropzone"
                :on-drag-over (fn [e]
@@ -15,11 +15,11 @@
                :on-drag-leave clear-hover-tile
                :on-drop (fn [e]
                           (let [drop-tile (u/e->tile e zoom-scale)]
-                            (when-not (contains? occupied drop-tile)
+                            (when-not (occupied? drop-tile)
                               (on-drop drop-tile))))}
          (when (some? @hover-tile)
            [:div {:class ["dropzone__hover-tile"
-                          (when (contains? occupied @hover-tile)
+                          (when (occupied? @hover-tile)
                             "dropzone__hover-tile_disabled")]
                   :style (u/tile-style @hover-tile zoom-scale)}])]))))
 
@@ -27,17 +27,11 @@
   (let [hover-tile (r/atom nil)]
     (letfn [(set-hover-tile [tile] (reset! hover-tile tile))
             (clear-hover-tile [] (reset! hover-tile nil))]
-      (fn [{:keys [on-click on-drag-start on-drag-end zoom-scale occupied]
+      (fn [{:keys [on-click on-drag-start on-drag-end zoom-scale]
             :or {zoom-scale 1}}]
         [:div {:class "tile-select"
                :draggable true
-               :on-drag-start (fn [e]
-                                (let [tile (u/e->tile e zoom-scale)]
-                                  (if (contains? occupied tile)
-                                    (do
-                                      (.setDragImage (.-dataTransfer e) (js/Image.) 0 0)
-                                      (on-drag-start (get occupied tile)))
-                                    (u/prevent-e! e))))
+               :on-drag-start (fn [e] (on-drag-start e (u/e->tile e zoom-scale)))
                :on-drag-end on-drag-end
                :on-mouse-down u/stop-e!
                :on-mouse-move (fn [e] (set-hover-tile (u/e->tile e zoom-scale)))
