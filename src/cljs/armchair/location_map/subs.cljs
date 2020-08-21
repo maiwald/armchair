@@ -17,16 +17,14 @@
   (fn [[_ location-id]]
     [(subscribe [:db/location location-id])
      (subscribe [:db-characters])
-     (subscribe [:db-player])
-     (subscribe [:ui/inspector])])
-  (fn [[{:keys [placements bounds]} characters player inspector] [_ location-id]]
+     (subscribe [:db-player])])
+  (fn [[{:keys [placements bounds]} characters player] [_ location-id]]
     (u/map-keys
       (fn [tile] (m/global-point tile bounds))
       (cond-> (u/map-values
-                (fn [{:keys [character-id]} tile]
+                (fn [{:keys [character-id]}]
                   (let [character (characters character-id)]
-                    (merge (select-keys character [:texture :display-name])
-                           {:inspecting? (= inspector [:tile location-id tile])})))
+                    (select-keys character [:texture :display-name])))
                 placements)
         (= location-id (:location-id player))
         (assoc (:location-position player) {:texture ["hare.png" (m/Point. 6 0)]
@@ -45,7 +43,7 @@
         characters
         preview-cache-background
         preview-cache-foreground
-        inspector
+        [inspector-type inspector-location-id inspector-tile]
         zoom-scale]
        [_ location-id]]
     (let [{:keys [display-name]
@@ -60,7 +58,9 @@
        :preview-image-foreground-src preview-image-foreground-src
        :preview-image-w (* zoom-scale config/tile-size w)
        :preview-image-h (* zoom-scale config/tile-size h)
-       :inspecting? (= inspector [:location location-id])})))
+       :inspecting? (= [inspector-type inspector-location-id] [:location location-id])
+       :inspected-tile (when (= [inspector-type inspector-location-id] [:tile location-id])
+                         (m/global-point inspector-tile bounds))})))
 
 (reg-sub
   :location-map/bounds

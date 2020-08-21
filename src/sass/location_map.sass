@@ -64,6 +64,9 @@
     user-select: none
     box-sizing: content-box
 
+  &_is-inspecting > &__tilemap-wrapper
+    border-color: $blue-600
+
   &__tilemap
     position: relative
 
@@ -72,14 +75,14 @@
 
     &__character
       position: absolute
+      pointer-events: none
 
+    &__tile
       &_is-inspecting
         box-sizing: content-box
         margin: -2px 0 0 -2px
         border: 2px dashed white
-
-  &_is-inspecting > &__tilemap-wrapper
-    border-color: $blue-600
+        pointer-events: none
 
 .location-connections
   pointer-events: none
