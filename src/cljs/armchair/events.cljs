@@ -261,6 +261,3 @@
   :stop-entity-drag
   (fn [db]
     (dissoc db :ui/dnd)))
-
-;; Inspector
-
