@@ -27,12 +27,6 @@
 ;; Subscriptions
 
 (reg-sub
-  :inspecting?
-  :<- :ui/inspector
-  (fn [inspector [_ inspector-type & inspector-data]]
-    (= inspector (apply vector inspector-type inspector-data))))
-
-(reg-sub
   ::placement-inspector
   (fn [[_ location-id]]
     [(subscribe [:db/location location-id])
