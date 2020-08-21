@@ -99,9 +99,11 @@
                                           (>evt [:stop-entity-drag])
                                           (reset! test-state {}))
                            :on-click #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}]
-             (when (<sub [:ui/dnd])
+             (when-let [[dnd-type] (<sub [:ui/dnd])]
                [tile-dropzone {:zoom-scale zoom-scale
-                               :occupied? (fn [tile] (contains? occupied tile))
+                               :can-drop? (fn [tile] (or (not (contains? occupied tile))
+                                                         (and (= dnd-type :tile)
+                                                              (= (get-in occupied [tile 0]) :connection-trigger))))
                                :on-drop (fn [e]
                                           (>evt [:drop-entity location-id (m/relative-point e bounds)])
                                           (reset! test-state {}))
