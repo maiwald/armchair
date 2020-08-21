@@ -28,7 +28,8 @@
                     preview-image-h
                     zoom-scale
                     bounds
-                    inspecting?]} (<sub [:location-map/location location-id])
+                    inspecting?
+                    inspected-tile]} (<sub [:location-map/location location-id])
             dragging? (<sub [:dragging-item? location-id])
             position (<sub [:location-map/location-position location-id])
             occupied (<sub [:location/occupied-tiles location-id])
@@ -72,14 +73,17 @@
                             :height (u/px preview-image-h)}}]
              (when (seq characters)
                [:<>
-                (for [[tile {:keys [texture display-name inspecting?]}] characters]
+                (for [[tile {:keys [texture display-name]}] characters]
                   [:div {:key (str "location-character:" location-id ",tile:" (pr-str tile))
-                         :class ["location__tilemap__character" (when inspecting? "location__tilemap__character_is-inspecting")]
+                         :class ["location__tilemap__character"]
                          :style (u/tile-style tile zoom-scale)}
                    [c/sprite-texture texture display-name zoom-scale]])])
              [:img {:src preview-image-foreground-src
                     :style {:width (u/px preview-image-w)
                             :height (u/px preview-image-h)}}]
+             (when (some? inspected-tile)
+               [:div {:class ["location__tilemap__tile_is-inspecting"]
+                      :style (u/tile-style inspected-tile zoom-scale)}])
              [tile-select {:zoom-scale zoom-scale
                            :on-drag-start (fn [e tile]
                                             (if-let [entity (get occupied tile)]
