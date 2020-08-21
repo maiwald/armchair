@@ -17,6 +17,8 @@
             :on-mouse-move move-cursor}]
           (r/children (r/current-component)))))
 
+(def test-state (r/atom {}))
+
 (defn location []
   (let [mouse-down-start (atom nil)]
     (fn [location-id]
@@ -86,19 +88,25 @@
                       :style (u/tile-style inspected-tile zoom-scale)}])
              [tile-select {:zoom-scale zoom-scale
                            :on-drag-start (fn [e tile]
-                                            (if-let [entity (get occupied tile)]
-                                              (do
-                                                (>evt [:start-entity-drag entity])
-                                                (.setDragImage (.-dataTransfer e)
-                                                               (js/Image.)
-                                                               0 0))
-                                              (u/prevent-e! e)))
-                           :on-drag-end #(>evt [:stop-entity-drag])
+                                            (.setDragImage (.-dataTransfer e)
+                                                           (js/Image.)
+                                                           0 0)
+                                            (let [entity (get occupied tile [:tile location-id (m/relative-point tile bounds)])]
+                                              (>evt [:start-entity-drag entity])
+                                              (when (= :tile (first entity))
+                                                (swap! test-state assoc :start [location-id (m/relative-point tile bounds)]))))
+                           :on-drag-end (fn []
+                                          (>evt [:stop-entity-drag])
+                                          (reset! test-state {}))
                            :on-click #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}]
              (when (<sub [:ui/dnd])
                [tile-dropzone {:zoom-scale zoom-scale
                                :occupied? (fn [tile] (contains? occupied tile))
-                               :on-drop #(>evt [:drop-entity location-id (m/relative-point % bounds)])}])]]
+                               :on-drop (fn [e]
+                                          (>evt [:drop-entity location-id (m/relative-point e bounds)])
+                                          (reset! test-state {}))
+                               :on-drag-leave #(swap! test-state dissoc :end)
+                               :on-drag-over #(swap! test-state assoc :end [location-id (m/relative-point % bounds)])}])]]
            [:div {:class "location__loading"
                   :style {:width (u/px preview-image-w)
                           :height (u/px preview-image-h)}}
@@ -133,6 +141,18 @@
     [:svg {:class "location-connections" :version "1.1"
            :baseProfile "full"
            :xmlns "http://www.w3.org/2000/svg"}
+     (when (and (contains? @test-state :start)
+                (contains? @test-state :end))
+       (let [{[start-location start-tile] :start
+              [end-location end-tile] :end} @test-state
+             {{start-x :x start-y :y} :tile-center} (<sub [:location-map/connection-position start-location start-tile])
+             {{end-x :x end-y :y} :tile-center} (<sub [:location-map/connection-position end-location end-tile])]
+         [:line {:stroke-width 2
+                 :stroke "red"
+                 :x1 start-x
+                 :y1 start-y
+                 :x2 end-x
+                 :y2 end-y}]))
      (for [[start end] cs]
        ^{:key (str "location-connection" start "->" end)}
        [location-connection start end])]))
