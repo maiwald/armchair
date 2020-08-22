@@ -116,6 +116,16 @@
                 (vector [from-id from-position] to))))))
 
 (reg-sub
+  :location-map/dnd-connection-preview
+  :<- [:ui/dnd]
+  :<- [:ui/dnd-preview]
+  (fn [[[dnd-type & dnd-payload] dnd-preview]]
+    (when (and (= dnd-type :tile)
+               (some? dnd-preview))
+      {:start dnd-payload
+       :end dnd-preview})))
+
+(reg-sub
   :location-map
   :<- [:db-locations]
   :<- [:location-map/bounds]

@@ -355,7 +355,8 @@
                               :opt [:ui/location-map-scroll-center
                                     :ui/inspector
                                     :ui/active-resource
-                                    :ui/dnd])))
+                                    :ui/dnd
+                                    :ui/dnd-preview])))
 
 (s/def :state/player
   (s/keys :req-un [::location-id

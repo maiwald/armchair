@@ -17,8 +17,6 @@
             :on-mouse-move move-cursor}]
           (r/children (r/current-component)))))
 
-(def test-state (r/atom {}))
-
 (defn location []
   (let [mouse-down-start (atom nil)]
     (fn [location-id]
@@ -91,24 +89,22 @@
                                             (.setDragImage (.-dataTransfer e)
                                                            (js/Image.)
                                                            0 0)
-                                            (let [entity (get occupied tile [:tile location-id (m/relative-point tile bounds)])]
-                                              (>evt [:start-entity-drag entity])
-                                              (when (= :tile (first entity))
-                                                (swap! test-state assoc :start [location-id (m/relative-point tile bounds)]))))
-                           :on-drag-end (fn []
-                                          (>evt [:stop-entity-drag])
-                                          (reset! test-state {}))
-                           :on-click #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}]
+                                            ;; If nothing is occupying the given tile, we start dragging the
+                                            ;; tile itself to start creating a new connection trigger
+                                            (let [tile-dnd-payload [:tile location-id (m/relative-point tile bounds)]
+                                                  entity (get occupied tile tile-dnd-payload)]
+                                              (>evt [:start-entity-drag entity])))
+                           :on-drag-end (fn [] (>evt [:stop-entity-drag]))
+                           :on-click (fn [tile] (>evt [:inspect :tile location-id (m/relative-point tile bounds)]))}]
              (when-let [[dnd-type] (<sub [:ui/dnd])]
                [tile-dropzone {:zoom-scale zoom-scale
-                               :can-drop? (fn [tile] (or (not (contains? occupied tile))
-                                                         (and (= dnd-type :tile)
-                                                              (= (get-in occupied [tile 0]) :connection-trigger))))
-                               :on-drop (fn [e]
-                                          (>evt [:drop-entity location-id (m/relative-point e bounds)])
-                                          (reset! test-state {}))
-                               :on-drag-leave #(swap! test-state dissoc :end)
-                               :on-drag-over #(swap! test-state assoc :end [location-id (m/relative-point % bounds)])}])]]
+                               :can-drop? (fn [tile]
+                                            (or (not (contains? occupied tile))
+                                                (and (= dnd-type :tile)
+                                                     (= (get-in occupied [tile 0]) :connection-trigger))))
+                               :on-drop (fn [tile] (>evt [:drop-entity location-id (m/relative-point tile bounds)]))
+                               :on-drag-leave #(>evt [:unset-entity-drop-preview])
+                               :on-drag-over (fn [tile] (>evt [:set-entity-drop-preview location-id (m/relative-point tile bounds)]))}])]]
            [:div {:class "location__loading"
                   :style {:width (u/px preview-image-w)
                           :height (u/px preview-image-h)}}
@@ -143,22 +139,25 @@
     [:svg {:class "location-connections" :version "1.1"
            :baseProfile "full"
            :xmlns "http://www.w3.org/2000/svg"}
-     (when (and (contains? @test-state :start)
-                (contains? @test-state :end))
-       (let [{[start-location start-tile] :start
-              [end-location end-tile] :end} @test-state
-             {{start-x :x start-y :y} :tile-center} (<sub [:location-map/connection-position start-location start-tile])
-             {{end-x :x end-y :y} :tile-center} (<sub [:location-map/connection-position end-location end-tile])]
+     (for [[start end] cs]
+       ^{:key (str "location-connection" start "->" end)}
+       [location-connection start end])]))
+
+(defn connection-preview []
+  (when-let [drag-preview (<sub [:location-map/dnd-connection-preview])]
+    [:svg {:class "location-connections" :version "1.1"
+           :baseProfile "full"
+           :xmlns "http://www.w3.org/2000/svg"}
+     (let [{[start-location start-tile] :start
+            [end-location end-tile] :end} drag-preview
+           {{start-x :x start-y :y} :tile-center} (<sub [:location-map/connection-position start-location start-tile])
+           {{end-x :x end-y :y} :tile-center} (<sub [:location-map/connection-position end-location end-tile])]
          [:line {:stroke-width 2
                  :stroke "red"
                  :x1 start-x
                  :y1 start-y
                  :x2 end-x
-                 :y2 end-y}]))
-     (for [[start end] cs]
-       ^{:key (str "location-connection" start "->" end)}
-       [location-connection start end])]))
-
+                 :y2 end-y}])]))
 
 (defn e->scroll-center [e]
   (let [target (.-currentTarget e)]
@@ -199,4 +198,5 @@
           (for [id location-ids]
             ^{:key (str "location:" id)}
             [location id])
-          [connections]]]))))
+          [connections]
+          [connection-preview]]]))))
