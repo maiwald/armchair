@@ -6,7 +6,6 @@
 
 # TODO
 - editing connections
-  - inline temporary drag state
 - improved dialogue editor and state management
 - select and paint multiple texture sprites
 - Dialogue Structure (Quests?)
