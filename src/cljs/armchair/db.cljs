@@ -62,6 +62,14 @@
 (s/def :ui/inspector (s/cat :inspector/type #{:location :tile}
                             :inspector/data (s/* some?)))
 
+(s/def :ui/dnd
+  (s/or :tile               (s/tuple #(= :tile %) ::location-id :type/point)
+        :placement          (s/tuple #(= :placement %) ::location-id :type/point)
+        :connection-trigger (s/tuple #(= :connection-trigger %) ::location-id :type/point)
+        :location           (s/tuple #(= :location %) ::location-id)
+        :character          (s/tuple #(= :character %) ::character-id)
+        :player             (s/tuple #(= :player %))))
+
 (s/def ::current-page (s/nilable string?))
 
 ;; Location Editor
