@@ -43,14 +43,9 @@
 
 ;; UI State
 
-(s/def :ui/connecting (s/or :lines ::connecting-lines
-                            :locations ::connecting-locations))
+(s/def :ui/connecting (s/keys :req-un [::cursor-start]
+                              :opt-un [::line-id ::dialogue-id ::index]))
 (s/def ::cursor-start :type/point)
-
-(s/def ::connecting-lines (s/keys :req-un [::cursor-start]
-                                  :opt-un [::line-id ::dialogue-id ::index]))
-
-(s/def ::connecting-locations (s/keys :req-un [::cursor-start ::location-id]))
 
 (s/def :ui/cursor :type/point)
 (s/def :ui/dragging (s/keys :req-un [::cursor-start ::ids]))
