@@ -5,7 +5,6 @@
 - visual connection idicator is broken in dialogue editor
 
 # TODO
-- editing connections
 - improved dialogue editor and state management
 - select and paint multiple texture sprites
 - Dialogue Structure (Quests?)
