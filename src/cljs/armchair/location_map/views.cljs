@@ -29,10 +29,11 @@
                     zoom-scale
                     bounds
                     is-inspecting
-                    inspected-tile]} (<sub [:location-map/location location-id])
+                    inspected-tile
+                    can-drop?
+                    drag-entity]} (<sub [:location-map/location location-id])
             is-dragging (<sub [:dragging-item? location-id])
             position (<sub [:location-map/location-position location-id])
-            occupied (<sub [:location/occupied-tiles location-id])
             start-dragging (fn [e]
                              (when (e->left? e)
                                (u/stop-e! e)
@@ -89,19 +90,14 @@
                                             (.setDragImage (.-dataTransfer e)
                                                            (js/Image.)
                                                            0 0)
-                                            ;; If nothing is occupying the given tile, we start dragging the
-                                            ;; tile itself to start creating a new connection trigger
-                                            (let [tile-dnd-payload [:tile location-id (m/relative-point tile bounds)]
-                                                  entity (get occupied tile tile-dnd-payload)]
-                                              (>evt [:start-entity-drag entity])))
+                                            (if-let [entity (drag-entity tile)]
+                                              (>evt [:start-entity-drag entity])
+                                              (u/prevent-e! e)))
                            :on-drag-end (fn [] (>evt [:stop-entity-drag]))
                            :on-click (fn [tile] (>evt [:inspect :tile location-id (m/relative-point tile bounds)]))}]
-             (when-let [[dnd-type] (<sub [:ui/dnd])]
+             (when (<sub [:ui/dnd])
                [tile-dropzone {:zoom-scale zoom-scale
-                               :can-drop? (fn [tile]
-                                            (or (not (contains? occupied tile))
-                                                (and (= dnd-type :tile)
-                                                     (= (get-in occupied [tile 0]) :connection-trigger))))
+                               :can-drop? can-drop?
                                :on-drop (fn [tile] (>evt [:drop-entity location-id (m/relative-point tile bounds)]))
                                :on-drag-leave #(>evt [:unset-entity-drop-preview])
                                :on-drag-over (fn [tile] (>evt [:set-entity-drop-preview location-id (m/relative-point tile bounds)]))}])]]
