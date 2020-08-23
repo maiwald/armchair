@@ -87,7 +87,7 @@
                           (fn [_ k] [:placement location-id k])
                           placements)
                         (when (= location-id (:location-id player))
-                          (u/spy {(:location-position player) [:player]})))]
+                          {(:location-position player) [:player]}))]
          (fn [global-tile]
            (let [tile (m/relative-point global-tile bounds)]
              (if-let [entity (occupied tile)]
