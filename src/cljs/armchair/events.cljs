@@ -219,45 +219,67 @@
   (fn [db [_ payload]]
     (assoc db :ui/dnd payload)))
 
+(reg-event-meta
+  :set-entity-drop-preview
+  (fn [{[dnd-type] :ui/dnd :as db}
+       [_ target-location-id target-position]]
+    (assert (some? dnd-type)
+            "Attempting to preview entity drop while no drag in progress!")
+    (cond-> db
+      (= dnd-type :tile)
+      (assoc :ui/dnd-preview [target-location-id target-position]))))
+
+(reg-event-meta
+  :unset-entity-drop-preview
+  (fn [db _]
+    (dissoc db :ui/dnd-preview)))
 
 (reg-event-data
   :drop-entity
-  (fn [{[dnd-type & dnd-payload] :ui/dnd :as db} [_ target-location-id target-position]]
+  (fn [{[dnd-type & dnd-payload] :ui/dnd :as db}
+       [_ target-location-id target-position]]
     (assert (some? dnd-type)
-            "Attempting to drop while no drag in progress!")
-    (case dnd-type
-      :player (-> db
-                  (dissoc :ui/dnd)
-                  (assoc :player {:location-id target-location-id
-                                  :location-position target-position}))
-      :character (-> db
-                     (dissoc :ui/dnd)
-                     (assoc :ui/inspector [:tile target-location-id target-position])
-                     (assoc-in [:locations target-location-id :placements target-position]
-                               {:character-id (first dnd-payload)}))
-      :location (-> db
-                  (dissoc :ui/dnd)
-                  (assoc-in
-                    [:modal :connection-trigger-creation]
-                    {:location-id target-location-id
-                     :location-position target-position
-                     :target-id (first dnd-payload)}))
-      :placement (let [[location-id location-position] dnd-payload
-                       placement (get-in db [:locations location-id :placements location-position])]
-                   (-> db
-                       (dissoc :ui/dnd)
-                       (assoc :ui/inspector [:tile target-location-id target-position])
-                       (update-in [:locations location-id :placements] dissoc location-position)
-                       (assoc-in [:locations target-location-id :placements target-position] placement)))
-      :connection-trigger (let [[location-id location-position] dnd-payload]
-                            (-> db
-                                (dissoc :ui/dnd)
-                                (assoc :ui/inspector [:tile target-location-id target-position])
-                                (update-in [:locations location-id :connection-triggers] dissoc location-position)
-                                (assoc-in [:locations target-location-id :connection-triggers target-position]
-                                          (get-in db [:locations location-id :connection-triggers location-position])))))))
+            "Attempting to drop entity while no drag in progress!")
+    (-> (case dnd-type
+          :player
+          (-> db
+              (assoc :ui/inspector [:tile target-location-id target-position]
+                     :player {:location-id target-location-id
+                              :location-position target-position}))
+          :character
+          (-> db
+              (assoc :ui/inspector [:tile target-location-id target-position])
+              (assoc-in [:locations target-location-id :placements target-position]
+                        {:character-id (first dnd-payload)}))
+          :location
+          (-> db
+            (assoc-in
+              [:modal :connection-trigger-creation]
+              {:location-id target-location-id
+               :location-position target-position
+               :target-id (first dnd-payload)}))
+          :placement
+          (let [[location-id location-position] dnd-payload
+                placement (get-in db [:locations location-id :placements location-position])]
+            (-> db
+                (assoc :ui/inspector [:tile target-location-id target-position])
+                (update-in [:locations location-id :placements] dissoc location-position)
+                (assoc-in [:locations target-location-id :placements target-position] placement)))
+          :connection-trigger
+          (let [[location-id location-position] dnd-payload]
+            (-> db
+                (assoc :ui/inspector [:tile target-location-id target-position])
+                (update-in [:locations location-id :connection-triggers] dissoc location-position)
+                (assoc-in [:locations target-location-id :connection-triggers target-position]
+                          (get-in db [:locations location-id :connection-triggers location-position]))))
+          :tile
+          (let [[location-id location-position] dnd-payload]
+            (-> db
+                (assoc :ui/inspector [:tile location-id location-position])
+                (assoc-in [:locations location-id :connection-triggers location-position]
+                          [target-location-id target-position]))))
+        (dissoc :ui/dnd :ui/dnd-preview))))
 
 (reg-event-meta
   :stop-entity-drag
-  (fn [db]
-    (dissoc db :ui/dnd)))
+  (fn [db] (dissoc db :ui/dnd :ui/dnd-preview)))

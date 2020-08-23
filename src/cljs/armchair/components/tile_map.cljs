@@ -6,20 +6,23 @@
   (let [hover-tile (r/atom nil)]
     (letfn [(set-hover-tile [tile] (reset! hover-tile tile))
             (clear-hover-tile [] (reset! hover-tile nil))]
-      (fn [{:keys [occupied? on-drop zoom-scale]
+      (fn [{:keys [can-drop? on-drop on-drag-over on-drag-leave zoom-scale]
             :or {zoom-scale 1}}]
         [:div {:class "dropzone"
                :on-drag-over (fn [e]
                                (u/prevent-e! e)
-                               (set-hover-tile (u/e->tile e zoom-scale)))
-               :on-drag-leave clear-hover-tile
+                               (let [hover-tile (u/e->tile e zoom-scale)]
+                                 (set-hover-tile hover-tile)
+                                 (when (fn? on-drag-over) (on-drag-over hover-tile))))
+               :on-drag-leave (fn [] (clear-hover-tile)
+                                (when (fn? on-drag-leave) (on-drag-leave)))
                :on-drop (fn [e]
                           (let [drop-tile (u/e->tile e zoom-scale)]
-                            (when-not (occupied? drop-tile)
+                            (when (can-drop? drop-tile)
                               (on-drop drop-tile))))}
          (when (some? @hover-tile)
            [:div {:class ["dropzone__hover-tile"
-                          (when (occupied? @hover-tile)
+                          (when-not (can-drop? @hover-tile)
                             "dropzone__hover-tile_disabled")]
                   :style (u/tile-style @hover-tile zoom-scale)}])]))))
 

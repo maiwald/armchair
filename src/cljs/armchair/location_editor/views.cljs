@@ -253,7 +253,7 @@
          nil)
 
        (when (<sub [:ui/dnd])
-         [tile-dropzone {:occupied? (fn [tile] (contains? occupied tile))
+         [tile-dropzone {:can-drop? (fn [tile] (not (contains? occupied tile)))
                          :on-drop #(>evt [:drop-entity location-id (relative-point % bounds)])}])]]]))
 
 (defn location-editor-header [location-id]
