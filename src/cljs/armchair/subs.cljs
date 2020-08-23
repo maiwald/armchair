@@ -37,6 +37,7 @@
 (reg-sub :ui/location-map-zoom-scale #(:ui/location-map-zoom-scale %))
 
 (reg-sub :ui/dnd #(:ui/dnd %))
+(reg-sub :ui/dnd-preview #(:ui/dnd-preview %))
 
 (reg-sub
   :character-list

@@ -34,21 +34,24 @@
   :location-map/location
   (fn [[_ location-id]]
     [(subscribe [:db/location location-id])
+     (subscribe [:db-player])
      (subscribe [:location-map/location-characters location-id])
+     (subscribe [:ui/dnd])
      (subscribe [:ui/location-preview-cache-background])
      (subscribe [:ui/location-preview-cache-foreground])
      (subscribe [:ui/inspector])
      (subscribe [:ui/location-map-zoom-scale])])
-  (fn [[location
+  (fn [[{:keys [display-name placements connection-triggers blocked]
+         {:keys [w h] :as bounds} :bounds}
+        player
         characters
+        [dnd-type & dnd-payload]
         preview-cache-background
         preview-cache-foreground
         [inspector-type inspector-location-id inspector-tile]
         zoom-scale]
        [_ location-id]]
-    (let [{:keys [display-name]
-           {:keys [w h] :as bounds} :bounds} location
-          preview-image-background-src (get preview-cache-background location-id)
+    (let [preview-image-background-src (get preview-cache-background location-id)
           preview-image-foreground-src (get preview-cache-foreground location-id)]
       {:display-name display-name
        :zoom-scale zoom-scale
@@ -58,9 +61,42 @@
        :preview-image-foreground-src preview-image-foreground-src
        :preview-image-w (* zoom-scale config/tile-size w)
        :preview-image-h (* zoom-scale config/tile-size h)
-       :inspecting? (= [inspector-type inspector-location-id] [:location location-id])
-       :inspected-tile (when (= [inspector-type inspector-location-id] [:tile location-id])
-                         (m/global-point inspector-tile bounds))})))
+       :is-inspecting (= [inspector-type inspector-location-id]
+                         [:location location-id])
+       :inspected-tile (when (= [inspector-type inspector-location-id]
+                                [:tile location-id])
+                         (m/global-point inspector-tile bounds))
+       :can-drop?
+       (fn [global-tile]
+         (let [tile (m/relative-point global-tile bounds)]
+           (not (or (contains? blocked tile)
+                    (case dnd-type
+                      :tile (or (contains? placements tile)
+                                (= [location-id tile]
+                                   ((juxt :location-id :location-position) player))
+                                (= [location-id tile]
+                                   dnd-payload))
+                      (or (contains? placements tile)
+                          (contains? connection-triggers tile)))))))
+       :drag-entity
+       (let [occupied (merge
+                        (u/map-values
+                          (fn [_ k] [:connection-trigger location-id k])
+                          connection-triggers)
+                        (u/map-values
+                          (fn [_ k] [:placement location-id k])
+                          placements)
+                        (when (= location-id (:location-id player))
+                          (u/spy {(:location-position player) [:player]})))]
+         (fn [global-tile]
+           (let [tile (m/relative-point global-tile bounds)]
+             (if-let [entity (occupied tile)]
+              entity
+              ;; If nothing is occupying the given tile and it is not blocked by
+              ;; collision we start dragging the tile itself to start creating a
+              ;; new connection trigger.
+              (when-not (contains? blocked tile)
+                [:tile location-id tile])))))})))
 
 (reg-sub
   :location-map/bounds
@@ -114,6 +150,16 @@
          (select [ALL (collect-one FIRST) LAST :connection-triggers ALL])
          (map (fn [[from-id [from-position to]]]
                 (vector [from-id from-position] to))))))
+
+(reg-sub
+  :location-map/dnd-connection-preview
+  :<- [:ui/dnd]
+  :<- [:ui/dnd-preview]
+  (fn [[[dnd-type & dnd-payload] dnd-preview]]
+    (when (and (= dnd-type :tile)
+               (some? dnd-preview))
+      {:start dnd-payload
+       :end dnd-preview})))
 
 (reg-sub
   :location-map

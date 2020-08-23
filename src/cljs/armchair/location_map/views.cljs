@@ -28,24 +28,25 @@
                     preview-image-h
                     zoom-scale
                     bounds
-                    inspecting?
-                    inspected-tile]} (<sub [:location-map/location location-id])
-            dragging? (<sub [:dragging-item? location-id])
+                    is-inspecting
+                    inspected-tile
+                    can-drop?
+                    drag-entity]} (<sub [:location-map/location location-id])
+            is-dragging (<sub [:dragging-item? location-id])
             position (<sub [:location-map/location-position location-id])
-            occupied (<sub [:location/occupied-tiles location-id])
             start-dragging (fn [e]
                              (when (e->left? e)
                                (u/stop-e! e)
                                (u/prevent-e! e)
                                (>evt [:start-dragging #{location-id} (u/e->point e) zoom-scale])))
             stop-dragging (fn [e]
-                            (when dragging?
+                            (when is-dragging
                               (u/stop-e! e)
                               (>evt [:end-dragging])))
             inspect-location #(>evt [:inspect :location location-id])]
         [:div {:class ["location"
-                       (when inspecting? "location_is-inspecting")
-                       (when dragging? "location_is-dragging")]
+                       (when is-inspecting "location_is-inspecting")
+                       (when is-dragging "location_is-dragging")]
                :on-mouse-down u/stop-e!
                :style {:left (u/px (:x position))
                        :top (u/px (:y position))}}
@@ -86,19 +87,20 @@
                       :style (u/tile-style inspected-tile zoom-scale)}])
              [tile-select {:zoom-scale zoom-scale
                            :on-drag-start (fn [e tile]
-                                            (if-let [entity (get occupied tile)]
-                                              (do
-                                                (>evt [:start-entity-drag entity])
-                                                (.setDragImage (.-dataTransfer e)
-                                                               (js/Image.)
-                                                               0 0))
+                                            (.setDragImage (.-dataTransfer e)
+                                                           (js/Image.)
+                                                           0 0)
+                                            (if-let [entity (drag-entity tile)]
+                                              (>evt [:start-entity-drag entity])
                                               (u/prevent-e! e)))
-                           :on-drag-end #(>evt [:stop-entity-drag])
-                           :on-click #(>evt [:inspect :tile location-id (m/relative-point % bounds)])}]
+                           :on-drag-end (fn [] (>evt [:stop-entity-drag]))
+                           :on-click (fn [tile] (>evt [:inspect :tile location-id (m/relative-point tile bounds)]))}]
              (when (<sub [:ui/dnd])
                [tile-dropzone {:zoom-scale zoom-scale
-                               :occupied? (fn [tile] (contains? occupied tile))
-                               :on-drop #(>evt [:drop-entity location-id (m/relative-point % bounds)])}])]]
+                               :can-drop? can-drop?
+                               :on-drop (fn [tile] (>evt [:drop-entity location-id (m/relative-point tile bounds)]))
+                               :on-drag-leave #(>evt [:unset-entity-drop-preview])
+                               :on-drag-over (fn [tile] (>evt [:set-entity-drop-preview location-id (m/relative-point tile bounds)]))}])]]
            [:div {:class "location__loading"
                   :style {:width (u/px preview-image-w)
                           :height (u/px preview-image-h)}}
@@ -137,6 +139,21 @@
        ^{:key (str "location-connection" start "->" end)}
        [location-connection start end])]))
 
+(defn connection-preview []
+  (when-let [drag-preview (<sub [:location-map/dnd-connection-preview])]
+    [:svg {:class "location-connections" :version "1.1"
+           :baseProfile "full"
+           :xmlns "http://www.w3.org/2000/svg"}
+     (let [{[start-location start-tile] :start
+            [end-location end-tile] :end} drag-preview
+           {{start-x :x start-y :y} :tile-center} (<sub [:location-map/connection-position start-location start-tile])
+           {{end-x :x end-y :y} :tile-center} (<sub [:location-map/connection-position end-location end-tile])]
+         [:line {:stroke-width 2
+                 :stroke "red"
+                 :x1 start-x
+                 :y1 start-y
+                 :x2 end-x
+                 :y2 end-y}])]))
 
 (defn e->scroll-center [e]
   (let [target (.-currentTarget e)]
@@ -177,4 +194,5 @@
           (for [id location-ids]
             ^{:key (str "location:" id)}
             [location id])
-          [connections]]]))))
+          [connections]
+          [connection-preview]]]))))
