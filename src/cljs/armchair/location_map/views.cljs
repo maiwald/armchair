@@ -28,9 +28,9 @@
                     preview-image-h
                     zoom-scale
                     bounds
-                    inspecting?
+                    is-inspecting
                     inspected-tile]} (<sub [:location-map/location location-id])
-            dragging? (<sub [:dragging-item? location-id])
+            is-dragging (<sub [:dragging-item? location-id])
             position (<sub [:location-map/location-position location-id])
             occupied (<sub [:location/occupied-tiles location-id])
             start-dragging (fn [e]
@@ -39,13 +39,13 @@
                                (u/prevent-e! e)
                                (>evt [:start-dragging #{location-id} (u/e->point e) zoom-scale])))
             stop-dragging (fn [e]
-                            (when dragging?
+                            (when is-dragging
                               (u/stop-e! e)
                               (>evt [:end-dragging])))
             inspect-location #(>evt [:inspect :location location-id])]
         [:div {:class ["location"
-                       (when inspecting? "location_is-inspecting")
-                       (when dragging? "location_is-dragging")]
+                       (when is-inspecting "location_is-inspecting")
+                       (when is-dragging "location_is-dragging")]
                :on-mouse-down u/stop-e!
                :style {:left (u/px (:x position))
                        :top (u/px (:y position))}}

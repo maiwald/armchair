@@ -58,8 +58,10 @@
        :preview-image-foreground-src preview-image-foreground-src
        :preview-image-w (* zoom-scale config/tile-size w)
        :preview-image-h (* zoom-scale config/tile-size h)
-       :inspecting? (= [inspector-type inspector-location-id] [:location location-id])
-       :inspected-tile (when (= [inspector-type inspector-location-id] [:tile location-id])
+       :is-inspecting (= [inspector-type inspector-location-id]
+                         [:location location-id])
+       :inspected-tile (when (= [inspector-type inspector-location-id]
+                                [:tile location-id])
                          (m/global-point inspector-tile bounds))})))
 
 (reg-sub
