@@ -12,7 +12,7 @@
 - sounds & music
 
 # nice things
-- placing exits by dragging from location to location in world
+- consolidate drag-drop logic for location map and location editor
 - reliable drag and drop ghosts
 - search
 - locate resources
