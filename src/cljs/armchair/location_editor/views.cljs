@@ -248,9 +248,7 @@
                                                            0 0))
                                           (u/prevent-e! e)))
                        :on-drag-end #(>evt [:stop-entity-drag])
-                       :on-click #(>evt [:inspect :tile location-id (relative-point % bounds)])}]
-
-         nil)
+                       :on-click #(>evt [:inspect :tile location-id (relative-point % bounds)])}])
 
        (when (<sub [:ui/dnd])
          [tile-dropzone {:can-drop? (fn [tile] (not (contains? occupied tile)))
