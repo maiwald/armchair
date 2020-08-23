@@ -34,7 +34,12 @@
             :or {zoom-scale 1}}]
         [:div {:class "tile-select"
                :draggable true
-               :on-drag-start (fn [e] (on-drag-start e (u/e->tile e zoom-scale)))
+               :on-drag-start (fn [e]
+                                (.setDragImage
+                                  (.-dataTransfer e)
+                                  (.getElementById js/document "default-dnd-ghost")
+                                  12 24)
+                                (on-drag-start e (u/e->tile e zoom-scale)))
                :on-drag-end on-drag-end
                :on-mouse-down u/stop-e!
                :on-mouse-move (fn [e] (set-hover-tile (u/e->tile e zoom-scale)))

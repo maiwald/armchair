@@ -87,9 +87,6 @@
                       :style (u/tile-style inspected-tile zoom-scale)}])
              [tile-select {:zoom-scale zoom-scale
                            :on-drag-start (fn [e tile]
-                                            (.setDragImage (.-dataTransfer e)
-                                                           (js/Image.)
-                                                           0 0)
                                             (if-let [entity (drag-entity tile)]
                                               (>evt [:start-entity-drag entity])
                                               (u/prevent-e! e)))

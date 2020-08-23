@@ -72,6 +72,8 @@
          (let [{:keys [page-name page-params]} (page-data (<sub [:current-page]))]
            [:<>
             [modal]
+            [:div#default-dnd-ghost
+             [c/icon "map-marker"]]
             [:div#page
              [menu-bar page-name]
              [:div#page__workspace
