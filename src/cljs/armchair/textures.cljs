@@ -1,5 +1,6 @@
 (ns armchair.textures
   (:require [clojure.core.async :refer [go chan take! put! <!]]
+            [armchair.util :refer [px]]
             [armchair.config :refer [tile-size]]
             [armchair.math :refer [Rect]]))
 
@@ -49,3 +50,22 @@
                  (swap! atlas assoc file-name image)))
              @atlas)
            callback)))
+
+;; Sprite Texture
+
+(defn sprite-texture [[file {:keys [x y]}] title zoom-scale]
+  (let [{:keys [w h]} (image-size file)
+        zoom-scale (or zoom-scale 1)]
+    [:div
+     {:title title
+      :style {:width (px (* zoom-scale tile-size))
+              :height (px (* zoom-scale tile-size))
+              :background-repeat "no-repeat"
+              :background-image (str "url(" (image-path file) ")")
+              :background-size (str (px (* w zoom-scale))
+                                    " "
+                                    (px (* h zoom-scale)))
+              :background-position (str (px (- (* zoom-scale tile-size x)))
+                                        " "
+                                        (px (- (* zoom-scale tile-size y))))}}]))
+

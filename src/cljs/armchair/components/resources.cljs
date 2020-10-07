@@ -5,6 +5,7 @@
             [armchair.math :refer [Point]]
             [armchair.components :as c]
             [armchair.components.sidebar :refer [sidebar]]
+            [armchair.textures :refer [sprite-texture]]
             [armchair.routes :refer [>navigate]]
             [armchair.util :as u :refer [<sub >evt e->]]))
 
@@ -42,13 +43,13 @@
                                        (.setDragImage (.-dataTransfer e) ghost offset offset))
                                      (>evt [:start-entity-drag [:player]]))}
      [:div.drag-ghost
-      [c/sprite-texture texture display-name]]
+      [sprite-texture texture display-name]]
      [:span.resource__drag_handle
       [c/icon "grip-vertical"]]
      [:span.resource__icon
       {:style {:width (u/px 20)}
        :height (u/px 20)}
-      [c/sprite-texture texture display-name (/ 20 config/tile-size)]]
+      [sprite-texture texture display-name (/ 20 config/tile-size)]]
      [:span.resource__label display-name]]))
 
 (defn character [{:keys [id display-name texture line-count]}]
@@ -64,12 +65,12 @@
                                     (.setDragImage (.-dataTransfer e) ghost offset offset))
                                   (>evt [:start-entity-drag [:character id]]))}
    [:div.drag-ghost
-    [c/sprite-texture texture display-name]]
+    [sprite-texture texture display-name]]
    [:span.resource__drag_handle
     [c/icon "grip-vertical"]]
    [:span.resource__icon {:style {:width (u/px icon-size)}
                           :height (u/px icon-size)}
-    [c/sprite-texture texture display-name (/ icon-size config/tile-size)]]
+    [sprite-texture texture display-name (/ icon-size config/tile-size)]]
    [:span.resource__label display-name]
    (when (zero? line-count)
      [:span.resource__action

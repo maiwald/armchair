@@ -5,7 +5,7 @@
             [armchair.util :as u :refer [>evt e->val]]
             [armchair.math :as m]
             [armchair.events :refer [reg-event-data reg-event-meta]]
-            [armchair.textures :refer [character-sprite-sheets]]
+            [armchair.textures :refer [sprite-texture character-sprite-sheets]]
             [armchair.components :as c]
             [armchair.modals.events :refer [assert-no-open-modal build-modal-assertion]]))
 
@@ -85,4 +85,4 @@
                       :height (u/px config/tile-size)
                       :background-color "#fff"}}
          [:a {:on-click #(>evt [::update :texture new-texture])}
-          [c/sprite-texture new-texture]]])]]))
+          [sprite-texture new-texture]]])]]))

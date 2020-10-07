@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [armchair.components :as c]
             [armchair.components.tile-map :refer [tile-select tile-dropzone]]
+            [armchair.textures :refer [image-path sprite-texture]]
             [armchair.config :as config]
             [armchair.math :refer [Point
                                    Rect
@@ -10,8 +11,7 @@
                                    rect->point-seq
                                    rect-contains?]]
             [armchair.util :as u :refer [<sub >evt]]
-            [armchair.routes :refer [>navigate]]
-            [armchair.textures :refer [image-path]]))
+            [armchair.routes :refer [>navigate]]))
 
 (defn tile-paint-canvas []
   (let [painted-tiles (r/atom nil)
@@ -47,7 +47,7 @@
                [:div {:style (merge {:position "absolute"
                                      :opacity ".8"}
                                     (u/tile-style tile))}
-                [c/sprite-texture texture]]
+                [sprite-texture texture]]
                [:div {:class "interactor interactor_paint"
                       :style (u/tile-style tile)}]))])))))
 
@@ -77,14 +77,14 @@
     [do-all-tiles rect (str "texture-layer:" layer-id)
      (fn [tile]
        (if-let [t (get layer tile)]
-         [c/sprite-texture t]))]))
+         [sprite-texture t]))]))
 
 (defn player-tile [rect position]
   (when (rect-contains? rect position)
     [:div {:key (str "location-cell:player:" position)
            :class "level__tile"
            :style (u/tile-style (global-point position rect))}
-     [c/sprite-texture ["hare.png" (Point. 6 0)] "Player"]]))
+     [sprite-texture ["hare.png" (Point. 6 0)] "Player"]]))
 
 (defn entity-layer [location-id override-rect]
   (let [{:keys [player-position
@@ -94,7 +94,7 @@
     [:<>
      [do-some-tiles rect characters "npc"
       (fn [_tile {:keys [display-name texture]}]
-        [c/sprite-texture texture display-name])]
+        [sprite-texture texture display-name])]
      (when (some? player-position)
        [player-tile rect player-position])]))
 
