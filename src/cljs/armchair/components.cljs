@@ -1,8 +1,6 @@
 (ns armchair.components
   (:require [clojure.string :refer [join]]
             [reagent.core :as r]
-            [armchair.config :as config]
-            [armchair.textures :refer [image-path image-size]]
             [armchair.math :as m :refer [abs point-delta translate-point]]
             [armchair.util :as u]))
 
@@ -84,23 +82,6 @@
             :on-click on-click
             :type "button"}
    [icon glyph title {:fixed? true}]])
-
-;; Sprite Texture
-
-(defn sprite-texture [[file {:keys [x y]}] title zoom-scale]
-  (let [{:keys [w h]} (image-size file)
-        zoom-scale (or zoom-scale 1)]
-    [:div.sprite-texture
-     {:title title
-      :style {:width (u/px (* zoom-scale config/tile-size))
-              :height (u/px (* zoom-scale config/tile-size))
-              :background-image (str "url(" (image-path file) ")")
-              :background-size (str (u/px (* w zoom-scale))
-                                    " "
-                                    (u/px (* h zoom-scale)))
-              :background-position (str (u/px (- (* zoom-scale config/tile-size x)))
-                                        " "
-                                        (u/px (- (* zoom-scale config/tile-size y))))}}]))
 
 ;; Scroll Container
 
