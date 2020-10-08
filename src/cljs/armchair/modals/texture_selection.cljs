@@ -78,7 +78,6 @@
          [input/label "Texture"]
          [:div {:style {:overflow "scroll"
                         :background-color "#000"
-                        :max-width (u/px 600)
                         :max-height (u/px 400)}}
           [:div.level
            [:img {:src (image-path file)
