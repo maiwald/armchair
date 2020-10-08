@@ -170,7 +170,6 @@
         occupied (<sub [:location-editor/physically-occupied-tiles location-id])]
     [:div {:style {:overflow "scroll"
                    :background-color "#000"
-                   :max-width (u/px 600)
                    :max-height (u/px 400)}}
      [:div {:class "level"
             :style {:width (u/px (* config/tile-size (:w bounds)))
