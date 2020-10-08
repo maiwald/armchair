@@ -119,8 +119,8 @@
 
 (defn e->val [e]
   (let [target (.-target e)]
-    (case (.-type target)
-      "checkbox" (.-checked target)
+    (if (= (.-type target) "checkbox")
+      (.-checked target)
       (.-value target))))
 
 (defn get-rect [elem]
