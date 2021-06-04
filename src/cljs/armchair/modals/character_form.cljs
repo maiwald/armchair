@@ -73,12 +73,12 @@
      [input/label "Avatar"]
      [:ul {:class "tile-grid"
            :style {:height "200px"}}
-      (for [[file dimensions] character-sprite-sheets
-            tile (-> dimensions
+      (for [{:keys [file-name bounds]} character-sprite-sheets
+            tile (-> bounds
                      (m/rect-scale (/ 1 config/tile-size))
                      m/rect->point-seq)
-            :let [new-texture [file tile]]]
-        [:li {:key (str "avatar-select:" file ":" (pr-str tile))
+            :let [new-texture [file-name tile]]]
+        [:li {:key (str "avatar-select:" file-name ":" (pr-str tile))
               :class ["tile-grid__item"
                       (when (= new-texture texture) "tile-grid__item_active")]
               :style {:width (u/px config/tile-size)

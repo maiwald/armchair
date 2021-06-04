@@ -36,10 +36,10 @@
 
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:entity/id v)))))
 
-(s/def :texture/file string?)
+(s/def :texture/file-name string?)
 (s/def :texture/tile :type/point)
 (s/def ::texture
-  (s/nilable (s/tuple :texture/file :texture/tile)))
+  (s/nilable (s/tuple :texture/file-name :texture/tile)))
 
 ;; UI State
 
@@ -315,7 +315,7 @@
           :opt-un [::description]))
 
 (s/def :modal/texture-selection
-  (s/keys :req-un [:texture-selection/file
+  (s/keys :req-un [:texture-selection/file-name
                    :texture-selection/tile]))
 
 ;; Invariants

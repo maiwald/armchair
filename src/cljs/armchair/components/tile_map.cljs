@@ -48,3 +48,20 @@
          (when (some? @hover-tile)
            [:div {:class "tile-select__hover-tile"
                   :style (u/tile-style @hover-tile zoom-scale)}])]))))
+
+(defn sprite-select []
+  (let [hover-tile (r/atom nil)]
+    (letfn [(set-hover-tile [tile] (reset! hover-tile tile))
+            (clear-hover-tile [] (reset! hover-tile nil))]
+      (fn [{:keys [selected on-select tile-size gutter offset]}]
+        [:div {:class "tile-select"
+               :on-mouse-down u/stop-e!
+               :on-mouse-move (fn [e] (set-hover-tile (u/e->sprite e tile-size gutter offset)))
+               :on-mouse-leave clear-hover-tile
+               :on-click (fn [e] (on-select (u/e->sprite e tile-size gutter offset)))}
+         (when (some? @hover-tile)
+           [:div {:class "tile-select__hover-tile"
+                  :style (u/sprite-style @hover-tile tile-size gutter offset)}])
+         (when (some? selected)
+           [:div {:class "tile-select__selected-tile"
+                  :style (u/sprite-style selected tile-size gutter offset)}])]))))
