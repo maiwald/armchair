@@ -62,7 +62,7 @@
   (s/nilable (s/map-of :type/point
                        (s/keys :req-un [:game/texture :game/dialogue-id]))))
 (s/def :game/dialogue-id (s/nilable :entity/id))
-(s/def :game/texture (s/tuple :texture/file :texture/tile))
+(s/def :game/texture (s/tuple :texture/file-name :texture/tile))
 (s/def :game/next-line-id (s/nilable :entity/id))
 
 

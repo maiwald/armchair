@@ -2,7 +2,7 @@
   (:require [clojure.set :refer [subset?]]
             [re-frame.core :as re-frame]
             [armchair.math :refer [clamp round Point Rect]]
-            [armchair.config :refer [tile-size]]
+            [armchair.config :as config]
             [com.rpl.specter
              :refer [collect-one ALL FIRST LAST MAP-VALS MAP-KEYS]
              :refer-macros [transform]]))
@@ -30,15 +30,15 @@
     (.click file-input)))
 
 (defn tile->coord [{:keys [x y]}]
-  (Point. (* tile-size x) (* tile-size y)))
+  (Point. (* config/tile-size x) (* config/tile-size y)))
 
 (defn coord->tile
   ([{:keys [x y]}]
-   (Point. (cond-> (quot x tile-size) (neg? x) dec)
-           (cond-> (quot y tile-size) (neg? y) dec)))
+   (Point. (cond-> (quot x config/tile-size) (neg? x) dec)
+           (cond-> (quot y config/tile-size) (neg? y) dec)))
   ([{:keys [x y]} zoom-scale]
-   (Point. (cond-> (quot (/ x zoom-scale) tile-size) (neg? x) dec)
-           (cond-> (quot (/ y zoom-scale) tile-size) (neg? y) dec))))
+   (Point. (cond-> (quot (/ x zoom-scale) config/tile-size) (neg? x) dec)
+           (cond-> (quot (/ y zoom-scale) config/tile-size) (neg? y) dec))))
 
 (defn normalize-to-tile [coord]
   (-> coord coord->tile tile->coord))
@@ -129,9 +129,9 @@
            (.-width domrect) (.-height domrect))))
 
 (defn relative-cursor [e elem]
-  (let [rect (.getBoundingClientRect elem)]
-    (Point. (- (.-clientX e) (.-left rect))
-            (- (.-clientY e) (.-top rect)))))
+  (let [domrect (.getBoundingClientRect elem)]
+    (Point. (- (.-clientX e) (.-left domrect))
+            (- (.-clientY e) (.-top domrect)))))
 
 (defn e->left? [e]
   (zero? (.-button e)))
@@ -147,14 +147,35 @@
          {:keys [x y]} (relative-cursor e target)
          max-x (.-offsetWidth target)
          max-y (.-offsetHeight target)]
-     (-> (Point. (clamp 0 max-x x) (clamp 0 max-y y))
-         (coord->tile zoom-scale)))))
+    (Point. (quot (/ (clamp 0 max-x x) zoom-scale) config/tile-size)
+            (quot (/ (clamp 0 max-y y) zoom-scale) config/tile-size)))))
+
+(defn e->sprite [e tile-size gutter offset]
+  (let [target (.-currentTarget e)
+        {:keys [x y]} (relative-cursor e target)
+        max-x (.-offsetWidth target)
+        max-y (.-offsetHeight target)
+        tile-scale (/ config/tile-size tile-size)
+        valid-dim? (fn [dim]
+                     (<= (mod (- dim offset) (+ tile-size gutter)) tile-size))]
+    (when (and (valid-dim? x) (valid-dim? y))
+      (Point. (quot (clamp 0 max-x x) (* tile-scale (+ tile-size gutter)))
+              (quot (clamp 0 max-y y) (* tile-scale (+ tile-size gutter)))))))
 
 (defn tile-style
   ([tile] (tile-style tile 1))
   ([{:keys [x y]} zoom-scale]
-   {:width (px (* tile-size zoom-scale))
-    :height (px (* tile-size zoom-scale))
-    :top (px (* y tile-size zoom-scale))
-    :left (px (* x tile-size zoom-scale))}))
+   {:width (px (* config/tile-size zoom-scale))
+    :height (px (* config/tile-size zoom-scale))
+    :top (px (* y config/tile-size zoom-scale))
+    :left (px (* x config/tile-size zoom-scale))}))
+
+(defn sprite-style [{:keys [x y]} tile-size gutter offset]
+  (let [tile-scale (/ config/tile-size tile-size)
+        scaled-gutter (* gutter tile-scale)
+        scaled-offset (* offset tile-scale)]
+    {:width (px config/tile-size)
+     :height (px config/tile-size)
+     :top (px (+ (* y (+ config/tile-size scaled-gutter)) scaled-offset))
+     :left (px (+ (* x (+ config/tile-size scaled-gutter)) scaled-offset))}))
 

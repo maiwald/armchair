@@ -46,3 +46,4 @@ All graphic assets are taken from [opengameart.org](https://opengameart.org)
 - https://opengameart.org/content/2d-lost-garden-zelda-style-tiles-resized-to-32x32-with-additions
 - https://opengameart.org/content/castle-tiles-for-rpgs
 - https://pipoya.itch.io/pipoya-free-rpg-character-sprites-32x32
+- https://kenney.nl/assets/roguelike-rpg-pack
