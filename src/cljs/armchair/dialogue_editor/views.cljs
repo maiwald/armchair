@@ -317,19 +317,19 @@
       [:li
        [c/button {:title "New Character Line"
                   :icon "plus"
-                  :event [:create-npc-line dialogue-id]}]]
+                  :on-click #(>evt [:create-npc-line dialogue-id])}]]
       [:li
        [c/button {:title "New Player Line"
                   :icon "plus"
-                  :event [:create-player-line dialogue-id]}]]
+                  :on-click #(>evt [:create-player-line dialogue-id])}]]
       [:li
        [c/button {:title "New Trigger Node"
                   :icon "plus"
-                  :event [:create-trigger-node dialogue-id]}]]
+                  :on-click #(>evt [:create-trigger-node dialogue-id])}]]
       [:li
        [c/button {:title "New Switch Node"
                   :icon "plus"
-                  :event [:armchair.modals.case-node-creation/open dialogue-id]}]]]]))
+                  :on-click #(>evt [:armchair.modals.case-node-creation/open dialogue-id])}]]]]))
 
 (defn dialogue-editor [dialogue-id]
   (if-let [{:keys [bounds
