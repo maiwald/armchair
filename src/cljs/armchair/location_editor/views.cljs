@@ -124,18 +124,10 @@
     [:div {:class "level"
            :style {:width (u/px (* config/tile-size (:w bounds)))
                    :height (u/px (* config/tile-size (:h bounds)))}}
-     [texture-layer {:location-id location-id
-                     :layer-id :background1
-                     :override-rect bounds}]
-     [texture-layer {:location-id location-id
-                     :layer-id :background2
-                     :override-rect bounds}]
-     [texture-layer {:location-id location-id
-                     :layer-id :foreground1
-                     :override-rect bounds}]
-     [texture-layer {:location-id location-id
-                     :layer-id :foreground2
-                     :override-rect bounds}]
+     (for [layer-id (list :background1 :background2 :foreground1 :foreground2)]
+       [texture-layer {:location-id location-id
+                       :layer-id layer-id
+                       :override-rect bounds}])
      [entity-layer location-id bounds]
      [conntection-trigger-layer location-id bounds]
      [:div {:key "location-cell:highlight"
@@ -175,14 +167,9 @@
             :style {:width (u/px (* config/tile-size (:w bounds)))
                     :height (u/px (* config/tile-size (:h bounds)))
                     :margin "auto"}}
-      [texture-layer {:location-id location-id
-                      :layer-id :background1}]
-      [texture-layer {:location-id location-id
-                      :layer-id :background2}]
-      [texture-layer {:location-id location-id
-                      :layer-id :foreground1}]
-      [texture-layer {:location-id location-id
-                      :layer-id :foreground2}]
+      (for [layer-id (list :background1 :background2 :foreground1 :foreground2)]
+        [texture-layer {:location-id location-id
+                        :layer-id layer-id}])
       [entity-layer location-id]
       [conntection-trigger-layer location-id]
       [tile-select-old {:bounds bounds
