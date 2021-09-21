@@ -8,7 +8,8 @@
                                      camera-tile-height
                                      camera-scale]]
             [armchair.components :refer [icon]]
-            [armchair.game.core :refer [start-game end-game]]))
+            [armchair.game.core :refer [start-game end-game]]
+            [goog.object :as g]))
 
 (def allowed-keys
   #{"ArrowUp" "KeyW" "KeyK"
@@ -42,7 +43,8 @@
         {:display-name "game-canvas"
          :component-did-mount
          (fn [this]
-           (reset! game-handle (start-game (.getContext (rd/dom-node this) "2d")
+           (reset! game-handle (start-game (doto (.getContext (rd/dom-node this) "2d")
+                                             (g/set "imageSmoothingEnabled" false))
                                            (r/props this)))
            (.addEventListener js/document "keydown" on-key-down)
            (.addEventListener js/document "keyup" on-key-up))

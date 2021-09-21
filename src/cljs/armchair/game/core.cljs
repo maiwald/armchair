@@ -11,7 +11,7 @@
                                      camera-tile-width
                                      camera-tile-height
                                      camera-scale]]
-            [armchair.textures :refer [image-files load-textures]]
+            [armchair.textures :refer [sprite-sheets image-files load-textures]]
             [armchair.math :as m]
             [armchair.util :as u]
             [com.rpl.specter
@@ -103,17 +103,16 @@
                       (m/Rect. (* x tile-size) (* y tile-size)
                                tile-size tile-size)))
 
-(defn draw-texture [texture coord]
+(defn draw-sprite-texture [[file-name {:keys [x y]}] dest-coord]
   (when (some? @texture-atlas)
-    (c/draw-image! @ctx (get @texture-atlas texture
-                             (@texture-atlas "missing_texture.png"))
-                   coord)))
-
-(defn draw-sprite-texture [[file {:keys [x y]}] dest-coord]
-  (when (some? @texture-atlas)
-    (if-let [sprite-sheet (get @texture-atlas file)]
-      (c/draw-image! @ctx sprite-sheet (m/Point. (* tile-size x)
-                                                 (* tile-size y)) dest-coord)
+    (if-let [sprite-sheet (get @texture-atlas file-name)]
+      (let [{sheet-tile-size :tile-size :keys [gutter offset]} (sprite-sheets file-name)]
+        (c/draw-image! @ctx sprite-sheet
+                            (m/Point. (+ offset (* (+ gutter sheet-tile-size) x))
+                                    (+ offset (* (+ gutter sheet-tile-size) y)))
+                            [sheet-tile-size sheet-tile-size]
+                            dest-coord
+                            [tile-size tile-size]))
       (c/draw-image! @ctx (@texture-atlas "missing_texture.png") dest-coord))))
 
 (defn draw-texture-rotated [texture coord deg]
