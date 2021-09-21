@@ -1,6 +1,6 @@
 (ns armchair.location-previews
   (:require [re-frame.core :refer [dispatch ->interceptor]]
-            [armchair.textures :refer [load-textures]]
+            [armchair.textures :refer [sprite-sheets load-textures]]
             [armchair.events :refer [reg-event-meta]]
             [com.rpl.specter
              :refer [multi-path FIRST MAP-VALS]
@@ -16,6 +16,22 @@
     (g/set "width" w)
     (g/set "height" h)))
 
+(defn draw-layer [ctx layer {rect :bounds :as location} atlas]
+  (g/set ctx "imageSmoothingEnabled" false)
+  (doseq [x (range (:x rect) (+ (:x rect) (:w rect)))
+          y (range (:y rect) (+ (:y rect) (:h rect)))
+          :let [tile (Point. x y)
+                [file {:keys [x y]}] (get-in location [layer tile])]
+          :when (some? file)]
+    (if-let [sprite-sheet (get atlas file)]
+      (let [{:keys [tile-size gutter offset]} (sprite-sheets file)]
+        (canvas/draw-image! ctx sprite-sheet
+                            (Point. (+ offset (* (+ gutter tile-size) x))
+                                    (+ offset (* (+ gutter tile-size) y)))
+                            [tile-size tile-size]
+                            (u/tile->coord (global-point tile rect))
+                            [config/tile-size config/tile-size])))))
+
 (defn location-preview-url [{rect :bounds :as location} callback]
   (let [texture-files (-> (select [(multi-path :background1
                                                :background2
@@ -23,39 +39,21 @@
                                                :foreground2) MAP-VALS FIRST] location)
                           distinct
                           vec)
-        w (* config/tile-size (:w rect))
-        h (* config/tile-size (:h rect))]
+        canvas-w (* config/tile-size (:w rect))
+        canvas-h (* config/tile-size (:h rect))]
     (load-textures
       texture-files
       (fn [atlas]
-        (let [foreground-canvas (create-canvas w h)
+        (let [foreground-canvas (create-canvas canvas-w canvas-h)
               foreground-ctx (.getContext foreground-canvas "2d")
-              background-canvas (create-canvas w h)
+              background-canvas (create-canvas canvas-w canvas-h)
               background-ctx (.getContext background-canvas "2d")]
           (canvas/clear! background-ctx)
-          (canvas/fill-rect! background-ctx (Rect. 0 0 w h))
+          (canvas/fill-rect! background-ctx (Rect. 0 0 canvas-w canvas-h))
           (doseq [layer (vector :background1 :background2)]
-            (doseq [x (range (:x rect) (+ (:x rect) (:w rect)))
-                    y (range (:y rect) (+ (:y rect) (:h rect)))
-                    :let [tile (Point. x y)
-                          [file {:keys [x y]}] (get-in location [layer tile])]
-                    :when (some? file)]
-              (if-let [sprite-sheet (get atlas file)]
-                (canvas/draw-image! background-ctx sprite-sheet
-                                    (Point. (* config/tile-size x)
-                                            (* config/tile-size y))
-                                    (u/tile->coord (global-point tile rect))))))
+            (draw-layer background-ctx layer location atlas))
           (doseq [layer (vector :foreground1 :foreground2)]
-            (doseq [x (range (:x rect) (+ (:x rect) (:w rect)))
-                    y (range (:y rect) (+ (:y rect) (:h rect)))
-                    :let [tile (Point. x y)
-                          [file {:keys [x y]}] (get-in location [layer tile])]
-                    :when (some? file)]
-              (if-let [sprite-sheet (get atlas file)]
-                (canvas/draw-image! foreground-ctx sprite-sheet
-                                    (Point. (* config/tile-size x)
-                                            (* config/tile-size y))
-                                    (u/tile->coord (global-point tile rect))))))
+            (draw-layer foreground-ctx layer location atlas))
           (callback (.toDataURL background-canvas)
                     (.toDataURL foreground-canvas)))))))
 
