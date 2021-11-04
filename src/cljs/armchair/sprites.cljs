@@ -62,9 +62,9 @@
              @atlas)
            callback)))
 
-;; Sprite Element
+;; Sprite Component
 
-(defn sprite-texture [[file-name {:keys [x y]}] title zoom-scale]
+(defn Sprite [[file-name {:keys [x y]}] title zoom-scale]
   (let [{:keys [tile-size gutter offset]
          {:keys [w h]} :bounds} (sprite-sheets file-name)
         tile-scale (/ config/tile-size tile-size)

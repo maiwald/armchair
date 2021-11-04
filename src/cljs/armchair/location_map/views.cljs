@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [armchair.components :as c]
             [armchair.components.tile-map :refer [tile-select tile-dropzone]]
-            [armchair.sprites :refer [sprite-texture]]
+            [armchair.sprites :refer [Sprite]]
             [armchair.math :as m]
             [armchair.util :as u :refer [<sub >evt e->left?]]
             [goog.functions :refer [debounce]]))
@@ -79,7 +79,7 @@
                   [:div {:key (str "location-character:" location-id ",tile:" (pr-str tile))
                          :class ["location__tilemap__character"]
                          :style (u/tile-style tile zoom-scale)}
-                   [sprite-texture sprite display-name zoom-scale]])])
+                   [Sprite sprite display-name zoom-scale]])])
              [:img {:src preview-image-foreground-src
                     :style {:width (u/px preview-image-w)
                             :height (u/px preview-image-h)}}]
