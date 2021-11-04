@@ -1,4 +1,6 @@
 /*.log
+/.clj-kondo
+/.lsp
 /target
 /build
 /*-init.clj
@@ -12,3 +14,4 @@ out
 .cljs_nashorn_repl/
 nashorn_code_cache
 .env
+.clj_kondo/
