@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [armchair.components :as c]
             [armchair.components.tile-map :refer [tile-select tile-dropzone]]
-            [armchair.sprites :refer [image-path sprite-texture]]
+            [armchair.sprites :refer [image-path Sprite]]
             [armchair.config :as config]
             [armchair.math :refer [Point
                                    Rect
@@ -47,7 +47,7 @@
                [:div {:style (merge {:position "absolute"
                                      :opacity ".8"}
                                     (u/tile-style tile))}
-                [sprite-texture sprite]]
+                [Sprite sprite]]
                [:div {:class "interactor interactor_paint"
                       :style (u/tile-style tile)}]))])))))
 
@@ -77,14 +77,14 @@
     [do-all-tiles rect (str "sprite-layer:" layer-id)
      (fn [tile]
        (if-let [sprite (get layer tile)]
-         [sprite-texture sprite]))]))
+         [Sprite sprite]))]))
 
 (defn player-tile [rect position]
   (when (rect-contains? rect position)
     [:div {:key (str "location-cell:player:" position)
            :class "level__tile"
            :style (u/tile-style (global-point position rect))}
-     [sprite-texture ["hare.png" (Point. 6 0)] "Player"]]))
+     [Sprite ["hare.png" (Point. 6 0)] "Player"]]))
 
 (defn entity-layer [location-id override-rect]
   (let [{:keys [player-position
@@ -94,7 +94,7 @@
     [:<>
      [do-some-tiles rect characters "npc"
       (fn [_tile {:keys [display-name sprite]}]
-        [sprite-texture sprite display-name])]
+        [Sprite sprite display-name])]
      (when (some? player-position)
        [player-tile rect player-position])]))
 

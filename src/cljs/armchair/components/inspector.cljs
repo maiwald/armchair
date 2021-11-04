@@ -5,7 +5,7 @@
             [armchair.config :as config]
             [armchair.util :as u :refer [<sub >evt e->val e->]]
             [armchair.components :as c]
-            [armchair.sprites :refer [sprite-texture]]
+            [armchair.sprites :refer [Sprite]]
             [armchair.routes :refer [>navigate]]
             [armchair.math :refer [global-point]]
             [armchair.input :as input]
@@ -248,7 +248,7 @@
         [property {:title "Active Texture"}
          [:a {:class "insprop_active-sprite"
               :on-click (e-> #(>evt [:armchair.modals.sprite-selection/open active-sprite]))}
-          [sprite-texture active-sprite]]]
+          [Sprite active-sprite]]]
         [property {:title "Tool"}
          [c/button {:icon "paint-brush"
                     :title "Paint"
