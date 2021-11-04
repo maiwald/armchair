@@ -36,10 +36,10 @@
 
 (s/def ::entity-map (s/every (fn [[k v]] (= k (:entity/id v)))))
 
-(s/def :texture/file-name string?)
-(s/def :texture/tile :type/point)
-(s/def ::texture
-  (s/nilable (s/tuple :texture/file-name :texture/tile)))
+(s/def :sprite/file-name string?)
+(s/def :sprite/tile :type/point)
+(s/def :type/sprite
+  (s/nilable (s/tuple :sprite/file-name :sprite/tile)))
 
 ;; UI State
 
@@ -75,13 +75,13 @@
                    :location-editor/active-layer
                    :location-editor/active-tool
                    :location-editor/active-walk-state
-                   :location-editor/active-texture]))
+                   :location-editor/active-sprite]))
 
 (s/def :location-editor/active-tool #{:brush :eraser})
 (s/def :location-editor/layers (set (map first config/location-editor-layers)))
 (s/def :location-editor/visible-layers (s/coll-of :location-editor/layers :kind set?))
 (s/def :location-editor/active-layer :location-editor/layers)
-(s/def :location-editor/active-texture ::texture)
+(s/def :location-editor/active-sprite :type/sprite)
 (s/def :location-editor/active-walk-state boolean?)
 
 ;; Data
@@ -113,13 +113,13 @@
                    :location/connection-triggers]))
 
 (s/def :location/position :type/point)
-(s/def :location/texture-layer (s/map-of :location/position ::texture))
+(s/def :location/sprite-layer (s/map-of :location/position :type/sprite))
 
 (s/def :location/bounds :type/rect)
-(s/def :location/background1 :location/texture-layer)
-(s/def :location/background2 :location/texture-layer)
-(s/def :location/foreground1 :location/texture-layer)
-(s/def :location/foreground1 :location/texture-layer)
+(s/def :location/background1 :location/sprite-layer)
+(s/def :location/background2 :location/sprite-layer)
+(s/def :location/foreground1 :location/sprite-layer)
+(s/def :location/foreground1 :location/sprite-layer)
 (s/def :location/blocked (s/coll-of :location/position :kind set?))
 
 (s/def :location/placements
@@ -144,7 +144,7 @@
 
 (s/def :character/character
   (s/keys :req [:entity/id :entity/type]
-          :req-un [::display-name ::color ::texture]))
+          :req-un [::display-name ::color :type/sprite]))
 
 ;; Dialogue & Lines
 
@@ -263,14 +263,14 @@
                                      :modal/switch-form
                                      :modal/unlock-conditions-form
                                      :modal/connection-trigger-creation
-                                     :modal/texture-selection
+                                     :modal/sprite-selection
                                      ::npc-line-id
                                      ::dialogue-state]))
 
 (s/def :modal/location-creation ::display-name)
 
 (s/def :modal/character-form
-  (s/keys :req-un [::display-name ::color ::texture]
+  (s/keys :req-un [::display-name ::color :type/sprite]
           :opt-un [:entity/id]))
 
 (s/def :modal/dialogue-creation
@@ -314,9 +314,9 @@
   (s/keys :req-un [::line-id]
           :opt-un [::description]))
 
-(s/def :modal/texture-selection
-  (s/keys :req-un [:texture-selection/file-name
-                   :texture-selection/tile]))
+(s/def :modal/sprite-selection
+  (s/keys :req-un [:sprite-selection/file-name
+                   :sprite-selection/tile]))
 
 ;; Invariants
 
@@ -461,7 +461,7 @@
                                               :entities
                                               :triggers}
                             :active-walk-state true
-                            :active-texture ["PathAndObjects_0.png" (Point. 4 1)]}
+                            :active-sprite ["PathAndObjects_0.png" (Point. 4 1)]}
           :ui/positions {}
           :ui/location-preview-cache-foreground {}
           :ui/location-preview-cache-background {}

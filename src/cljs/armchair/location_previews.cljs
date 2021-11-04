@@ -1,6 +1,6 @@
 (ns armchair.location-previews
   (:require [re-frame.core :refer [dispatch ->interceptor]]
-            [armchair.textures :refer [sprite-sheets load-textures]]
+            [armchair.sprites :refer [sprite-sheets load-images]]
             [armchair.events :refer [reg-event-meta]]
             [com.rpl.specter
              :refer [multi-path FIRST MAP-VALS]
@@ -33,16 +33,16 @@
                             [config/tile-size config/tile-size])))))
 
 (defn location-preview-url [{rect :bounds :as location} callback]
-  (let [texture-files (-> (select [(multi-path :background1
-                                               :background2
-                                               :foreground1
-                                               :foreground2) MAP-VALS FIRST] location)
-                          distinct
-                          vec)
+  (let [image-files (-> (select [(multi-path :background1
+                                             :background2
+                                             :foreground1
+                                             :foreground2) MAP-VALS FIRST] location)
+                        distinct
+                        vec)
         canvas-w (* config/tile-size (:w rect))
         canvas-h (* config/tile-size (:h rect))]
-    (load-textures
-      texture-files
+    (load-images
+      image-files
       (fn [atlas]
         (let [foreground-canvas (create-canvas canvas-w canvas-h)
               foreground-ctx (.getContext foreground-canvas "2d")

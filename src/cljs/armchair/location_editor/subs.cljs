@@ -11,7 +11,7 @@
                   :visible-layers
                   :active-layer
                   :active-walk-state
-                  :active-texture])))
+                  :active-sprite])))
 
 (reg-sub
   :location-editor/tile-type
@@ -45,7 +45,7 @@
     (u/map-values
       (fn [{:keys [character-id]} tile]
         (let [character (characters character-id)]
-          (merge (select-keys character [:texture :display-name])
+          (merge (select-keys character [:sprite :display-name])
                  {:inspecting? (inspecting-tile? inspector location-id tile)})))
       placements)))
 
@@ -84,10 +84,10 @@
   :<- [:db-characters]
   (fn [characters]
     (->> characters
-         (map (fn [[id {:keys [texture display-name]}]]
+         (map (fn [[id {:keys [sprite display-name]}]]
                 {:character-id id
                  :display-name display-name
-                 :texture texture}))
+                 :sprite sprite}))
          (sort-by :display-name))))
 
 (reg-sub

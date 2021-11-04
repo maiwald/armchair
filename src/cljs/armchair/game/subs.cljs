@@ -60,15 +60,10 @@
 (s/def :game/position :type/point)
 (s/def :game/characters
   (s/nilable (s/map-of :type/point
-                       (s/keys :req-un [:game/texture :game/dialogue-id]))))
+                       (s/keys :req-un [:type/sprite :game/dialogue-id]))))
 (s/def :game/dialogue-id (s/nilable :entity/id))
-(s/def :game/texture (s/tuple :texture/file-name :texture/tile))
 (s/def :game/next-line-id (s/nilable :entity/id))
 
-
-(defn triggers-to-map [triggers]
-  (into {} (for [{:keys [switch-id switch-value]} triggers]
-             [switch-id switch-value])))
 
 (defn condition->fn [{:keys [conjunction terms]}]
   (fn [switches]
@@ -132,7 +127,7 @@
                    :characters (->> (:placements location)
                                     (u/map-values
                                       (fn [{:keys [character-id dialogue-id]}]
-                                        {:texture (get-in characters [character-id :texture])
+                                        {:sprite (get-in characters [character-id :sprite])
                                          :dialogue-id dialogue-id}))))))
       locations)))
 

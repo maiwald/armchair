@@ -21,7 +21,9 @@
 
 (defn draw-image!
   ([ctx image {:keys [x y]}]
-   (.drawImage ctx image 0 0 tile-size tile-size x y tile-size tile-size))
+   (.drawImage ctx image
+               0 0 tile-size tile-size
+               x y tile-size tile-size))
   ([ctx image s d]
    (.drawImage ctx image
                (:x s) (:y s) tile-size tile-size

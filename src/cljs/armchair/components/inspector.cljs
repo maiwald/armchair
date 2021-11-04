@@ -5,7 +5,7 @@
             [armchair.config :as config]
             [armchair.util :as u :refer [<sub >evt e->val e->]]
             [armchair.components :as c]
-            [armchair.textures :refer [sprite-texture]]
+            [armchair.sprites :refer [sprite-texture]]
             [armchair.routes :refer [>navigate]]
             [armchair.math :refer [global-point]]
             [armchair.input :as input]
@@ -206,7 +206,7 @@
 
 
 (defn tilemap-inspector [location-id]
-  (let [{:keys [active-layer active-texture active-tool active-walk-state visible-layers]} (<sub [:location-editor/ui])
+  (let [{:keys [active-layer active-sprite active-tool active-walk-state visible-layers]} (<sub [:location-editor/ui])
         {:keys [width height]} (<sub [:location-editor/dimensions location-id])]
     [:div.inspector__content
      [property {:title (str "Size: " width " x " height)}
@@ -246,9 +246,9 @@
        (:background1 :background2 :foreground1 :foreground2)
        [:<>
         [property {:title "Active Texture"}
-         [:a {:class "insprop_active-texture"
-              :on-click (e-> #(>evt [:armchair.modals.texture-selection/open active-texture]))}
-          [sprite-texture active-texture]]]
+         [:a {:class "insprop_active-sprite"
+              :on-click (e-> #(>evt [:armchair.modals.sprite-selection/open active-sprite]))}
+          [sprite-texture active-sprite]]]
         [property {:title "Tool"}
          [c/button {:icon "paint-brush"
                     :title "Paint"
