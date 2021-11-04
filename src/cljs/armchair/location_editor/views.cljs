@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [armchair.components :as c]
             [armchair.components.tile-map :refer [tile-select tile-dropzone]]
-            [armchair.textures :refer [image-path sprite-texture]]
+            [armchair.sprites :refer [image-path sprite-texture]]
             [armchair.config :as config]
             [armchair.math :refer [Point
                                    Rect
@@ -27,7 +27,7 @@
                              (not (contains? @painted-tiles tile)))
                     (swap! painted-tiles conj tile)
                     (paint-fn tile)))))]
-      (fn [{:keys [on-paint texture]}]
+      (fn [{:keys [on-paint sprite]}]
         (let [paint (make-paint on-paint)]
           [:div {:class "level__layer"
                  :on-mouse-enter set-current-tile
@@ -43,11 +43,11 @@
                                   (paint e))
                  :on-mouse-up stop-painting}
            (if-let [tile @current-tile]
-             (if (some? texture)
+             (if (some? sprite)
                [:div {:style (merge {:position "absolute"
                                      :opacity ".8"}
                                     (u/tile-style tile))}
-                [sprite-texture texture]]
+                [sprite-texture sprite]]
                [:div {:class "interactor interactor_paint"
                       :style (u/tile-style tile)}]))])))))
 
@@ -70,14 +70,14 @@
             :style (u/tile-style (global-point tile rect))}
       (f tile item)])])
 
-(defn texture-layer [{:keys [location-id layer-id override-rect]}]
+(defn sprite-layer [{:keys [location-id layer-id override-rect]}]
   (let [location (<sub [:location-editor/location location-id])
         rect (or override-rect (:bounds location))
         layer (get location layer-id)]
-    [do-all-tiles rect (str "texture-layer:" layer-id)
+    [do-all-tiles rect (str "sprite-layer:" layer-id)
      (fn [tile]
-       (if-let [t (get layer tile)]
-         [sprite-texture t]))]))
+       (if-let [sprite (get layer tile)]
+         [sprite-texture sprite]))]))
 
 (defn player-tile [rect position]
   (when (rect-contains? rect position)
@@ -93,8 +93,8 @@
         rect (or override-rect bounds)]
     [:<>
      [do-some-tiles rect characters "npc"
-      (fn [_tile {:keys [display-name texture]}]
-        [sprite-texture texture display-name])]
+      (fn [_tile {:keys [display-name sprite]}]
+        [sprite-texture sprite display-name])]
      (when (some? player-position)
        [player-tile rect player-position])]))
 
@@ -125,9 +125,9 @@
            :style {:width (u/px (* config/tile-size (:w bounds)))
                    :height (u/px (* config/tile-size (:h bounds)))}}
      (for [layer-id (list :background1 :background2 :foreground1 :foreground2)]
-       [texture-layer {:location-id location-id
-                       :layer-id layer-id
-                       :override-rect bounds}])
+       [sprite-layer {:location-id location-id
+                      :layer-id layer-id
+                      :override-rect bounds}])
      [entity-layer location-id bounds]
      [conntection-trigger-layer location-id bounds]
      [:div {:key "location-cell:highlight"
@@ -168,8 +168,8 @@
                     :height (u/px (* config/tile-size (:h bounds)))
                     :margin "auto"}}
       (for [layer-id (list :background1 :background2 :foreground1 :foreground2)]
-        [texture-layer {:location-id location-id
-                        :layer-id layer-id}])
+        [sprite-layer {:location-id location-id
+                       :layer-id layer-id}])
       [entity-layer location-id]
       [conntection-trigger-layer location-id]
       [tile-select-old {:bounds bounds
@@ -182,7 +182,7 @@
         {:keys [active-layer
                 visible-layers
                 active-tool
-                active-texture]} (<sub [:location-editor/ui])
+                active-sprite]} (<sub [:location-editor/ui])
         width (* config/tile-size (:w bounds))
         height (* config/tile-size (:h bounds))
         occupied (<sub [:location/occupied-tiles location-id])]
@@ -210,13 +210,13 @@
 
            (:background1 :background2 :foreground1 :foreground2)
            ^{:key (str "layer:" layer-id)}
-           [texture-layer {:location-id location-id
-                           :layer-id layer-id}]))
+           [sprite-layer {:location-id location-id
+                          :layer-id layer-id}]))
 
        (case active-layer
          (:background1 :background2 :foreground1 :foreground2)
          [tile-paint-canvas
-          {:texture (when (not= active-tool :eraser) active-texture)
+          {:sprite (when (not= active-tool :eraser) active-sprite)
            :on-paint #(>evt [:location-editor/paint location-id active-layer
                              (relative-point % bounds)])}]
 

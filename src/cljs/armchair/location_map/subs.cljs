@@ -24,10 +24,10 @@
       (cond-> (u/map-values
                 (fn [{:keys [character-id]}]
                   (let [character (characters character-id)]
-                    (select-keys character [:texture :display-name])))
+                    (select-keys character [:sprite :display-name])))
                 placements)
         (= location-id (:location-id player))
-        (assoc (:location-position player) {:texture ["hare.png" (m/Point. 6 0)]
+        (assoc (:location-position player) {:sprite ["hare.png" (m/Point. 6 0)]
                                             :display-name "Player"})))))
 
 (reg-sub

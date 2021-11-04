@@ -164,6 +164,6 @@
                {:id id
                 :synopsis synopsis
                 :character (merge {:id character-id} character)
-                :texture (:texture character)})))
+                :sprite (:sprite character)})))
          (sort-by (fn [{s :synopsis {n :display-name} :character}]
                     [n s])))))

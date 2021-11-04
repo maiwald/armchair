@@ -1,52 +1,51 @@
-(ns armchair.modals.texture-selection
+(ns armchair.modals.sprite-selection
   (:require [re-frame.core :as re-frame :refer [reg-sub]]
-            [armchair.textures :refer [image-path image-size sprite-sheets sprite-sheet-size tile-sprite-sheets]]
+            [armchair.sprites :refer [image-path sprite-sheets sprite-sheet-size tile-sprite-sheets]]
             [armchair.components :as c]
             [armchair.input :as input]
             [armchair.util :as u :refer [<sub >evt e->val]]
             [armchair.events :refer [reg-event-data reg-event-meta]]
             [armchair.modals.events :refer [assert-no-open-modal
                                             build-modal-assertion]]
-            [armchair.components.tile-map :refer [sprite-select]]
-            [armchair.location-editor.views :refer [tile-select-old]]))
+            [armchair.components.tile-map :refer [sprite-select]]))
 
 ;; Events
 
-(def assert-texture-selection-modal
-  (build-modal-assertion :texture-selection))
+(def assert-sprite-selection-modal
+  (build-modal-assertion :sprite-selection))
 
 (reg-event-meta
   ::open
   (fn [db]
     (assert-no-open-modal db)
-    (assoc-in db [:modal :texture-selection]
+    (assoc-in db [:modal :sprite-selection]
               (zipmap (list :file-name :tile)
-                      (get-in db [:location-editor :active-texture])))))
+                      (get-in db [:location-editor :active-sprite])))))
 
 
 (reg-event-meta
   ::update-file
   (fn [db [_ file-name]]
-    (assert-texture-selection-modal db)
-    (assoc-in db [:modal :texture-selection]
+    (assert-sprite-selection-modal db)
+    (assoc-in db [:modal :sprite-selection]
               {:file-name file-name})))
 
 (reg-event-meta
   ::update-tile
   (fn [db [_ tile]]
-    (assert-texture-selection-modal db)
-    (assoc-in db [:modal :texture-selection :tile] tile)))
+    (assert-sprite-selection-modal db)
+    (assoc-in db [:modal :sprite-selection :tile] tile)))
 
 (reg-event-data
   ::save
   (fn [db]
-    (assert-texture-selection-modal db)
-    (let [{:keys [file-name tile]} (get-in db [:modal :texture-selection])]
+    (assert-sprite-selection-modal db)
+    (let [{:keys [file-name tile]} (get-in db [:modal :sprite-selection])]
       (cond-> db
         (and (some? file-name) (some? tile))
         (->
           (dissoc :modal)
-          (update :location-editor merge {:active-texture [file-name tile]
+          (update :location-editor merge {:active-sprite [file-name tile]
                                           :active-tool :brush}))))))
 
 ;; Subscriptions
@@ -54,11 +53,11 @@
 (reg-sub
   ::modal-data
   :<- [:modal]
-  (fn [modal] (:texture-selection modal)))
+  (fn [modal] (:sprite-selection modal)))
 
 ;; Views
 
-(def texture-options
+(def sprite-options
   (->> tile-sprite-sheets
        (map :file-name)
        (sort)
@@ -79,7 +78,7 @@
                   :confirm-handler save}
          [input/select {:label "File"
                         :on-change update-file
-                        :options texture-options
+                        :options sprite-options
                         :value file-name}]
          [input/label "Texture"]
          [:div {:style {:overflow "scroll"

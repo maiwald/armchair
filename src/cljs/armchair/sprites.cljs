@@ -1,4 +1,4 @@
-(ns armchair.textures
+(ns armchair.sprites
   (:require [clojure.core.async :refer [go chan take! put! <!]]
             [clojure.set :refer [union]]
             [armchair.util :refer [px]]
@@ -39,9 +39,6 @@
   (into #{"arrow.png" "exit.png" "missing_texture.png" "player.png"}
         (keys sprite-sheets)))
 
-(defn image-size [file-name]
-  (get-in sprite-sheets [file-name :bounds] (Rect. 0 0 config/tile-size config/tile-size)))
-
 (defn image-path [file-name]
   (str "images/" (image-files file-name "missing_texture.png")))
 
@@ -50,22 +47,22 @@
     (m/rect-scale bounds (/ config/tile-size tile-size))
     (Rect. 0 0 config/tile-size config/tile-size)))
 
-(defn load-textures [files callback]
+(defn load-images [file-names callback]
   (let [atlas (atom {})
         loaded (chan)]
     (run! (fn [file-name]
             (let [image (js/Image.)]
               (set! (.-onload image) #(put! loaded [file-name image]))
               (set! (.-src image) (image-path file-name))))
-          files)
+          file-names)
     (take! (go
-             (while (not= (count @atlas) (count files))
+             (while (not= (count @atlas) (count file-names))
                (let [[file-name image] (<! loaded)]
                  (swap! atlas assoc file-name image)))
              @atlas)
            callback)))
 
-;; Sprite Texture
+;; Sprite Element
 
 (defn sprite-texture [[file-name {:keys [x y]}] title zoom-scale]
   (let [{:keys [tile-size gutter offset]
