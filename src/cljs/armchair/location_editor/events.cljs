@@ -12,10 +12,10 @@
     (assoc-in db [:locations id :display-name] value)))
 
 (reg-event-meta
-  :location-editor/set-active-texture
-  (fn [db [_ texture]]
+  :location-editor/set-active-sprite
+  (fn [db [_ sprite]]
     (update db :location-editor
-               merge {:active-texture texture
+               merge {:active-sprite sprite
                       :active-tool :brush})))
 
 (reg-event-meta
@@ -81,9 +81,9 @@
   :location-editor/paint
   [build-location-preview]
   (fn [db [_ location-id layer-id tile]]
-    (let [{:keys [active-tool active-texture]} (:location-editor db)]
+    (let [{:keys [active-tool active-sprite]} (:location-editor db)]
       (case active-tool
-        :brush (assoc-in db [:locations location-id layer-id tile] active-texture)
+        :brush (assoc-in db [:locations location-id layer-id tile] active-sprite)
         :eraser (update-in db [:locations location-id layer-id] dissoc tile)))))
 
 (reg-event-data

@@ -11,7 +11,7 @@
                                      camera-tile-width
                                      camera-tile-height
                                      camera-scale]]
-            [armchair.textures :refer [image-files load-textures]]
+            [armchair.sprites :refer [sprite-sheets image-files load-images]]
             [armchair.math :as m]
             [armchair.util :as u]
             [com.rpl.specter
@@ -38,8 +38,8 @@
 
 (s/def ::player (s/keys :req-un [:player/position
                                  :player/direction]
-                        :req-opt [:player/texture
-                                  :player/animation]))
+                        :opt-un [:player/sprite
+                                 :player/animation]))
 (s/def :player/position :type/point)
 (s/def :player/direction #{:up :down :left :right})
 (s/def :player/animation (s/keys :req-un [::start ::origin ::destination]))
@@ -96,51 +96,51 @@
 ;; Rendering
 
 (def ctx (atom nil))
-(def texture-atlas (atom nil))
+(def loaded-images (atom nil))
 
 (defn tile-visible? [camera {:keys [x y]}]
   (m/rect-intersects? camera
                       (m/Rect. (* x tile-size) (* y tile-size)
                                tile-size tile-size)))
 
-(defn draw-texture [texture coord]
-  (when (some? @texture-atlas)
-    (c/draw-image! @ctx (get @texture-atlas texture
-                             (@texture-atlas "missing_texture.png"))
-                   coord)))
+(defn draw-sprite [sprite dest-coord]
+  (let [[file-name {:keys [x y]}] sprite]
+    (when (some? @loaded-images)
+      (if-let [sprite-sheet (get @loaded-images file-name)]
+        (let [{sheet-tile-size :tile-size :keys [gutter offset]} (sprite-sheets file-name)]
+          (c/draw-image! @ctx sprite-sheet
+                         (m/Point. (+ offset (* (+ gutter sheet-tile-size) x))
+                                   (+ offset (* (+ gutter sheet-tile-size) y)))
+                         [sheet-tile-size sheet-tile-size]
+                         dest-coord
+                         [tile-size tile-size]))
+        (c/draw-image! @ctx (@loaded-images "missing_texture.png") dest-coord)))))
 
-(defn draw-sprite-texture [[file {:keys [x y]}] dest-coord]
-  (when (some? @texture-atlas)
-    (if-let [sprite-sheet (get @texture-atlas file)]
-      (c/draw-image! @ctx sprite-sheet (m/Point. (* tile-size x)
-                                                 (* tile-size y)) dest-coord)
-      (c/draw-image! @ctx (@texture-atlas "missing_texture.png") dest-coord))))
-
-(defn draw-texture-rotated [texture coord deg]
-  (when (some? @texture-atlas)
-    (c/draw-image-rotated! @ctx (@texture-atlas texture) coord deg)))
+(defn draw-sprite-rotated [file-name coord deg]
+  (when (some? @loaded-images)
+    (c/draw-image-rotated! @ctx (@loaded-images file-name) coord deg)))
 
 (defn draw-background [rect background camera]
   (when (some? background)
     (doseq [x (range (:x rect) (+ (:x rect) (:w rect)))
             y (range (:y rect) (+ (:y rect) (:h rect)))
             :let [tile (m/Point. x y)
-                  texture (get background tile)]
-            :when (and (some? texture)
+                  sprite (get background tile)]
+            :when (and (some? sprite)
                        (tile-visible? camera tile))]
-      (draw-sprite-texture texture (u/tile->coord tile)))))
+      (draw-sprite sprite (u/tile->coord tile)))))
 
-(defn draw-player [{:keys [coord texture]}]
-  (draw-sprite-texture texture coord))
+(defn draw-player [{:keys [coord sprite]}]
+  (draw-sprite sprite coord))
 
 (defn draw-characters [characters camera]
-  (doseq [[tile {texture :texture}] characters]
+  (doseq [[tile {:keys [sprite]}] characters]
     (when (tile-visible? camera tile)
-      (draw-sprite-texture texture (u/tile->coord tile)))))
+      (draw-sprite sprite (u/tile->coord tile)))))
 
 (defn draw-direction-indicator [{{:keys [coord direction]} :player}]
   (let [rotation (direction {:up 0 :right 90 :down 180 :left 270})]
-    (draw-texture-rotated "arrow.png" coord rotation)))
+    (draw-sprite-rotated "arrow.png" coord rotation)))
 
 (defn button [rect
               {:keys [mouse-clicked?
@@ -327,7 +327,7 @@
 
 ;; Animations
 
-(defn add-animation-textures [animation-map]
+(defn add-animation-sprites [animation-map]
   (transform [MAP-VALS MAP-VALS ALL FIRST]
              {:hare_down_idle1 ["hare.png" (m/Point. 6 0)]
               :hare_down_idle2 ["hare.png" (m/Point. 7 0)]
@@ -358,7 +358,7 @@
              animation-map))
 
 (def hare-animations
-  (add-animation-textures
+  (add-animation-sprites
     {:idle {:up
             [[:hare_up_idle1 200]
              [:hare_up_idle2 200]]
@@ -385,7 +385,7 @@
                 [:hare_right_walking2 (quot tile-move-time 2)]]}}))
 
 (def guy-animations
-  (add-animation-textures
+  (add-animation-sprites
     {:idle {:up [[:guy_up_idle 200]]
             :down [[:guy_down_idle 200]]
             :left [[:guy_left_idle 200]]
@@ -408,11 +408,11 @@
    :frames frames
    :total-duration (apply + (select [ALL (nthpath 1)] frames))})
 
-(defn animation-texture [now {:keys [start frames total-duration]}]
+(defn animation-sprite [now {:keys [start frames total-duration]}]
   (let [animation-frame (mod (m/round (- now start)) total-duration)]
-    (reduce (fn [duration-sum [texture duration]]
+    (reduce (fn [duration-sum [sprite duration]]
               (if (<= duration-sum animation-frame (+ duration-sum duration -1))
-                (reduced texture)
+                (reduced sprite)
                 (+ duration-sum duration)))
             0
             frames)))
@@ -568,9 +568,9 @@
             (merge player
                    (if-some [{:keys [start origin destination]} animation]
                      {:coord (animated-position start (u/tile->coord origin) (u/tile->coord destination) now)
-                      :texture (animation-texture now (anim->data start (get-in hare-animations [:walking direction])))}
+                      :sprite (animation-sprite now (anim->data start (get-in hare-animations [:walking direction])))}
                      {:coord (u/tile->coord position)
-                      :texture (animation-texture now (anim->data 0 (get-in hare-animations [:idle direction])))})))))
+                      :sprite (animation-sprite now (anim->data 0 (get-in hare-animations [:idle direction])))})))))
 
 (defn camera-coord [cam-size loc-lower loc-size p-coord]
   (if (<= loc-size cam-size)
@@ -646,10 +646,10 @@
   (reset! ctx context)
   (let [input-chan (chan)
         quit (atom false)]
-    (load-textures
+    (load-images
       image-files
-      (fn [loaded-atlas]
-        (reset! texture-atlas loaded-atlas)
+      (fn [images]
+        (reset! loaded-images images)
         (start-input-loop input-chan)
         (js/requestAnimationFrame
           (fn game-loop []
