@@ -5,6 +5,7 @@
              :refer [must ALL]
              :refer-macros [transform]]
             [armchair.config :as config]
+            [armchair.game.core]
             [armchair.util :as u]))
 
 (s/def :game/data (s/keys :req-un [:game/lines
