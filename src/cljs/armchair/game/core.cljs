@@ -120,14 +120,11 @@
   (when (some? @loaded-images)
     (c/draw-image-rotated! @ctx (@loaded-images file-name) coord deg)))
 
-(defn draw-background [rect background camera]
-  (when (some? background)
-    (doseq [x (range (:x rect) (+ (:x rect) (:w rect)))
-            y (range (:y rect) (+ (:y rect) (:h rect)))
-            :let [tile (m/Point. x y)
-                  sprite (get background tile)]
-            :when (and (some? sprite)
-                       (tile-visible? camera tile))]
+(defn draw-tile-layer [tile-layer camera]
+  (when (some? tile-layer)
+    (doseq [[_ tile-data] (group-by (fn [[_ [file-name]]] file-name) tile-layer)
+            [tile sprite] tile-data
+            :when (tile-visible? camera tile)]
       (draw-sprite sprite (u/tile->coord tile)))))
 
 (defn draw-player [{:keys [coord sprite]}]
@@ -240,18 +237,17 @@
       (c/set-transform! @ctx 1 0 0 1 w-offset h-offset))
     (let [l (get-in state [:player :location-id])
           {:keys [characters
-                  bounds
                   background1
                   background2
                   foreground1
                   foreground2]} (get-in @data [:locations l])]
-      (draw-background bounds background1 camera)
-      (draw-background bounds background2 camera)
+      (draw-tile-layer background1 camera)
+      (draw-tile-layer background2 camera)
       (draw-highlight (:highlight state))
       (draw-player (:player state))
       (draw-characters characters camera)
-      (draw-background bounds foreground1 camera)
-      (draw-background bounds foreground2 camera))
+      (draw-tile-layer foreground1 camera)
+      (draw-tile-layer foreground2 camera))
       ; (draw-direction-indicator @ctx state)
       ; (draw-camera camera))
     (c/reset-transform! @ctx)
