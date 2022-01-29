@@ -3,7 +3,6 @@
 set -e
 
 source .env
-source build.sh
 
 aws s3 sync \
   --follow-symlinks \
