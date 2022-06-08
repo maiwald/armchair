@@ -86,7 +86,7 @@
 (reg-event-data
   :dialogue-editor/end-connecting-lines
   (fn [db [_ end-id]]
-    (assert (s/valid? :armchair.db/connecting-lines (:connecting db))
+    (assert (s/valid? :ui/connecting-lines (:connecting db))
             "Attempting to end connecting with missing or invalid state!")
     (let [{:keys [dialogue-id line-id index]} (:connecting db)
           id-path (if (some? line-id)

@@ -43,8 +43,10 @@
 
 ;; UI State
 
-(s/def :ui/connecting (s/keys :req-un [::cursor-start]
-                              :opt-un [::line-id ::dialogue-id ::index]))
+(s/def :ui/connecting (s/or :lines :ui/connecting-lines))
+
+(s/def :ui/connecting-lines (s/keys :req-un [::cursor-start]
+                                    :opt-un [::line-id ::dialogue-id ::index]))
 (s/def ::cursor-start :type/point)
 
 (s/def :ui/cursor :type/point)
