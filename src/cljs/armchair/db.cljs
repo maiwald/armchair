@@ -8,8 +8,8 @@
             [armchair.migrations :refer [db-version migrate]]
             [armchair.config :as config]
             [armchair.math :refer [Point Rect]]
-            [armchair.util :as u])
-  (:require-macros [armchair.slurp :refer [slurp]]))
+            [armchair.util :as u]
+            [shadow.resource :as rc]))
 
 ;; Types
 
@@ -475,4 +475,4 @@
           :triggers {}
           :switches {}
           :switch-values {}}
-         (migrate (deserialize-db (slurp "resources/dummy_data.json")))))
+         (migrate (deserialize-db (rc/inline "./default_save.json")))))
