@@ -4,7 +4,7 @@
              :refer [must ALL NONE MAP-VALS]
              :refer-macros [select setval]]
             [clojure.spec.alpha :as s]
-            cljsjs.filesaverjs
+            ["file-saver" :refer [saveAs]]
             [armchair.config :refer [debug?]]
             [armchair.local-storage :as ls]
             [armchair.db :as db :refer [default-db
@@ -86,7 +86,7 @@
           filename (str "armchair-save-"
                         (.toISOString (new js/Date))
                         ".json")]
-      (js/saveAs blob filename))
+      (saveAs blob filename))
     {}))
 
 ;; Character CRUD

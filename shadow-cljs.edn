@@ -1,0 +1,25 @@
+;; shadow-cljs configuration
+{:source-paths
+ ["src/cljs"]
+
+ :dependencies [[reagent "1.1.0"]
+                [re-frame "1.2.0"]
+                [tailrecursion/cljs-priority-map "1.2.1"]
+                [com.cognitect/transit-cljs "0.8.269"]
+                [bidi "2.1.6"]
+                [com.rpl/specter "1.1.3"]
+                [binaryage/devtools "1.0.4"]
+                [day8.re-frame/re-frame-10x "1.2.0"]]
+
+ :dev-http {3449 "resources/public"}
+ :builds
+ {:app {:output-dir "resources/public/compiled/js"
+        :asset-path "compiled/js"
+        :target :browser
+        :modules {:app {:entries [armchair.core]
+                        :init-fn armchair.core/init}}
+        :devtools {:repl-init-ns armchair.core
+                   :preloads [devtools.preload day8.re-frame-10x.preload]
+                   :after-load armchair.core/mount-root}
+        :dev {:closure-defines {re-frame.trace.trace_enabled? true}}
+        :compiler-options {:source-map true}}}}
