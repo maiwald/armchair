@@ -71,7 +71,7 @@
      [component item-id]]))
 
 (defn drag-canvas [{:keys [kind nodes bounds]}]
-  (let [connecting? (some? (<sub [:connector]))
+  (let [connecting? (some? (<sub [:ui/connector]))
         dragging? (<sub [:dragging?])]
     [:div {:class ["graph"
                    (when dragging? "graph_is-dragging")
@@ -93,7 +93,7 @@
                    :keys [title color width actions on-connect-end]
                    :or {width (u/px config/line-width)}}]
   (let [dragging? (<sub [:dragging-item? id])
-        connecting? (some? (<sub [:connector]))
+        connecting? (some? (<sub [:ui/connector]))
         start-dragging (fn [e]
                          (when (e->left? e)
                            (u/stop-e! e)
@@ -356,10 +356,10 @@
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
-       (if-let [{:keys [start end kind]} (<sub [:connector])]
-         [connection {:start (m/global-point start bounds)
-                      :end (m/global-point end bounds)
-                      :kind kind}])
+       (if-let [{:keys [start end]} (<sub [:ui/connector])]
+         [connection {:start start
+                      :end end
+                      :kind :connector}])
        (if-let [[start end] initial-line-connection]
          [line-connection bounds start end])
        (for [[start end] line-connections]

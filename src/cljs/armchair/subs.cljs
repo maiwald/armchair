@@ -117,6 +117,15 @@
         position))))
 
 (reg-sub
+  :ui/connector
+  :<- [:db-connecting]
+  :<- [:db-cursor]
+  (fn [[connecting cursor]]
+    (when connecting
+      {:start (:cursor-start connecting)
+       :end cursor})))
+
+(reg-sub
   :character-options
   :<- [:db-characters]
   (fn [characters _]
@@ -141,16 +150,6 @@
   :<- [:db-dragging]
   (fn [dragging [_ position-id]]
     (= (:ids dragging) #{position-id})))
-
-(reg-sub
-  :connector
-  :<- [:db-connecting]
-  :<- [:db-cursor]
-  (fn [[connecting cursor]]
-    (when connecting
-      {:start (:cursor-start connecting)
-       :end cursor
-       :kind :connector})))
 
 (reg-sub
   :dialogue-list
