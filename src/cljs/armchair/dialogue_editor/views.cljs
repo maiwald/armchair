@@ -157,13 +157,16 @@
    (into [:div.action-wrapper__actions.actions_vertical]
          actions)])
 
-(defn player-line-option-component [line-id index]
+(defn player-line-option-component [line-id index _option _total-count]
   (let [handle-text-change #(>evt [:dialogue-editor/update-option line-id index %])
         edit-condition #(>evt [::unlock-conditions-form/open line-id index])
         move-up #(>evt [:dialogue-editor/move-option line-id index :up])
         move-down #(>evt [:dialogue-editor/move-option line-id index :down])
         delete #(>evt [:dialogue-editor/delete-option line-id index])]
-    (fn [line-id index {:keys [text connected? conditions condition-conjunction]} total-count]
+    (fn [line-id
+         index
+         {:keys [text connected? conditions condition-conjunction]}
+         total-count]
       [:li
        [action-wrapper {:actions
                         [[:div.action {:on-click edit-condition}
