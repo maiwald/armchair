@@ -9,28 +9,28 @@ Anyway, feel free to play around with what it can do so far: https://my-armchair
 
 ## Development
 
-You need [leinigen](https://leiningen.org/) and [sass](https://sass-lang.com/) installed on your system.
+You need [node](https://nodejs.org/) installed on your system.
 
-Then start the two processes:
+Install all dependencies, then start the two processes:
 
 ```bash
-lein figwheel dev
-sass --watch src/sass:resources/public/compiled/css
+npm install
+npm exec -- shadow-cljs watch app
+npm exec -- sass --watch src/sass:resources/public/compiled/css
 ```
 
 Wait a bit, then browse to [http://localhost:3449](http://localhost:3449).
 
 ### tmux
 
-You can also run ```./start_dev.sh``` to start everythin in one go!
+You can also run ```./scripts/start_dev.sh``` to start everythin in one go!
 
 ## Production Build
 
 To compile clojurescript to javascript:
 
 ```
-lein clean
-lein cljsbuild once min
+make build
 ```
 
 # Credit
