@@ -1,5 +1,7 @@
 (ns armchair.components
   (:require [clojure.string :refer [join]]
+            [herb.core :refer [<class]]
+            [garden.color :as color]
             [reagent.core :as r]
             [armchair.math :as m :refer [abs point-delta translate-point]]
             [armchair.util :as u]))
@@ -63,18 +65,48 @@
 
 ;; Button
 
+(def blue-600 "#3182CE")
+(def color-danger "#dc3545")
+(def button-background "#f4f6f9")
+
+(defn button-css [active fill danger]
+  (with-meta
+    (cond->
+      {:display "inline-flex"
+       :gap "8px"
+       :flex-direction "row"
+       :justify-content "center"
+       :border "1px solid #ddd"
+       :border-radius ".25rem"
+       :padding "0 12px"
+       :background "#fff"
+       :color blue-600
+       :font-family "Verdana"
+       :font-size ".75rem"
+       :line-height "1.75rem"
+       :cursor "pointer"}
+      fill (merge {:width "100%"})
+      active (merge {:background (color/darken button-background 15)})
+      danger (merge {:color "#fff"
+                     :background color-danger}))
+    {:pseudo {:hover (cond-> {:background button-background}
+                       active (merge {:background (color/darken button-background 20)})
+                       danger (merge {:background (color/darken color-danger 10)}))
+              :focus (cond-> {:outline 0
+                              :background button-background
+                              :box-shadow (str "0 0 3px " blue-600)}
+                       danger (merge {:background (color/darken color-danger 10)}))}
+     :combinators {[:> :div.title] {:white-space "nowrap"}}}))
+
 (defn button [{glyph :icon
                btn-type :type
                :keys [title on-click fill active]
                :or {fill false active false}}]
-  [:button {:class ["button"
-                    (when fill "button_fill")
-                    (when active "button_active")
-                    (when (= btn-type :danger) "button_danger")]
+  [:button {:class (<class button-css active fill (= btn-type :danger))
             :on-click on-click
             :type "button"}
-   (when (some? glyph) [:div {:class "button__icon"} [icon glyph title]])
-   (when (some? title) [:div {:class "button__title"} title])])
+   (when (some? glyph) [:div {:class "icon"} [icon glyph title]])
+   (when (some? title) [:div {:class "title"} title])])
 
 (defn icon-button [{glyph :icon
                     :keys [title on-click]}]
