@@ -1,10 +1,10 @@
 (ns armchair.components.resources
   (:require [re-frame.core :refer [reg-sub]]
+            [herb.core :refer [<class]]
             [armchair.events :refer [reg-event-meta]]
             [armchair.config :as config]
             [armchair.math :refer [Point]]
             [armchair.components :as c]
-            [armchair.components.sidebar :refer [sidebar]]
             [armchair.sprites :refer [Sprite]]
             [armchair.routes :refer [>navigate]]
             [armchair.util :as u :refer [<sub >evt e->]]))
@@ -29,7 +29,7 @@
 
 (def icon-size 20)
 
-(defn player []
+(defn Player []
   (let [display-name "Player"
         sprite ["hare.png" (Point. 6 0)]]
     [:div.resource {:draggable true
@@ -47,12 +47,12 @@
      [:span.resource__drag_handle
       [c/icon "grip-vertical"]]
      [:span.resource__icon
-      {:style {:width (u/px 20)}
-       :height (u/px 20)}
+      {:style {:width (u/px 20)
+               :height (u/px 20)}}
       [Sprite sprite display-name (/ 20 config/tile-size)]]
      [:span.resource__label display-name]]))
 
-(defn character [{:keys [id display-name sprite line-count]}]
+(defn Character [{:keys [id display-name sprite line-count]}]
   [:li.resource {:draggable true
                  :on-click #(>evt [:armchair.modals.character-form/open id])
                  :on-drag-end #(>evt [:stop-entity-drag])
@@ -77,14 +77,14 @@
       [c/icon-button {:icon "trash-alt"
                       :on-click (e-> #(>evt [:delete-character id]))}]])])
 
-(defn dialogue [{:keys [id synopsis]}]
+(defn Dialogue [{:keys [id synopsis]}]
   [:li.resource {:on-click #(>navigate :dialogue-edit :id id)}
    [:span.resource__label synopsis]
    [:span.resource__action
     [c/icon-button {:icon "trash-alt"
                     :on-click (e-> #(>evt [:delete-dialogue id]))}]]])
 
-(defn location [{:keys [id display-name]}]
+(defn Location [{:keys [id display-name]}]
   [:li.resource {:draggable true
                  :on-click #(>navigate :location-edit :id id)
                  :on-drag-end #(>evt [:stop-entity-drag])
@@ -98,82 +98,57 @@
     [c/icon-button {:icon "trash-alt"
                     :on-click (e-> #(>evt [:delete-location id]))}]]])
 
-(defn switch [{:keys [id display-name]}]
+(defn Switch [{:keys [id display-name]}]
   [:li.resource {:on-click #(>evt [:armchair.modals.switch-form/open id])}
    [:span.resource__label display-name]
    [:span.resource__action
     [c/icon-button {:icon "trash-alt"
                     :on-click (e-> #(>evt [:delete-switch id]))}]]])
 
-(defn resources []
-  [sidebar
-   {:active-panel (<sub [:ui/active-resource])
-    :on-panel-change #(>evt [::set-active-resource %])
-    :on-panel-close #(>evt [::unset-active-resource %])
-    :panels (array-map
-              :characters
-              {:label "Characters"
-               :icon "user-friends"
-               :component (let [characters (<sub [:character-list])]
-                            [:<>
-                             [c/button {:title "New Character"
-                                        :icon "plus"
-                                        :fill true
-                                        :on-click #(>evt [:armchair.modals.character-form/open])}]
-                             [:ol.resource_list
-                              (for [{:keys [display-name] :as c} characters]
-                                ^{:key (str "character-select" display-name)}
-                                [character c])]])}
+(def resource-categories
+  [{:label "Characters"
+    :new-resource #(>evt [:armchair.modals.character-form/open])
+    :list-sub :character-list
+    :item-component Character}
+   {:label "Dialogues"
+    :new-resource #(>evt [:armchair.modals.dialogue-creation/open])
+    :list-sub :dialogue-list
+    :item-component Dialogue}
+   {:label "Locations"
+    :new-resource #(>evt [:armchair.modals.location-creation/open])
+    :list-sub :location-list
+    :item-component Location}
+   {:label "Switches"
+    :new-resource #(>evt [:armchair.modals.switch-form/open])
+    :list-sub :switch-list
+    :item-component Switch}
+   {:label "Player"
+    :component Player}])
 
-              :dialogues
-              {:label "Dialogues"
-               :icon "comments"
-               :component (let [dialogues (<sub [:dialogue-list])]
-                            [:<>
-                             [c/button {:title "New Dialogue"
-                                        :icon "plus"
-                                        :fill true
-                                        :on-click #(>evt [:armchair.modals.dialogue-creation/open])}]
-                             [:ol.resource_list
-                              (for [{:keys [id] :as d} dialogues]
-                                ^{:key (str "dialogue-select" id)}
-                                [dialogue d])]])}
+(defn- header-css []
+  ^{:combinators {[:> :span] {:flex-grow 1
+                              :font-size (u/px 20)}}}
+  {:display :flex
+   :flex-directin "column"
+   :align-items "center"
+   :height (u/px 40)})
 
-              :locations
-              {:label "Locations"
-               :icon "map"
-               :component (let [locations (<sub [:location-list])]
-                            [:<>
-                             [c/button {:title "New Location"
-                                        :icon "plus"
-                                        :fill true
-                                        :on-click #(>evt [:armchair.modals.location-creation/open])}]
-                             [:ol.resource_list
-                              (for [{:keys [id] :as l} locations]
-                                ^{:key (str "location-select" id)}
-                                [location l])]])}
-
-              :switches
-              {:label "Switches"
-               :icon "database"
-               :component (let [switches (<sub [:switch-list])]
-                            [:<>
-                             [c/button {:title "New Switch"
-                                        :icon "plus"
-                                        :fill true
-                                        :on-click #(>evt [:armchair.modals.switch-form/open])}]
-                             [:ol.resource_list
-                              (for [{:keys [id] :as s} switches]
-                                ^{:key (str "switch-select" id)}
-                                [switch s])]])}
-
-              :player
-              {:label "Player"
-               :icon "user"
-               :component [player]}
-
-              :settings
-              {:label "Settings"
-               :icon "cog"
-               :bottom? true
-               :component "Settings"})}])
+(defn Resources []
+  (into
+    [:ul]
+    (for [{:keys [label
+                  new-resource
+                  list-sub
+                  component
+                  item-component]} resource-categories]
+      [:li
+       [:header {:class (<class header-css)}
+        [:span label]
+        (when (some? new-resource)
+          [c/icon-button {:icon "plus" :on-click new-resource}])]
+       (if (some? list-sub)
+         [:ol
+          (for [resource (<sub [list-sub])]
+            ^{:key (:id resource)}
+            [item-component resource])]
+         [component])])))
