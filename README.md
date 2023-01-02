@@ -15,15 +15,10 @@ Install all dependencies, then start the two processes:
 
 ```bash
 npm install
-npm exec -- shadow-cljs watch app
-npm exec -- sass --watch src/sass:resources/public/compiled/css
+npm run dev
 ```
 
 Wait a bit, then browse to [http://localhost:3449](http://localhost:3449).
-
-### tmux
-
-You can also run ```./scripts/start_dev.sh``` to start everythin in one go!
 
 ## Production Build
 

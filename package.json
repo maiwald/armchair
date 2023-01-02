@@ -2,7 +2,11 @@
   "name": "armchair",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "dev": "npm exec foreman -- start"
+  },
   "devDependencies": {
+    "foreman": "^3.0.1",
     "sass": "1.54.5",
     "shadow-cljs": "2.16.12"
   },
