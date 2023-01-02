@@ -225,19 +225,24 @@
          [:a {:on-click #(>evt [:location-editor/resize-smaller location-id :right])} [c/icon "arrow-left" "shrink"]]
          [:a {:on-click #(>evt [:location-editor/resize-larger location-id :right])} [c/icon "arrow-right" "extend"]]]]]]
      [property {:title "Layers"}
-      [:ol.level-layers
+      [:ol {:class "flex flex-col gap-1"}
        (for [[layer-id layer-name] config/location-editor-layers
-             :let [visible? (contains? visible-layers layer-id)]]
+             :let [visible? (contains? visible-layers layer-id)
+                   active-layer? (= active-layer layer-id)]]
          [:li {:key (str "layer" layer-id)
-               :class ["level-layers__item"
-                       (when (= active-layer layer-id) "level-layers__item_active")]}
-          [:span.level-layers__item__name
-           {:on-click #(>evt [:location-editor/set-active-layer layer-id])}
+               :class ["flex gap-2 items-center text-xs rounded-md"
+                       (if active-layer?
+                         "text-slate-100 bg-sky-800 hover:bg-sky-700"
+                         "text-slate-800 bg-slate-50 hover:bg-sky-100")]}
+          [:button
+           {:class "text-left pl-2 py-1 flex-grow cursor-pointer"
+            :on-click #(>evt [:location-editor/set-active-layer layer-id])}
            layer-name]
-          [:span
-           {:class ["level-layers__item__visibility"
-                    (str "level-layers__item__visibility_"
-                         (if visible? "visible" "not-visible"))]
+          [:button
+           {:class ["flex justify-center w-6"
+                    (if (or active-layer? visible?)
+                      "text-slate-300"
+                      "text-slate-600")]
             :on-click #(>evt [:location-editor/toggle-layer-visibility layer-id])}
            (if visible?
              [c/icon "eye" "Hide layer"]
