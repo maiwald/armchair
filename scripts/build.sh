@@ -16,6 +16,9 @@ ln -s ../resources/public/webfonts/ $RELEASE_FOLDER/webfonts
 npm exec -- shadow-cljs release app \
   --config-merge "{:output-dir \"$RELEASE_FOLDER/compiled/js/\"}"
 npm exec -- sass --source-map src/sass/app.sass $RELEASE_FOLDER/compiled/css/app.css
+npm exec -- tailwindcss -i src/tailwind/styles.css -o $RELEASE_FOLDER/compiled/tailwind/styles.css -m
+
+mv $RELEASE_FOLDER/compiled/tailwind/styles{,-$VERSION}.css
 
 mv $RELEASE_FOLDER/compiled/css/app{,-$VERSION}.css
 mv $RELEASE_FOLDER/compiled/css/app{,-$VERSION}.css.map
@@ -32,5 +35,6 @@ sed -i "" \
 cp resources/public/index.html $RELEASE_FOLDER/index.html
 sed -i "" \
   -e "s/app\.css/app-$VERSION.css/" \
+  -e "s/styles\.css/styles-$VERSION.css/" \
   -e "s/app\.js/app-$VERSION.js/" \
   $RELEASE_FOLDER/index.html
