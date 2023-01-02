@@ -1,10 +1,6 @@
-
-.PHONY: tmux
-tmux:
-	./scripts/start_dev.sh
-
+.PHONY: watch
 watch:
-	npm exec -- shadow-cljs watch app
+	npm exec -- foreman start
 
 .PHONY: build
 build:
