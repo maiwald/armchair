@@ -300,7 +300,7 @@
                   nil)]
     (if-not (empty? options)
       options
-      (vector {:text "Yeah..., whatever. Farewell."
+      (vector {:text "Ok, farewell."
                :trigger-changes trigger-changes}))))
 
 (defn resolve-interaction
