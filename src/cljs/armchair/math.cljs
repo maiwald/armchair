@@ -9,8 +9,6 @@
    (let [factor (js/Math.pow 10 decimals)]
      (/ (js/Math.round (+ (* factor x) js/Number.EPSILON)) factor))))
 
-(defn abs [x] (.abs js/Math x))
-
 (defn clamp [lower upper value]
   (max lower (min value upper)))
 

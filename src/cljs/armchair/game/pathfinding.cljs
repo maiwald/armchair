@@ -1,6 +1,6 @@
 (ns armchair.game.pathfinding
   (:require [tailrecursion.priority-map :refer [priority-map]]
-            [armchair.math :refer [abs translate-point]]))
+            [armchair.math :refer [translate-point]]))
 
 (defn manhattan-distance [p1 p2]
   (+ (abs (- (:x p2) (:x p1)))

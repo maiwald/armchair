@@ -1,7 +1,7 @@
 (ns armchair.components
   (:require [clojure.string :refer [join]]
             [reagent.core :as r]
-            [armchair.math :as m :refer [abs point-delta translate-point]]
+            [armchair.math :as m :refer [point-delta translate-point]]
             [armchair.util :as u]))
 
 ;; SVG Connections
