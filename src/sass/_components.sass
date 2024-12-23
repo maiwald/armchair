@@ -1,5 +1,7 @@
 @use 'sass:math'
-@import "varibales"
+@use 'sass:color'
+@use 'varibales' as *
+@use 'constants' as *
 
 .tag
   border-radius: 9px
@@ -44,13 +46,17 @@
 
   cursor: pointer
 
+  margin-right: 6px
+  &:last-child
+    margin-right: 0
+
   &_fill
     width: 100%
 
   &_active
-    background: darken(#f4f6f9, 15%)
+    background: color.scale(#f4f6f9, $lightness: -15%)
     &:focus
-      background: darken(#f4f6f9, 20%) !important
+      background: color.scale(#f4f6f9, $lightness: -20%) !important
 
   &:hover, &:focus
     background: #f4f6f9
@@ -59,15 +65,11 @@
     color: #fff
     background: $color-danger
     &:hover, &:focus
-      background: darken($color-danger, 10%)
+      background: color.scale($color-danger, $lightness: -10%)
 
   &:focus
     outline: 0
     box-shadow: 0 0 3px $blue-600
-
-  margin-right: 6px
-  &:last-child
-    margin-right: 0
 
   &__icon
     margin-right: 8px
