@@ -19,7 +19,9 @@
     "Space" "Enter"})
 
 (defn game-canvas []
-  (let [game-handle (atom nil)]
+  (let [game-handle (atom nil)
+        canvas-ref (r/atom nil)
+        canvas-ref-fn (fn [ref] (reset! canvas-ref ref))]
     (letfn [(on-key-down [e]
               (when-not (or ^boolean (.-altKey e)
                             ^boolean (.-ctrlKey e)
@@ -43,7 +45,7 @@
         {:display-name "game-canvas"
          :component-did-mount
          (fn [this]
-           (reset! game-handle (start-game (doto (.getContext (rd/dom-node this) "2d")
+           (reset! game-handle (start-game (doto (.getContext @canvas-ref "2d")
                                              (g/set "imageSmoothingEnabled" false))
                                            (r/props this)))
            (.addEventListener js/document "keydown" on-key-down)
@@ -58,14 +60,15 @@
          :component-did-update
          (fn [this]
            (end-game @game-handle)
-           (reset! game-handle (start-game (.getContext (rd/dom-node this) "2d")
+           (reset! game-handle (start-game (.getContext @canvas-ref "2d")
                                            (r/props this))))
 
          :reagent-render
          (fn []
            (let [w (* tile-size camera-tile-width camera-scale)
                  h (* tile-size camera-tile-height camera-scale)]
-             [:canvas#game__view {:on-mouse-down on-pointer-down
+             [:canvas#game__view {:ref canvas-ref-fn
+                                  :on-mouse-down on-pointer-down
                                   :on-mouse-up on-pointer-up
                                   :on-mouse-move on-pointer-move
                                   :on-touch-start on-pointer-down
