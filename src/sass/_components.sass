@@ -29,57 +29,6 @@
     &:last-child
       margin-right: -2px
 
-
-.button
-  display: inline-flex
-  flex-direction: row
-  justify-content: center
-  border: 1px solid #ddd
-  border-radius: .25rem
-  padding: 0 12px
-
-  background: #fff
-  color: $blue-600
-  font-family: Verdana
-  font-size: .75rem
-  line-height: 1.75rem
-
-  cursor: pointer
-
-  margin-right: 6px
-  &:last-child
-    margin-right: 0
-
-  &_fill
-    width: 100%
-
-  &_active
-    background: color.scale(#f4f6f9, $lightness: -15%)
-    &:focus
-      background: color.scale(#f4f6f9, $lightness: -20%) !important
-
-  &:hover, &:focus
-    background: #f4f6f9
-
-  &_danger
-    color: #fff
-    background: $color-danger
-    &:hover, &:focus
-      background: color.scale($color-danger, $lightness: -10%)
-
-  &:focus
-    outline: 0
-    box-shadow: 0 0 3px $blue-600
-
-  &__icon
-    margin-right: 8px
-    &:last-child
-      margin-right: 0
-
-  &__title
-    white-space: nowrap
-
-
 .icon-button
   display: flex
   justify-content: center

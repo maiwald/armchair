@@ -130,7 +130,7 @@
                         :on-click #(>evt [:armchair.modals.dialogue-creation/open character-id location-id tile])}]])]]
        [:div.inspector__actions
         [c/button {:title "Remove Character"
-                   :type :danger
+                   :variant :danger
                    :fill true
                    :on-click #(>evt [:location-editor/remove-placement location-id tile])}]]])))
 
@@ -164,7 +164,7 @@
         [location-preview target-id target-position]]]]
      [:div.inspector__actions
       [c/button {:title "Remove Exit"
-                 :type :danger
+                 :variant :danger
                  :fill true
                  :on-click #(>evt [:location-editor/remove-trigger location-id tile])}]]]))
 
@@ -194,7 +194,7 @@
           character-name])]]
      [:div.inspector__actions
       [c/button {:title "Delete Location"
-                 :type :danger
+                 :variant :danger
                  :fill true
                  :on-click #(>evt [:delete-location location-id])}]]]))
 
@@ -255,14 +255,15 @@
               :on-click (e-> #(>evt [:armchair.modals.sprite-selection/open active-sprite]))}
           [Sprite active-sprite]]]
         [property {:title "Tool"}
-         [c/button {:icon "paint-brush"
-                    :title "Paint"
-                    :active (= :brush active-tool)
-                    :on-click #(>evt [:location-editor/set-active-tool :brush])}]
-         [c/button {:icon "eraser"
-                    :title "Erase"
-                    :active (= :eraser active-tool)
-                    :on-click #(>evt [:location-editor/set-active-tool :eraser])}]]]
+         [:div {:class "flex gap-1"}
+           [c/button {:icon "paint-brush"
+                      :title "Paint"
+                      :variant (when (= :brush active-tool) :primary)
+                      :on-click #(>evt [:location-editor/set-active-tool :brush])}]
+           [c/button {:icon "eraser"
+                      :title "Erase"
+                      :variant (when (= :eraser active-tool) :primary)
+                      :on-click #(>evt [:location-editor/set-active-tool :eraser])}]]]]
        :collision
        [property {:title "Collision State"}
         [:ul {:class "tile-grid"}

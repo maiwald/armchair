@@ -64,17 +64,23 @@
 ;; Button
 
 (defn button [{glyph :icon
-               btn-type :type
-               :keys [title on-click fill active]
-               :or {fill false active false}}]
-  [:button {:class ["button"
-                    (when fill "button_fill")
-                    (when active "button_active")
-                    (when (= btn-type :danger) "button_danger")]
+               button-type :type
+               :keys [title on-click variant fill]
+               :or {fill false button-type "button"}}]
+  [:button {:class ["cursor-pointer"
+                    "flex gap-2 justify-center items-baseline px-3 py-1.5"
+                    "border rounded"
+                    "text-xs font-sans"
+                    "active:shadow-inner"
+                    (when fill "w-full")
+                    (case variant
+                      :primary "bg-sky-800 hover:bg-sky-700 text-white"
+                      :danger "bg-red-600 hover:bg-red-700 text-white"
+                      "bg-white hover:bg-slate-100 text-sky-700")]
             :on-click on-click
-            :type "button"}
-   (when (some? glyph) [:div {:class "button__icon"} [icon glyph title]])
-   (when (some? title) [:div {:class "button__title"} title])])
+            :type button-type}
+   (when (some? glyph) [icon glyph title])
+   (when (some? title) [:div {:class "whitespace-nowrap"} title])])
 
 (defn icon-button [{glyph :icon
                     :keys [title on-click]}]
@@ -149,7 +155,6 @@
     (into [:form {:on-submit (u/e-> confirm-handler)}]
           (r/children (r/current-component)))
     [:footer
-     [:button {:class "button"
-               :type "submit"
-               :on-click (u/e-> confirm-handler)}
-      "Ok"]]]])
+     [button {:type "submit"
+              :on-click (u/e-> confirm-handler)
+              :title "Ok"}]]]])
