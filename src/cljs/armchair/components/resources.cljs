@@ -170,10 +170,4 @@
               :player
               {:label "Player"
                :icon "user"
-               :component [player]}
-
-              :settings
-              {:label "Settings"
-               :icon "cog"
-               :bottom? true
-               :component "Settings"})}])
+               :component [player]})}])

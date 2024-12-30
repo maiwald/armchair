@@ -4,11 +4,10 @@
 (defn sidebar [{:keys [panels active-panel on-panel-change on-panel-close]}]
   [:aside.sidebar
    [:ul.panel-selectors
-    (for [[panel-key {:keys [icon label bottom?]}] panels
+    (for [[panel-key {:keys [icon label]}] panels
           :let [active? (= panel-key active-panel)]]
       [:li.panel-selector {:key (str "sidebar-panel-selector-" panel-key)
-                           :class [(when active? "is-active")
-                                   (when bottom? "is-bottom")]
+                           :class [(when active? "is-active")]
                            :on-click (if (= active-panel panel-key)
                                        on-panel-close
                                        #(on-panel-change panel-key))}
