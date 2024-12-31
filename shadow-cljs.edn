@@ -19,7 +19,7 @@
         :modules {:app {:entries [armchair.core]
                         :init-fn armchair.core/init}}
         :devtools {:repl-init-ns armchair.core
-                   :preloads [devtools.preload day8.re-frame-10x.preload]
+                   :preloads [devtools.preload day8.re-frame-10x.preload.react-18]
                    :after-load armchair.core/mount-root}
         :dev {:closure-defines {re-frame.trace.trace_enabled? true}}
         :compiler-options {:source-map true}}}}
