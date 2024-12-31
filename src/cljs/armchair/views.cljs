@@ -1,6 +1,5 @@
 (ns armchair.views
-  (:require [reagent.core :as r]
-            [armchair.components :as c :refer [icon]]
+  (:require [armchair.components :as c :refer [icon]]
             [armchair.location-editor.views :refer [location-editor location-editor-header]]
             [armchair.dialogue-editor.views :refer [dialogue-editor dialogue-editor-header]]
             [armchair.location-map.views :refer [location-map location-map-header]]
@@ -52,39 +51,25 @@
 
 (defn content-component [page-name page-params]
   (case page-name
-    :game          [game-view]
     :locations     [location-map]
     :location-edit [location-editor (uuid (:id page-params))]
     :dialogue-edit [dialogue-editor (uuid (:id page-params))]
     [:div "Page not found"]))
 
 (defn root []
-  (letfn [(scrollToTop []
-            (-> js/document
-                (.getElementById "page__content")
-                (.-scrollTop)
-                (set! 0)))]
-    (r/create-class
-      {:component-did-mount scrollToTop
-       :component-did-update scrollToTop
-       :reagent-render
-       (fn []
-         (let [{:keys [page-name page-params]} (page-data (<sub [:current-page]))]
-           [:<>
-            [modal]
-            [:div#default-dnd-ghost
-             [c/icon "map-marker"]]
-            [:div#page
-             [menu-bar page-name]
-             [:div#page__workspace
-              (when-not (= page-name :game)
-                [:div#page__workspace__resources
-                 [resources]])
-              [:div#page__workspace__main
-               (when (not= page-name :game)
-                 [page-header page-name page-params])
-               [:div#page__content
-                [content-component page-name page-params]]]
-              (when-not (= page-name :game)
-                [:div#page__workspace__inspector
-                 [inspector page-name page-params]])]]]))})))
+  (let [{:keys [page-name page-params]} (page-data (<sub [:current-page]))]
+    [:<>
+     [modal]
+     [:div#default-dnd-ghost [c/icon "map-marker"]]
+     [:div#page {:class "flex flex-col w-screen h-screen"}
+      [menu-bar page-name]
+      (if (= page-name :game)
+        [game-view]
+        [:div#workspace {:class "grow flex flex-row overflow-hidden"}
+         [:div {:class "flex"} [resources]]
+         [:div {:class "grow flex flex-col overflow-hidden"}
+          [page-header page-name page-params]
+          [:div#main {:class "grow overflow-hidden"}
+           [content-component page-name page-params]]]
+         [:div {:class "flex"}
+          [inspector page-name page-params]]])]]))

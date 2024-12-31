@@ -1,36 +1,5 @@
 @use "varibales" as *
 
-#page
-  height: 100vh
-  max-height: 100vh
-  width: 100vw
-  max-width: 100vw
-  display: flex
-  flex-direction: column
-
-  &__workspace
-    flex: 1
-    display: flex
-    flex-direction: row
-    overflow: hidden
-
-    &__resources, &__inspector
-      display: flex
-
-    &__main
-      flex: 1
-      display: flex
-      flex-direction: column
-      overflow-x: hidden
-      overflow-y: auto
-
-  &__content
-    flex: 1
-    display: flex
-    overflow-x: hidden
-    overflow-y: auto
-    position: relative
-
 ul#menu-bar
   display: flex
   user-select: none
