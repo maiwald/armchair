@@ -1,29 +1,11 @@
 (ns armchair.components.resources
-  (:require [re-frame.core :refer [reg-sub]]
-            [armchair.events :refer [reg-event-meta]]
+  (:require [reagent.core :as r]
             [armchair.config :as config]
             [armchair.math :refer [Point]]
             [armchair.components :as c]
-            [armchair.components.sidebar :refer [sidebar]]
             [armchair.sprites :refer [Sprite]]
             [armchair.routes :refer [>navigate]]
-            [armchair.util :as u :refer [<sub >evt e->]]))
-
-;; Events
-
-(reg-event-meta
-  ::set-active-resource
-  (fn [db [_ resource]]
-    (assoc db :ui/active-resource resource)))
-
-(reg-event-meta
-  ::unset-active-resource
-  (fn [db]
-    (dissoc db :ui/active-resource)))
-
-;; Subscriptions
-
-(reg-sub :ui/active-resource #(:ui/active-resource %))
+            [armchair.util :as u :refer [>evt e->]]))
 
 ;; Views
 
@@ -105,69 +87,63 @@
     [c/icon-button {:icon "trash-alt"
                     :on-click (e-> #(>evt [:delete-switch id]))}]]])
 
-(defn resources []
-  [sidebar
-   {:active-panel (<sub [:ui/active-resource])
-    :on-panel-change #(>evt [::set-active-resource %])
-    :on-panel-close #(>evt [::unset-active-resource %])
-    :panels (array-map
-              :characters
-              {:label "Characters"
-               :icon "user-friends"
-               :component (let [characters (<sub [:character-list])]
-                            [:<>
-                             [c/button {:title "New Character"
-                                        :icon "plus"
-                                        :fill true
-                                        :on-click #(>evt [:armchair.modals.character-form/open])}]
-                             [:ol.resource_list
-                              (for [{:keys [display-name] :as c} characters]
-                                ^{:key (str "character-select" display-name)}
-                                [character c])]])}
+(def resources
+  (array-map
+   :characters
+   {:label "Characters"
+    :label-singular "Character"
+    :icon "user-friends"
+    :sub [:character-list]
+    :item-component character}
 
-              :dialogues
-              {:label "Dialogues"
-               :icon "comments"
-               :component (let [dialogues (<sub [:dialogue-list])]
-                            [:<>
-                             [c/button {:title "New Dialogue"
-                                        :icon "plus"
-                                        :fill true
-                                        :on-click #(>evt [:armchair.modals.dialogue-creation/open])}]
-                             [:ol.resource_list
-                              (for [{:keys [id] :as d} dialogues]
-                                ^{:key (str "dialogue-select" id)}
-                                [dialogue d])]])}
+   :dialogues
+   {:label "Dialogues"
+    :label-singular "Dialogue"
+    :icon "comments"
+    :sub [:dialogue-list]
+    :item-component dialogue}
 
-              :locations
-              {:label "Locations"
-               :icon "map"
-               :component (let [locations (<sub [:location-list])]
-                            [:<>
-                             [c/button {:title "New Location"
-                                        :icon "plus"
-                                        :fill true
-                                        :on-click #(>evt [:armchair.modals.location-creation/open])}]
-                             [:ol.resource_list
-                              (for [{:keys [id] :as l} locations]
-                                ^{:key (str "location-select" id)}
-                                [location l])]])}
+   :locations
+   {:label "Locations"
+    :label-singular "Location"
+    :icon "map"
+    :sub [:location-list]
+    :item-component location}
 
-              :switches
-              {:label "Switches"
-               :icon "database"
-               :component (let [switches (<sub [:switch-list])]
-                            [:<>
-                             [c/button {:title "New Switch"
-                                        :icon "plus"
-                                        :fill true
-                                        :on-click #(>evt [:armchair.modals.switch-form/open])}]
-                             [:ol.resource_list
-                              (for [{:keys [id] :as s} switches]
-                                ^{:key (str "switch-select" id)}
-                                [switch s])]])}
+   :switches
+   {:label "Switches"
+    :label-singular "Switch"
+    :icon "database"
+    :sub [:switch-list]
+    :item-component switch}
 
-              :player
-              {:label "Player"
-               :icon "user"
-               :component [player]})}])
+   :player
+   {:label "Player"
+    :icon "user"
+    :component player}))
+
+(defn resource-sidebar []
+  (let [active-panel (r/atom (first (keys resources)))
+        toggle-panel #(swap! active-panel (fn [panel-key] (if (= panel-key %) nil %)))]
+    (fn []
+      [:aside {:class "flex grow border-r border-solid border-zinc-700 bg-zinc-200"}
+       [:ul {:class "flex flex-col bg-zinc-300"}
+        (doall (for [[panel-key {:keys [icon label]}] resources]
+                [:li {:key panel-key
+                      :class ["w-14 h-14 flex items-center justify-center"
+                              "cursor-pointer"
+                              (if (= panel-key @active-panel)
+                                "text-white bg-zinc-700"
+                                "hover:text-white hover:bg-zinc-700")]
+                      :on-click #(toggle-panel panel-key)}
+                 [c/icon icon label {:fixed? true}]]))]
+       (when-let [panel-key @active-panel]
+         (let [{:keys [label]} (resources panel-key)]
+           [:div {:class ["flex w-72 flex-col overflow-y-hidden"]}
+            [:h2 {:class "text-lg p-2"} label]
+            (if-let [component (get-in resources [panel-key :component])]
+              [component]
+              (let [{:keys [sub item-component]} (resources panel-key)]
+                [:ul {:class "overflow-y-auto"}
+                 (for [item (u/<sub sub)]
+                   [item-component item])]))]))])))

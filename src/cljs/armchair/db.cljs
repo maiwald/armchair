@@ -55,7 +55,6 @@
 (s/def :ui/location-map-scroll-center :type/point)
 (s/def :ui/location-map-zoom-scale float?)
 
-(s/def :ui/active-resource keyword?)
 (s/def :ui/inspector (s/cat :inspector/type #{:location :tile}
                             :inspector/data (s/* some?)))
 
@@ -359,7 +358,6 @@
                                        :modal/modal]
                               :opt [:ui/location-map-scroll-center
                                     :ui/inspector
-                                    :ui/active-resource
                                     :ui/dnd
                                     :ui/dnd-preview])))
 

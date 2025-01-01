@@ -3,7 +3,7 @@
             [armchair.location-editor.views :refer [location-editor location-editor-header]]
             [armchair.dialogue-editor.views :refer [dialogue-editor dialogue-editor-header]]
             [armchair.location-map.views :refer [location-map location-map-header]]
-            [armchair.components.resources :refer [resources]]
+            [armchair.components.resources :refer [resource-sidebar]]
             [armchair.components.inspector :refer [inspector]]
             [armchair.modals.views :refer [modal]]
             [armchair.util :as u :refer [<sub >evt]]
@@ -66,7 +66,7 @@
       (if (= page-name :game)
         [game-view]
         [:div#workspace {:class "grow flex flex-row overflow-hidden"}
-         [:div {:class "flex"} [resources]]
+         [:div {:class "flex"} [resource-sidebar]]
          [:div {:class "grow flex flex-col overflow-hidden"}
           [page-header page-name page-params]
           [:div#main {:class "grow overflow-hidden"}
