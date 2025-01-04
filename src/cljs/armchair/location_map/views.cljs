@@ -182,15 +182,17 @@
   (let [update-scroll-center (debounce #(>evt [:location-map/update-scroll-center %]) 200)
         on-scroll (comp update-scroll-center e->scroll-center)]
     (fn []
-      (let [{:keys [bounds scroll-center location-ids zoom-scale]} (<sub [:location-map])]
-        [c/scroll-container {:width (:w bounds)
-                             :height (:h bounds)
-                             :scroll-center scroll-center
-                             :zoom-scale zoom-scale
-                             :on-scroll on-scroll}
-         [drag-container
-          (for [id location-ids]
-            ^{:key (str "location:" id)}
-            [location id])
-          [connections]
-          [connection-preview]]]))))
+      [:div
+       [location-map-header]
+       (let [{:keys [bounds scroll-center location-ids zoom-scale]} (<sub [:location-map])]
+         [c/scroll-container {:width (:w bounds)
+                              :height (:h bounds)
+                              :scroll-center scroll-center
+                              :zoom-scale zoom-scale
+                              :on-scroll on-scroll}
+          [drag-container
+           (for [id location-ids]
+             ^{:key (str "location:" id)}
+             [location id])
+           [connections]
+           [connection-preview]]])])))

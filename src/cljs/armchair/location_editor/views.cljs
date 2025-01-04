@@ -250,5 +250,7 @@
 
 (defn location-editor [location-id]
   (if (<sub [:location-editor/location-exists? location-id])
-    [canvas location-id]
+    [:div
+     [location-editor-header location-id]
+     [canvas location-id]]
     "Location not found."))

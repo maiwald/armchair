@@ -1,8 +1,8 @@
 (ns armchair.views
   (:require [armchair.components :as c :refer [icon]]
-            [armchair.location-editor.views :refer [location-editor location-editor-header]]
-            [armchair.dialogue-editor.views :refer [dialogue-editor dialogue-editor-header]]
-            [armchair.location-map.views :refer [location-map location-map-header]]
+            [armchair.location-editor.views :refer [location-editor]]
+            [armchair.dialogue-editor.views :refer [dialogue-editor]]
+            [armchair.location-map.views :refer [location-map]]
             [armchair.components.resources :refer [resource-sidebar]]
             [armchair.components.inspector :refer [inspector]]
             [armchair.modals.views :refer [modal]]
@@ -43,12 +43,6 @@
 
 ;; Page
 
-(defn page-header [page-name page-params]
-  (case page-name
-    :locations     [location-map-header]
-    :location-edit [location-editor-header (uuid (:id page-params))]
-    :dialogue-edit [dialogue-editor-header (uuid (:id page-params))]))
-
 (defn content-component [page-name page-params]
   (case page-name
     :locations     [location-map]
@@ -67,9 +61,7 @@
         [game-view]
         [:div#workspace {:class "grow flex flex-row overflow-hidden"}
          [:div {:class "flex"} [resource-sidebar]]
-         [:div {:class "grow flex flex-col overflow-hidden"}
-          [page-header page-name page-params]
-          [:div#main {:class "grow overflow-hidden"}
-           [content-component page-name page-params]]]
+         [:div#main {:class "grow flex flex-col overflow-hidden"}
+          [content-component page-name page-params]]
          [:div {:class "flex"}
           [inspector page-name page-params]]])]]))

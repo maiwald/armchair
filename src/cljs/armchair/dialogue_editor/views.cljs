@@ -334,7 +334,7 @@
                   :icon "plus"
                   :on-click #(>evt [:armchair.modals.case-node-creation/open dialogue-id])}]]]]))
 
-(defn dialogue-editor [dialogue-id]
+(defn canvas [dialogue-id]
   (if-let [{:keys [bounds
                    npc-line-ids
                    player-line-ids
@@ -356,11 +356,11 @@
       [:svg {:class "graph__connection-container" :version "1.1"
              :baseProfile "full"
              :xmlns "http://www.w3.org/2000/svg"}
-       (if-let [{:keys [start end]} (<sub [:ui/connector])]
+       (when-let [{:keys [start end]} (<sub [:ui/connector])]
          [connection {:start start
                       :end end
                       :kind :connector}])
-       (if-let [[start end] initial-line-connection]
+       (when-let [[start end] initial-line-connection]
          [line-connection bounds start end])
        (for [[start end] line-connections]
          ^{:key (str "line-connection:" start "->" end)}
@@ -372,3 +372,8 @@
          ^{:key (str "response-connection:" start ":" index "->" end)}
          [option-connection bounds start index end])]]]
     [:span "Dialogue not found."]))
+
+(defn dialogue-editor [dialogue-id]
+  [:div
+   [dialogue-editor-header dialogue-id]
+   [canvas dialogue-id]])
