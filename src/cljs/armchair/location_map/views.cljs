@@ -159,7 +159,7 @@
               (+ (.-scrollTop target) (/ (.-clientHeight target) 2)))))
 
 (defn location-map-header []
-  [:header.page-header
+  [:header.page-header {:class "bg-sky-800 text-white"}
    [:h1 "World"]
    [:ul.page-header__actions
     [:li
@@ -182,7 +182,7 @@
   (let [update-scroll-center (debounce #(>evt [:location-map/update-scroll-center %]) 200)
         on-scroll (comp update-scroll-center e->scroll-center)]
     (fn []
-      [:div
+      [:<>
        [location-map-header]
        (let [{:keys [bounds scroll-center location-ids zoom-scale]} (<sub [:location-map])]
          [c/scroll-container {:width (:w bounds)

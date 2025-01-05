@@ -311,10 +311,7 @@
 
 (defn dialogue-editor-header [dialogue-id]
   (let [{:keys [synopsis]} (<sub [:dialogue-editor/header dialogue-id])]
-    [:div.page-header
-     [:a.page-header__back
-      {:on-click #(>navigate :locations)}
-      [c/icon "angle-double-left"] "World"]
+    [:header.page-header {:class "bg-sky-800 text-white"}
      [:h1 "Dialogue: " synopsis]
      [:ul.page-header__actions
       [:li
@@ -374,6 +371,6 @@
     [:span "Dialogue not found."]))
 
 (defn dialogue-editor [dialogue-id]
-  [:div
+  [:<>
    [dialogue-editor-header dialogue-id]
    [canvas dialogue-id]])

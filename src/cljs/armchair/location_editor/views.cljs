@@ -242,15 +242,12 @@
 
 (defn location-editor-header [location-id]
   (let [{:keys [display-name]} (<sub [:location-editor/header location-id])]
-    [:header.page-header
-     [:a.page-header__back
-      {:on-click #(>navigate :locations)}
-      [c/icon "angle-double-left"] "World"]
+    [:header.page-header {:class "bg-sky-800 text-white"}
      [:h1 "Location: " display-name]]))
 
 (defn location-editor [location-id]
   (if (<sub [:location-editor/location-exists? location-id])
-    [:div
+    [:<>
      [location-editor-header location-id]
      [canvas location-id]]
     "Location not found."))

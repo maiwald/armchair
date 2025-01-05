@@ -172,7 +172,26 @@
 (reg-event-meta
   :show-page
   (fn [db [_ path]]
-    (assoc db :current-page path)))
+    (let [open-pages (:open-pages db)
+          new-open-pages (if (some #(= path %) open-pages)
+                           open-pages
+                           (conj open-pages path))]
+      (-> db
+          (assoc :current-page (u/index-of new-open-pages path))
+          (assoc :open-pages new-open-pages)))))
+
+
+(reg-event-meta
+  :close-page
+  (fn [{:keys [open-pages current-page] :as db} [_ path]]
+    (when-let [index (u/index-of open-pages path)]
+      (-> db
+          (assoc :current-page (if (= current-page index)
+                                 (max 0 (dec index))
+                                 (if (< current-page index)
+                                   current-page
+                                   (dec current-page))))
+          (assoc :open-pages (u/removev open-pages index))))))
 
 ;; Mouse, Dragging UI
 

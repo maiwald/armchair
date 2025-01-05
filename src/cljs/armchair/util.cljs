@@ -93,6 +93,10 @@
   (vec (concat (take idx v)
                (drop (inc idx) v))))
 
+(defn index-of [v item]
+  (let [idx? (fn [i a] (when (= item a) i))]
+    (first (keep-indexed idx? v))))
+
 (defn spy [& args]
   (apply js/console.log args)
   (first args))

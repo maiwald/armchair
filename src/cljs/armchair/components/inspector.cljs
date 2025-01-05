@@ -304,7 +304,7 @@
                                          :component [tilemap-inspector (uuid (:id page-params))]}
                          :dialogue-edit {:title "Dialogue Edit"
                                          :component [dialogue-inspector (uuid (:id page-params))]})]
-    [:div#inspector
+    [:div#inspector {:class "shrink-0"}
      [:header
       [:span.title (:title page-inspector)]]
      (case inspector-type

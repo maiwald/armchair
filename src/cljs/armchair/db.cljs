@@ -66,7 +66,9 @@
         :character          (s/tuple #(= :character %) ::character-id)
         :player             (s/tuple #(= :player %))))
 
-(s/def ::current-page (s/nilable string?))
+(s/def ::current-page number?)
+(s/def ::open-pages
+  (s/coll-of string? :kind vector?))
 
 ;; Location Editor
 
@@ -342,6 +344,7 @@
                       (s/keys :req [:ui/positions
                                     :ui/location-map-zoom-scale]
                               :req-un [::current-page
+                                       ::open-pages
                                        :state/player
                                        :state/characters
                                        :state/dialogues
@@ -466,6 +469,8 @@
           :ui/location-preview-cache-foreground {}
           :ui/location-preview-cache-background {}
           :ui/location-map-zoom-scale 0.6
+          :open-pages ["/locations"]
+          :current-page 0
           :characters {}
           :locations {}
           :dialogues {}

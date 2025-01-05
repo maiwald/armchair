@@ -25,7 +25,8 @@
 (reg-sub :db-connecting #(:connecting %))
 (reg-sub :db-cursor #(:cursor %))
 
-(reg-sub :current-page #(:current-page %))
+(reg-sub :current-page (fn [{:keys [current-page open-pages]}] (get open-pages current-page)))
+(reg-sub :open-pages #(:open-pages %))
 (reg-sub :modal #(:modal %))
 
 (reg-sub :ui/positions #(:ui/positions %))
