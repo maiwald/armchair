@@ -167,6 +167,16 @@
                      (rest line-ids))))
           (update :dialogues dissoc dialogue-id)))))
 
+;; Mode
+
+(reg-event-meta
+  :set-game-mode
+  (fn [db] (assoc (u/spy db) :mode :game)))
+
+(reg-event-meta
+  :set-editor-mode
+  (fn [db] (assoc db :mode :editor)))
+
 ;; Page
 
 (reg-event-meta

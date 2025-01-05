@@ -12,15 +12,18 @@
 
 ;; Navigation
 
-(defn menu-bar [page-name]
+(defn menu-bar [mode]
   [:ul#menu-bar
    [:li
-    (if (not= page-name :game)
-      [:a {:on-click #(>navigate :game)}
+    (case mode
+      :editor
+      [:a {:on-click #(>evt [:set-game-mode])}
        [icon "play"] "Play"]
-      [:a {:on-click #(>navigate :locations)}
+
+      :game
+      [:a {:on-click #(>evt [:set-editor-mode])}
        [icon "edit"] "Edit"])]
-   (when (not= page-name :game)
+   (when (= mode :editor)
      [:<>
       [:li
        (if (<sub [:can-undo?])
@@ -39,7 +42,6 @@
       [:li
        [:a {:on-click #(>evt [:reset-db])}
         [icon "snowplow"] "Reset All Data"]]])])
-
 
 ;; Page
 
@@ -80,19 +82,20 @@
                            :on-click #(>evt [:close-page page])}]])])]))
 
 (defn root []
-  (let [{:keys [page-name page-params]} (page-data (<sub [:current-page]))]
+  (let [mode (<sub [:current-mode])
+        {:keys [page-name page-params]} (page-data (<sub [:current-page]))]
     [:<>
      [modal]
      [:div#default-dnd-ghost [c/icon "map-marker"]]
      [:div#page {:class "flex flex-col w-screen h-screen"}
-      [menu-bar page-name]
-      (if (= page-name :game)
-        [game-view]
-        [:div#workspace {:class "grow flex flex-row overflow-hidden"}
-         [:div {:class "flex"} [resource-sidebar]]
-         [:div#main {:class "grow flex flex-col overflow-hidden"}
-          [tabs]
-          [:div {:class "grow flex flex-row overflow-hidden"}
-           [:div#content {:class "flex flex-col grow overflow-hidden"}
-            [content-component page-name page-params]]
-           [inspector page-name page-params]]]])]]))
+      [menu-bar mode]
+      (case mode
+        :game [game-view]
+        :editor [:div#workspace {:class "grow flex flex-row overflow-hidden"}
+                 [:div {:class "flex"} [resource-sidebar]]
+                 [:div#main {:class "grow flex flex-col overflow-hidden"}
+                  [tabs]
+                  [:div {:class "grow flex flex-row overflow-hidden"}
+                   [:div#content {:class "flex flex-col grow overflow-hidden"}
+                    [content-component page-name page-params]]
+                   [inspector page-name page-params]]]])]]))

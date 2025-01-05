@@ -66,6 +66,7 @@
         :character          (s/tuple #(= :character %) ::character-id)
         :player             (s/tuple #(= :player %))))
 
+(s/def ::mode #{:editor :game})
 (s/def ::current-page number?)
 (s/def ::open-pages
   (s/coll-of string? :kind vector?))
@@ -343,7 +344,8 @@
                       ::location-connection-validation
                       (s/keys :req [:ui/positions
                                     :ui/location-map-zoom-scale]
-                              :req-un [::current-page
+                              :req-un [::mode
+                                       ::current-page
                                        ::open-pages
                                        :state/player
                                        :state/characters
@@ -469,6 +471,7 @@
           :ui/location-preview-cache-foreground {}
           :ui/location-preview-cache-background {}
           :ui/location-map-zoom-scale 0.6
+          :mode :editor
           :open-pages ["/locations"]
           :current-page 0
           :characters {}

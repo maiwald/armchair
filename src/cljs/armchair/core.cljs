@@ -15,7 +15,6 @@
             [armchair.location-previews]
             [armchair.game.subs]
             [armchair.util :refer [>evt]]
-            [armchair.routes :as routes]
             [armchair.views :as views]
             [armchair.config :as config]))
 
@@ -32,9 +31,6 @@
 (defn ^:export init []
   (re-frame/dispatch-sync [:initialize-db])
   (re-frame/dispatch-sync [:load-storage-state])
-  (when (empty? js/location.hash)
-    (js/history.replaceState #js{} "" routes/root))
-  (re-frame/dispatch-sync [:show-page (subs js/location.hash 1)])
   (dev-setup)
   (mount-root))
 
