@@ -123,7 +123,7 @@
     :component player}))
 
 (defn resource-sidebar []
-  (let [active-panel (r/atom (first (keys resources)))
+  (let [active-panel (r/atom nil)
         toggle-panel #(swap! active-panel (fn [panel-key] (if (= panel-key %) nil %)))]
     (fn []
       [:aside {:class "flex grow border-r border-solid border-zinc-700 bg-zinc-200"}
