@@ -14,9 +14,7 @@
 (def option-position-lookup (r/atom {}))
 
 (defn e->graph-cursor [e]
-  (u/relative-cursor e (-> js/document
-                           (.getElementsByClassName "graph")
-                           (aget 0))))
+  (u/relative-cursor e (js/document.getElementById "graph-canvas")))
 
 
 (defn inline-textarea [{:keys [label text on-change]}]
@@ -72,7 +70,8 @@
 (defn drag-canvas [{:keys [kind nodes bounds]}]
   (let [connecting? (some? (<sub [:ui/connector]))
         dragging? (<sub [:dragging?])]
-    [:div {:class ["graph"
+    [:div {:id "graph-canvas"
+           :class ["graph"
                    (when dragging? "graph_is-dragging")
                    (when connecting? "graph_is-connecting")]
            :on-mouse-move (fn [e]
