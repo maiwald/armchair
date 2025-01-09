@@ -242,7 +242,7 @@
                 :entity/type]
           :req-un [::display-name
                    :switch/value-ids]
-          :req-opt [:switch/default]))
+          :opt-un [:switch/default]))
 
 (s/def :switch/default ::switch-value-id)
 (s/def :switch/value-ids (s/coll-of ::switch-value-id
