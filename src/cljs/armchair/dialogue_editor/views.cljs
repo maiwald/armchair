@@ -9,7 +9,6 @@
             [armchair.modals.unlock-conditions-form :as unlock-conditions-form]
             [armchair.modals.switch-form :as switch-form]
             [armchair.modals.trigger-creation :as trigger-creation]
-            [armchair.routes :refer [>navigate]]
             [armchair.util :as u :refer [<sub >evt stop-e! prevent-e! e->val e->left?]]))
 
 (def option-position-lookup (r/atom {}))
