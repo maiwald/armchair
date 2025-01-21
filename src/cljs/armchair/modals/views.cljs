@@ -12,14 +12,6 @@
             [armchair.modals.unlock-conditions-form]
             [armchair.modals.sprite-selection]))
 
-(defn dialogue-state-modal [{:keys [description]}]
-  [c/modal {:title "Dialogue State"
-            :confirm-handler #(>evt [:create-dialogue-state])
-            :close-handler #(>evt [:close-modal])}
-   [input/text {:label "State description"
-                :on-change #(>evt [:dialogue-state-update (e->val %)])
-                :value description}]])
-
 (defn npc-line-form-modal [line-id]
   (let [line (<sub [:dialogue/modal-line line-id])]
     [c/modal {:title "Character Line"
@@ -36,10 +28,9 @@
 
 
 (defn modal []
-  (if-let [modal (<sub [:modal])]
+  (when-let [modal (<sub [:modal])]
     (condp #(contains? %2 %1) modal
       :dialogue-creation           [armchair.modals.dialogue-creation/modal]
-      :dialogue-state              [dialogue-state-modal (:dialogue-state modal)]
       :npc-line-id                 [npc-line-form-modal (:npc-line-id modal)]
       :character-form              [armchair.modals.character-form/modal (:character-form modal)]
       :location-creation           [armchair.modals.location-creation/modal (:location-creation modal)]

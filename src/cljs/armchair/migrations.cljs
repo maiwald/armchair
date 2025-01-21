@@ -14,7 +14,7 @@
             [armchair.util :as u]
             [armchair.migrations.textures :refer [texture-lookup]]))
 
-(def db-version 17)
+(def db-version 18)
 
 (def migrations
   "Map of migrations. Key is the version we are coming from."
@@ -174,7 +174,13 @@
 
    ; Rename character terture to sprite
    16 (fn [db]
-        (u/update-values db :characters rename-keys {:texture :sprite}))})
+        (u/update-values db :characters rename-keys {:texture :sprite}))
+
+   ; Remove dialogue states
+   17 (fn [db]
+        (u/update-values db :dialogues dissoc :states))})
+
+
 
 (defn migrate [{:keys [version payload]}]
   (assert (<= version db-version)

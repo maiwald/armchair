@@ -231,10 +231,8 @@
                 :entity/type]
           :req-un [::character-id
                    :dialogue/initial-line-id
-                   :dialogue/synopsis]
-          :opt-un [:dialogue/states]))
+                   :dialogue/synopsis]))
 
-(s/def :dialogue/states (s/map-of ::line-id ::text))
 (s/def :dialogue/initial-line-id ::line-id)
 
 (s/def :switch/switch
@@ -268,8 +266,7 @@
                                      :modal/unlock-conditions-form
                                      :modal/connection-trigger-creation
                                      :modal/sprite-selection
-                                     ::npc-line-id
-                                     ::dialogue-state]))
+                                     ::npc-line-id]))
 
 (s/def :modal/location-creation ::display-name)
 
@@ -313,10 +310,6 @@
                    ::location-position
                    :connection-trigger/target-id
                    :connection-trigger/target-position]))
-
-(s/def ::dialogue-state
-  (s/keys :req-un [::line-id]
-          :opt-un [::description]))
 
 (s/def :modal/sprite-selection
   (s/keys :req-un [:sprite-selection/file-name
@@ -399,11 +392,6 @@
                (setval [(must :next-line-id) node-ref?] NONE)
                (setval [(must :clauses) MAP-VALS node-ref?] NONE)))]
     (-> (case (:kind node)
-          :npc (update-in db [:dialogues (:dialogue-id node)]
-                          (fn [dialogue]
-                            (if-let [states (dissoc (:states dialogue) node-id)]
-                              (assoc dialogue :states states)
-                              (dissoc dialogue :states))))
           :trigger (update db :triggers #(apply dissoc % (:trigger-ids node)))
           :player (update db :player-options #(apply dissoc % (:options node)))
           db)

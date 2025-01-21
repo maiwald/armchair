@@ -66,12 +66,6 @@
   (fn [db [_ id field value]]
     (assoc-in db [:lines id field] value)))
 
-(reg-event-data
-  :dialogue-editor/delete-dialogue-state
-  (fn [db [_ line-id]]
-    (let [dialogue-id (get-in db [:lines line-id :dialogue-id])]
-      (update-in db [:dialogues dialogue-id :states] dissoc line-id))))
-
 (reg-event-meta
   :dialogue-editor/start-connecting-lines
   (fn [db [_ line-id cursor index]]

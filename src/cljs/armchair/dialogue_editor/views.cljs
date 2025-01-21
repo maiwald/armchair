@@ -120,8 +120,7 @@
            (r/children (r/current-component)))]))
 
 (defn npc-line-component [line-id]
-  (let [{:keys [state
-                connected?
+  (let [{:keys [connected?
                 text
                 character-name
                 character-color]} (<sub [:dialogue-editor/npc-line line-id])]
@@ -129,16 +128,8 @@
                  :item-id line-id
                  :color character-color
                  :on-connect-end #(>evt [:dialogue-editor/end-connecting-lines line-id])
-                 :actions [(when-not (some? state)
-                             ["tag" "Create named state" #(>evt [:open-dialogue-state-modal line-id])])
-                           ["trash" "Delete" #(>evt [:dialogue-editor/delete-node line-id])]
+                 :actions [["trash" "Delete" #(>evt [:dialogue-editor/delete-node line-id])]
                            ["edit" "Edit" #(>evt [:open-npc-line-modal line-id])]]}
-     (when (some? state)
-       [:div {:class "line__state"}
-        [c/tag {:title state
-                :icon "tag"
-                :on-click #(>evt [:open-dialogue-state-modal line-id])
-                :on-remove #(>evt [:dialogue-editor/delete-dialogue-state line-id])}]])
      [:div {:class "line__content-wrapper"}
       [:div.graph-node__connector
        [connector {:connected? connected?

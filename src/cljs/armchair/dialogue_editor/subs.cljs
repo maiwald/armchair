@@ -12,11 +12,10 @@
   (fn [[lines dialogues characters] [_ line-id]]
     (let [{:keys [text character-id dialogue-id next-line-id]} (get lines line-id)
           character (get characters character-id)
-          {:keys [initial-line-id states]} (get dialogues dialogue-id)]
+          {:keys [initial-line-id]} (get dialogues dialogue-id)]
       {:id line-id
        :text text
        :initial-line? (= initial-line-id line-id)
-       :state (get states line-id)
        :connected? (some? next-line-id)
        :character-color (:color character)
        :character-name (:display-name character)})))
