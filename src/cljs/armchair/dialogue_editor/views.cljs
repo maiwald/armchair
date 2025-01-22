@@ -67,25 +67,21 @@
            :style {:left (:x position) :top (:y position)}}
      [component item-id]]))
 
-(defn drag-canvas [{:keys [kind nodes bounds]}]
+(defn drag-canvas []
   (let [connecting? (some? (<sub [:ui/connector]))
         dragging? (<sub [:dragging?])]
-    [:div {:id "graph-canvas"
-           :class ["graph"
-                   (when dragging? "graph_is-dragging")
-                   (when connecting? "graph_is-connecting")]
-           :on-mouse-move (fn [e]
-                            (when (or dragging? connecting?)
-                              (>evt [:move-cursor (e->graph-cursor e)])))
-           :on-mouse-up (fn []
-                          (cond
-                            connecting? (>evt [:abort-connecting])
-                            dragging? (>evt [:end-dragging])))}
-     (into [:<>] (r/children (r/current-component)))
-     (for [[item-component ids] nodes
-           id ids]
-       ^{:key (str kind ":" id)}
-       [drag-item id bounds item-component])]))
+    (into [:div {:id "graph-canvas"
+                 :class ["graph"
+                         (when dragging? "graph_is-dragging")
+                         (when connecting? "graph_is-connecting")]
+                 :on-mouse-move (fn [e]
+                                  (when (or dragging? connecting?)
+                                    (>evt [:move-cursor (e->graph-cursor e)])))
+                 :on-mouse-up (fn []
+                                (cond
+                                  connecting? (>evt [:abort-connecting])
+                                  dragging? (>evt [:end-dragging])))}]
+          (r/children (r/current-component)))))
 
 (defn graph-node [{id :item-id
                    :keys [title color width actions on-connect-end]
@@ -322,41 +318,42 @@
 
 (defn canvas [dialogue-id]
   (if-let [{:keys [bounds
-                   npc-line-ids
-                   player-line-ids
-                   trigger-node-ids
-                   case-node-ids
+                   lines
                    initial-line-connection
                    line-connections
                    case-connections
                    option-connections]} (<sub [:dialogue-editor/dialogue dialogue-id])]
     [c/scroll-container {:width (:w bounds)
                          :height (:h bounds)}
-     [drag-canvas {:kind "line"
-                   :bounds bounds
-                   :nodes {npc-line-component npc-line-ids
-                           player-line-component player-line-ids
-                           trigger-node-component trigger-node-ids
-                           case-node-component case-node-ids
-                           initial-line-component (list dialogue-id)}}
-      [:svg {:class "graph__connection-container" :version "1.1"
-             :baseProfile "full"
-             :xmlns "http://www.w3.org/2000/svg"}
-       (when-let [{:keys [start end]} (<sub [:ui/connector])]
-         [connection {:start start
-                      :end end
-                      :kind :connector}])
-       (when-let [[start end] initial-line-connection]
-         [line-connection bounds start end])
-       (for [[start end] line-connections]
-         ^{:key (str "line-connection:" start "->" end)}
-         [line-connection bounds start end])
-       (for [[start index end] case-connections]
-         ^{:key (str "case-connection:" start ":" index "->" end)}
-         [case-connection bounds start index end])
-       (for [[start index end] option-connections]
-         ^{:key (str "response-connection:" start ":" index "->" end)}
-         [option-connection bounds start index end])]]]
+     [drag-canvas
+       (for [{:keys [kind id]} lines]
+         ^{:key (str kind ":" id)}
+         [drag-item id bounds
+          (case kind
+            :npc npc-line-component
+            :player player-line-component
+            :trigger trigger-node-component
+            :initial initial-line-component
+            :case case-node-component)])
+       [drag-item dialogue-id bounds initial-line-component]
+       [:svg {:class "graph__connection-container" :version "1.1"
+              :baseProfile "full"
+              :xmlns "http://www.w3.org/2000/svg"}
+        (when-let [{:keys [start end]} (<sub [:ui/connector])]
+          [connection {:start start
+                       :end end
+                       :kind :connector}])
+        (when-let [[start end] initial-line-connection]
+          [line-connection bounds start end])
+        (for [[start end] line-connections]
+          ^{:key (str "line-connection:" start "->" end)}
+          [line-connection bounds start end])
+        (for [[start index end] case-connections]
+          ^{:key (str "case-connection:" start ":" index "->" end)}
+          [case-connection bounds start index end])
+        (for [[start index end] option-connections]
+          ^{:key (str "response-connection:" start ":" index "->" end)}
+          [option-connection bounds start index end])]]]
     [:span "Dialogue not found."]))
 
 (defn dialogue-editor [dialogue-id]

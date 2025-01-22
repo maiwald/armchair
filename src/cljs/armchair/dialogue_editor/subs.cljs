@@ -114,11 +114,9 @@
                     :right (+ config/line-width 100)
                     :top 100
                     :bottom 400})
-         :npc-line-ids (map :entity/id (lines-by-kind :npc))
-         :player-line-ids (map :entity/id (lines-by-kind :player))
-         :trigger-node-ids (map :entity/id (lines-by-kind :trigger))
-         :case-node-ids (map :entity/id (lines-by-kind :case))
-         :initial-line-connection (if-let [end (:initial-line-id dialogue)]
+         :lines (map (fn [{:keys [entity/id kind]}] {:id id :kind kind})
+                     (vals dialogue-lines))
+         :initial-line-connection (when-let [end (:initial-line-id dialogue)]
                                     (vector dialogue-id end))
          :line-connections (->> (concat (lines-by-kind :npc)
                                         (lines-by-kind :trigger))
