@@ -146,4 +146,5 @@
               (let [{:keys [sub item-component]} (resources panel-key)]
                 [:ul {:class "overflow-y-auto"}
                  (for [item (u/<sub sub)]
+                   ^{:key (:id item)}
                    [item-component item])]))]))])))
