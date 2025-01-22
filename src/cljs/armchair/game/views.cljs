@@ -1,7 +1,6 @@
 (ns armchair.game.views
   (:require [clojure.core.async :refer [put!]]
             [reagent.core :as r]
-            [reagent.dom :as rd]
             [armchair.util :as u :refer [<sub prevent-e! px]]
             [armchair.config :refer [tile-size
                                      camera-tile-width
