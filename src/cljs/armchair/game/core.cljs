@@ -316,10 +316,9 @@
 
 (defn interaction-line-id [state]
   (let [l (get-in state [:player :location-id])
-        characters (get-in @data [:locations l :characters])
         tile (interaction-tile state)]
-    (if-let [dialogue-id (get-in characters [tile :dialogue-id])]
-      (get-in state [:dialogue-states dialogue-id]))))
+    (when-let [dialogue-id (get-in @data [:locations l :characters tile :dialogue-id])]
+      (get-in @data [:initial-dialogue-lines dialogue-id]))))
 
 ;; Animations
 
