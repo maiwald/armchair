@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Integration Test - Armchair</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        .item h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .item p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .color-box {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .loading {
+            color: #1976d2;
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Armchair Database Integration Test</h1>
+        
+        <div class="section">
+            <h2>API Status</h2>
+            <div id="api-status" class="loading">Checking API status...</div>
+            <button onclick="checkAPI()">Refresh API Status</button>
+        </div>
+
+        <div class="grid">
+            <div class="section">
+                <h2>Locations from Database</h2>
+                <div id="locations-container" class="loading">Loading locations...</div>
+                <button onclick="loadLocations()">Refresh Locations</button>
+            </div>
+
+            <div class="section">
+                <h2>Characters from Database</h2>
+                <div id="characters-container" class="loading">Loading characters...</div>
+                <button onclick="loadCharacters()">Refresh Characters</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5300/api';
+
+        async function checkAPI() {
+            const statusEl = document.getElementById('api-status');
+            try {
+                statusEl.innerHTML = '<div class="loading">Checking API...</div>';
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    statusEl.innerHTML = `<div style="color: #2e7d32; background: #e8f5e8; padding: 10px; border-radius: 4px;">✅ API is healthy: ${data.message}</div>`;
+                } else {
+                    statusEl.innerHTML = `<div class="error">⚠️ API returned unexpected status: ${JSON.stringify(data)}</div>`;
+                }
+            } catch (error) {
+                statusEl.innerHTML = `<div class="error">❌ Failed to connect to API: ${error.message}</div>`;
+            }
+        }
+
+        async function loadLocations() {
+            const container = document.getElementById('locations-container');
+            try {
+                container.innerHTML = '<div class="loading">Loading locations...</div>';
+                const response = await fetch(`${API_BASE}/locations`);
+                const locations = await response.json();
+                
+                if (locations.length === 0) {
+                    container.innerHTML = '<p>No locations found in database.</p>';
+                    return;
+                }
+
+                container.innerHTML = locations.map(location => `
+                    <div class="item">
+                        <h3>${location['display-name']}</h3>
+                        <p><strong>ID:</strong> ${location['entity/id']}</p>
+                        <p><strong>Type:</strong> ${location['entity/type']}</p>
+                        <p><strong>Bounds:</strong> ${JSON.stringify(location.bounds)}</p>
+                    </div>
+                `).join('');
+            } catch (error) {
+                container.innerHTML = `<div class="error">Failed to load locations: ${error.message}</div>`;
+            }
+        }
+
+        async function loadCharacters() {
+            const container = document.getElementById('characters-container');
+            try {
+                container.innerHTML = '<div class="loading">Loading characters...</div>';
+                const response = await fetch(`${API_BASE}/characters`);
+                const characters = await response.json();
+                
+                if (characters.length === 0) {
+                    container.innerHTML = '<p>No characters found in database.</p>';
+                    return;
+                }
+
+                container.innerHTML = characters.map(character => `
+                    <div class="item">
+                        <h3>${character['display-name']}</h3>
+                        <p><strong>ID:</strong> ${character['entity/id']}</p>
+                        <p><strong>Type:</strong> ${character['entity/type']}</p>
+                        <p><strong>Color:</strong> 
+                            <span class="color-box" style="background-color: ${character.color}"></span>
+                            ${character.color}
+                        </p>
+                        <p><strong>Sprite:</strong> ${JSON.stringify(character.sprite)}</p>
+                    </div>
+                `).join('');
+            } catch (error) {
+                container.innerHTML = `<div class="error">Failed to load characters: ${error.message}</div>`;
+            }
+        }
+
+        // Load data on page load
+        window.onload = function() {
+            checkAPI();
+            loadLocations();
+            loadCharacters();
+        };
+    </script>
+</body>
+</html>

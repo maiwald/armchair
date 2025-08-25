@@ -134,6 +134,37 @@
     (dispatch [:load-characters-from-api])
     {}))
 
+;; Individual item loading events
+(reg-event-fx
+  :load-location-by-id
+  (fn [{db :db} [_ location-id]]
+    (go
+      (let [result (<! (api/fetch-location location-id))]
+        (if (:success result)
+          (dispatch [:location-loaded (:data result)])
+          (js/console.error "Failed to load location:" (:error result)))))
+    {}))
+
+(reg-event-data
+  :location-loaded
+  (fn [db [_ location]]
+    (assoc-in db [:locations (:entity/id location)] location)))
+
+(reg-event-fx
+  :load-character-by-id
+  (fn [{db :db} [_ character-id]]
+    (go
+      (let [result (<! (api/fetch-character character-id))]
+        (if (:success result)
+          (dispatch [:character-loaded (:data result)])
+          (js/console.error "Failed to load character:" (:error result)))))
+    {}))
+
+(reg-event-data
+  :character-loaded
+  (fn [db [_ character]]
+    (assoc-in db [:characters (:entity/id character)] character)))
+
 ;; Character CRUD
 
 (reg-event-data
