@@ -5,6 +5,7 @@
             [armchair.location-map.views :refer [location-map]]
             [armchair.components.resources :refer [resource-sidebar]]
             [armchair.components.inspector :refer [inspector]]
+            [armchair.components.api-data :as api-data]
             [armchair.modals.views :refer [modal]]
             [armchair.util :as u :refer [<sub >evt]]
             [armchair.routes :refer [page-data >navigate]]
@@ -41,7 +42,10 @@
         [icon "upload"] "Load From File"]]
       [:li
        [:a {:on-click #(>evt [:reset-db])}
-        [icon "snowplow"] "Reset All Data"]]])])
+        [icon "snowplow"] "Reset All Data"]]
+      [:li
+       [:a {:on-click #(>navigate :api-data {})}
+        [icon "database"] "Database View"]]])])
 
 ;; Page
 
@@ -50,6 +54,7 @@
     :locations     [location-map]
     :location-edit [location-editor (uuid (:id page-params))]
     :dialogue-edit [dialogue-editor (uuid (:id page-params))]
+    :api-data      [api-data/api-data-view]
     [:div "Page not found"]))
 
 (defn tabs []

@@ -5,3 +5,4 @@
 /build
 /node_modules/
 /resources/public/compiled
+/server/armchair.db

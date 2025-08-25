@@ -5,6 +5,7 @@
              :refer-macros [select setval]]
             [clojure.spec.alpha :as s]
             ["file-saver" :refer [saveAs]]
+            [cljs.core.async :as async :refer [go <!]]
             [armchair.config :refer [debug?]]
             [armchair.local-storage :as ls]
             [armchair.db :as db :refer [default-db
@@ -15,6 +16,7 @@
             [armchair.undo :refer [record-undo]]
             [armchair.math :as m]
             [armchair.util :as u]
+            [armchair.api :as api]
             [goog.functions :refer [debounce]]))
 
 (when debug?
@@ -87,6 +89,49 @@
                         (.toISOString (new js/Date))
                         ".json")]
       (saveAs blob filename))
+    {}))
+
+;; API Data Loading Events
+
+(reg-event-fx
+  :load-locations-from-api
+  (fn [{db :db} _]
+    (go
+      (let [result (<! (api/fetch-locations))]
+        (if (:success result)
+          (let [locations (:data result)
+                locations-map (into {} (map (fn [loc] [(:entity/id loc) loc]) locations))]
+            (dispatch [:locations-loaded locations-map]))
+          (js/console.error "Failed to load locations:" (:error result)))))
+    {}))
+
+(reg-event-data
+  :locations-loaded
+  (fn [db [_ locations-map]]
+    (assoc db :locations locations-map)))
+
+(reg-event-fx
+  :load-characters-from-api
+  (fn [{db :db} _]
+    (go
+      (let [result (<! (api/fetch-characters))]
+        (if (:success result)
+          (let [characters (:data result)
+                characters-map (into {} (map (fn [char] [(:entity/id char) char]) characters))]
+            (dispatch [:characters-loaded characters-map]))
+          (js/console.error "Failed to load characters:" (:error result)))))
+    {}))
+
+(reg-event-data
+  :characters-loaded
+  (fn [db [_ characters-map]]
+    (assoc db :characters characters-map)))
+
+(reg-event-fx
+  :load-data-from-api
+  (fn [_ _]
+    (dispatch [:load-locations-from-api])
+    (dispatch [:load-characters-from-api])
     {}))
 
 ;; Character CRUD

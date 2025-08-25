@@ -31,6 +31,7 @@
 (defn ^:export init []
   (re-frame/dispatch-sync [:initialize-db])
   (re-frame/dispatch-sync [:load-storage-state])
+  (re-frame/dispatch [:load-data-from-api])  ; Load data from API after initialization
   (dev-setup)
   (mount-root))
 
