@@ -49,49 +49,49 @@ jobs:
         run: |
           # Make build script executable
           chmod +x scripts/build.sh
-          
+
           # Create release folder
           mkdir -p build
-          
+
           # Run the build commands directly to avoid sed -i "" issues on Linux
           source .env
-          
+
           # Clean release folder
           rm -rf $RELEASE_FOLDER/*
-          
+
           # Create directories
           mkdir -p $RELEASE_FOLDER/compiled/css
           mkdir -p $RELEASE_FOLDER/compiled/js
           mkdir -p $RELEASE_FOLDER/compiled/tailwind
-          
+
           # Create symlinks
           ln -s ../resources/public/css/ $RELEASE_FOLDER/css
           ln -s ../resources/public/images/ $RELEASE_FOLDER/images
           ln -s ../resources/public/webfonts/ $RELEASE_FOLDER/webfonts
-          
+
           # Build ClojureScript
           npm exec -- shadow-cljs release app \
             --config-merge "{:output-dir \"$RELEASE_FOLDER/compiled/js/\"}"
-          
+
           # Build Sass
           npm exec -- sass --source-map src/sass/app.sass $RELEASE_FOLDER/compiled/css/app.css
-          
+
           # Build Tailwind CSS
           npm exec -- tailwindcss -i src/tailwind/styles.css -o $RELEASE_FOLDER/compiled/tailwind/styles.css -m
-          
+
           # Rename and update files with version
           mv $RELEASE_FOLDER/compiled/tailwind/styles.css $RELEASE_FOLDER/compiled/tailwind/styles-$VERSION.css
-          
+
           mv $RELEASE_FOLDER/compiled/css/app.css $RELEASE_FOLDER/compiled/css/app-$VERSION.css
           mv $RELEASE_FOLDER/compiled/css/app.css.map $RELEASE_FOLDER/compiled/css/app-$VERSION.css.map
           sed -i "s/sourceMappingURL=app\.css\.map/sourceMappingURL=app-$VERSION.css.map/" \
             $RELEASE_FOLDER/compiled/css/app-$VERSION.css
-          
+
           mv $RELEASE_FOLDER/compiled/js/app.js $RELEASE_FOLDER/compiled/js/app-$VERSION.js
           mv $RELEASE_FOLDER/compiled/js/app.js.map $RELEASE_FOLDER/compiled/js/app-$VERSION.js.map
           sed -i "s/sourceMappingURL=app\.js\.map/sourceMappingURL=app-$VERSION.js.map/" \
             $RELEASE_FOLDER/compiled/js/app-$VERSION.js
-          
+
           # Copy and update index.html
           cp resources/public/index.html $RELEASE_FOLDER/index.html
           sed -i \
