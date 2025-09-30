@@ -1,11 +1,14 @@
+> [!IMPORTANT]
+> Armchair is discontinued. It was fun but no more changes will be made.
+> 
+> Feel free to look around the code or the [last build](https://maiwald.github.io/armchair).
+
 # Armchair
 
 Armchair will be an Editor for games with branching dialogue.
 
 I have rather intricate plans for what I want to to with dialogue in a little
 game I am working on that an off-the-shelf editor was not an option. Let's see where that goes ;)
-
-Anyway, feel free to play around with what it can do so far: https://my-armchair.com/alpha
 
 ## Development
 
