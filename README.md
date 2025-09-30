@@ -28,6 +28,23 @@ To compile clojurescript to javascript:
 make build
 ```
 
+## GitHub Pages Deployment
+
+This repository includes a GitHub Actions workflow that automatically builds and deploys to GitHub Pages.
+
+### Setup
+
+1. Go to your repository Settings → Pages
+2. Under "Build and deployment", select "GitHub Actions" as the source
+3. Push to the `main` branch or manually trigger the workflow
+
+The workflow will:
+- Build the ClojureScript, Sass, and Tailwind CSS
+- Version the output files using the git commit hash
+- Deploy the `build` folder to GitHub Pages
+
+For more details, see [.github/workflows/README.md](.github/workflows/README.md).
+
 # Credit
 
 All graphic assets are taken from [opengameart.org](https://opengameart.org)
